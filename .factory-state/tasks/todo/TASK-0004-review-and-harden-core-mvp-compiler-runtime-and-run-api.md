@@ -3,10 +3,11 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0014
+- Task ID: TASK-0004
 - Status: todo
 - Owner:
-- Priority: P0 — after TASK-0002/TASK-0003, before TASK-0004
+- Priority: Phase 1 Feasibility, step 4 — after TASK-0003 (auth/list hardening), before TASK-0005 (real LLM providers)
+- Previous ID: TASK-0014 (renumbered 2026-10-16, DEC-0007)
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Requirement IDs: REQ-0001
@@ -34,7 +35,7 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 
 ### Out Of Scope
 
-- Container sandboxing of imports (TASK-0004)
+- Repo import hardening and container sandboxing (TASK-0015, Phase 4)
 - New node types, versioning, HITL, RBAC
 - Frontend redesign (only small UI changes needed to show cancel/timeout states)
 
@@ -50,7 +51,7 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 - Requirement: `.factory-state/artifacts/REQ-0001-mvp-baseline.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
-- Related tasks: TASK-0002 (CI, PR #1), TASK-0003 (LLM providers, PR #2), TASK-0004 (sandboxed imports, next after this)
+- Related tasks: TASK-0002 (CI, PR #1), TASK-0003 (auth/list hardening), TASK-0005 (LLM providers, PR #2 — old TASK-0003), TASK-0015 (repo import + sandbox, last phase)
 
 ## Expected Outputs
 
@@ -68,7 +69,7 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 
 ## Dependencies
 
-- Builds on TASK-0002 (pyproject/CI) and TASK-0003 (provider calls); start from `main` after they merge, or stack on the TASK-0003 branch and document it
+- Builds on TASK-0002 (pyproject/CI). Independent of TASK-0005; if TASK-0005 (PR #2) merges first, also cover provider-call errors
 
 ## Acceptance Criteria
 
@@ -95,7 +96,7 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 ## Assumptions
 
 - Cooperative cancellation between LangGraph supersteps is acceptable (an in-flight HTTP call may finish before the run stops)
-- SQLite remains the store until TASK-0008
+- SQLite remains the store until TASK-0009
 
 ## Open Questions
 
@@ -104,8 +105,9 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 
 ## Activity Log
 
-- 2026-10-16: Created task (owner-approved scope proposal); placed in todo as next P0 before TASK-0004. Not started.
+- 2026-10-16: Created task (owner-approved scope proposal); placed in todo as next P0 (as TASK-0014). Not started.
+- 2026-10-16: Renumbered TASK-0014 -> TASK-0004 (Phase 1 step 4) per DEC-0007.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0014-review-and-harden-core-mvp` when implementation begins.
+- Use branch `factory/task-0004-review-and-harden-core-mvp` when implementation begins. (Planning PR #3 used branch `factory/task-0014-plan-mvp-hardening`.)

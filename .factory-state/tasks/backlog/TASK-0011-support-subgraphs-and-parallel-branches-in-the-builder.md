@@ -3,37 +3,38 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0006
+- Task ID: TASK-0011
+- Previous ID: TASK-0010 (renumbered 2026-10-16, DEC-0007)
 - Status: backlog
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
-- Requirement IDs: REQ-0005
+- Requirement IDs: REQ-0006
 - Design IDs:
 - Architecture IDs: ARCH-0001
 
 ## Objective
 
-Implement REQ-0005: Add workflow versioning with diff and rollback.
+Implement REQ-0006: Support subgraphs and parallel branches in the builder.
 
 ## Scope
 
 ### In Scope
 
-- Deliver the in-scope items of `.factory-state/artifacts/REQ-0005-workflow-versioning.md`
+- Deliver the in-scope items of `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
 
 ### Out Of Scope
 
-- Out-of-scope items listed in REQ-0005
+- Out-of-scope items listed in REQ-0006
 
 ## Inputs
 
-- `.factory-state/artifacts/REQ-0005-workflow-versioning.md`
+- `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
 ## Related Artifacts
 
-- Requirement: `.factory-state/artifacts/REQ-0005-workflow-versioning.md`
+- Requirement: `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
 
@@ -52,9 +53,9 @@ Implement REQ-0005: Add workflow versioning with diff and rollback.
 
 ## Acceptance Criteria
 
-- Each save creates a new version with author and timestamp
-- Run history records the version that executed
-- Rollback restores a previous version as a new latest version
+- A workflow containing a subgraph node compiles and runs, emitting events for inner nodes
+- Two parallel branches run in the same superstep and their outputs merge via declared reducers
+- Cycles between workflows via subgraph references are rejected by validation
 
 ## Validation Plan
 
@@ -68,12 +69,13 @@ Implement REQ-0005: Add workflow versioning with diff and rollback.
 
 ## Open Questions
 
-- None
+- Which state reducers must be supported (append list, merge dict)?
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0010 -> TASK-0011 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0006-add-workflow-versioning-with-diff-and-rollback` when implementation begins.
+- Use branch `factory/task-0011-support-subgraphs-and-parallel-branches-in-the-builder` when implementation begins.

@@ -80,7 +80,8 @@ Provide the internal MVP that the owner requested and that now exists in the rep
 
 ## Related Artifacts
 
-- `.factory-state/tasks/todo/TASK-0014-review-and-harden-core-mvp-compiler-runtime-and-run-api.md` (hardening)
+- `.factory-state/tasks/todo/TASK-0003-harden-auth-login-and-workflow-list.md` (auth + list hardening)
+- `.factory-state/tasks/todo/TASK-0004-review-and-harden-core-mvp-compiler-runtime-and-run-api.md` (core hardening; old TASK-0014)
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`

@@ -1,0 +1,312 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, addEdge,
+  useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, type LucideIcon } from 'lucide-react'
+import dagre from '@dagrejs/dagre'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
+import { cn } from '@/lib/utils'
+import { useParams, Link } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
+import { api, wsUrl } from '@/lib/api'
+import { useTheme, ThemeToggle } from '@/lib/theme'
+import { UserMenu } from '@/components/user-menu'
+
+type Field = { name: string; type: string }
+type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
+const META: Record<string, { label: string; icon: LucideIcon; color: string; desc: string }> = {
+  start: { label: 'Start', icon: CirclePlay, color: 'text-sky-500 bg-sky-500/10', desc: 'Điểm bắt đầu' },
+  llm: { label: 'LLM', icon: Brain, color: 'text-violet-500 bg-violet-500/10', desc: 'Gọi model với prompt' },
+  tool: { label: 'Tool/API', icon: Wrench, color: 'text-orange-500 bg-orange-500/10', desc: 'HTTP hoặc Python function' },
+  condition: { label: 'Condition', icon: GitBranch, color: 'text-amber-500 bg-amber-500/10', desc: 'Rẽ nhánh theo state field' },
+  end: { label: 'End', icon: Flag, color: 'text-zinc-500 bg-zinc-500/10', desc: 'Kết thúc' },
+}
+META.code = { label: 'Code', icon: Code2, color: 'text-teal-600 bg-teal-500/10 dark:text-teal-400', desc: 'Node Python từ repo import' }
+const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
+
+function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
+  const g = new dagre.graphlib.Graph(); g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 110 }); g.setDefaultEdgeLabel(() => ({}))
+  nodes.forEach(n => g.setNode(n.id, { width: 200, height: 70 })); edges.forEach(e => g.setEdge(e.source, e.target))
+  dagre.layout(g)
+  return nodes.map(n => { const p = g.node(n.id); return { ...n, position: { x: p.x - 100, y: p.y - 35 } } })
+}
+const styleEdges = (es: any[]): Edge[] => es.map(e => e.conditional ? { ...e, animated: true, style: { strokeDasharray: '6 4' }, labelBgPadding: [6, 3], labelBgBorderRadius: 4 } : e)
+function defaultInput(state: Field[]) {
+  return JSON.stringify(Object.fromEntries(state.map(f => [f.name, f.type === 'list' ? [{ role: 'user', content: 'Xin chào!' }] : f.type === 'number' || f.type === 'integer' ? 0 : f.type === 'boolean' ? false : f.type === 'object' ? {} : 'hello'])), null, 2)
+}
+const DEFAULTS: Record<string, any> = {
+  start: { label: 'Start' }, end: { label: 'End' },
+  llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: 'Trả lời: {{state.message}}', output_field: '' },
+  tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
+  condition: { label: 'Condition', field: '', default: '' },
+}
+
+function StatusBadge({ s }: { s?: string }) {
+  if (s === 'running') return <Badge className="bg-amber-500 text-white gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
+  if (s === 'done') return <Badge className="bg-emerald-600 text-white gap-1"><CheckCircle2 className="size-3" />done</Badge>
+  if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />error</Badge>
+  return null
+}
+
+function StudioNode({ data, type, selected }: NodeProps) {
+  const d = data as any; const m = META[type!]; const I = m.icon
+  return <div className={cn(type === 'code' && 'border-teal-500/60 border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
+    selected && 'ring-2 ring-ring', d._status === 'running' && 'border-amber-500 ring-4 ring-amber-500/30',
+    d._status === 'done' && 'border-emerald-500', d._status === 'error' && 'border-destructive')}>
+    {type !== 'start' && <Handle type="target" position={Position.Left} />}
+    <div className="flex items-center gap-2">
+      <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
+      <div className="flex-1 min-w-0">
+        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</div>
+        <div className="text-sm font-medium truncate ">{d.label}</div>
+        {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" className="h-4 px-1 text-[9px] gap-0.5"><Sparkles className="size-2.5" />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
+      </div>
+    </div>
+    {(d._status || d._dur != null) && <div className="mt-2 flex items-center justify-between gap-2">
+      <StatusBadge s={d._status} />{d._dur != null && <span className="text-[10px] text-muted-foreground">{d._dur} ms</span>}</div>}
+    {type !== 'end' && <Handle type="source" position={Position.Right} />}
+  </div>
+}
+const nodeTypes = Object.fromEntries([...TYPES, 'code'].map(t => [t, StudioNode]))
+
+function Tip({ tip, children }: { tip: string; children: React.ReactElement }) {
+  return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{tip}</TooltipContent></Tooltip>
+}
+
+const Sel = ({ value, onChange, opts, ph }: { value?: string; onChange: (v: string) => void; opts: string[]; ph?: string }) =>
+    <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger className="w-full"><SelectValue placeholder={ph || 'Chọn…'} /></SelectTrigger>
+      <SelectContent>{opts.filter(Boolean).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+    </Select>
+const F = ({ label, children }: { label: string; children: React.ReactNode }) => <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{label}</Label>{children}</div>
+
+export function EditorPage() { return <ReactFlowProvider><Studio /></ReactFlowProvider> }
+
+function Studio() {
+  const { id } = useParams()
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
+  const [state, setState] = useState<Field[]>([])
+  const [name, setName] = useState('Untitled')
+  const [wid, setWid] = useState<string | undefined>()
+  const [sel, setSel] = useState<{ kind: 'node' | 'edge'; id: string } | null>(null)
+  const [input, setInput] = useState('{\n  "message": "Đơn hàng A100 của tôi đâu rồi?"\n}')
+  const [log, setLog] = useState<LogItem[]>([])
+  const [errors, setErrors] = useState<string[]>([])
+  const [tools, setTools] = useState<{ name: string }[]>([])
+  const [mode, setMode] = useState('')
+  const [source, setSource] = useState<any>(null)
+  const [history, setHistory] = useState<any[]>([])
+  const [tab, setTab] = useState('input')
+  const [running, setRunning] = useState(false)
+  const { dark } = useTheme()
+  const rf = useReactFlow(); const idc = useRef(1)
+
+  const load = (wf: any) => {
+    setName(wf.name); setWid(wf.id); setState(wf.state || [])
+    setSource(wf.source || null)
+    setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
+    if (wf.source) setInput(defaultInput(wf.state || []))
+  }
+  const loadHistory = (id?: string) => id && api(`/api/workflows/${id}/runs`).then(setHistory)
+  useEffect(() => {
+    api(`/api/workflows/${id}`).then(wf => { load(wf); loadHistory(wf.id) }).catch(e => setErrors([e.message]))
+    api('/api/tools').then(setTools)
+    fetch('/api/health').then(r => r.json()).then(h => setMode(h.llm_mode))
+  }, [id])
+
+  const toJSON = () => ({
+    id: wid, name, state,
+    nodes: nodes.map(n => ({ id: n.id, type: n.type, position: n.position, data: Object.fromEntries(Object.entries(n.data).filter(([k]) => !k.startsWith('_'))) })),
+    edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, ...(e.label ? { label: String(e.label) } : {}), ...((e as any).conditional ? { conditional: true } : {}) })),
+  })
+  const save = async () => {
+    const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
+    setWid(r.id); setErrors(r.errors); if (r.errors.length) setTab('input')
+  }
+  const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
+  const run = () => {
+    let inp: any; try { inp = JSON.parse(input) } catch { setErrors(['Input không phải JSON hợp lệ']); setTab('input'); return }
+    setLog([]); setErrors([]); setTab('logs'); setRunning(true)
+    setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
+    const ws = new WebSocket(wsUrl('/ws/run'))
+    ws.onopen = () => ws.send(JSON.stringify({ workflow_id: wid, workflow: toJSON(), input: inp }))
+    ws.onmessage = m => {
+      const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
+      if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
+      if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
+      if (ev.type === 'error') setErrors(ev.errors || [])
+    }
+    ws.onclose = () => { setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
+  }
+
+  const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
+  const onDrop = (ev: React.DragEvent) => {
+    ev.preventDefault(); const t = ev.dataTransfer.getData('nodetype'); if (!t) return
+    const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
+    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t] } }])
+  }
+  const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
+  const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined
+  const upd = (k: string, v: any) => selNode && mark(selNode.id, { [k]: v })
+  const d: any = selNode?.data || {}
+  const fieldNames = state.map(f => f.name)
+
+  return <div className="h-screen grid grid-rows-[56px_1fr_250px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
+    {/* Top bar */}
+    <header className="col-span-3 flex items-center gap-3 border-b px-4">
+      <Tip tip="Về danh sách workflow"><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
+      <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
+      <Separator orientation="vertical" className="h-6!" />
+      <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
+      <Tip tip="Lưu workflow (SQLite)"><Button variant="outline" size="sm" onClick={save}><Save />Save</Button></Tip>
+      <Tip tip="Chạy workflow với input hiện tại"><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}Run</Button></Tip>
+      <Dialog>
+        <Tip tip="Xem JSON"><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
+        <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>Workflow JSON</DialogTitle><DialogDescription>Định dạng gửi lên backend.</DialogDescription></DialogHeader>
+          <ScrollArea className="h-96 rounded-md border bg-muted/40"><pre className="p-3 text-xs">{JSON.stringify(toJSON(), null, 2)}</pre></ScrollArea>
+        </DialogContent>
+      </Dialog>
+      <div className="ml-auto flex items-center gap-2">
+        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge className="bg-teal-600 text-white gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
+        <Badge variant="secondary">LLM: {mode}</Badge>{wid && <Badge variant="outline">id: {wid}</Badge>}
+        <ThemeToggle /><UserMenu />
+      </div>
+    </header>
+
+    {/* Left */}
+    <aside className="border-r bg-muted/30 min-h-0">
+      <ScrollArea className="h-full"><div className="p-3 space-y-4">
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Node palette</div>
+          <div className="space-y-2">{TYPES.map(t => { const m = META[t]; const I = m.icon
+            return <Card key={t} draggable onDragStart={e => { e.dataTransfer.setData('nodetype', t); e.dataTransfer.effectAllowed = 'move' }}
+              className="flex-row items-center gap-3 p-2.5 cursor-grab hover:bg-accent transition-colors py-2.5">
+              <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
+              <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{m.desc}</div></div>
+            </Card> })}</div>
+        </div>
+        <Separator />
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">State schema</div>
+          <div className="space-y-1.5">{state.map((f, i) => <div className="flex gap-1" key={i}>
+            <Input className="h-8 flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+            <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v } : x))}>
+              <SelectTrigger size="sm" className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>{['string', 'number', 'integer', 'boolean', 'object', 'list'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
+          </div>)}</div>
+          <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />Thêm field</Button>
+        </div>
+      </div></ScrollArea>
+    </aside>
+
+    {/* Canvas */}
+    <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
+      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        colorMode={dark ? 'dark' : 'light'} onConnect={onConnect} onNodeClick={(_, n) => setSel({ kind: 'node', id: n.id })}
+        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={['Delete', 'Backspace']} fitView>
+        <Background /><Controls /><MiniMap pannable zoomable />
+      </ReactFlow>
+    </main>
+
+    {/* Right config */}
+    <aside className="border-l bg-muted/30 min-h-0">
+      <ScrollArea className="h-full"><div className="p-4 space-y-4 w-[318px]">
+        <div className="text-xs font-semibold uppercase text-muted-foreground">Config</div>
+        {!selNode && !selEdge && <p className="text-muted-foreground text-xs">Chọn một node hoặc edge để cấu hình. Nhấn Delete để xoá.</p>}
+        {selEdge && <div className="space-y-3">
+          <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
+          <F label="Label (khớp với giá trị field của Condition)"><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
+          <Button variant="destructive" size="sm" onClick={() => { setEdges(es => es.filter(x => x.id !== selEdge.id)); setSel(null) }}><Trash2 />Xoá edge</Button>
+        </div>}
+        {selNode && <div className="space-y-3">
+          <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
+            <div><div className="font-medium">{META[selNode.type!].label}</div><div className="text-[11px] text-muted-foreground font-mono">{selNode.id}</div></div></div>
+          <F label="Label"><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>
+          {selNode.type === 'llm' && <>
+            <F label="Model"><Input value={d.model} onChange={e => upd('model', e.target.value)} /></F>
+            <F label="Prompt template ({{state.field}})"><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
+            <F label="Output field"><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'tool' && <>
+            <F label="Mode"><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="function">Python function</SelectItem><SelectItem value="http">HTTP request</SelectItem></SelectContent></Select></F>
+            {d.mode === 'http' ? <>
+              <F label="Method"><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
+              <F label="URL"><Input value={d.url} onChange={e => upd('url', e.target.value)} placeholder="https://…" /></F>
+              <F label="Body template"><Textarea rows={4} className="font-mono text-xs" value={d.body} onChange={e => upd('body', e.target.value)} /></F>
+            </> : <F label="Function"><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
+            <F label="Output field"><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'code' && <>
+            <div className="flex flex-wrap gap-1 max-w-[286px]">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />Có vẻ là LLM call</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">read-only</Badge></div>
+            <F label="Node name"><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
+            <F label="Reference (module:function)"><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
+            <F label="Source"><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
+          </>}
+          {selNode.type === 'condition' && <>
+            <F label="State field để rẽ nhánh"><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
+            <F label="Default label (tuỳ chọn)"><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
+            <p className="text-[11px] text-muted-foreground">Giá trị field được so khớp với label của các edge ra.</p>
+          </>}
+          {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />Xoá node</Button>}
+        </div>}
+      </div></ScrollArea>
+    </aside>
+
+    {/* Bottom run panel */}
+    <section className="col-span-3 border-t min-h-0 flex flex-col">
+      <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
+        <div className="flex items-center gap-3 px-3 py-2 border-b">
+          <TabsList><TabsTrigger value="input">Input</TabsTrigger><TabsTrigger value="logs">Logs {log.length > 0 && <Badge variant="secondary" className="ml-1">{log.length}</Badge>}</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger></TabsList>
+          {errors.length > 0 && <Badge variant="destructive">{errors.length} lỗi</Badge>}
+        </div>
+        <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
+          <Textarea className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
+          {errors.length > 0 && <ScrollArea className="w-1/2 rounded-md border border-destructive/40 bg-destructive/5 p-2">{errors.map((e, i) => <div key={i} className="text-destructive text-xs">⚠ {e}</div>)}</ScrollArea>}
+        </TabsContent>
+        <TabsContent value="logs" className="flex-1 min-h-0">
+          <ScrollArea className="h-full"><div className="p-3 font-mono text-xs space-y-1">
+            {!log.length && <span className="text-muted-foreground">Nhấn Run để chạy workflow…</span>}
+            {log.map((l, i) => <div key={i} className="flex items-start gap-2">
+              {l.type === 'run_started' && <span className="text-muted-foreground">… run started</span>}
+              {l.type === 'node_started' && <><Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">started</Badge><span>{l.label} <span className="text-muted-foreground">({l.node})</span></span></>}
+              {l.type === 'node_finished' && <><Badge className="bg-emerald-600 text-white">finished</Badge><span>{l.label} <span className="text-muted-foreground">({l.node}) · {l.duration_ms} ms</span> <span className="text-sky-600 dark:text-sky-400">Δ {JSON.stringify(l.delta)}</span></span></>}
+              {l.type === 'run_finished' && <><Badge>done</Badge><span className="break-all">Done. State: {JSON.stringify(l.state)}</span></>}
+              {l.type === 'error' && <><Badge variant="destructive">error</Badge><span className="text-destructive">{l.errors?.join('; ')}</span></>}
+            </div>)}
+          </div></ScrollArea>
+        </TabsContent>
+        <TabsContent value="history" className="flex-1 min-h-0">
+          <ScrollArea className="h-full"><div className="p-3 space-y-1">
+            {!history.length && <span className="text-muted-foreground text-xs">Chưa có lần chạy nào.</span>}
+            {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setTab('logs') }}
+              className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
+              <Badge variant={h.status === 'ok' ? 'secondary' : 'destructive'}>{h.status}</Badge>
+              <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString()}</span>
+              <span className="font-mono text-muted-foreground">{h.id}</span>
+              <span className="truncate">{JSON.stringify(h.input)}</span>
+              <span className="ml-auto text-muted-foreground">{Math.round((h.ended - h.started) * 1000)} ms</span>
+            </button>)}
+          </div></ScrollArea>
+        </TabsContent>
+      </Tabs>
+    </section>
+  </div>
+}

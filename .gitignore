@@ -1,0 +1,25 @@
+# deps / envs
+node_modules/
+.venv/
+venv/
+# build & caches
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.tsbuildinfo
+.vite/
+# data
+*.db
+*.db-wal
+*.db-shm
+backend/imports/
+# env/secrets
+.env
+.env.*
+!.env.example
+# misc
+.DS_Store
+*.log

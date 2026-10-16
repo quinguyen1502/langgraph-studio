@@ -9,7 +9,11 @@ Công cụ kéo-thả để xây dựng workflow LangGraph: vẽ graph trên can
 - UI: http://localhost:5173 (Vite proxy `/api` và `/ws` sang backend)
 - API: http://localhost:8000/docs
 
-Dùng LLM thật: `export OPENAI_API_KEY=sk-...` (tuỳ chọn `OPENAI_BASE_URL` cho endpoint tương thích OpenAI) trước khi chạy. Không có key → **mock LLM** xác định (deterministic), chạy offline.
+Dùng LLM thật (2 cách):
+1. **Credentials trong app** (khuyến nghị): trang Workflows → **Credentials** → thêm OpenAI / OpenAI-compatible (base URL tuỳ chọn) hoặc Anthropic. Trong editor, chọn credential ở config của LLM node. API key được **mã hoá khi lưu** (Fernet, khoá từ `STUDIO_SECRET_KEY` hoặc file `~/.langgraph-studio/secret.key` tự tạo với quyền 0600, đổi bằng `STUDIO_SECRET_KEY_FILE`) và không bao giờ trả về trình duyệt; chỉ hiển thị 4 ký tự cuối. Mất khoá → credential cũ không giải mã được (báo lỗi rõ khi chạy).
+2. `export OPENAI_API_KEY=sk-...` (tuỳ chọn `OPENAI_BASE_URL`) — dùng cho LLM node không chọn credential.
+
+Không có credential/key → **mock LLM** xác định (deterministic), chạy offline. Lỗi provider (401, timeout…) hiện thành event `error` của node, không làm sập server.
 
 ## Đăng nhập & tài khoản demo
 - Tài khoản demo (tự seed khi khởi động): **admin@example.com / admin123**
@@ -115,6 +119,7 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **Condition**: `field`; giá trị field được so khớp với `label` của các cạnh ra (chính xác → không phân biệt hoa thường → chứa chuỗi), `default` tuỳ chọn → `add_conditional_edges`.
 
 ## API
+- `GET/POST /api/credentials`, `DELETE /api/credentials/{id}`, `GET /api/providers` (secret không bao giờ được trả về)
 - `POST /api/auth/register`, `POST /api/auth/login` → `{token, user}`, `GET /api/me`
 - `PATCH /api/workflows/{id}` (đổi tên), `POST /api/workflows/{id}/duplicate`, `DELETE /api/workflows/{id}`
 - `GET/POST /api/workflows`, `GET /api/workflows/{id}`, `POST /api/validate`, `GET /api/tools`

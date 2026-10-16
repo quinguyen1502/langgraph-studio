@@ -12,6 +12,7 @@ import { api } from '@/lib/api'
 import { ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 import { ImportDialog } from '@/components/import-dialog'
+import { CredentialsDialog } from '@/components/credentials-dialog'
 
 type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null }
 const fmt = (t: number) => new Date(t * 1000).toLocaleString('vi-VN')
@@ -65,6 +66,7 @@ export function WorkflowsPage() {
         <div className="flex gap-2">
           <div className="relative"><Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" /><Input id="wf-search" aria-label="Tìm workflow" className="pl-8 pr-8 w-64" placeholder="Tìm workflow…" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
             {q && <button aria-label="Xoá tìm kiếm" className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground" onClick={() => setQ('')}><X className="size-4" /></button>}</div>
+          <CredentialsDialog />
           <ImportDialog />
           <Button onClick={create} id="new-wf" disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Plus />}New workflow</Button>
         </div>

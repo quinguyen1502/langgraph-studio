@@ -5,8 +5,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
 from ..core.errors import TooLarge
 from ..models.database import Database
-from ..repositories import RunRepository, UserRepository, WorkflowRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository
 from ..services.auth_service import AuthService
+from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
 from ..services.run_service import RunService
 from ..services.workflow_service import WorkflowService
@@ -24,7 +25,10 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db))
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service())
+
+def credential_service() -> CredentialService:
+    return CredentialService(CredentialRepository(get_db()))
 
 def import_service() -> ImportService:
     return ImportService(workflow_service())

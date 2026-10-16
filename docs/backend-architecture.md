@@ -54,7 +54,7 @@
 | `importer.py`, `sandbox/runner.py` | `engine/repo_import.py`, `engine/sandbox/runner.py` |
 | `example.py` | `engine/examples.py` |
 
-## Porting PR #2 (TASK-0005 credentials) onto this structure
+## Credentials (TASK-0005, ported from PR #2: done)
 
 | PR #2 piece | Goes to |
 |---|---|
@@ -63,4 +63,6 @@
 | provider registry `PROVIDERS`, provider HTTP calls in `compiler.py` | `engine/llm.py` (`call_llm`) |
 | CRUD + resolver | `repositories/credentials.py`, `services/credential_service.py` (`resolver(uid)`) |
 | `/api/providers`, `/api/credentials*` | `api/routes/credentials.py` |
-| resolver passed to `run_stream` | `RunPlan.events()` → `run_stream(wf, inp, resolve=…)` |
+| resolver passed to `run_stream` | `RunService.plan` binds `CredentialService.resolver(uid)` into `RunPlan`; `RunPlan.events()` → `run_stream(wf, inp, resolve)` → `node_fn` |
+
+Secrets are encrypted in the service before they reach the repository; only `resolve()` decrypts, at run time.

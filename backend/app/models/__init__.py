@@ -3,5 +3,6 @@ from .base import Base
 from .user import User
 from .workflow import Workflow
 from .run import Run
+from .credential import Credential
 
-__all__ = ["Base", "User", "Workflow", "Run"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential"]

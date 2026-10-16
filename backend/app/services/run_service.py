@@ -20,6 +20,7 @@ class RunPlan:
     workflow_id: Optional[str]
     workflow: dict
     input: dict
+    resolve: Optional[Callable[[str], dict]] = None  # credential lookup bound to the run's user
 
     @property
     def imported(self) -> bool:
@@ -27,15 +28,16 @@ class RunPlan:
 
     def events(self) -> Iterator[dict]:
         if self.imported: return repo_import.run_imported(self.workflow, dict(self.input))
-        return run_stream(self.workflow, self.input)
+        return run_stream(self.workflow, self.input, self.resolve)
 
 
 def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 
 class RunService:
-    def __init__(self, workflows: WorkflowRepository, runs: RunRepository):
-        self.workflows, self.runs = workflows, runs
+    def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None):
+        """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly)."""
+        self.workflows, self.runs, self.credentials = workflows, runs, credentials
 
     # ---- planning / validation of the client request ----
     def plan(self, uid: str, req) -> RunPlan:
@@ -50,7 +52,7 @@ class RunService:
         stored = json.loads(row.data or "{}") if row else {}
         wf = stored if stored.get("source") else (req.get("workflow") or stored)
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise BadRequest("Workflow không hợp lệ hoặc quá lớn")
-        return RunPlan(wid, wf, inp)
+        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None)
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:

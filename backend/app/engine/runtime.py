@@ -35,10 +35,10 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
     return errs
 
 
-def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any]):
+def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator."""
     if (bad := check_input(wf, inputs)): raise ValidationError(bad)
-    app = compile_workflow(wf)
+    app = compile_workflow(wf, resolve)
     nodes = {n["id"]: n for n in wf["nodes"]}
     state = dict(inputs); counts: Dict[str, int] = {}
 

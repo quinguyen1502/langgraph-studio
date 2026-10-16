@@ -4,7 +4,7 @@ import uuid, pytest
 from fastapi.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from app.main import app
-from app.auth import hash_password, verify_password
+from app.core.security import hash_password, verify_password
 
 c = TestClient(app)
 def H(t): return {"Authorization": f"Bearer {t}"}

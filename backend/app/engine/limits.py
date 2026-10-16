@@ -1,24 +1,16 @@
 """Runtime limits, payload caps and error sanitising (TASK-0004).
 
 Layers of caps:
-- TRACE_CAP (compiler.cap_payload, 16 000 JSON chars): per traced field (`input`/`delta`) so the
+- TRACE_CAP (runtime.cap_payload, 16 000 JSON chars): per traced field (`input`/`delta`) so the
   timeline stays light. Over the cap -> {"_truncated": True, "size", "preview"}.
 - EVENT_MAX_BYTES (256 KB): whole event as sent/stored; oversized fields (state, input, delta, ...)
   are replaced by truncation markers.
 - RUN_MAX_BYTES (2 MB): all events of a stored run; middle events are dropped and replaced by a
   single {"type": "truncated", "dropped": n} event; final_state is capped to EVENT_MAX_BYTES.
 """
-import json, os, re
+import json, re
 
-def _int(name, default):
-    try: return int(os.environ.get(name, default))
-    except ValueError: return default
-
-def run_timeout() -> float: return float(os.environ.get("STUDIO_RUN_TIMEOUT", 120))
-def event_max() -> int: return _int("STUDIO_EVENT_MAX_BYTES", 256 * 1024)
-def run_max() -> int: return _int("STUDIO_RUN_MAX_BYTES", 2 * 1024 * 1024)
-def input_max() -> int: return _int("STUDIO_INPUT_MAX_BYTES", 256 * 1024)
-def workflow_max() -> int: return _int("STUDIO_WORKFLOW_MAX_BYTES", 1024 * 1024)
+from ..core.config import event_max, run_max, input_max, workflow_max, run_timeout  # noqa: F401 (re-exported)
 
 def size(obj) -> int:
     return len(json.dumps(obj, ensure_ascii=False, default=str).encode())

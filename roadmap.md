@@ -18,9 +18,10 @@ Status as of 2026-10-16 (nothing merged yet; all PRs are drafts).
 | 4 | TASK-0004 | Review and harden core MVP compiler, runtime and run API | review | [#7](https://github.com/quinguyen1502/langgraph-studio/pull/7) (plan: [#3](https://github.com/quinguyen1502/langgraph-studio/pull/3)) | #6 branch |
 | 5 | TASK-0005 | Real LLM providers with per-workflow credentials | review | [#2](https://github.com/quinguyen1502/langgraph-studio/pull/2) | #1 branch |
 | 6 | TASK-0016 | Run trace timeline UI | review | [#6](https://github.com/quinguyen1502/langgraph-studio/pull/6) | #5 branch |
+| 7 | TASK-0017 | Restructure backend into layers (SQLAlchemy + Alembic) | review | [#8](https://github.com/quinguyen1502/langgraph-studio/pull/8) | #7 branch |
 | — | (re-plan) | Phases + task renumbering (DEC-0007) | — | [#4](https://github.com/quinguyen1502/langgraph-studio/pull/4) | `main` |
 
-**Merge order:** #4 → #1 → #3 → #5 → #6 → #7 → #2. After each merge, retarget the next stacked PR to `main`. PR #3 (TASK-0004 plan only) is superseded by #7 and can be closed once #7 merges, or merged first; its files are identical on #7.
+**Merge order:** #4 → #1 → #3 → #5 → #6 → #7 → #8 (TASK-0017) → #2 (rebase onto the layered backend first; see `docs/backend-architecture.md`). After each merge, retarget the next stacked PR to `main`. PR #3 (TASK-0004 plan only) is superseded by #7 and can be closed once #7 merges, or merged first; its files are identical on #7.
 
 ## Phase 2 — Usable
 

@@ -1,7 +1,8 @@
 import time, uuid, jwt, pytest
 from fastapi.testclient import TestClient
-from app import auth
-from app.main import app, unique_name
+from app.core import security as auth
+from app.main import app
+from app.services.naming import unique_name
 
 c = TestClient(app)
 def H(t): return {"Authorization": f"Bearer {t}"}
@@ -76,6 +77,5 @@ def test_many_workflows_list_fast():
     assert len(r.json()) == 121 and dt < 1.5
 
 def test_unique_name_helper():
-    class C:
-        def execute(self, *a): return [{"id": "1", "name": "A"}, {"id": "2", "name": "A (copy)"}]
-    assert unique_name(C(), "u", "B") == "B" and unique_name(C(), "u", "A") == "A (copy 2)"
+    names = {"A", "A (copy)"}
+    assert unique_name(names, "B") == "B" and unique_name(names, "A") == "A (copy 2)"

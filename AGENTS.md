@@ -21,6 +21,7 @@ Init creates a valid factory skeleton. It is not ready for implementation until 
 - Use task branches named `factory/task-<id>-<short-name>` unless project standards define another convention.
 - Do not merge without explicit human approval.
 - UI work: use shadcn/ui components and theme tokens only; no hard-coded colours; new status colours go in as shadcn-style CSS variables (`--success`, `--warning`, `--info`). Follow `docs/ui-conventions.md` (DEC-0008) and run its review checklist.
+- Backend work: keep the layers in `docs/backend-architecture.md` (DEC-0009): routers call services, services call repositories/engine, no FastAPI in services, no raw SQL (SQLAlchemy models + Alembic migrations for every schema change). `tests/test_layers.py` must pass.
 - Do not start implementation source work until `factory ready` exits 0, unless the owner explicitly overrides that gate.
 
 ## Workflow Skills

@@ -33,7 +33,7 @@ Dùng LLM thật: `export OPENAI_API_KEY=sk-...` (tuỳ chọn `OPENAI_BASE_URL`
 ## Import LangGraph repo
 Trên trang `/workflows` bấm **Import repo** → tab *GitHub URL* (repo public, tuỳ chọn branch/subdir) hoặc *Zip upload*. Dialog hiển thị tiến trình (fetching → installing → inspecting → ready), log và lỗi; nếu repo có nhiều graph thì chọn một graph rồi **Tạo workflow**.
 
-Backend (`backend/app/importer.py`, `backend/app/sandbox/runner.py`):
+Backend (`backend/app/engine/repo_import.py`, `backend/app/engine/sandbox/runner.py`):
 1. Clone (`git clone --depth 1`) hoặc giải nén zip (chặn zip-slip) vào `~/.langgraph-studio/imports/<job_id>/` (đổi bằng biến `STUDIO_IMPORT_DIR`; nằm ngoài repo để không lẫn vào git/Factory scan). Workflow import trước đây (ở `backend/imports/`) vẫn chạy được vì lưu đường dẫn tuyệt đối.
 2. Tạo venv riêng (`uv venv`, fallback `python -m venv`) và cài deps: `pip install -e .` nếu có pyproject/setup.py, hoặc `-r requirements.txt` (+ `langgraph`, `python-dotenv`).
 3. Tìm graph từ `langgraph.json` → `graphs`; fallback: quét file `.py` có `StateGraph` và biến `x = ....compile(...)`.
@@ -111,7 +111,7 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
  "edges": [{"id":"e1","source":"a","target":"b","label":"(chỉ cho cạnh ra từ Condition)"}]}
 ```
 - **LLM**: `model`, `prompt` (biến `{{state.field}}`), `output_field`.
-- **Tool**: `mode=function` + `function` (đăng ký bằng `@register_tool` trong `backend/app/compiler.py`, ví dụ `lookup_order`) hoặc `mode=http` + `method`, `url`, `body` (template).
+- **Tool**: `mode=function` + `function` (đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py`, ví dụ `lookup_order`) hoặc `mode=http` + `method`, `url`, `body` (template).
 - **Condition**: `field`; giá trị field được so khớp với `label` của các cạnh ra (chính xác → không phân biệt hoa thường → chứa chuỗi), `default` tuỳ chọn → `add_conditional_edges`.
 
 ## API
@@ -126,3 +126,10 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 
 ## Giới hạn MVP
 Auth đơn giản (không refresh token, không reset mật khẩu, không phân quyền chia sẻ), không chạy song song/loop phức tạp (mỗi LLM/Tool chỉ 1 cạnh ra), không có undo, mock LLM chỉ dùng heuristic từ khoá.
+
+## Cấu trúc backend & database (TASK-0017)
+Backend chia lớp `core / models / schemas / repositories / services / api / engine` — sơ đồ và quy tắc import ở `docs/backend-architecture.md` (DEC-0009).
+
+- ORM: SQLAlchemy 2.0; migration: Alembic (`backend/app/migrations`). Server tự chạy `alembic upgrade head` khi khởi động; DB SQLite cũ được nhận nguyên dữ liệu.
+- `DATABASE_URL` (tuỳ chọn) ghi đè `STUDIO_DB`, ví dụ `postgresql+psycopg://user:pw@localhost/studio` (cần cài driver). Mặc định vẫn là SQLite `backend/studio.db`.
+- Tạo migration mới: `cd backend && .venv/bin/alembic revision --autogenerate -m "mô tả"`, rồi `.venv/bin/alembic upgrade head`.

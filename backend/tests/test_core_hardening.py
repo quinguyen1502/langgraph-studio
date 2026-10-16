@@ -1,10 +1,12 @@
 import json, threading, time, uuid
 import pytest
 from fastapi.testclient import TestClient
-from app import limits
-from app.compiler import validate, run_stream, register_tool, TOOLS, check_input
-from app.example import EXAMPLE
-from app.limits import cap_event, cap_run, safe_error
+from app.engine import limits
+from app.engine.validator import validate
+from app.engine.runtime import run_stream, check_input
+from app.engine.tools import register_tool, TOOLS
+from app.engine.examples import EXAMPLE
+from app.engine.limits import cap_event, cap_run, safe_error
 from app.main import app
 
 c = TestClient(app)

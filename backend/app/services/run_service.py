@@ -27,6 +27,7 @@ class RunPlan:
     run_id: Optional[str] = None
     previous: Optional["Run"] = None
     resume: Optional[dict] = None
+    source: str = "ui"  # ui | api (TASK-0007)
 
     @property
     def imported(self) -> bool:
@@ -71,8 +72,10 @@ class RunService:
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
-        if self.bus.owner(rid) is None and self.runs.get(rid) is not None:  # not running here or elsewhere: maybe waiting
-            return self.cancel_waiting(rid, uid)
+        row = self.runs.get(rid) if self.bus.owner(rid) is None else None  # not running here or elsewhere
+        if row is not None and row.status == "queued" and row.owner == uid:  # API run not picked up yet: worker skips it
+            return self.runs.set_status(rid, "cancelled")
+        if row is not None: return self.cancel_waiting(rid, uid)
         if self.bus.owner(rid) != uid: raise AppError("RUN_NOT_FOUND")  # unknown, finished or not yours
         self.bus.request_cancel(rid)
 
@@ -105,7 +108,7 @@ class RunService:
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(uid) if self.credentials else None,
-                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response})
+                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response}, source=r.source or "ui")
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""
@@ -120,19 +123,19 @@ class RunService:
     def cancel_waiting(self, rid: str, uid: str) -> None:
         r = self.waiting_run(rid, uid); events = json.loads(r.events or "[]")
         events.append({"type": "run_cancelled", "ts": time.time(), "reason": "api"})
-        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid)
+        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid, source=r.source or "ui")
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
-                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended,
+                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui",
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
                  "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
                 for r in self.runs.list_for_workflow(wid)]
 
-    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None) -> dict:
+    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui") -> dict:
         """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}.
         A waiting run keeps its checkpoint and gets its (single) trace only once it ends."""
         t1 = time.time(); metrics = summarize(events, t0, t1)  # from the full events, before capping
@@ -143,7 +146,7 @@ class RunService:
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
-                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None,
+                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source,
                           checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics))
         return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
 
@@ -228,8 +231,8 @@ class RunService:
         except asyncio.CancelledError:  # handler cancelled (server shutdown / client gone mid-await): still keep history
             cancel.set(); status = "cancelled"
             events.append({"type": "run_cancelled", "ts": time.time(), "reason": "disconnect"})
-            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None))
+            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source))
             raise
-        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint)
+        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint, plan.source)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

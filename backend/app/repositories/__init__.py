@@ -3,5 +3,6 @@ from .users import UserRepository
 from .workflows import WorkflowRepository
 from .runs import RunRepository
 from .credentials import CredentialRepository
+from .workflow_tokens import WorkflowTokenRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository"]

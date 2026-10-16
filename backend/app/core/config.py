@@ -42,4 +42,7 @@ def run_max() -> int: return _int("STUDIO_RUN_MAX_BYTES", 2 * 1024 * 1024)
 def input_max() -> int: return _int("STUDIO_INPUT_MAX_BYTES", 256 * 1024)
 def workflow_max() -> int: return _int("STUDIO_WORKFLOW_MAX_BYTES", 1024 * 1024)
 def recursion_limit() -> int: return _int("STUDIO_RECURSION_LIMIT", 25)
+def allow_private_callbacks() -> bool: return os.environ.get("STUDIO_ALLOW_PRIVATE_CALLBACKS") == "1"
+def worker_enabled() -> bool: return os.environ.get("STUDIO_WORKER", "1") != "0"  # run queued jobs in this API process
+def worker_concurrency() -> int: return max(1, _int("STUDIO_WORKER_CONCURRENCY", 2))
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"

@@ -103,3 +103,17 @@ Secrets are encrypted in the service before they reach the repository; only `res
   - `RunService.plan` sees `resume_run_id`, then `plan_resume` checks owner and `waiting` status and builds a plan with the same run id and the earlier events.
   - `record()` stores the checkpoint while waiting and clears it when the run ends; the trace is emitted only at the end.
 - `runs.owner` (backfilled from workflows) and `runs.checkpoint` come from migration `0004_hitl`.
+
+## API triggers and the job queue (TASK-0007, DEC-0014)
+
+- `services/job_queue.py`: `JobQueue` with `enqueue` / `dequeue`. `InMemoryJobQueue` is the default; `RedisJobQueue` is a Redis list `studio:run-jobs` when `REDIS_URL` is set.
+- `services/trigger_service.py`:
+  - token create, list and revoke (only the SHA-256 is stored);
+  - `authenticate`, which binds a token to its workflow and owner;
+  - `start`, which pre-creates the run as `queued` (source `api`) and enqueues the job;
+  - `wait`, the sync mode, which polls the runs table;
+  - `run_result`, the public result shape shared by the REST response and the webhook;
+  - `check_callback_url`, the SSRF guard.
+- `services/run_worker.py`: `RunWorker` dequeues a job, skips it if it is no longer `queued`, sets it to `running`, then calls `RunService.plan` and `execute` (no socket: `send` is a no-op and cancel comes via the RunBus), then delivers the webhook.
+  - Started by the app lifespan when `STUDIO_WORKER` is not `0`; `app/worker.py` runs it standalone.
+- Routes: `api/routes/triggers.py`.

@@ -195,3 +195,23 @@ Node **Human** tạm dừng run để chờ người duyệt hoặc nhập liệ
   - `GET /api/runs/pending`: danh sách run đang chờ.
   - WebSocket `/ws/run` gửi `{"resume_run_id": "...", "response": "approved"}` để tiếp tục.
   - `POST /api/runs/{id}/cancel` để huỷ run đang chờ.
+
+## Kích hoạt workflow qua API / webhook (TASK-0007)
+1. Mở workflow, bấm **API** trên thanh công cụ, tạo token (dạng `wft_…`; token chỉ hiện **một lần**). Có thể thu hồi bất kỳ lúc nào.
+2. Gọi:
+```bash
+curl -X POST http://localhost:8080/api/hooks/workflows/<wid>/runs \
+  -H "Authorization: Bearer wft_..." -H "Content-Type: application/json" \
+  -d '{"input": {"message": "hi"}, "mode": "sync"}'
+```
+- **Các chế độ**:
+  - `mode: "sync"`: chờ và trả `final_state`.
+  - `"async"` (mặc định): trả `202 {run_id, status: "queued"}`, rồi xem kết quả bằng `GET /api/hooks/workflows/<wid>/runs/<run_id>`.
+  - `callback_url`: nhận kết quả bằng POST (header `X-Studio-Event: run.finished`). Địa chỉ nội bộ bị chặn trừ khi `STUDIO_ALLOW_PRIVATE_CALLBACKS=1`.
+- **Lỗi**: token sai, thiếu hoặc đã thu hồi trả về `401 TRIGGER_TOKEN_INVALID`.
+- **Lịch sử**: run qua API hiện trong tab Lịch sử với nhãn **API**.
+- **Hàng đợi**: run được đưa vào hàng đợi rồi do worker thực thi.
+  - Mặc định worker chạy ngay trong tiến trình API (`STUDIO_WORKER=1`).
+  - Khi có `REDIS_URL`, hàng đợi là Redis nên có thể chạy worker riêng bằng `python -m app.worker`.
+  - Compose có sẵn service `worker`; mở rộng bằng `docker compose up --scale worker=3`.
+- **Chưa hỗ trợ**: lịch chạy định kỳ (cron), xem DEC-0014.

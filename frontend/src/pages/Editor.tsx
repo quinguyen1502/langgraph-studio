@@ -21,6 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { cn } from '@/lib/utils'
 import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { HumanPanel } from '@/components/human-panel'
+import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
@@ -233,6 +234,7 @@ function Studio() {
       <Separator orientation="vertical" className="h-6!" />
       <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" onClick={save}><Save />{t('common.save')}</Button></Tip>
+      <ApiTriggerDialog wid={wid} />
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
       <Dialog>
@@ -364,6 +366,7 @@ function Studio() {
               <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
+              {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}
               <span className="truncate">{JSON.stringify(h.input)}</span>
               <span className="ml-auto flex shrink-0 items-center gap-2 text-muted-foreground tabular-nums">
                 {h.metrics && <span data-testid="history-tokens">{t('trace.tokens', { count: h.metrics.tokens })}</span>}

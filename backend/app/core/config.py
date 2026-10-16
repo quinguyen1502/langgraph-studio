@@ -9,7 +9,16 @@ BACKEND_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "..
 # --- database ---
 STUDIO_DB = os.environ.get("STUDIO_DB", os.path.join(BACKEND_DIR, "studio.db"))
 # DATABASE_URL overrides STUDIO_DB (e.g. postgresql+psycopg://user:pw@host/db); default is the SQLite file.
-DATABASE_URL = os.environ.get("DATABASE_URL") or f"sqlite:///{STUDIO_DB}"
+def normalise_db_url(url: str) -> str:
+    """Accept the common `postgres://` / `postgresql://` forms and pin them to the psycopg (v3) driver."""
+    for prefix in ("postgres://", "postgresql://"):
+        if url.startswith(prefix): return "postgresql+psycopg://" + url[len(prefix):]
+    return url
+
+DATABASE_URL = normalise_db_url(os.environ.get("DATABASE_URL") or f"sqlite:///{STUDIO_DB}")
+
+# --- redis (TASK-0009): optional; unset = in-memory run bus (single process) ---
+REDIS_URL = os.environ.get("REDIS_URL") or None
 
 # --- auth ---
 PLACEHOLDER_SECRET = "dev-secret-change-me"

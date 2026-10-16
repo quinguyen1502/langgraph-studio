@@ -67,6 +67,7 @@
 | `RUN_INPUT_TOO_LARGE` | 413 | Run input is too large (max {max_kb} KB) |
 | `RUN_FAILED` | 500 | Run failed |
 | `RUN_TIMEOUT` | 408 | Run exceeded the time limit ({seconds}s, STUDIO_RUN_TIMEOUT) |
+| `RUN_NOT_FOUND` | 404 | Run not found, already finished or not yours |
 | `NODE_FAILED` | 500 | Node failed |
 | `CREDENTIAL_NOT_FOUND` | 404 | Credential not found or not yours |
 | `CREDENTIAL_PROVIDER_UNSUPPORTED` | 400 | Unsupported provider: {provider} |

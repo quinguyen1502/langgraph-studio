@@ -43,7 +43,7 @@ async def ws_run(ws: WebSocket):
             state["connected"] = False
             return "disconnected"
 
-    await svc.execute(plan, send, listen)
+    await svc.execute(plan, send, listen, uid)
     if state["connected"]:
         try: await ws.close()
         except Exception: pass

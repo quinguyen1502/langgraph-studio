@@ -8,3 +8,6 @@ python-multipart
 sqlalchemy>=2.0
 alembic>=1.13
 cryptography
+psycopg[binary]>=3.2
+redis>=5
+fakeredis>=2.20

@@ -212,6 +212,7 @@
     "RUN_INPUT_TOO_LARGE": "Run input is too large (max {{max_kb}} KB)",
     "RUN_FAILED": "Run failed",
     "RUN_TIMEOUT": "Run exceeded the time limit ({{seconds}}s)",
+    "RUN_NOT_FOUND": "Run not found, already finished or not yours",
     "NODE_FAILED": "Node failed",
     "CREDENTIAL_NOT_FOUND": "Credential not found or not yours",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Unsupported provider: {{provider}}",

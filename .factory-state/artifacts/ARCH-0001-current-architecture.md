@@ -51,14 +51,18 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 
 - REST: `/api/auth/*`, `/api/me`, `/api/workflows*`, `/api/import*`, `/api/tools`, `/api/health`
 - WebSocket: `/ws/run?token=`
+- Run control: `POST /api/runs/{id}/cancel` (TASK-0009, works across API workers when Redis is configured)
+- RunBus (`services/run_bus.py`): `InMemoryRunBus` (default) or `RedisRunBus` (`REDIS_URL`): run registry, cancel flags, event fan-out on `run:{id}:events` (DEC-0011)
 - Subprocess contract: `runner.py inspect|run <repo> <file:var>` emitting JSON lines
 
 ## Data Or State Considerations
 
 - Import jobs are in-memory (lost on restart); import directories persist on disk.
+- Database: SQLite file by default; Postgres via `DATABASE_URL` (psycopg 3), tested in CI (TASK-0009, DEC-0011).
 - Schema managed by Alembic (`backend/app/migrations`, `0001_initial` = MVP schema, adopts pre-Alembic files); `alembic upgrade head` runs at startup.
 
 ## Quality Attributes
 
 - Security: imported code is not sandboxed beyond subprocess/venv/env-trim/timeout (documented risk).
-- Reliability: single process; cooperative cancel + timeout per run (TASK-0004).
+- Reliability: cooperative cancel + timeout per run (TASK-0004). Runs execute in the API process holding the socket; Redis carries cancel signals and events between processes (no job queue yet).
+- Deployment: `docker-compose.yml` (postgres, redis, api, web/nginx) with healthchecks and volumes (TASK-0009).

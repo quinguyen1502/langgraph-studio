@@ -9,9 +9,10 @@ MIGRATIONS_DIR = os.path.join(os.path.dirname(__file__), "..", "migrations")
 
 
 def make_engine(url: str | None = None) -> Engine:
-    url = url or config.DATABASE_URL
+    url = config.normalise_db_url(url or config.DATABASE_URL)
     sqlite = url.startswith("sqlite")
-    eng = create_engine(url, future=True, connect_args={"check_same_thread": False, "timeout": 15} if sqlite else {})
+    eng = create_engine(url, future=True, connect_args={"check_same_thread": False, "timeout": 15} if sqlite else {"connect_timeout": 10},
+                        pool_pre_ping=not sqlite)
     if sqlite:
         @event.listens_for(eng, "connect")
         def _pragmas(dbapi_conn, _):  # same behaviour as the MVP: WAL + 15 s busy timeout
@@ -22,7 +23,7 @@ def make_engine(url: str | None = None) -> Engine:
 class Database:
     """Owns the engine and hands out sessions; one instance per app (see api.deps)."""
     def __init__(self, url: str | None = None):
-        self.url = url or config.DATABASE_URL
+        self.url = config.normalise_db_url(url or config.DATABASE_URL)
         self.engine = make_engine(self.url)
         self._factory = sessionmaker(self.engine, expire_on_commit=False)
 

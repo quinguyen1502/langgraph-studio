@@ -25,4 +25,4 @@
 - REQ-0011 / TASK-0012 MCP tools
 - REQ-0012 / TASK-0013 RBAC and sharing
 
-Priorities are an agent proposal pending owner confirmation.
+Priorities accepted by the owner on 2026-10-16 (DEC-0004).

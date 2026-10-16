@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "langgraph-studio-backend"
+version = "0.1.0"
+description = "FastAPI backend for LangGraph Studio (compiler, runner, auth, repo import)"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi",
+  "uvicorn[standard]",
+  "langgraph",
+  "httpx",
+  "pyjwt",
+  "python-multipart",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools]
+packages = ["app", "app.sandbox"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+norecursedirs = ["imports", "fixtures", ".venv"]

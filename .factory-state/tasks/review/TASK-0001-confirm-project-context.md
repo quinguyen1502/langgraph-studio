@@ -72,6 +72,8 @@ Validate the owner-approved specification, declared technology direction, expect
 
 ## Activity Log
 
+- 2026-10-16: Owner answered open questions: DEC-0001 (stack Preferred, CI Approved), DEC-0002 (main), DEC-0003 (copy), DEC-0004 (roadmap accepted), DEC-0005 (deps/verify unblock folded into TASK-0002).
+
 - 2026-10-16: Created task.
 - 2026-10-16: Discovery performed by agent. Observed commands: `./dev.sh` (install/run), `cd backend && .venv/bin/python -m pytest -q` (19 passed), `cd frontend && npm run build` (passes, includes `tsc -b`). Lint/format Unknown. Updated DISC-0001, project.md, vision.md, roadmap.md, project-specs intake; created ARCH-0001, REQ-0001..REQ-0012, TASK-0002..TASK-0013.
 

@@ -117,3 +117,13 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `services/run_worker.py`: `RunWorker` dequeues a job, skips it if it is no longer `queued`, sets it to `running`, then calls `RunService.plan` and `execute` (no socket: `send` is a no-op and cancel comes via the RunBus), then delivers the webhook.
   - Started by the app lifespan when `STUDIO_WORKER` is not `0`; `app/worker.py` runs it standalone.
 - Routes: `api/routes/triggers.py`.
+
+## Workflow versions (TASK-0008, DEC-0015)
+
+- `models/workflow_version.py` + `repositories/workflow_versions.py`: one immutable row per version, unique `(workflow_id, version)`. Migration `0006_workflow_versions` backfills v1 for existing workflows and adds `runs.workflow_version`.
+- `WorkflowService._write` is the single write path (save, rename, duplicate, import, seed, restore). It writes the workflow and then a new version only when the stored JSON changed.
+- `services/workflow_diff.py` holds the pure functions:
+  - `diff_workflows(a, b)` matches nodes and edges by id and state fields by name, and reports added, removed and changed (with before/after), plus `moved` for position-only changes;
+  - `same_content` ignores the name and positions.
+- `RunService.plan` tags a run with the latest version when the workflow it runs has the same content as that version, otherwise `NULL` (unsaved edits). A resume or cancel keeps the original tag.
+- Routes live in `api/routes/workflows.py`: `/versions`, `/versions/diff`, `/versions/{n}`, `/versions/{n}/restore`.

@@ -1,0 +1,98 @@
+import { useTranslation } from 'react-i18next'
+import { useEffect, useState } from 'react'
+import { AlertCircle, History, RotateCcw } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { api } from '@/lib/api'
+import i18n from '@/lib/i18n'
+
+type Version = { version: number; name: string; created: number; author_email: string | null; note: string | null; node_count: number; current: boolean }
+type Section = { added: any[]; removed: any[]; changed: { id: string; fields: string[]; before: any; after: any }[]; moved?: string[] }
+type Diff = { a: number; b: number; identical: boolean; name: { before: string; after: string } | null; nodes: Section; edges: Section; state: Section }
+
+const label = (x: any) => x.id ?? x.name ?? '?'
+const edgeLabel = (e: any) => `${e.source} → ${e.target}${e.label ? ` (${e.label})` : ''}`
+
+function SectionView({ title, s, kind }: { title: string; s: Section; kind: 'nodes' | 'edges' | 'state' }) {
+  const { t } = useTranslation()
+  const name = (x: any) => kind === 'edges' ? edgeLabel(x) : `${label(x)}${x.type ? ` · ${x.type}` : ''}`
+  const rows = [
+    ...s.added.map(x => ({ k: `+${label(x)}`, v: 'success' as const, tag: t('versions.added'), text: name(x) })),
+    ...s.removed.map(x => ({ k: `-${label(x)}`, v: 'destructive' as const, tag: t('versions.removed'), text: name(x) })),
+    ...s.changed.map(c => ({ k: `~${c.id}`, v: 'warning' as const, tag: t('versions.changed'), text: `${c.id}: ${c.fields.join(', ')}`, c })),
+    ...(s.moved ?? []).map(id => ({ k: `>${id}`, v: 'secondary' as const, tag: t('versions.moved'), text: id })),
+  ]
+  if (!rows.length) return null
+  return <div className="space-y-1">
+    <div className="text-xs font-medium text-muted-foreground">{title}</div>
+    {rows.map(r => <div key={r.k} data-testid="diff-row" className="text-xs space-y-1">
+      <div className="flex items-center gap-2"><Badge variant={r.v}>{r.tag}</Badge><span className="font-mono">{r.text}</span></div>
+      {'c' in r && r.c && <div className="grid grid-cols-2 gap-2 pl-2">
+        <pre className="rounded bg-muted p-1.5 overflow-auto max-h-32 text-[11px]">{JSON.stringify(r.c.before, null, 1)}</pre>
+        <pre className="rounded bg-muted p-1.5 overflow-auto max-h-32 text-[11px]">{JSON.stringify(r.c.after, null, 1)}</pre></div>}
+    </div>)}
+  </div>
+}
+
+/** Workflow version history: list, diff any two versions, restore (TASK-0008). */
+export function VersionsDialog({ wid, onRestored }: { wid?: string; onRestored: (wf: any) => void }) {
+  const { t } = useTranslation(); const [open, setOpen] = useState(false)
+  const [items, setItems] = useState<Version[]>([]); const [err, setErr] = useState('')
+  const [a, setA] = useState<string>(''); const [b, setB] = useState<string>(''); const [diff, setDiff] = useState<Diff | null>(null)
+  const [confirm, setConfirm] = useState<number | null>(null)
+  const load = () => wid && api<Version[]>(`/api/workflows/${wid}/versions`).then(vs => {
+    setItems(vs); setB(String(vs[0]?.version ?? '')); setA(String(vs[1]?.version ?? vs[0]?.version ?? ''))
+  }).catch(e => setErr(e.message))
+  useEffect(() => { if (open) { setErr(''); setConfirm(null); setDiff(null); load() } }, [open])
+  useEffect(() => {
+    if (!open || !a || !b) return
+    api<Diff>(`/api/workflows/${wid}/versions/diff?a=${a}&b=${b}`).then(setDiff).catch(e => setErr(e.message))
+  }, [a, b, open])
+  const restore = async (n: number) => {
+    setErr('')
+    try { const r = await api<any>(`/api/workflows/${wid}/versions/${n}/restore`, { method: 'POST' }); onRestored(r.workflow); setConfirm(null); load() }
+    catch (e: any) { setErr(e.message) }
+  }
+  const pick = (v: string, set: (s: string) => void) => <Select value={v} onValueChange={set}>
+    <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+    <SelectContent>{items.map(i => <SelectItem key={i.version} value={String(i.version)}>v{i.version}</SelectItem>)}</SelectContent>
+  </Select>
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button size="sm" variant="outline" id="versions-btn" disabled={!wid}><History />{t('versions.button')}</Button></DialogTrigger>
+    <DialogContent className="sm:max-w-4xl">
+      <DialogHeader><DialogTitle>{t('versions.title')}</DialogTitle><DialogDescription>{t('versions.desc')}</DialogDescription></DialogHeader>
+      {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+      <div className="grid grid-cols-[18rem_1fr] gap-4 min-h-0">
+        <ScrollArea className="h-96 rounded-md border">
+          <div className="p-1">{items.map(v => <div key={v.version} data-testid="version-row" className="rounded-md px-2 py-1.5 text-xs hover:bg-accent space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-semibold">v{v.version}</span>
+              {v.current && <Badge variant="success">{t('versions.current')}</Badge>}
+              <span className="ml-auto text-muted-foreground">{new Date(v.created * 1000).toLocaleString(i18n.resolvedLanguage)}</span>
+            </div>
+            <div className="text-muted-foreground truncate">{v.author_email ?? '—'} · {t('versions.nodes', { count: v.node_count })}</div>
+            {v.note && <div className="text-muted-foreground italic truncate">{v.note.startsWith('Restored from v') ? t('versions.restoredFrom', { n: v.note.slice(15) }) : v.note === 'Initial version' ? t('versions.initial') : v.note}</div>}
+            {!v.current && (confirm === v.version
+              ? <div className="flex gap-1"><Button size="sm" variant="destructive" className="h-6" data-testid="restore-confirm" onClick={() => restore(v.version)}>{t('versions.confirm', { n: v.version })}</Button>
+                  <Button size="sm" variant="ghost" className="h-6" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button></div>
+              : <Button size="sm" variant="ghost" className="h-6" data-testid="restore-btn" onClick={() => setConfirm(v.version)}><RotateCcw />{t('versions.restore')}</Button>)}
+          </div>)}</div>
+        </ScrollArea>
+        <div className="space-y-3 min-w-0">
+          <div className="flex items-center gap-2 text-xs"><span>{t('versions.compare')}</span>{pick(a, setA)}<span>→</span>{pick(b, setB)}</div>
+          <ScrollArea className="h-80"><div className="space-y-3 pr-3" id="version-diff">
+            {diff?.identical && <div className="text-xs text-muted-foreground">{t('versions.identical')}</div>}
+            {diff?.name && <div className="text-xs"><Badge variant="warning">{t('versions.renamed')}</Badge> <span className="font-mono">{diff.name.before} → {diff.name.after}</span></div>}
+            {diff && <><SectionView title={t('versions.nodesTitle')} s={diff.nodes} kind="nodes" />
+              <SectionView title={t('versions.edgesTitle')} s={diff.edges} kind="edges" />
+              <SectionView title={t('versions.stateTitle')} s={diff.state} kind="state" /></>}
+          </div></ScrollArea>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+}

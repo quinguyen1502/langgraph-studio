@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
 from ..core.errors import AppError
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -48,13 +48,13 @@ def get_telemetry() -> Telemetry:
 
 
 def workflow_service() -> WorkflowService:
-    db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db))
+    db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db))
 
 def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry())
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db))
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

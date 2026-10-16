@@ -15,6 +15,7 @@ from ..models import Run
 from ..repositories import RunRepository, WorkflowRepository
 from .run_bus import InMemoryRunBus, RunBus
 from .telemetry import Telemetry, summarize, trace_url
+from .workflow_diff import same_content
 
 
 @dataclass
@@ -28,6 +29,7 @@ class RunPlan:
     previous: Optional["Run"] = None
     resume: Optional[dict] = None
     source: str = "ui"  # ui | api (TASK-0007)
+    version: Optional[int] = None  # stored workflow version that runs; None = unsaved edits (TASK-0008)
 
     @property
     def imported(self) -> bool:
@@ -63,11 +65,12 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
-                 telemetry: Telemetry | None = None):
+                 telemetry: Telemetry | None = None, versions=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
         self.bus = bus or InMemoryRunBus()
+        self.versions = versions  # WorkflowVersionRepository (optional): tags runs with the version they ran
         self.telemetry = telemetry or Telemetry(exporters=[])  # no-op unless an exporter is configured
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
@@ -93,7 +96,13 @@ class RunService:
         stored = json.loads(row.data or "{}") if row else {}
         wf = stored if stored.get("source") else (req.get("workflow") or stored)
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
-        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None)
+        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=self._version_of(wid, wf))
+
+    def _version_of(self, wid, wf: dict) -> Optional[int]:
+        """The latest stored version number if `wf` matches it in content, else None (unsaved edits)."""
+        if not wid or self.versions is None: return None
+        v = self.versions.latest(wid)
+        return v.version if v and same_content(json.loads(v.data or "{}"), wf) else None
 
     # ---- human-in-the-loop (TASK-0006) ----
     def waiting_run(self, rid: str, uid: str) -> Run:
@@ -108,7 +117,7 @@ class RunService:
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(uid) if self.credentials else None,
-                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response}, source=r.source or "ui")
+                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response}, source=r.source or "ui", version=r.workflow_version)
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""
@@ -123,19 +132,19 @@ class RunService:
     def cancel_waiting(self, rid: str, uid: str) -> None:
         r = self.waiting_run(rid, uid); events = json.loads(r.events or "[]")
         events.append({"type": "run_cancelled", "ts": time.time(), "reason": "api"})
-        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid, source=r.source or "ui")
+        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid, source=r.source or "ui", version=r.workflow_version)
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
-                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui",
+                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui", "version": r.workflow_version,
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
                  "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
                 for r in self.runs.list_for_workflow(wid)]
 
-    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui") -> dict:
+    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui", version: Optional[int] = None) -> dict:
         """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}.
         A waiting run keeps its checkpoint and gets its (single) trace only once it ends."""
         t1 = time.time(); metrics = summarize(events, t0, t1)  # from the full events, before capping
@@ -146,7 +155,7 @@ class RunService:
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
-                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source,
+                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source, workflow_version=version,
                           checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics))
         return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
 
@@ -231,8 +240,8 @@ class RunService:
         except asyncio.CancelledError:  # handler cancelled (server shutdown / client gone mid-await): still keep history
             cancel.set(); status = "cancelled"
             events.append({"type": "run_cancelled", "ts": time.time(), "reason": "disconnect"})
-            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source))
+            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source, plan.version))
             raise
-        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint, plan.source)
+        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint, plan.source, plan.version)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

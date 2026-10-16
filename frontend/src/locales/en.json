@@ -238,7 +238,8 @@
     "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)",
     "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",
     "TOKEN_NOT_FOUND": "Token not found",
-    "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL"
+    "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
+    "VERSION_NOT_FOUND": "That version no longer exists."
   },
   "lang": {
     "en": "English",
@@ -293,5 +294,31 @@
     "create": "Create token",
     "example": "Example",
     "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result."
+  },
+  "versions": {
+    "button": "Versions",
+    "title": "Version history",
+    "desc": "Every save that changes the workflow creates a version. Compare any two, or restore an older one as a new version.",
+    "current": "current",
+    "nodes_one": "{{count}} node",
+    "nodes_other": "{{count}} nodes",
+    "restore": "Restore",
+    "confirm": "Restore v{{n}}?",
+    "restoredFrom": "Restored from v{{n}}",
+    "initial": "Initial version",
+    "compare": "Compare",
+    "identical": "No differences.",
+    "renamed": "Renamed",
+    "added": "added",
+    "removed": "removed",
+    "changed": "changed",
+    "moved": "moved",
+    "nodesTitle": "Nodes",
+    "edgesTitle": "Edges",
+    "stateTitle": "State",
+    "restored": "Restored v{{n}} as a new version.",
+    "unsaved": "unsaved",
+    "runVersion": "Ran version v{{n}}",
+    "runUnsaved": "Ran with unsaved changes"
   }
 }

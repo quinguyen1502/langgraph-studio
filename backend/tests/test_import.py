@@ -2,7 +2,7 @@ import io, os, tempfile, time, zipfile
 os.environ.setdefault("STUDIO_DB", tempfile.mktemp(suffix=".db"))
 import pytest
 from fastapi.testclient import TestClient
-from app import importer
+from app.engine import repo_import as importer
 from app.main import app
 
 FIX = os.path.join(os.path.dirname(__file__), "fixtures")

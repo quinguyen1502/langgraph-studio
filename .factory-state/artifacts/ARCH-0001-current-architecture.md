@@ -7,21 +7,30 @@
 - Status: Observed (documents existing implementation)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-16 (TASK-0017 layering)
 - Related Requirements: REQ-0001
 
 ## Context
 
-Inspected: `backend/app/{main,compiler,auth,importer,example}.py`, `backend/app/sandbox/runner.py`, `frontend/src/**`, `dev.sh`, `backend/tests/`.
+Inspected: `backend/app/**` (layered since TASK-0017, DEC-0009), `frontend/src/**`, `dev.sh`, `backend/tests/`.
 
 ## Decision Or Proposal
 
 - Frontend SPA (Vite + React + TS, @xyflow/react, Tailwind v4, shadcn/ui, react-router) served by Vite dev server on :5173, proxying `/api` and `/ws` to the backend.
-- Backend FastAPI on :8000. Workflow JSON `{nodes, edges, state}` stored in SQLite (`workflows`, `runs`, `users`).
-- `compiler.py` validates the JSON and builds a `langgraph.StateGraph` (TypedDict from state schema; Condition nodes → `add_conditional_edges` keyed on edge labels).
+- Backend FastAPI on :8000, layered (DEC-0009, `docs/backend-architecture.md`): `api` routers → `services` → `repositories` (SQLAlchemy 2.0 ORM) / `engine` (LangGraph); `core` config/security/errors; `schemas` DTOs. Workflow JSON `{nodes, edges, state}` stored in `workflows`, `runs`, `users` (SQLite default, `DATABASE_URL` for others).
+- `engine/validator.py` + `engine/compiler.py` validate the JSON and builds a `langgraph.StateGraph` (TypedDict from state schema; Condition nodes → `add_conditional_edges` keyed on edge labels).
 - Runs: WebSocket `/ws/run?token=` → worker thread executes `graph.stream(stream_mode="updates")` → per-node events (`node_started`, `node_finished{duration_ms, delta}`, `run_finished`, `error`) → stored in `runs`.
-- Imports: `importer.py` clones/unzips into `backend/imports/<job>/`, creates a per-import venv with uv, and executes `sandbox/runner.py` in a subprocess (inspect via `get_graph(xray=True)`; run via `astream(stream_mode=["debug","values"])`). Imported workflows carry server-side `source` metadata; runs always execute the original graph.
+- Imports: `engine/repo_import.py` clones/unzips into `backend/imports/<job>/`, creates a per-import venv with uv, and executes `engine/sandbox/runner.py` in a subprocess (inspect via `get_graph(xray=True)`; run via `astream(stream_mode=["debug","values"])`). Imported workflows carry server-side `source` metadata; runs always execute the original graph.
 - Auth: PBKDF2-SHA256 password hashes, HS256 JWT (24h), bearer header for REST, query token for WebSocket.
+
+## Layer Diagram (TASK-0017)
+
+```
+api/routes ─► services ─► repositories ─► models (SQLAlchemy) ─► DB (SQLite | DATABASE_URL)
+                  │                         migrations (Alembic)
+                  └────► engine (validator, compiler, nodes, llm, tools, runtime, repo_import)
+core (config, security, errors) ◄── all layers      schemas (Pydantic) ◄── api
+```
 
 ## Rationale
 
@@ -45,9 +54,9 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 ## Data Or State Considerations
 
 - Import jobs are in-memory (lost on restart); import directories persist on disk.
-- SQLite schema migrated inline at startup.
+- Schema managed by Alembic (`backend/app/migrations`, `0001_initial` = MVP schema, adopts pre-Alembic files); `alembic upgrade head` runs at startup.
 
 ## Quality Attributes
 
 - Security: imported code is not sandboxed beyond subprocess/venv/env-trim/timeout (documented risk).
-- Reliability: single process; no run cancellation.
+- Reliability: single process; cooperative cancel + timeout per run (TASK-0004).

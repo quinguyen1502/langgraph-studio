@@ -195,7 +195,7 @@ Team members can sign in, visually compose a workflow (Start, LLM, Tool/API, Con
 - Lint: Unknown
 - Typecheck: cd frontend && npx tsc -b [Expected]
 - Format: Unknown
-- Migration: none; SQLite schema created/migrated on startup in backend/app/main.py [Expected]
+- Migration: Alembic (`backend/app/migrations`), applied on startup (DEC-0009) [Observed]
 
 ### Constraints
 

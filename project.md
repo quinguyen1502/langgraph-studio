@@ -17,10 +17,11 @@ langgraph-studio
 ## Modules
 
 - `frontend/` — React SPA: login/register, workflow list, editor (canvas, palette, config, run panel), import dialog
-- `backend/app/main.py` — FastAPI REST + WebSocket, SQLite persistence
-- `backend/app/compiler.py` — validation, StateGraph compiler, LLM/tool execution, streaming
-- `backend/app/auth.py` — password hashing, JWT
-- `backend/app/importer.py`, `backend/app/sandbox/runner.py` — repo import and subprocess execution
+- `backend/app/` — layered FastAPI backend (DEC-0009, `docs/backend-architecture.md`):
+  - `main.py` app factory; `api/` routers (REST + `/ws/run`), deps, error handlers
+  - `services/` business rules; `repositories/` SQLAlchemy queries; `models/` ORM models + `Database`; `migrations/` Alembic
+  - `engine/` validator, StateGraph compiler, nodes, LLM/tools, runtime streaming, limits, repo import + `sandbox/runner.py`
+  - `core/` config (env vars), security (hashing, JWT), domain errors; `schemas/` Pydantic DTOs
 - `backend/tests/` — pytest suite
 
 ## Constraints

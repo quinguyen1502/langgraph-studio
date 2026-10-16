@@ -1,14 +1,16 @@
-import hashlib, hmac, logging, os, re, secrets, time
+"""Security primitives: password hashing (PBKDF2), JWT issue/verify, secret and password policy checks."""
+import hashlib, hmac, re, secrets, time
 import jwt
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from . import config
+from .errors import Unauthorized
+from .logging import get_logger
 
-log = logging.getLogger("studio.auth")
-PLACEHOLDER_SECRET = "dev-secret-change-me"
-SECRET = os.environ.get("JWT_SECRET", PLACEHOLDER_SECRET)
-TTL = int(os.environ.get("JWT_TTL_SECONDS", 60 * 60 * 24))
+log = get_logger("auth")
+PLACEHOLDER_SECRET = config.PLACEHOLDER_SECRET
+SECRET = config.JWT_SECRET
+TTL = config.JWT_TTL_SECONDS
 ITER = 200_000
-IS_PROD = os.environ.get("STUDIO_ENV", "dev").lower() in ("prod", "production")
+IS_PROD = config.IS_PROD
 
 def check_secret():
     """Refuse the placeholder secret in production; warn in dev."""
@@ -41,15 +43,10 @@ def make_token(uid: str, email: str, ttl: int | None = None) -> str:
     return jwt.encode({"sub": uid, "email": email, "exp": int(time.time()) + (TTL if ttl is None else ttl)}, SECRET, algorithm="HS256")
 
 def decode_token(tok: str) -> dict:
+    """Return the JWT payload or raise Unauthorized (expired tokens carry X-Auth-Error: expired)."""
     try:
         return jwt.decode(tok, SECRET, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
-        raise HTTPException(401, "Phiên đăng nhập đã hết hạn", headers={"X-Auth-Error": "expired"})
+        raise Unauthorized("Phiên đăng nhập đã hết hạn", headers={"X-Auth-Error": "expired"})
     except jwt.PyJWTError:
-        raise HTTPException(401, "Token không hợp lệ hoặc đã hết hạn")
-
-bearer = HTTPBearer(auto_error=False)
-def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
-    if not cred: raise HTTPException(401, "Chưa đăng nhập")
-    p = decode_token(cred.credentials)
-    return {"id": p["sub"], "email": p["email"]}
+        raise Unauthorized("Token không hợp lệ hoặc đã hết hạn")

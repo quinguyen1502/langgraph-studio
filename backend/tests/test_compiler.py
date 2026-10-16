@@ -4,8 +4,11 @@ import tempfile
 os.environ["STUDIO_DB"] = tempfile.mktemp(suffix=".db")
 import pytest
 from fastapi.testclient import TestClient
-from app.compiler import validate, compile_workflow, run_stream, ValidationError
-from app.example import EXAMPLE
+from app.engine.validator import validate
+from app.engine.compiler import compile_workflow
+from app.engine.runtime import run_stream
+from app.engine.errors import ValidationError
+from app.engine.examples import EXAMPLE
 from app.main import app
 
 def test_example_valid():

@@ -1,5 +1,5 @@
-from app.compiler import run_stream, cap_payload
-from app.example import EXAMPLE
+from app.engine.runtime import run_stream, cap_payload
+from app.engine.examples import EXAMPLE
 
 def test_finished_events_carry_input_type_iteration():
     evs = list(run_stream(EXAMPLE, {"message": "Đơn hàng A100 của tôi đâu rồi?"}))

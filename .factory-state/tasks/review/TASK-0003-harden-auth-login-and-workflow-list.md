@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0003
 - Status: todo
-- Owner:
+- Owner: Grok Bot (agent)
 - Priority: Phase 1 Feasibility, step 3 — after TASK-0002 (CI), before TASK-0004 (core hardening)
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -22,7 +22,7 @@ Prove the login → workflow list → open → run path is solid: harden registr
 ### In Scope
 
 - Password rules on register (min length 8, at least one letter and one digit; clear messages); email normalisation; generic login error (no user enumeration)
-- Basic login throttling (e.g. 5 failed attempts / 5 min per email+IP) with a clear message
+- ~~Basic login throttling~~ — **Deferred** (owner decision 2026-10-16): no lockout / rate limiting in this task
 - Token expiry: frontend detects 401/expired JWT, redirects to `/login?expired=1` with a notice and returns to the original page after login; `JWT_SECRET` required outside dev (warning at startup when the placeholder is used)
 - Auth screens: loading, error, disabled-submit states; keyboard/enter submit; accessible labels
 - Workflow list edge cases: empty list, search with no results, long names, many workflows (≥100) render and search fast, rename to empty/duplicate name handled, delete of the currently open workflow, deleted/foreign workflow URL shows a not-found state
@@ -33,6 +33,7 @@ Prove the login → workflow list → open → run path is solid: harden registr
 ### Out Of Scope
 
 - SSO, password reset by email, RBAC (TASK-0014)
+- Login rate limiting / account lockout (deferred by owner 2026-10-16; candidate for a later hardening task)
 - Core compiler/runtime hardening (TASK-0004)
 
 ## Inputs
@@ -53,7 +54,7 @@ Prove the login → workflow list → open → run path is solid: harden registr
 ## Expected Outputs
 
 - Backend and frontend changes for the rules and states above
-- New pytest cases (password rules, throttling, expiry) and Playwright E2E suite
+- New pytest cases (password rules, expiry, names) and Playwright E2E suite
 - README section for running E2E tests; REV and QA artifacts
 
 ## Constraints
@@ -67,7 +68,7 @@ Prove the login → workflow list → open → run path is solid: harden registr
 
 ## Acceptance Criteria
 
-- Register rejects weak passwords with a specific message; login errors are generic; 6th failed attempt within the window is throttled
+- Register rejects weak passwords with a specific message; login errors are generic (throttling deferred — see Scope)
 - An expired or invalid token on any page redirects to `/login` with an "expired" notice and returns to the original URL after login
 - Startup logs a warning when `JWT_SECRET` is the placeholder
 - List shows distinct empty and no-search-result states; 100+ workflows render and filter without visible lag; empty rename is rejected
@@ -89,13 +90,20 @@ Prove the login → workflow list → open → run path is solid: harden registr
 
 ## Open Questions
 
-- Password policy acceptable as proposed (≥8, letter+digit)?
-- Should E2E run in CI on every PR or nightly?
+- Password policy acceptable as proposed (≥8, letter+digit)? Implemented as proposed; owner confirms in PR review.
+- Should E2E run in CI on every PR or nightly? Not added to CI yet (Actions blocked by billing); suite runs locally in ~20 s.
 
 ## Activity Log
 
 - 2026-10-16: Created task during owner re-plan (DEC-0007). Not started.
+- 2026-10-16: Moved todo -> doing on `factory/task-0003-harden-auth-login-and-workflow-list` (from PR #4 branch + merged TASK-0002 branch).
+- 2026-10-16: Owner decision: login rate limiting / lockout out of scope (deferred). A prototype was removed before commit.
+- 2026-10-16: Implemented backend rules, frontend states, Playwright E2E (5 tests), screenshots. Local: pytest 32 passed, build + lint OK, E2E 5 passed, `factory verify run --profile full` passed.
+- 2026-10-16: Moved doing -> review. Review: REV-0003-task-0003; QA: QA-0003-task-0003.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0003-harden-auth-login-and-workflow-list` when implementation begins.
+- Branch `factory/task-0003-harden-auth-login-and-workflow-list`; PR base `factory/replan-renumber-tasks` (PR #4). The branch also merges the TASK-0002 branch (PR #1) for pyproject/conftest/CI. Merge after #4 and #1, then retarget to `main`.
+- Deferred: login throttling / lockout.
+- E2E: `cd frontend && npm run e2e` (needs `backend/.venv`; `PW_CHROME` to use system Chrome). Not in CI yet.
+- Review: `.factory-state/artifacts/REV-0003-task-0003.md`; QA: `.factory-state/artifacts/QA-0003-task-0003.md`.

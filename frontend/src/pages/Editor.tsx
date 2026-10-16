@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { cn } from '@/lib/utils'
 import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
-import { api, wsUrl } from '@/lib/api'
+import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 
@@ -112,6 +112,7 @@ function Studio() {
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
   const [running, setRunning] = useState(false)
+  const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
   const { dark } = useTheme()
   const rf = useReactFlow(); const idc = useRef(1)
 
@@ -123,9 +124,9 @@ function Studio() {
   }
   const loadHistory = (id?: string) => id && api(`/api/workflows/${id}/runs`).then(setHistory)
   useEffect(() => {
-    api(`/api/workflows/${id}`).then(wf => { load(wf); loadHistory(wf.id) }).catch(e => setErrors([e.message]))
-    api('/api/tools').then(setTools)
-    fetch('/api/health').then(r => r.json()).then(h => setMode(h.llm_mode))
+    api(`/api/workflows/${id}`).then(wf => { setLoadErr(null); load(wf); loadHistory(wf.id) }).catch(e => setLoadErr({ status: e.status ?? 0, msg: e.message }))
+    api('/api/tools').then(setTools).catch(() => {})
+    fetch('/api/health').then(r => r.json()).then(h => setMode(h.llm_mode)).catch(() => {})
   }, [id])
 
   const toJSON = () => ({
@@ -134,12 +135,15 @@ function Studio() {
     edges: edges.map(e => ({ id: e.id, source: e.source, target: e.target, ...(e.label ? { label: String(e.label) } : {}), ...((e as any).conditional ? { conditional: true } : {}) })),
   })
   const save = async () => {
-    const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
-    setWid(r.id); setErrors(r.errors); if (r.errors.length) setTab('input')
+    try {
+      const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
+      setWid(r.id); setErrors(r.errors); if (r.errors.length) setTab('input')
+    } catch (e: any) { setErrors([`Lưu thất bại: ${e.message}`]); setTab('input') }
   }
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
   const run = () => {
     let inp: any; try { inp = JSON.parse(input) } catch { setErrors(['Input không phải JSON hợp lệ']); setTab('input'); return }
+    if (!tokenValid()) { setErrors(['Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập…']); setTab('logs'); setTimeout(sessionExpired, 1500); return }
     setLog([]); setErrors([]); setTab('logs'); setRunning(true)
     setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
     const ws = new WebSocket(wsUrl('/ws/run'))
@@ -150,7 +154,10 @@ function Studio() {
       if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
       if (ev.type === 'error') setErrors(ev.errors || [])
     }
-    ws.onclose = () => { setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
+    ws.onerror = () => setErrors(e => e.length ? e : ['Mất kết nối tới máy chủ khi đang chạy'])
+    ws.onclose = ev => {
+      if (ev.code === 4401) { setErrors(['Phiên đăng nhập đã hết hạn trong khi chạy. Đang chuyển tới trang đăng nhập…']); setTimeout(sessionExpired, 1500) }
+      setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
   }
 
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
@@ -164,6 +171,15 @@ function Studio() {
   const upd = (k: string, v: any) => selNode && mark(selNode.id, { [k]: v })
   const d: any = selNode?.data || {}
   const fieldNames = state.map(f => f.name)
+
+  if (loadErr) return <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 text-foreground">
+    <div className="max-w-sm text-center space-y-3 rounded-xl border bg-card p-8 shadow-sm" id="editor-not-found">
+      <div className="mx-auto w-fit rounded-full bg-muted p-3 text-muted-foreground"><ArrowLeft className="size-5" /></div>
+      <h1 className="text-lg font-semibold">{loadErr.status === 404 ? 'Không tìm thấy workflow' : 'Không mở được workflow'}</h1>
+      <p className="text-sm text-muted-foreground">{loadErr.status === 404 ? 'Workflow này đã bị xoá hoặc không thuộc tài khoản của bạn.' : loadErr.msg}</p>
+      <Button asChild><Link to="/workflows" id="back-to-list">Về danh sách workflow</Link></Button>
+    </div>
+  </div>
 
   return <div className="h-screen grid grid-rows-[56px_1fr_250px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
     {/* Top bar */}

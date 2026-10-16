@@ -1,9 +1,9 @@
 // Turns the run event stream into one span per node execution (LangSmith/Langfuse-style trace).
 export type RunEvent = { type: string; node?: string; label?: string; node_type?: string; iteration?: number; duration_ms?: number
-  input?: any; delta?: any; state?: any; errors?: string[]; ts?: number; tokens?: number; usage?: { total_tokens?: number }; run_id?: string }
-export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error'
+  input?: any; delta?: any; state?: any; errors?: string[]; ts?: number; tokens?: number; usage?: { total_tokens?: number }; run_id?: string; status?: string; reason?: string }
+export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled'
   start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; events: RunEvent[] }
-export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error'; start?: number; end?: number; total?: number
+export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout'; start?: number; end?: number; total?: number
   tokens?: number; errors: string[]; final?: any }
 
 export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: string; type?: string } = () => ({})): Trace {
@@ -22,13 +22,17 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
       Object.assign(s, { status: 'done', end: t(e, i), duration: e.duration_ms, input: e.input, output: e.delta, tokens: e.tokens ?? e.usage?.total_tokens })
       s.events.push(e)
     } else if (e.type === 'error') {
-      st.v = 'error'; const msg = (e.errors || []).join('; ') || 'Error'; errors.push(msg)
-      const s = n ? open(n) : [...spans].reverse().find(x => x.status === 'running')
+      st.v = e.status === 'timeout' ? 'timeout' : 'error'; const msg = (e.errors || []).join('; ') || 'Error'; errors.push(msg)
+      const s = (n ? open(n) ?? [...spans].reverse().find(x => x.node === n) : undefined) ?? (e.status === 'timeout' ? undefined : [...spans].reverse().find(x => x.status === 'running'))
       if (s) { Object.assign(s, { status: 'error', end: t(e, i), duration: e.duration_ms ?? s.duration, error: msg, input: e.input ?? s.input }); s.events.push(e) }
+    } else if (e.type === 'run_cancelled') { st.v = 'cancelled'
     } else if (e.type === 'run_finished') { if (st.v !== 'error') st.v = 'ok'; final = e.state }
   })
   // Speculative "started" rows (predicted next nodes) that never ran are dropped once the run ends.
-  const status = st.v; const done = status === 'ok' || status === 'error'
+  const status = st.v; const done = status !== 'running' && status !== 'idle'
+  // Rows still running when a run is cancelled / times out are shown as cancelled; speculative
+  // "started" rows (predicted next nodes) are dropped once a run finishes normally.
+  if (status === 'cancelled' || status === 'timeout') spans.forEach(s => { if (s.status === 'running') s.status = 'cancelled' })
   const kept = done ? spans.filter(s => s.status !== 'running') : spans
   const stamped = events.filter(e => e.ts != null)
   const start = stamped.length ? stamped[0].ts : kept[0]?.start

@@ -1,5 +1,5 @@
 // Captures docs/screenshots for TASK-0003 states. Run: SHOTS=1 npm run e2e -- screenshots
-import { test, expect } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 test.skip(!process.env.SHOTS, 'set SHOTS=1 to capture screenshots')
 const out = (n: string) => `../docs/screenshots/${n}.png`
 test.use({ viewport: { width: 1280, height: 800 } })
@@ -86,5 +86,46 @@ test.describe('node colors', () => {
     await page.getByRole('button', { name: /dark mode/i }).click(); await page.waitForTimeout(500); await page.mouse.move(5, 5)
     await page.screenshot({ path: out('node-colors-dark') })
     await page.getByRole('button', { name: /light mode|dark mode/i }).click()
+  })
+})
+
+async function admin(page: Page) {
+  await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
+  await expect(page).toHaveURL(/\/workflows$/)
+  return page.evaluate(() => localStorage.getItem('token'))
+}
+const slow = (n: number, name: string) => {
+  const ids = ['s', ...Array.from({ length: n }, (_, i) => `wait${i + 1}`), 'e']
+  return { name, state: [{ name: 'message', type: 'string' }, { name: 'out', type: 'string' }],
+    nodes: ids.map((id, i) => ({ id, type: i === 0 ? 'start' : i === ids.length - 1 ? 'end' : 'tool', position: { x: 40 + i * 220, y: 180 },
+      data: i === 0 ? { label: 'Start' } : i === ids.length - 1 ? { label: 'End' } : { label: `Wait ${i}`, mode: 'function', function: 'sleep_demo', output_field: 'out' } })),
+    edges: ids.slice(1).map((id, i) => ({ id: `e${i}`, source: ids[i], target: id })) }
+}
+async function open(page: Page, token: string | null, wf: object) {
+  const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })
+  await page.goto(`/workflows/${(await r.json()).id}`)
+}
+
+test.describe('runtime states', () => {
+  test.use({ viewport: { width: 1440, height: 900 } })
+  test('capture cancel / timeout / validation', async ({ page }) => {
+    const t = await admin(page)
+    await open(page, t, slow(4, 'Slow demo (cancel)')); await page.locator('#run-btn').click()
+    await expect(page.locator('.trace-row[data-span="wait1#1"]')).toBeVisible(); await page.locator('#cancel-btn').click()
+    await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'cancelled'); await page.mouse.move(5, 5); await page.waitForTimeout(300)
+    await page.screenshot({ path: out('runtime-cancelled') })
+    await open(page, t, slow(6, 'Slow demo (timeout)')); await page.locator('#run-btn').click()
+    await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'timeout', { timeout: 15000 }); await page.mouse.move(5, 5); await page.waitForTimeout(300)
+    await page.screenshot({ path: out('runtime-timeout') })
+    await open(page, t, { name: 'Broken graph', state: [{ name: 'message', type: 'string' }],
+      nodes: [{ id: 's', type: 'start', position: { x: 40, y: 150 }, data: { label: 'Start' } },
+        { id: 'a', type: 'llm', position: { x: 260, y: 80 }, data: { label: 'Draft', model: 'gpt-4o-mini', prompt: '{{state.message}}', output_field: 'message' } },
+        { id: 'b', type: 'llm', position: { x: 480, y: 80 }, data: { label: 'Refine', model: 'gpt-4o-mini', prompt: '{{state.message}}', output_field: 'message' } },
+        { id: 'lonely', type: 'tool', position: { x: 260, y: 300 }, data: { label: 'Unreachable tool', mode: 'function', function: 'lookup_order', output_field: 'message' } },
+        { id: 'e', type: 'end', position: { x: 700, y: 150 }, data: { label: 'End' } }],
+      edges: [{ id: '1', source: 's', target: 'a' }, { id: '2', source: 'a', target: 'b' }, { id: '3', source: 'b', target: 'a' }, { id: '4', source: 'lonely', target: 'e' }] })
+    await page.locator('#run-btn').click(); await page.getByRole('tab', { name: 'Input' }).click()
+    await expect(page.locator('#validation-errors')).toBeVisible(); await page.mouse.move(5, 5); await page.waitForTimeout(300)
+    await page.screenshot({ path: out('runtime-validation-errors') })
   })
 })

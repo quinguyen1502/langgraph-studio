@@ -3,6 +3,7 @@ from __future__ import annotations
 import json, operator, os, re, time
 from typing import Any, Callable, Dict, List, Optional, TypedDict
 import httpx
+from .limits import safe_error
 from langgraph.graph import StateGraph, START, END
 
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
@@ -46,6 +47,13 @@ def lookup_order(state: Dict[str, Any]) -> str:
 
 
 # ---------------- LLM ----------------
+if os.environ.get("STUDIO_ENABLE_DEMO_TOOLS") == "1":
+    @register_tool("sleep_demo")
+    def sleep_demo(state: Dict[str, Any]) -> str:
+        """Demo/testing only (STUDIO_ENABLE_DEMO_TOOLS=1): sleeps 1.5 s, to exercise cancel/timeout."""
+        time.sleep(1.5); return "slept 1.5s"
+
+
 def mock_llm(prompt: str, model: str) -> str:
     """Deterministic offline mock. Recognises classification prompts."""
     p = prompt.lower()
@@ -75,18 +83,31 @@ def call_llm(prompt: str, model: str) -> str:
 # ---------------- Validation ----------------
 def validate(wf: Dict[str, Any]) -> List[str]:
     errs: List[str] = []
-    nodes = wf.get("nodes", [])
-    edges = wf.get("edges", [])
+    nodes = [n for n in wf.get("nodes", []) if isinstance(n, dict)]
+    edges = [e for e in wf.get("edges", []) if isinstance(e, dict)]
+    if any(not n.get("id") for n in nodes): return ["Mọi node cần có id"]
+    if any(not e.get("source") or not e.get("target") for e in edges): return ["Mọi edge cần có source và target"]
+    for kind, items in (("node", nodes), ("edge", edges)):
+        seen_ids, dup = set(), set()
+        for x in items:
+            if x.get("id") in seen_ids: dup.add(str(x.get("id")))
+            seen_ids.add(x.get("id"))
+        if dup: errs.append(f"Trùng id {kind}: {', '.join(sorted(dup))}")
     ids = {n["id"] for n in nodes}
     types = {n["id"]: n.get("type") for n in nodes}
     starts = [n for n in nodes if n.get("type") == "start"]
     ends = [n for n in nodes if n.get("type") == "end"]
-    if len(starts) != 1: errs.append("Cần đúng 1 node Start")
+    if not starts: errs.append("Cần đúng 1 node Start (chưa có)")
+    elif len(starts) > 1: errs.append(f"Chỉ được 1 node Start (đang có {len(starts)}: {', '.join(n['id'] for n in starts)})")
     if not ends: errs.append("Cần ít nhất 1 node End")
     fields = {f["name"] for f in wf.get("state", [])}
     for e in edges:
-        if e["source"] not in ids or e["target"] not in ids:
-            errs.append(f"Edge {e.get('id')} trỏ tới node không tồn tại")
+        missing = [x for x in (e["source"], e["target"]) if x not in ids]
+        if missing:
+            errs.append(f"Edge {e.get('id')} trỏ tới node không tồn tại: {', '.join(missing)}")
+        elif e["source"] == e["target"] and types.get(e["source"]) != "condition":
+            errs.append(f"Node {e['source']}: không được tự nối vào chính nó (chỉ Condition mới được tạo vòng lặp)")
+    edges = [e for e in edges if e["source"] in ids and e["target"] in ids]
     out = {i: [e for e in edges if e["source"] == i] for i in ids}
     for n in nodes:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
@@ -117,6 +138,20 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "llm":
             for v in VAR_RE.findall(d.get("prompt", "")):
                 if fields and v not in fields: errs.append(f"Node {nid}: biến state.{v} không có trong state")
+    # cycles must pass through a Condition node (otherwise the loop can never exit)
+    plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) != "condition" and e["target"] != i] for i in ids if types.get(i) != "condition"}
+    state_: Dict[str, int] = {}
+    def dfs(u, path):
+        state_[u] = 1; path.append(u)
+        for v in plain.get(u, []):
+            if state_.get(v) == 1:
+                cyc = path[path.index(v):] + [v]
+                errs.append(f"Vòng lặp không qua Condition: {' → '.join(cyc)}")
+                return True
+            elif not state_.get(v) and dfs(v, path): return True
+        path.pop(); state_[u] = 2; return False
+    for i in sorted(plain):
+        if not state_.get(i) and dfs(i, []): break
     # reachability
     if len(starts) == 1:
         seen, stack = set(), [starts[0]["id"]]
@@ -172,13 +207,15 @@ def compile_workflow(wf: Dict[str, Any]):
             field = n["data"]["field"]
             mapping = {e["label"]: e["target"] for e in out}
             default = n["data"].get("default") or ("default" if "default" in mapping else None)
-            def router(state, field=field, mapping=mapping, default=default):
-                v = str(state.get(field, "")).strip()
+            label = n["data"].get("label") or nid
+            def router(state, field=field, mapping=mapping, default=default, nid=nid, label=label):
+                raw = state.get(field)
+                v = ("" if raw is None else str(raw).lower() if isinstance(raw, bool) else str(raw)).strip()
                 if v in mapping: return v
                 for k in mapping:  # case-insensitive / contains fallback
                     if k.lower() == v.lower() or k.lower() in v.lower(): return k
                 if default and default in mapping: return default
-                raise ValueError(f"Condition: giá trị '{v}' không khớp label nào {list(mapping)}")
+                raise ValueError(f"Condition '{label}' ({nid}): giá trị {field}='{v[:100]}' không khớp label nào {list(mapping)} và không có default")
             g.add_conditional_edges(nid, router, mapping)
         else:
             for e in out:
@@ -200,8 +237,24 @@ def cap_payload(obj: Any, limit: int = TRACE_CAP) -> Any:
     return {"_truncated": True, "size": len(txt), "preview": txt[:limit]}
 
 
+PY_TYPES = {"number": (int, float), "integer": (int,), "boolean": (bool,), "list": (list,), "object": (dict,), "string": (str,)}
+
+
+def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
+    """Run input must be a JSON object whose known fields match the state schema types."""
+    if not isinstance(inputs, dict): return ["Input phải là một JSON object, ví dụ {\"message\": \"hi\"}"]
+    errs = []
+    for f in wf.get("state", []) or []:
+        name, typ = f.get("name"), f.get("type", "string")
+        if name in inputs and inputs[name] is not None and typ in PY_TYPES:
+            v = inputs[name]; ok = isinstance(v, PY_TYPES[typ]) and not (typ in ("number", "integer") and isinstance(v, bool))
+            if not ok: errs.append(f"Input '{name}' phải có kiểu {typ} (nhận {type(v).__name__})")
+    return errs
+
+
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any]):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator."""
+    if (bad := check_input(wf, inputs)): raise ValidationError(bad)
     app = compile_workflow(wf)
     nodes = {n["id"]: n for n in wf["nodes"]}
     state = dict(inputs); counts: Dict[str, int] = {}
@@ -225,16 +278,18 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any]):
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
                        "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
                        "input": cap_payload(before), "delta": cap_payload(delta)}
-            # predict next node(s) to mark as started
-            pending = _next_nodes(wf, list(chunk)[-1], state)
+            # predict next node(s) to mark as started; keep a Condition as "current" so routing errors name it
+            last = list(chunk)[-1]
+            nxt = _next_nodes(wf, last, state)
+            pending = nxt or ([last] if nodes[last]["type"] == "condition" else [])
             t0 = time.perf_counter()
-            for n2 in pending:
+            for n2 in nxt:
                 yield started(n2)
     except Exception as e:  # attribute runtime failures to the node that was running
         nid = pending[-1] if pending else None
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
                "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
-               "errors": [f"{type(e).__name__}: {e}"]}
+               "errors": [safe_error(e)]}
         return
     yield {"type": "run_finished", "state": state}
 

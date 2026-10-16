@@ -8,14 +8,23 @@ Phases accepted by the owner on 2026-10-16 (DEC-0007, supersedes the P0/P1/P2 ba
 
 ## Phase 1 — Feasibility (login, workflow list, simple core)
 
-1. TASK-0001 Confirm project context and technical baseline (review)
-2. TASK-0002 CI + Factory deps/verify unblock (PR #1)
-3. TASK-0003 Harden auth/login and workflow list (REQ-0001)
-4. TASK-0004 Review and harden core MVP compiler, runtime and run API (REQ-0001; PR #3)
-5. TASK-0005 Real LLM providers with per-workflow credentials (REQ-0002; PR #2)
-6. TASK-0016 Run trace timeline UI (REQ-0001; added 2026-10-16, stacked on TASK-0003)
+Status as of 2026-10-16 (nothing merged yet; all PRs are drafts).
+
+| # | Task | Title | Status | PR | Branch base |
+|---|---|---|---|---|---|
+| 1 | TASK-0001 | Confirm project context and technical baseline | review | (on `main`) | — |
+| 2 | TASK-0002 | CI + Factory deps/verify unblock | review | [#1](https://github.com/quinguyen1502/langgraph-studio/pull/1) | `main` |
+| 3 | TASK-0003 | Harden auth/login and workflow list | review | [#5](https://github.com/quinguyen1502/langgraph-studio/pull/5) | #4 branch (+ merges #1) |
+| 4 | TASK-0004 | Review and harden core MVP compiler, runtime and run API | review | [#7](https://github.com/quinguyen1502/langgraph-studio/pull/7) (plan: [#3](https://github.com/quinguyen1502/langgraph-studio/pull/3)) | #6 branch |
+| 5 | TASK-0005 | Real LLM providers with per-workflow credentials | review | [#2](https://github.com/quinguyen1502/langgraph-studio/pull/2) | #1 branch |
+| 6 | TASK-0016 | Run trace timeline UI | review | [#6](https://github.com/quinguyen1502/langgraph-studio/pull/6) | #5 branch |
+| — | (re-plan) | Phases + task renumbering (DEC-0007) | — | [#4](https://github.com/quinguyen1502/langgraph-studio/pull/4) | `main` |
+
+**Merge order:** #4 → #1 → #3 → #5 → #6 → #7 → #2. After each merge, retarget the next stacked PR to `main`. PR #3 (TASK-0004 plan only) is superseded by #7 and can be closed once #7 merges, or merged first; its files are identical on #7.
 
 ## Phase 2 — Usable
+
+Status for all Phase 2–4 tasks: backlog.
 
 - TASK-0006 Human-in-the-loop (REQ-0003)
 - TASK-0007 API / webhook trigger (REQ-0004)

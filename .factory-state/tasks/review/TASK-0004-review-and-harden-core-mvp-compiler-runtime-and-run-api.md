@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0004
 - Status: todo
-- Owner:
+- Owner: Grok Bot (agent)
 - Priority: Phase 1 Feasibility, step 4 — after TASK-0003 (auth/list hardening), before TASK-0005 (real LLM providers)
 - Previous ID: TASK-0014 (renumbered 2026-10-16, DEC-0007)
 - Created: 2026-10-16
@@ -100,14 +100,21 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 
 ## Open Questions
 
-- Default recursion limit (LangGraph default 25) and run timeout (proposed 120s) acceptable?
-- Size caps: proposed 256 KB per event delta, 2 MB per stored run
+- Resolved (owner, 2026-10-16): recursion limit 25 (reuse `STUDIO_RECURSION_LIMIT` from TASK-0016), run timeout 120 s, 256 KB per event, 2 MB per stored run.
+- Open: should the recursion limit be per-workflow configurable? (not done)
 
 ## Activity Log
 
-- 2026-10-16: Created task (owner-approved scope proposal); placed in todo as next P0 (as TASK-0014). Not started.
-- 2026-10-16: Renumbered TASK-0014 -> TASK-0004 (Phase 1 step 4) per DEC-0007.
+- 2026-10-16: Created as TASK-0014 (plan only, PR #3); renumbered to TASK-0004 (DEC-0007).
+- 2026-10-16: Owner approved implementation with defaults. Moved todo -> doing on `factory/task-0004-review-and-harden-core-mvp`, based on the TASK-0016 branch (PR #6). Implementation goes in a new draft PR (#7); the plan PR #3 remains the record of the plan.
+- 2026-10-16: Coverage baseline (TASK-0016 branch, 35 tests): statements 92% (636 stmts, 48 missed), branches+statements 89%.
+- 2026-10-16: Implemented. The audit findings are in REV-0005-task-0004. Coverage after (60 tests): statements 94% (819, 51 missed), branches+statements 91%.
+- 2026-10-16: Moved doing -> review. QA-0005-task-0004 records the results; the manual real-provider E2E is pending for the owner.
 
 ## Handoff Notes
+
+- Branch `factory/task-0004-review-and-harden-core-mvp`; PR base `factory/task-0016-run-trace-timeline-ui` (#6). Merge order: #4 → #1 → #3 → #5 → #6 → #7 → #2.
+- New env vars: `STUDIO_RUN_TIMEOUT`, `STUDIO_EVENT_MAX_BYTES`, `STUDIO_RUN_MAX_BYTES`, `STUDIO_INPUT_MAX_BYTES`, `STUDIO_WORKFLOW_MAX_BYTES`, `STUDIO_ENABLE_DEMO_TOOLS` (README).
+- When TASK-0005 (#2) merges, provider-call errors go through `safe_error` too; check the redaction against real provider messages.
 
 - Use branch `factory/task-0004-review-and-harden-core-mvp` when implementation begins. (Planning PR #3 used branch `factory/task-0014-plan-mvp-hardening`.)

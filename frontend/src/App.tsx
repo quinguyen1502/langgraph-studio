@@ -1,6 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { getToken, loginUrl, scheduleExpiry, tokenValid } from '@/lib/api'
+import { getToken, loginUrl, scheduleExpiry, tokenValid, wasExpired } from '@/lib/api'
 import { AuthPage } from '@/pages/Auth'
 import { WorkflowsPage } from '@/pages/Workflows'
 import { EditorPage } from '@/pages/Editor'
@@ -8,7 +8,7 @@ import { EditorPage } from '@/pages/Editor'
 function Protected({ children }: { children: React.ReactElement }) {
   const loc = useLocation()
   if (tokenValid()) return children
-  return <Navigate to={loginUrl(!!getToken(), loc.pathname + loc.search)} replace />
+  return <Navigate to={loginUrl(!!getToken() || wasExpired(), loc.pathname + loc.search)} replace />
 }
 scheduleExpiry()
 export default function App() {

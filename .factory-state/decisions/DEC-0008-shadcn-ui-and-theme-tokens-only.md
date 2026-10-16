@@ -22,10 +22,18 @@ Project-wide UI rule: **use shadcn/ui components and theme tokens only; no hard-
 
 ## Consequences
 
-- Node-type chips no longer use colour; they rely on their icons and `bg-muted`/`bg-secondary`.
 - Badge gains `success` and `warning` variants.
 - PR reviews check the conventions with the grep in `docs/ui-conventions.md`.
 
 ## Approval
 
 - Approved By: Thái Quí Nguyễn (owner), 2026-10-16
+
+## Addendum (2026-10-16): node-type colour tokens
+
+The owner wants node types to be easy to tell apart by colour again, using theme variables.
+
+- Each node type (`start`, `llm`, `tool`, `condition`, `end`, `code`) has `--node-<type>`, `--node-<type>-foreground` and `--node-<type>-muted` in `:root` and `.dark`, registered in `@theme inline`. That makes classes such as `bg-node-llm-muted`, `text-node-llm` and `border-node-code` available.
+- They are applied to palette chips, the accent stripe on canvas node cards, the config header and the trace timeline icons. Imported Code nodes keep a dashed `border-node-code/60` border.
+- Node-type colours mean category only; statuses stay on `success`/`warning`/`destructive`.
+- Approved by: Thái Quí Nguyễn (owner), 2026-10-16

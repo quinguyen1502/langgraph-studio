@@ -98,6 +98,7 @@ Replace the cluttered raw-event Logs tab with a compact run trace timeline (Lang
 - 2026-10-16: Implemented the backend event fields, the trace UI and the E2E tests. Found that the default langgraph recursion limit (~10k) made loop runs emit about 20k events; added `STUDIO_RECURSION_LIMIT=25`.
 - 2026-10-16: Moved doing -> review. REV-0004-task-0016, QA-0004-task-0016.
 - 2026-10-16: Owner review: the UI must strictly follow shadcn/ui. Recorded DEC-0008 and `docs/ui-conventions.md`. Replaced custom widgets with shadcn Switch, Collapsible, Alert, Tooltip, Separator and Button, and hard-coded colours with the tokens `--success`, `--warning` and `--info`, across the whole app.
+- 2026-10-16: Added node-type colour tokens (`--node-*`, DEC-0008 addendum) for the palette, canvas cards, config header and trace icons.
 
 ## Handoff Notes
 

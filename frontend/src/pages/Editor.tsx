@@ -29,14 +29,14 @@ import { buildTrace } from '@/lib/trace'
 
 type Field = { name: string; type: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
-const META: Record<string, { label: string; icon: LucideIcon; color: string; desc: string }> = {
-  start: { label: 'Start', icon: CirclePlay, color: 'bg-muted text-foreground', desc: 'Điểm bắt đầu' },
-  llm: { label: 'LLM', icon: Brain, color: 'bg-muted text-foreground', desc: 'Gọi model với prompt' },
-  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-muted text-foreground', desc: 'HTTP hoặc Python function' },
-  condition: { label: 'Condition', icon: GitBranch, color: 'bg-muted text-foreground', desc: 'Rẽ nhánh theo state field' },
-  end: { label: 'End', icon: Flag, color: 'bg-muted text-muted-foreground', desc: 'Kết thúc' },
+const META: Record<string, { label: string; icon: LucideIcon; color: string; accent: string; desc: string }> = {
+  start: { label: 'Start', icon: CirclePlay, color: 'bg-node-start-muted text-node-start', accent: 'bg-node-start', desc: 'Điểm bắt đầu' },
+  llm: { label: 'LLM', icon: Brain, color: 'bg-node-llm-muted text-node-llm', accent: 'bg-node-llm', desc: 'Gọi model với prompt' },
+  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-node-tool-muted text-node-tool', accent: 'bg-node-tool', desc: 'HTTP hoặc Python function' },
+  condition: { label: 'Condition', icon: GitBranch, color: 'bg-node-condition-muted text-node-condition', accent: 'bg-node-condition', desc: 'Rẽ nhánh theo state field' },
+  end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end', desc: 'Kết thúc' },
 }
-META.code = { label: 'Code', icon: Code2, color: 'bg-secondary text-secondary-foreground', desc: 'Node Python từ repo import' }
+META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code', desc: 'Node Python từ repo import' }
 const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
@@ -65,9 +65,10 @@ function StatusBadge({ s }: { s?: string }) {
 
 function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
-  return <div className={cn(type === 'code' && 'border-ring border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
+  return <div className={cn(type === 'code' && 'border-node-code/60 border-dashed', 'relative rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
     selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
     d._status === 'done' && 'border-success', d._status === 'error' && 'border-destructive')}>
+    <span aria-hidden className={cn('absolute inset-y-0 left-0 w-1 rounded-l-xl', m.accent)} />
     {type !== 'start' && <Handle type="target" position={Position.Left} />}
     <div className="flex items-center gap-2">
       <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>

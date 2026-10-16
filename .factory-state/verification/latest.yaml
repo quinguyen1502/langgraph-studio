@@ -1,9 +1,9 @@
 schema_version: 1
-run_id: 20261016T134659600502Z
+run_id: 20261016T135453326238Z
 status: passed
 profile: full
-updated_at: '2026-10-16T13:46:59.600502+00:00'
-source_sha256: 124a4f13ca44d63fd8386dc1fee1f08ddead987b9898bbbec7de52b659c7290d
+updated_at: '2026-10-16T13:54:53.326238+00:00'
+source_sha256: 92457600ba5e1736d8c42ad5cb9b3eada6b39cca7599cf432ef885fe5f4e82bc
 inputs:
   backend/pyproject.toml: 8a1fc60eb4737c4bb4ab5e206079e63b6e4eb29f206c933eea8252fc8b8560a6
   backend/requirements.txt: 09e2aa2a5d945e66ea7ea0f2e346f1c1ef1cdb6b0f8eeac1e08e26d201c5a31d
@@ -33,10 +33,10 @@ inputs:
   frontend/tsconfig.json: 770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808
   frontend/tsconfig.node.json: d366cc0827139db39c61815f22491bbfda56c654354a42ad7795143d314e45e8
   frontend/vite.config.ts: cacc72159a3c027a811e28c9dfd012cd084f38f8f119eaccf5f664d2bdf478e3
-  frontend/e2e/screenshots.spec.ts: 2bac9d816e543956e6eaaae0a1bfd4040995272560c7b8fe0d47e89bbfa25e27
+  frontend/e2e/screenshots.spec.ts: 9c3c71c46c86ab53a41c2fe9bc3d4fb520c6f3c1758a0b8cf9d859de4b08109b
   frontend/e2e/studio.spec.ts: 55d35ffbd3db2c9dc4f25b47e4154fc96d0ce8d74e9c12b787ed5f2370d9c0bd
   frontend/e2e/trace.spec.ts: 2721b1e3fe03da738010aa6b36b9e6622581f7f966348acb1c438f292db8a805
-  frontend/src/App.tsx: f9f00985fa965bd6f049feb8ccd6347f95e636c15679f15be4b1373b548021d6
+  frontend/src/App.tsx: d0c1d9e6df80850d264bb1f019da12eaad4fbeccbdf69f72b1affe30dd7f4d4e
   frontend/src/main.tsx: 6e9e5807fcbd48b75a96db5cbef36c996262196be42e6d4760dc86babbe61ad2
   frontend/src/components/import-dialog.tsx: 32d0f8c90bb31397310a97c25895628185e41f58fd69f8c3d3c15e9ff2aea8c3
   frontend/src/components/json-view.tsx: 0f3973f644312f073ce1e92d6a691388cc157bdc9160a03b83f06559231091fd
@@ -60,12 +60,12 @@ inputs:
   frontend/src/components/ui/tabs.tsx: b977274550595594055d850a16775c75761765e1cd76b4827e101c2f432762df
   frontend/src/components/ui/textarea.tsx: 82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f
   frontend/src/components/ui/tooltip.tsx: fc4380a53b7c847ff3d692c320f8d889eaaf3d6878dcba1da926ec4ab3a7c037
-  frontend/src/lib/api.ts: a698a1900866453944ad3137877f20455c3e38c6881c8b4d8b54194519a83a11
+  frontend/src/lib/api.ts: b5494d425e864244c914f34b4d6d5a0c60be4a049b8ecffc3e4448ebe8a8b674
   frontend/src/lib/theme.tsx: 29b6cd11c45bd6a715bfc54f30aa333d0d784ee81637559b43c33e691eefbeda
   frontend/src/lib/trace.ts: 813b1323d0b810e09fe7cbda848ba7efca148664d17266a3a58ca8988b0f76da
   frontend/src/lib/utils.ts: 14300d758170c270c75b057f38fedb3793a5920ea872f0477e29fb131185e8a7
   frontend/src/pages/Auth.tsx: acca49eed6f1301641a950cfd0463f0d2d673aea17add3ac075b6b2e3f8b61ca
-  frontend/src/pages/Editor.tsx: 1f2b76b2da24c0eaa67a5330128ba853c340551e82c70c8bb32f0c0107352895
+  frontend/src/pages/Editor.tsx: 35a347f2da4dfedd8925a8553fabf132aacfccc6a7b39e1e313621773a98fae3
   frontend/src/pages/Workflows.tsx: 7676f49350e6b64c41b671492cd773659054fb82a67fc5de6395ddf8cd5f6984
   frontend/test-results/.last-run.json: 91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903
 results:
@@ -79,9 +79,9 @@ results:
   source: backend/pyproject.toml
   status: passed
   returncode: 0
-  started_at: '2026-10-16T13:46:48.138214+00:00'
-  duration_seconds: 7.314
-  output_sha256: fc68edf7fc2f1ffb7e204e609cc2960f283bae6dd537e12f558b0e215bceff85
+  started_at: '2026-10-16T13:54:41.151722+00:00'
+  duration_seconds: 7.675
+  output_sha256: 5dc3f810fcdc493ab0ac942659f1845edb80bdab25e334f4ac5e3f7f281fc822
 - check_id: node:frontend:build
   kind: build
   working_dir: frontend
@@ -92,9 +92,9 @@ results:
   source: frontend/package.json
   status: passed
   returncode: 0
-  started_at: '2026-10-16T13:46:55.452407+00:00'
-  duration_seconds: 3.717
-  output_sha256: 2d918c577431623df8ede7a78c0c56aad04a3584aa9035845443e38beae9b5a0
+  started_at: '2026-10-16T13:54:48.826276+00:00'
+  duration_seconds: 4.054
+  output_sha256: f0e36ac6e634c2bf77b610afdaa26a0c29380f595fddd8c1da67cadb7e9b4305
 - check_id: node:frontend:lint
   kind: lint
   working_dir: frontend
@@ -105,6 +105,6 @@ results:
   source: frontend/package.json
   status: passed
   returncode: 0
-  started_at: '2026-10-16T13:46:59.169896+00:00'
-  duration_seconds: 0.431
-  output_sha256: b2f69b5a1a37ee2f227d6bdafce7d9f62b4b5ba2c3ce77b660eaa831edb3ca8c
+  started_at: '2026-10-16T13:54:52.880238+00:00'
+  duration_seconds: 0.446
+  output_sha256: 91debef96ef4d9575cb63e6e11859296d3b0463111b14250f086f40785980291

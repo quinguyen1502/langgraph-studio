@@ -60,16 +60,46 @@ def mock_llm(prompt: str, model: str) -> str:
     return f"[mock:{model}] Trả lời: {tail[:200]}"
 
 
-def call_llm(prompt: str, model: str) -> str:
-    key = os.environ.get("OPENAI_API_KEY")
-    if not key:
-        return mock_llm(prompt, model)
-    base = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
-    r = httpx.post(f"{base}/chat/completions", headers={"Authorization": f"Bearer {key}"},
-                   json={"model": model or "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]},
-                   timeout=60)
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"].strip()
+class LLMError(Exception):
+    pass
+
+
+def http_client() -> httpx.Client:
+    """Factory for outbound LLM HTTP calls (tests replace this with a MockTransport client)."""
+    return httpx.Client(timeout=60)
+
+
+def _post(provider: str, url: str, headers: Dict[str, str], body: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        with http_client() as c:
+            r = c.post(url, headers=headers, json=body)
+    except httpx.HTTPError as e:
+        raise LLMError(f"{provider}: không kết nối được ({type(e).__name__})") from None
+    if r.status_code >= 400:
+        try: msg = r.json().get("error", {}).get("message") or r.text
+        except Exception: msg = r.text
+        raise LLMError(f"{provider}: HTTP {r.status_code}: {str(msg)[:200]}")
+    return r.json()
+
+
+def call_llm(prompt: str, model: str, cred: Optional[Dict[str, Any]] = None) -> str:
+    """cred: decrypted credential {provider, base_url, api_key}. Without cred falls back to env OPENAI_API_KEY, then mock."""
+    if cred is None:
+        key = os.environ.get("OPENAI_API_KEY")
+        if not key:
+            return mock_llm(prompt, model)
+        cred = {"provider": "openai", "api_key": key, "base_url": os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")}
+    provider, key, base = cred["provider"], cred["api_key"], (cred.get("base_url") or "").rstrip("/")
+    if provider == "anthropic":
+        data = _post("anthropic", f"{base or 'https://api.anthropic.com'}/v1/messages",
+                     {"x-api-key": key, "anthropic-version": "2023-06-01"},
+                     {"model": model or "claude-3-5-haiku-latest", "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]})
+        try: return "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text").strip()
+        except Exception: raise LLMError("anthropic: response không hợp lệ") from None
+    data = _post("openai", f"{base or 'https://api.openai.com/v1'}/chat/completions", {"Authorization": f"Bearer {key}"},
+                 {"model": model or "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]})
+    try: return data["choices"][0]["message"]["content"].strip()
+    except Exception: raise LLMError("openai: response không hợp lệ") from None
 
 
 # ---------------- Validation ----------------
@@ -130,11 +160,15 @@ def validate(wf: Dict[str, Any]) -> List[str]:
 
 
 # ---------------- Compile ----------------
-def _node_fn(node: Dict[str, Any]):
+def _node_fn(node: Dict[str, Any], resolve: Optional[Callable[[str], Dict[str, Any]]] = None):
     t, d = node["type"], node.get("data", {})
     if t == "llm":
         def fn(state):
-            return {d["output_field"]: call_llm(render(d.get("prompt", ""), state), d.get("model", "gpt-4o-mini"))}
+            cred = None
+            if d.get("credential_id"):
+                if resolve is None: raise LLMError("Node dùng credential nhưng không có resolver")
+                cred = resolve(d["credential_id"])
+            return {d["output_field"]: call_llm(render(d.get("prompt", ""), state), d.get("model", "gpt-4o-mini"), cred)}
     elif t == "tool":
         def fn(state):
             if d.get("mode") == "http":
@@ -153,7 +187,7 @@ def _node_fn(node: Dict[str, Any]):
     return fn
 
 
-def compile_workflow(wf: Dict[str, Any]):
+def compile_workflow(wf: Dict[str, Any], resolve: Optional[Callable[[str], Dict[str, Any]]] = None):
     errs = validate(wf)
     if errs: raise ValidationError(errs)
     ann = {f["name"]: Optional[TYPE_MAP.get(f.get("type", "string"), str)] for f in wf.get("state", [])}
@@ -161,7 +195,7 @@ def compile_workflow(wf: Dict[str, Any]):
     g = StateGraph(State)
     nodes = {n["id"]: n for n in wf["nodes"]}
     for nid, n in nodes.items():
-        g.add_node(nid, _node_fn(n))
+        g.add_node(nid, _node_fn(n, resolve))
     for nid, n in nodes.items():
         out = [e for e in wf["edges"] if e["source"] == nid]
         if n["type"] == "start":
@@ -186,9 +220,9 @@ def compile_workflow(wf: Dict[str, Any]):
     return g.compile()
 
 
-def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any]):
+def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve: Optional[Callable[[str], Dict[str, Any]]] = None):
     """Yield per-node events: started / finished(duration, delta). Sync generator."""
-    app = compile_workflow(wf)
+    app = compile_workflow(wf, resolve)
     nodes = {n["id"]: n for n in wf["nodes"]}
     state = dict(inputs)
     start_id = next(n["id"] for n in wf["nodes"] if n["type"] == "start")

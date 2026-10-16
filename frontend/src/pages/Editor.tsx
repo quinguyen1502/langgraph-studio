@@ -24,6 +24,7 @@ import { ArrowLeft } from 'lucide-react'
 import { api, wsUrl } from '@/lib/api'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
+import type { Credential } from '@/components/credentials-dialog'
 
 type Field = { name: string; type: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
@@ -109,6 +110,7 @@ function Studio() {
   const [tools, setTools] = useState<{ name: string }[]>([])
   const [mode, setMode] = useState('')
   const [source, setSource] = useState<any>(null)
+  const [creds, setCreds] = useState<Credential[]>([])
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
   const [running, setRunning] = useState(false)
@@ -125,6 +127,7 @@ function Studio() {
   useEffect(() => {
     api(`/api/workflows/${id}`).then(wf => { load(wf); loadHistory(wf.id) }).catch(e => setErrors([e.message]))
     api('/api/tools').then(setTools)
+    api('/api/credentials').then(setCreds)
     fetch('/api/health').then(r => r.json()).then(h => setMode(h.llm_mode))
   }, [id])
 
@@ -239,7 +242,11 @@ function Studio() {
             <div><div className="font-medium">{META[selNode.type!].label}</div><div className="text-[11px] text-muted-foreground font-mono">{selNode.id}</div></div></div>
           <F label="Label"><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>
           {selNode.type === 'llm' && <>
-            <F label="Model"><Input value={d.model} onChange={e => upd('model', e.target.value)} /></F>
+            <F label="Credential (provider)"><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
+              <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">Mặc định (env OPENAI_API_KEY hoặc mock)</SelectItem>
+                {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select></F>
+            <F label="Model"><Input value={d.model} onChange={e => upd('model', e.target.value)} placeholder={creds.find(c => c.id === d.credential_id)?.provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gpt-4o-mini'} /></F>
             <F label="Prompt template ({{state.field}})"><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
             <F label="Output field"><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}

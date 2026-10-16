@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0002
-- Status: Proposed
+- Status: In Progress (TASK-0003)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -69,8 +69,7 @@ LLM nodes can call real providers (OpenAI, Anthropic, OpenAI-compatible) using c
 
 ## Open Questions
 
-- Credential scope: per user, per workflow, or global admin?
-- Which providers are required first?
+- None open; resolved provisionally by DEC-0006 (per-user credentials selected per LLM node; OpenAI/compatible + Anthropic first).
 
 ## Related Artifacts
 

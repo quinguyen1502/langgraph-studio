@@ -1,7 +1,7 @@
 import asyncio, json, os, re, sqlite3, time, uuid, threading
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, UploadFile, File, Form
 from typing import Optional
-from . import importer
+from . import importer, credentials as creds
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .compiler import validate, run_stream, TOOLS, ValidationError
@@ -26,6 +26,7 @@ def init_db():
     with db() as c:
         c.execute("CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, email TEXT UNIQUE, password TEXT, created REAL)")
         c.execute("CREATE TABLE IF NOT EXISTS workflows(id TEXT PRIMARY KEY, name TEXT, data TEXT, updated REAL, owner TEXT)")
+        creds.init_table(c)
         c.execute("CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, workflow_id TEXT, input TEXT, events TEXT, final_state TEXT, status TEXT, started REAL, ended REAL)")
         cols = [r[1] for r in c.execute("PRAGMA table_info(workflows)")]
         if "owner" not in cols: c.execute("ALTER TABLE workflows ADD COLUMN owner TEXT")
@@ -167,6 +168,32 @@ def import_finalize(jid: str, body: Finalize, user=Depends(current_user)):
         c.execute("INSERT INTO workflows(id,name,data,updated,owner) VALUES(?,?,?,?,?)", (wid, wf["name"], json.dumps(wf, ensure_ascii=False), time.time(), user["id"]))
     return {"id": wid}
 
+class CredIn(BaseModel):
+    name: str
+    provider: str
+    api_key: str
+    base_url: Optional[str] = None
+
+@app.get("/api/providers")
+def providers(user=Depends(current_user)): return [{"id": k, **v} for k, v in creds.PROVIDERS.items()]
+
+@app.get("/api/credentials")
+def list_creds(user=Depends(current_user)):
+    with db() as c: return creds.list_for(c, user["id"])
+
+@app.post("/api/credentials")
+def create_cred(body: CredIn, user=Depends(current_user)):
+    try:
+        with db() as c: return creds.create(c, user["id"], body.name, body.provider, body.api_key, body.base_url)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+@app.delete("/api/credentials/{cid}")
+def delete_cred(cid: str, user=Depends(current_user)):
+    with db() as c:
+        if not c.execute("DELETE FROM credentials WHERE id=? AND owner=?", (cid, user["id"])).rowcount: raise HTTPException(404, "Không tìm thấy credential")
+    return {"ok": True}
+
 @app.post("/api/validate")
 def validate_wf(wf: dict, user=Depends(current_user)): return {"errors": validate(wf)}
 
@@ -197,7 +224,9 @@ async def ws_run(ws: WebSocket):
         inp = req.get("input", {})
         stored = json.loads(r["data"]) if wid else {}
         wf = stored if stored.get("source") else (req.get("workflow") or stored)
-        gen = (lambda: importer.run_imported(wf, dict(inp))) if wf.get("source", {}).get("kind") == "langgraph_import" else (lambda: run_stream(wf, inp))
+        def resolver(cid, uid=uid):
+            with db() as c: return creds.resolve(c, uid, cid)
+        gen = (lambda: importer.run_imported(wf, dict(inp))) if wf.get("source", {}).get("kind") == "langgraph_import" else (lambda: run_stream(wf, inp, resolver))
         rid = uuid.uuid4().hex[:10]; t0 = time.time(); events = []; final = None; status = "ok"
         q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop()
         def worker():

@@ -4,12 +4,13 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0003
-- Status: backlog
+- Status: review
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Requirement IDs: REQ-0002
 - Design IDs:
+- Decision IDs: DEC-0006
 - Architecture IDs: ARCH-0001
 
 ## Objective
@@ -48,7 +49,7 @@ Implement REQ-0002: Configure real LLM providers with per-workflow credentials.
 
 ## Dependencies
 
-- TASK-0002 (CI) recommended first
+- Stacked on TASK-0002 branch (`factory/task-0002-add-github-actions-ci-for-backend-tests-and-frontend-build`, PR #1): uses its pyproject.toml, conftest.py and CI. PR base is that branch.
 
 ## Acceptance Criteria
 
@@ -74,8 +75,15 @@ Implement REQ-0002: Configure real LLM providers with per-workflow credentials.
 
 ## Activity Log
 
+- 2026-10-16: Moved todo -> doing on `factory/task-0003-configure-real-llm-providers-with-per-workflow-credentials` (stacked on TASK-0002).
+- 2026-10-16: Implemented `backend/app/credentials.py` (Fernet at rest, masked hints), credential CRUD API, provider calls for OpenAI/compatible + Anthropic via injectable httpx client, per-node `credential_id`, Credentials dialog + LLM node credential select. Tests: `backend/tests/test_llm_providers.py` (7 tests, mocked HTTP). Local: pytest 26 passed; factory verify run --profile full PASSED. Moved to review.
+
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
+
+- Review: `.factory-state/artifacts/REV-0002-task-0003.md`; QA: `.factory-state/artifacts/QA-0002-task-0003.md`; decision: `.factory-state/decisions/DEC-0006-llm-credential-model.md`
+- No real API keys were used; real-provider smoke test is left for the owner.
+- GitHub Actions blocked by account billing (same as TASK-0002).
 
 - Use branch `factory/task-0003-configure-real-llm-providers-with-per-workflow-credentials` when implementation begins.

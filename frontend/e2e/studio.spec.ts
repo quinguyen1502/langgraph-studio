@@ -33,7 +33,7 @@ test('register → logout → login → list → open example → run → done',
   await page.getByRole('cell', { name: /Customer support/i }).first().click()
   await expect(page).toHaveURL(/\/workflows\/\w+$/)
   await page.locator('#run-btn').click()
-  await expect(page.getByText(/^Done\. State:/)).toBeVisible({ timeout: 30_000 })
+  await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
   await page.locator('#back-btn').click()
   await expect(page.getByText('ok', { exact: true }).first()).toBeVisible()
 })

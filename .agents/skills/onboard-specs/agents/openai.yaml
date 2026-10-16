@@ -1,0 +1,7 @@
+interface:
+  display_name: "Onboard Specs"
+  short_description: "Convert project-specs.md into Factory vision, project, roadmap, requirement, design,..."
+  default_prompt: "Use $onboard-specs to apply the Onboard Specs workflow."
+
+policy:
+  allow_implicit_invocation: false

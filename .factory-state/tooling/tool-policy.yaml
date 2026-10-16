@@ -1,0 +1,11 @@
+schema_version: 1
+status: proposed
+level: instructions
+enabled_tools:
+- codex
+- cursor
+- claude-code
+- grok
+protect_factory_assets: false
+validate_on_stop: false
+commands: {}

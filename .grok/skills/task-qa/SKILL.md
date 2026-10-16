@@ -1,0 +1,31 @@
+---
+name: task-qa
+description: Produce a Factory QA artifact for the active task by verifying each acceptance criterion, recording evidence, gaps, and residual risk using the QA template. Use when the user asks to QA, verify acceptance, or produce a QA record for the active task.
+---
+
+# Task QA
+
+Verify the active task against its acceptance criteria and record the outcome as a Factory QA artifact. Do not implement fixes in this skill; recommend them.
+
+## Inputs
+
+- The active task artifact and its acceptance criteria.
+- The most recent validation output. If validation has not been run for the current diff, invoke or reference the task-validation skill first.
+- The QA template at `templates/qa-template.md` in the framework.
+- Any prior review artifact for this task.
+
+## Steps
+
+1. Confirm the active task and its branch. QA is normally performed once the task is in the `qa` lifecycle state or the user explicitly asks earlier.
+2. List each acceptance criterion. For each, record: verification method (test, manual check, artifact inspection), result, evidence path or command, and any gap.
+3. Run or reference the task-validation skill for declared commands when their outputs are part of the evidence.
+4. Note residual risk and open questions the owner should decide before completion.
+5. Allocate the QA ID with `git fetch --all --prune` then `factory ids next QA --all-refs`. Write `.factory-state/artifacts/QA-<id>-TASK-<task>-<short-name>.md` using the QA template. Include criteria checked, evidence, gaps, residual risk, and an overall QA outcome (`pass`, `pass with follow-up`, or `fail`).
+6. Update the task activity log per project standards if required. Do not move the task through lifecycle in this skill; the owner or the finish-pr skill handles that.
+
+## Non-goals
+
+- Do not edit implementation files or tests.
+- Do not mark the task as `done`. Completion also requires owner approval and merge.
+- Do not open, close, or merge pull requests.
+- Do not run new implementation experiments; if a criterion cannot be verified from the current diff, record the gap.

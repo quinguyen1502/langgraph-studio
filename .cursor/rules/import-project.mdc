@@ -1,0 +1,30 @@
+---
+description: Attach the Factory framework to an existing source repository without overwriting owner files. Use when the user asks to import factory, adopt factory, or add .factory to a repo that already has code.
+alwaysApply: false
+---
+
+# Import Project
+
+Preview, then apply, Factory assets into an existing repository.
+
+## Steps
+
+1. Confirm the target is a source repository, not this framework checkout.
+2. Preview without writing:
+
+```bash
+factory import <project-dir> --no-interactive
+```
+
+3. Review `create`, `keep`, `conflict`, and `invalid` rows. Stop on `invalid`.
+4. Apply only after the owner confirms. Existing files are never overwritten automatically.
+
+```bash
+factory import <project-dir> --apply --no-interactive [--copy] [--tool TOOL]
+```
+
+5. Resolve instruction conflicts under `.factory-state/import/proposals/` with the owner. Do not merge them yourself.
+6. Run `factory validate` and `factory ready`. Import does not make the project implementation-ready.
+7. If `factory validate` reports a missing `.factory-state/tooling/tool-policy.yaml`, that is a project backfill, not a framework defect. Repositories attached to Factory before the tooling bundle, or that never ran `import --apply` after it landed, do not grow the file when the `.factory` pin moves. Re-run `factory import --apply --no-interactive` to create missing tooling files without overwriting owner files, or write the policy and run `factory tools configure --no-interactive`.
+
+Do not generate application source. Do not change credentials or user-level tool config.

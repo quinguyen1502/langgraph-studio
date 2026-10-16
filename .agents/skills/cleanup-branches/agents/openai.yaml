@@ -1,0 +1,7 @@
+interface:
+  display_name: "Cleanup Branches"
+  short_description: "Audit and clean local Git branches and stale remote-tracking references after pull..."
+  default_prompt: "Use $cleanup-branches to apply the Cleanup Branches workflow."
+
+policy:
+  allow_implicit_invocation: false

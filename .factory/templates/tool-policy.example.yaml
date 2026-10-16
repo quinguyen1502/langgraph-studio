@@ -1,0 +1,63 @@
+# Example tool-policy.yaml
+#
+# Copy to `.factory-state/tooling/tool-policy.yaml` and edit for the project.
+# This file is the canonical source that per-tool permission and hook
+# assets (e.g. Codex rules, Claude Code allowlists) are derived from.
+#
+# Schema is validated by ToolPolicy in factory_cli.tooling.
+
+schema_version: 1
+
+# proposed: policy drafted, permissions/hooks not enabled yet.
+# approved: policy accepted by the project owner.
+status: proposed
+
+# Tool kit level:
+#   instructions - documentation-only assets (default; safe to publish)
+#   guardrails   - inactive permission/hook drafts for review
+#   automation   - active permissions and hooks
+#   custom       - project-managed
+# `active = status == approved AND level in {guardrails, automation, custom}`.
+level: instructions
+
+# Subset of ("codex", "cursor", "claude-code", "grok").
+enabled_tools:
+  - claude-code
+  - codex
+
+# Hook flags. Both must be true only when the kit is active.
+protect_factory_assets: false
+validate_on_stop: false
+
+# Named commands used by workflows and derived tool permissions.
+# Fill in with the project's real commands. Each entry has:
+#   command:  the shell command (with any args or flags)
+#   evidence: Expected (declared by owner) | Observed (recorded from a real run)
+#
+# Example (Flutter):
+#   commands:
+#     test:
+#       command: flutter test
+#       evidence: Expected
+#     analyze:
+#       command: flutter analyze
+#       evidence: Expected
+#     format:
+#       command: dart format --output=none --set-exit-if-changed lib test
+#       evidence: Expected
+#
+# `dart format .` walks generated trees such as `build/` and
+# `ios/SourcePackages` and fails there. Scope format to source
+# directories. Add `integration_test` if the project has that folder.
+#
+# Example (Node):
+#   commands:
+#     test:
+#       command: npm test
+#       evidence: Expected
+#     lint:
+#       command: npm run lint
+#       evidence: Expected
+#
+# Leave empty on init; populate during discovery.
+commands: {}

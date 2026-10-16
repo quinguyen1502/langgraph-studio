@@ -1,0 +1,7 @@
+interface:
+  display_name: "Next Task"
+  short_description: "Inspect AI Software Factory project state and identify or prepare the next task based..."
+  default_prompt: "Use $next-task to apply the Next Task workflow."
+
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,18 @@
+---
+name: finish-pr
+description: Finalize an existing Factory task pull request after the user has approved the implementation and asks to finish, complete, or ready the PR. Perform final artifact updates, validation, rebase, one-commit squash, force-push-with-lease, and Draft-to-Ready promotion without merging.
+---
+
+# Finish PR
+
+1. Confirm the user approved the current task and identify its branch and existing PR.
+2. Read the task, review, QA, delivery standards, and required validation commands.
+3. Resolve any remaining lifecycle metadata required for completion. Do not invent a new task or PR.
+4. Fetch the integration branch and rebase the task branch when needed.
+5. Squash the task branch to one commit while preserving the reviewed diff.
+6. Run required final formatting, analysis, tests, builds, and `git diff --check`.
+7. Push rewritten history with `--force-with-lease`.
+8. Mark the existing Draft PR Ready for review.
+9. Verify the PR is open, Ready, mergeable when GitHub reports it, and contains one task commit.
+
+Do not merge the PR unless the user explicitly asks to merge. Report validation gaps or blockers instead of marking the PR Ready when required checks fail.

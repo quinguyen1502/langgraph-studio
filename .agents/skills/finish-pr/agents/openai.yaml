@@ -1,0 +1,7 @@
+interface:
+  display_name: "Finish Pr"
+  short_description: "Finalize an existing Factory task pull request after the user has approved the..."
+  default_prompt: "Use $finish-pr to apply the Finish Pr workflow."
+
+policy:
+  allow_implicit_invocation: false

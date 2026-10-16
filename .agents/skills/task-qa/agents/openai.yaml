@@ -1,0 +1,7 @@
+interface:
+  display_name: "Task Qa"
+  short_description: "Produce a Factory QA artifact for the active task by verifying each acceptance..."
+  default_prompt: "Use $task-qa to apply the Task Qa workflow."
+
+policy:
+  allow_implicit_invocation: false

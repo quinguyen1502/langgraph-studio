@@ -1,0 +1,24 @@
+---
+name: create-requirement
+description: Write one Factory requirement artifact from the owner's request and current project context. Use when the user asks to add a requirement, feature, or user story.
+---
+
+# Create Requirement
+
+Write one requirement artifact. Do not implement source and do not create tasks in this skill.
+
+## Steps
+
+1. Read `vision.md`, `project.md`, `roadmap.md`, and any directly related existing `REQ-*` artifacts.
+2. Allocate the ID:
+
+```bash
+git fetch --all --prune
+factory ids next REQ --all-refs
+```
+
+3. Write `.factory-state/artifacts/REQ-<id>-<short-name>.md` from `.factory/templates/requirement-template.md`.
+4. Fill scope, constraints, acceptance criteria, and open questions. Link related artifacts by path.
+5. If there are four or more owner questions, or a checklist or conditional set, create a linked `CLAR-xxxx` instead of asking them in chat.
+
+Do not move work to `todo`. Hand off to `plan-tasks` after the owner accepts the requirement.

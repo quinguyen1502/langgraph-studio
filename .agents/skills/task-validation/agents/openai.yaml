@@ -1,0 +1,7 @@
+interface:
+  display_name: "Task Validation"
+  short_description: "Run the project's declared validation commands (format, analyze, lint, test, build)..."
+  default_prompt: "Use $task-validation to apply the Task Validation workflow."
+
+policy:
+  allow_implicit_invocation: false

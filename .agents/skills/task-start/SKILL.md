@@ -1,0 +1,26 @@
+---
+name: task-start
+description: Begin work on a recommended Factory task by preparing the branch, moving the task through the lifecycle, and printing a context brief without implementing anything. Use when the user asks to start, begin, pick up, or work on a specific task.
+---
+
+# Task Start
+
+Prepare the environment to start implementing an approved task. Do not write code or edit source in this skill.
+
+## Preconditions
+
+- The task must exist under `.factory-state/tasks/` and be in `backlog` or `todo`.
+- The user must have confirmed which task to start when more than one is eligible.
+- The working tree must be clean. If it is not, stop and ask the user how to proceed.
+
+## Steps
+
+1. Fetch the integration branch and confirm it is up to date.
+2. Read the task artifact and the artifacts it directly references (requirement, design, decision, plan, standards).
+3. If the task is in `backlog`, move it to `todo` first only when project standards allow; otherwise stop and surface the gap.
+4. Create the task branch off the integration branch using the tool-neutral naming convention `factory/task-<id>-<short-name>` unless project standards define a different pattern.
+5. Move the task artifact from `todo/` to `doing/`.
+6. Print a context brief covering: task goal, acceptance criteria, referenced artifacts, current related state, blocking dependencies, and the next concrete implementation step.
+7. Confirm ready-to-implement status. State clearly that no source has been edited.
+
+Do not open a pull request in this skill. Do not run validation. Do not begin implementation until the user gives the next instruction.

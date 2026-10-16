@@ -1,0 +1,24 @@
+Import plan: /workspace/langgraph-studio
+  CREATE   AGENTS.md - path is missing
+  CREATE   project-specs.md - path is missing
+  CREATE   vision.md - path is missing
+  CREATE   project.md - path is missing
+  CREATE   roadmap.md - path is missing
+  CREATE   .factory-state/factory.yaml - path is missing
+  CREATE   .factory-state/intake/project-specs-input.yaml - path is missing
+  CREATE   .factory-state/artifacts/DISC-0001-project-context.md - path is missing
+  CREATE   .factory-state/tasks/backlog/TASK-0001-confirm-project-context.md - path is missing
+  CREATE   .factory-state/tooling/tool-policy.yaml - path is missing
+  CREATE   .factory-state/tooling/hooks/pre_tool_guard.py - path is missing
+  CREATE   .factory-state/tooling/hooks/stop_validate.py - path is missing
+  CREATE   .factory-state/tooling/generated.yaml - path is missing
+  CREATE   .claude/CLAUDE.md - path is missing
+  CREATE   .factory-state/standards/architecture.md - path is missing
+  CREATE   .factory-state/standards/coding.md - path is missing
+  CREATE   .factory-state/standards/delivery.md - path is missing
+  CREATE   .factory-state/standards/documentation.md - path is missing
+  CREATE   .factory-state/standards/operations.md - path is missing
+  CREATE   .factory-state/standards/review.md - path is missing
+  CREATE   .factory-state/standards/security.md - path is missing
+  CREATE   .factory-state/standards/testing.md - path is missing
+  CREATE   .factory - factory framework is missing

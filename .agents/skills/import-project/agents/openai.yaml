@@ -1,0 +1,7 @@
+interface:
+  display_name: "Import Project"
+  short_description: "Attach the Factory framework to an existing source repository without overwriting..."
+  default_prompt: "Use $import-project to apply the Import Project workflow."
+
+policy:
+  allow_implicit_invocation: false

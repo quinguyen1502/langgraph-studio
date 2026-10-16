@@ -1,0 +1,7 @@
+interface:
+  display_name: "Create Project"
+  short_description: "Create a new Factory project repository from this framework using factory init with..."
+  default_prompt: "Use $create-project to apply the Create Project workflow."
+
+policy:
+  allow_implicit_invocation: false

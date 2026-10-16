@@ -1,0 +1,7 @@
+interface:
+  display_name: "Task Review"
+  short_description: "Produce a Factory review artifact for the active task by reading the diff, referenced..."
+  default_prompt: "Use $task-review to apply the Task Review workflow."
+
+policy:
+  allow_implicit_invocation: false

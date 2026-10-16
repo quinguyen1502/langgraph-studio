@@ -1,0 +1,14 @@
+schema_version: 1
+enabled_tools:
+- codex
+- cursor
+- claude-code
+- grok
+default_refiner: null
+refinement_timeout_seconds: 300
+factory_link_mode: copy
+integration_branch: main
+storage_backend: folder
+storage_dsn: null
+budget_enforcement: warn
+budgets: {}

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Create Requirement"
+  short_description: "Write one Factory requirement artifact from the owner's request and current project..."
+  default_prompt: "Use $create-requirement to apply the Create Requirement workflow."
+
+policy:
+  allow_implicit_invocation: false

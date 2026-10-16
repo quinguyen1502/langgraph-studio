@@ -1,0 +1,7 @@
+interface:
+  display_name: "Task Start"
+  short_description: "Begin work on a recommended Factory task by preparing the branch, moving the task..."
+  default_prompt: "Use $task-start to apply the Task Start workflow."
+
+policy:
+  allow_implicit_invocation: false

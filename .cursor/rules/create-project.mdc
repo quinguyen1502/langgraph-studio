@@ -1,0 +1,43 @@
+---
+description: Create a new Factory project repository from this framework using factory init with intake YAML, project-specs, or a preset. Use when the user asks to create, bootstrap, or start a new project.
+alwaysApply: false
+---
+
+# Create Project
+
+Create a product project next to this framework. Do not invent an `Approved` stack.
+
+## When to use
+
+Use this from the factory framework repository (`sw-ai-factory`), or from any checkout that has the `factory` CLI. After the project exists, open that directory and follow its `AGENTS.md`.
+
+## Inputs
+
+Collect only what the owner already stated:
+
+- Project folder name.
+- Optional `--intake FILE.yaml` (a `ProjectIntake` document).
+- Optional `--from-specs FILE.md` (owner-written `project-specs.md`).
+- Optional `--preset web-app|api|cli|mobile` to fill blank stack and command fields as `Proposed`.
+- Optional `--tool` values from `codex`, `cursor`, `claude-code`, `grok`. Default is every supported tool.
+- `--copy` when a Git submodule is not wanted.
+
+If more than three open questions remain, write a clarification artifact instead of blocking on chat.
+
+## Command
+
+```bash
+factory init <project-name> --no-interactive \
+  [--intake FILE.yaml] [--from-specs FILE.md] [--preset PRESET] \
+  [--tool TOOL] [--copy] [--tool-kit instructions]
+```
+
+Skills emit by default. Pass `--no-skills` only when the owner asks.
+
+Do not run the Textual wizard. Do not mark technology `Approved`. Do not scaffold source in this skill.
+
+## After init
+
+1. Report the created path and `Factory link`.
+2. Tell the owner to open that project.
+3. Next skills there: complete `TASK-0001`, then `onboard-specs` or `create-requirement`, then `factory ready` before implementation.

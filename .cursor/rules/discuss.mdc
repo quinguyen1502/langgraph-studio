@@ -1,0 +1,15 @@
+---
+description: Use when the user asks to discuss, analyze, or decide direction before implementation. Do not edit files or make implementation changes.
+alwaysApply: false
+---
+
+# Discuss First
+
+When this skill is invoked, stay in discussion mode.
+
+- Do not edit files, create branches, create tasks, add dependencies, run formatters, or run validation commands.
+- Read repository files only when needed to answer accurately.
+- Clarify requirements, risks, constraints, and implementation options.
+- Identify missing inputs, blockers, and fallback options.
+- If the request touches existing unfinished factory work, explain how it should update the active task instead of creating a new task.
+- End with a concise recommended direction or the specific question that needs user confirmation.

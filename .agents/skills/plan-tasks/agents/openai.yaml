@@ -1,0 +1,7 @@
+interface:
+  display_name: "Plan Tasks"
+  short_description: "Split an approved requirement into small Factory task artifacts with dependencies,..."
+  default_prompt: "Use $plan-tasks to apply the Plan Tasks workflow."
+
+policy:
+  allow_implicit_invocation: false

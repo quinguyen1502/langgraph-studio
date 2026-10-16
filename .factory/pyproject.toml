@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ai-software-factory"
+version = "0.3.0"
+description = "Generic CLI for bootstrapping AI Software Factory project repositories."
+requires-python = ">=3.9"
+dependencies = [
+    "PyYAML>=6,<7",
+    "prompt_toolkit>=3.0,<4",
+    "rich>=13,<15",
+    "textual>=8.2,<9",
+    "textual-plotext>=1,<2",
+]
+
+[project.scripts]
+factory = "factory_cli.entry:main"
+
+[tool.setuptools]
+package-dir = {"" = "cli"}
+
+[tool.setuptools.packages.find]
+where = ["cli"]

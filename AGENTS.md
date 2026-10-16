@@ -1,0 +1,48 @@
+# Project Agents
+
+This project uses the AI Software Factory framework in `.factory/`. This file is the canonical project instruction entrypoint for Codex, Cursor, and Grok. Claude Code imports it through `.claude/CLAUDE.md`.
+
+Init creates a valid factory skeleton. It is not ready for implementation until `factory ready` passes.
+
+## Required Rules
+
+- Before applying factory workflows, verify `.factory/AGENTS.md` exists and read it.
+- If `.factory/AGENTS.md` is missing and `.factory` is configured as a submodule, initialize it with `git submodule update --init .factory`.
+- If initialization requires credentials, network access, or approval, request it before implementation.
+- If `.factory/AGENTS.md` remains unavailable, stop implementation and record a blocker in `.factory-state/`.
+- Read `vision.md`, `project.md`, `roadmap.md`, and the current task before work.
+- Treat `project-specs.md` as source onboarding context and preserve explicit approval statuses.
+- Discover project context and commands from repository evidence; do not treat expected commands as observed.
+- Read `.factory-state/artifacts/` selectively by following task and artifact references.
+- Store generated workflow state under `.factory-state/`, never `.factory/`.
+- Record assumptions, blockers, open questions, review results, and QA evidence in artifacts.
+- Do not create standalone tasks or blocker artifacts for command trials, missing local authentication, sandbox or network retries, or other transient assistant execution mechanics unless they materially block an active delivery task.
+- Allocate new artifact IDs after `git fetch --all --prune` with `factory ids next <TYPE> --all-refs`. Do not guess the next number.
+- Use task branches named `factory/task-<id>-<short-name>` unless project standards define another convention.
+- Do not merge without explicit human approval.
+- Do not start implementation source work until `factory ready` exits 0, unless the owner explicitly overrides that gate.
+
+## Workflow Skills
+
+Use the matching installed skill when the user asks for that job. If the skill files are missing, run `factory skills apply`.
+
+- `onboard-specs` — convert `project-specs.md` into vision, project, roadmap, REQ/DES/ARCH, and tasks.
+- `create-requirement` — write one requirement artifact.
+- `plan-tasks` — split an approved requirement into verifiable tasks.
+- `discuss` — analysis only; no edits.
+- `next-task` — recommend the next lifecycle task.
+- `task-start` — branch and move a task to doing; do not implement.
+- `scoped-change` — implement or fix, then stop before validation.
+- `task-validation` — run declared project checks.
+- `task-review` — write a review artifact.
+- `task-qa` — write a QA artifact.
+- `finish-pr` — rebase, squash, and mark the existing PR Ready.
+- `cleanup-branches` — prune merged or obsolete local branches.
+
+## Factory References
+
+- Shared behavior: `.factory/AGENTS.md`
+- Agent roles: `.factory/agents/`
+- Workflows: `.factory/workflows/`
+- Templates: `.factory/templates/`
+- Framework docs: `.factory/docs/`

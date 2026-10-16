@@ -1,0 +1,7 @@
+interface:
+  display_name: "Discuss"
+  short_description: "Use when the user asks to discuss, analyze, or decide direction before implementation...."
+  default_prompt: "Use $discuss to apply the Discuss workflow."
+
+policy:
+  allow_implicit_invocation: false

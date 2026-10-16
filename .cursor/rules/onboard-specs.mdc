@@ -1,0 +1,48 @@
+---
+description: Convert project-specs.md into Factory vision, project, roadmap, requirement, design, architecture, decision, and task artifacts without implementing source. Use when onboarding a new project or when the user asks to turn specs into artifacts.
+alwaysApply: false
+---
+
+# Onboard Specs
+
+Convert `project-specs.md` into factory artifacts. Do not implement source.
+
+## Preconditions
+
+- `.factory/AGENTS.md` exists (initialize the submodule if needed).
+- `project-specs.md` is the source specification.
+- Working tree is clean enough that artifact-only edits are reviewable.
+
+## Allocate IDs first
+
+```bash
+git fetch --all --prune
+factory ids next REQ DES ARCH DEC TASK --all-refs
+```
+
+Use only numbers this command returns. Re-run the same command immediately before any push that adds artifacts.
+
+## Read
+
+- `project-specs.md`, `AGENTS.md`, `.factory/AGENTS.md`
+- `.factory/docs/artifact-model.md`, `.factory/docs/project-discovery.md`, `.factory/docs/task-lifecycle.md`
+- Templates under `.factory/templates/` for each artifact type you will write
+
+Do not invent facts that are not in the spec or repository files. Preserve `Approved` / `Preferred` / `Proposed` / `Unknown` wording. Mark commands and stack as expected or proposed when source does not yet exist.
+
+## Write
+
+- `vision.md` — problem, goals, non-goals
+- `project.md` — domain, actors, modules, constraints, declared stack
+- `roadmap.md` — MVP and priority bands
+- `.factory-state/artifacts/DISC-0001-project-context.md` — update, do not duplicate
+- `REQ-xxxx-*.md` for features and acceptance criteria
+- `DES-xxxx-*.md` only when the spec describes UX, screens, flows, or developer-facing experience
+- `ARCH-xxxx-*.md` or `DEC-xxxx-*.md` only when the spec states architecture, data, integrations, or deployment
+- Tasks under `.factory-state/tasks/backlog/` unless scope, inputs, outputs, dependencies, acceptance criteria, and validation are all clear — those go in `todo/`
+
+Each task must link the artifacts it depends on. Keep `TASK-0001` updated or move it forward when discovery is represented elsewhere.
+
+## After
+
+Summarize files created and updated, assumptions, open questions, and the recommended next task. Run `factory ready` and report remaining gaps. Do not scaffold, install dependencies, or write application source.

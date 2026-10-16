@@ -1,0 +1,7 @@
+interface:
+  display_name: "Scoped Change"
+  short_description: "Make a small, scoped implementation or review-feedback fix then stop before validation..."
+  default_prompt: "Use $scoped-change to apply the Scoped Change workflow."
+
+policy:
+  allow_implicit_invocation: false

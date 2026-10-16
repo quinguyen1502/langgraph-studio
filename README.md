@@ -27,7 +27,7 @@ Dùng LLM thật: `export OPENAI_API_KEY=sk-...` (tuỳ chọn `OPENAI_BASE_URL`
 Trên trang `/workflows` bấm **Import repo** → tab *GitHub URL* (repo public, tuỳ chọn branch/subdir) hoặc *Zip upload*. Dialog hiển thị tiến trình (fetching → installing → inspecting → ready), log và lỗi; nếu repo có nhiều graph thì chọn một graph rồi **Tạo workflow**.
 
 Backend (`backend/app/importer.py`, `backend/app/sandbox/runner.py`):
-1. Clone (`git clone --depth 1`) hoặc giải nén zip (chặn zip-slip) vào `backend/imports/<job_id>/`.
+1. Clone (`git clone --depth 1`) hoặc giải nén zip (chặn zip-slip) vào `~/.langgraph-studio/imports/<job_id>/` (đổi bằng biến `STUDIO_IMPORT_DIR`; nằm ngoài repo để không lẫn vào git/Factory scan). Workflow import trước đây (ở `backend/imports/`) vẫn chạy được vì lưu đường dẫn tuyệt đối.
 2. Tạo venv riêng (`uv venv`, fallback `python -m venv`) và cài deps: `pip install -e .` nếu có pyproject/setup.py, hoặc `-r requirements.txt` (+ `langgraph`, `python-dotenv`).
 3. Tìm graph từ `langgraph.json` → `graphs`; fallback: quét file `.py` có `StateGraph` và biến `x = ....compile(...)`.
 4. Chạy `runner.py inspect` **trong subprocess bằng python của venv import** (timeout 120s): `graph.get_graph(xray=True)` → nodes/edges (kể cả conditional), JSON schema input/output → state fields, `inspect.getsource` của từng node → module:function + source. Node có dấu hiệu gọi LLM (ChatOpenAI, init_chat_model, bind_tools…) được gắn badge “LLM” (best-effort).
@@ -44,10 +44,12 @@ Giới hạn: graph import là read-only (sửa trên canvas không ảnh hưở
 ## Dark mode
 Nút mặt trăng/mặt trời trên thanh trên cùng (mọi màn hình). Lựa chọn được lưu trong localStorage; có thể ép bằng `?theme=dark`. Giao diện dùng Tailwind CSS v4 + shadcn/ui (theme neutral mặc định), icon lucide-react.
 
-## Test
+## Test & CI
 ```bash
-cd backend && .venv/bin/python -m pytest -q
+cd backend && .venv/bin/python -m pytest -q   # cấu hình trong backend/pyproject.toml
+cd frontend && npm run build && npm run lint
 ```
+GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build trên Node 20/22, có cache) và `factory-verify.yml` (sinh bởi `factory stack apply`). Cài backend thủ công: `pip install -e "backend[dev]"`.
 
 ## Giao diện
 - **Top bar**: tên workflow, Save, Run.

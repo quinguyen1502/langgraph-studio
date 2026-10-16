@@ -1,6 +1,5 @@
 import io, os, tempfile, time, zipfile
 os.environ.setdefault("STUDIO_DB", tempfile.mktemp(suffix=".db"))
-os.environ["STUDIO_IMPORT_DIR"] = tempfile.mkdtemp()
 import pytest
 from fastapi.testclient import TestClient
 from app import importer

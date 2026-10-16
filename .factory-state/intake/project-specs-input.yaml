@@ -137,7 +137,7 @@ tech_stack:
     status: Proposed
   ci_cd:
     value: GitHub Actions
-    status: Proposed
+    status: Approved
   deployment:
     value: Internal host (undecided)
     status: Unknown
@@ -145,7 +145,8 @@ tech_stack:
     value: pytest (backend), tsc + vite build (frontend); Playwright screenshots
     status: Preferred
 commands:
-  install: ./dev.sh (creates backend/.venv and runs npm install on first run)
+  install: './dev.sh (first run: creates backend/.venv, pip install -e "backend[dev]",
+    npm install)'
   run: ./dev.sh (backend :8000, frontend :5173)
   test: cd backend && .venv/bin/python -m pytest -q
   build: cd frontend && npm run build
@@ -156,6 +157,6 @@ commands:
 refinement:
   status: deterministic
   tool: null
-  timestamp: '2026-10-16T12:22:52.214941+00:00'
-  input_sha256: 3451d6af4cc208e3efc5affdf0fb3d74a96636727a8e8fe9f057dc83015e5d5a
-  output_sha256: 86599fa5b1dbc54900f5f7bc41e1c68b639c03407aad401bf464873e655f0b4d
+  timestamp: '2026-10-16T12:34:46.836602+00:00'
+  input_sha256: 5a7f270f64717b39b586d91505f0b4489e1ca429169e2a71e7478974dd9c2102
+  output_sha256: 6e77264107c7993b8a5d6c3140c4b02b1b2f7fe9d0f49c0effab933b5bbf0402

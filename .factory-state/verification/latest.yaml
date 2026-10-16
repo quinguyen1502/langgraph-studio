@@ -1,11 +1,11 @@
 schema_version: 1
-run_id: 20261016T123518140667Z
+run_id: 20261016T123851567134Z
 status: passed
 profile: full
-updated_at: '2026-10-16T12:35:18.140667+00:00'
-source_sha256: 8f5a06e52f44eaa245aeb320339662ef11ffc671fe47d459c870aeb30488d6dc
+updated_at: '2026-10-16T12:38:51.567134+00:00'
+source_sha256: 577ed0de89c72fe3ae0884c797aaebfe04b56c7b318e3d9a9601e3b4eccf06ff
 inputs:
-  backend/pyproject.toml: 78c58124eb0844b1e90bfac108e72eb17e1337517c3da6047ed928387e2f7537
+  backend/pyproject.toml: 8a1fc60eb4737c4bb4ab5e206079e63b6e4eb29f206c933eea8252fc8b8560a6
   backend/requirements.txt: 09e2aa2a5d945e66ea7ea0f2e346f1c1ef1cdb6b0f8eeac1e08e26d201c5a31d
   backend/app/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
   backend/app/auth.py: b18df13479925b2fc3e7504d4263853001bc84937d4af5807010d9854d1eacae
@@ -66,9 +66,9 @@ results:
   source: backend/pyproject.toml
   status: passed
   returncode: 0
-  started_at: '2026-10-16T12:35:08.142043+00:00'
-  duration_seconds: 6.003
-  output_sha256: 20b50c8249b291f267016fef530c6a20a94fe2c4b5e97b61f66deb08b2ddaf21
+  started_at: '2026-10-16T12:38:41.343374+00:00'
+  duration_seconds: 6.16
+  output_sha256: bfff883131e1f2704d32619e15c48f27125b3e792b51d67ed8ca563e68f642cc
 - check_id: node:frontend:build
   kind: build
   working_dir: frontend
@@ -79,9 +79,9 @@ results:
   source: frontend/package.json
   status: passed
   returncode: 0
-  started_at: '2026-10-16T12:35:14.145511+00:00'
-  duration_seconds: 3.569
-  output_sha256: 57608eaabaf2f96461be8d8bc14fb15cc2e66e6fd9bb0171362ecb84f583190b
+  started_at: '2026-10-16T12:38:47.503796+00:00'
+  duration_seconds: 3.535
+  output_sha256: b69655692e7103ad00169677cd4430dd38659690c348c78482f54086c5fe770d
 - check_id: node:frontend:lint
   kind: lint
   working_dir: frontend
@@ -92,6 +92,6 @@ results:
   source: frontend/package.json
   status: passed
   returncode: 0
-  started_at: '2026-10-16T12:35:17.714672+00:00'
-  duration_seconds: 0.426
-  output_sha256: 9d5aad5cd7ac2c276e2088a53aea7d97fc6e9145e89a1805410f34a2fd7a3b0d
+  started_at: '2026-10-16T12:38:51.038797+00:00'
+  duration_seconds: 0.528
+  output_sha256: d5c1bc13d5a365ee7d24e59fa31a76b9206ba3789236d844ab370678c59d2e75

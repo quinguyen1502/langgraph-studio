@@ -14,10 +14,11 @@ dependencies = [
   "httpx",
   "pyjwt",
   "python-multipart",
+  "pytest",  # test runner kept in base deps so `factory deps apply` (pip install -e .) can run verification
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = []
 
 [tool.setuptools]
 packages = ["app", "app.sandbox"]

@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0002
-- Status: doing
+- Status: review
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -82,10 +82,16 @@ Add GitHub Actions CI (backend pytest on Python 3.12; frontend `npm ci && npm ru
 
 ## Activity Log
 
+- 2026-10-16: pytest moved to base deps after clean-clone factory-verify simulation failed (no pytest). Opened Draft PR #1; CI blocked by billing. Moved to review.
+
 - 2026-10-16: Created task during Factory import/onboarding.
 - 2026-10-16: Scope extended per DEC-0005; moved to doing on branch `factory/task-0002-add-github-actions-ci-for-backend-tests-and-frontend-build`.
 - 2026-10-16: Implemented ci.yml, backend/pyproject.toml, tests/conftest.py, import dir default; migrated local imports to ~/.langgraph-studio/imports. Local: pytest 19 passed; factory deps apply OK; factory verify run --profile full PASSED (backend test, frontend build, frontend lint).
 
 ## Handoff Notes
+
+- Draft PR: https://github.com/quinguyen1502/langgraph-studio/pull/1
+- Review: `.factory-state/artifacts/REV-0001-task-0002.md`; QA: `.factory-state/artifacts/QA-0001-task-0002.md`
+- Blocker: GitHub Actions jobs not started due to account billing/spending limit; owner must fix billing and re-run checks before QA can pass.
 
 - Use branch `factory/task-0002-add-github-actions-ci-for-backend-tests-and-frontend-build` when implementation begins.

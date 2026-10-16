@@ -1,11 +1,15 @@
 import asyncio, json, os, re, sqlite3, time, uuid, threading
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, UploadFile, File, Form
+from fastapi import Request, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, Depends, UploadFile, File, Form
 from typing import Optional
 from . import importer
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from .compiler import validate, run_stream, TOOLS, ValidationError
 from .example import EXAMPLE
+from . import limits
+from .limits import cap_event, cap_run, safe_error
 from .auth import hash_password, verify_password, make_token, decode_token, current_user, password_problem, check_secret
 
 DB = os.environ.get("STUDIO_DB", os.path.join(os.path.dirname(__file__), "..", "studio.db"))
@@ -32,7 +36,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 DEMO_EMAIL, DEMO_PW = "admin@example.com", "admin123"
 
 def db():
-    c = sqlite3.connect(DB); c.row_factory = sqlite3.Row; return c
+    c = sqlite3.connect(DB, timeout=15); c.row_factory = sqlite3.Row; return c
 
 def seed_example(c, owner, wid=None):
     wid = wid or uuid.uuid4().hex[:8]
@@ -42,6 +46,7 @@ def seed_example(c, owner, wid=None):
 
 def init_db():
     with db() as c:
+        c.execute("PRAGMA journal_mode=WAL")
         c.execute("CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY, email TEXT UNIQUE, password TEXT, created REAL)")
         c.execute("CREATE TABLE IF NOT EXISTS workflows(id TEXT PRIMARY KEY, name TEXT, data TEXT, updated REAL, owner TEXT)")
         c.execute("CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY, workflow_id TEXT, input TEXT, events TEXT, final_state TEXT, status TEXT, started REAL, ended REAL)")
@@ -55,6 +60,49 @@ def init_db():
         if not c.execute("SELECT 1 FROM workflows WHERE id='example'").fetchone():
             seed_example(c, uid, "example")
 init_db()
+
+# ---------- request models & readable validation errors ----------
+class NodeIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(min_length=1, max_length=64)
+    type: str = Field(min_length=1, max_length=32)
+    position: Optional[dict] = None
+    data: dict = Field(default_factory=dict)
+
+class EdgeIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: str = Field(min_length=1, max_length=64)
+    source: str = Field(min_length=1)
+    target: str = Field(min_length=1)
+    label: Optional[str] = None
+
+class FieldIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    name: str = Field(min_length=1, max_length=64)
+    type: str = "string"
+
+class WorkflowIn(BaseModel):
+    model_config = ConfigDict(extra="allow")
+    id: Optional[str] = None
+    name: Optional[str] = None
+    state: list[FieldIn] = Field(default_factory=list, max_length=200)
+    nodes: list[NodeIn] = Field(default_factory=list, max_length=500)
+    edges: list[EdgeIn] = Field(default_factory=list, max_length=2000)
+
+def _loc(err):
+    return ".".join(str(x) for x in err.get("loc", []) if x != "body") or "body"
+
+@app.exception_handler(RequestValidationError)
+async def readable_422(request, exc: RequestValidationError):
+    errs = [f"{_loc(e)}: {e.get('msg')}" for e in exc.errors()][:10]
+    return JSONResponse(status_code=422, content={"detail": "Dữ liệu không hợp lệ — " + "; ".join(errs), "errors": errs})
+
+async def _limit_body(request: Request):
+    n = int(request.headers.get("content-length") or 0)
+    if n > limits.workflow_max(): raise HTTPException(413, f"Workflow quá lớn (> {limits.workflow_max() // 1024} KB)")
+
+def _wf_dict(m: WorkflowIn) -> dict:
+    return m.model_dump(exclude_none=True)
 
 class Creds(BaseModel):
     email: str
@@ -112,8 +160,9 @@ def get_wf(wid: str, user=Depends(current_user)):
     with db() as c: r = _own(c, wid, user["id"])
     return {"id": r["id"], **json.loads(r["data"])}
 
-@app.post("/api/workflows")
-def save_wf(wf: dict, user=Depends(current_user)):
+@app.post("/api/workflows", dependencies=[Depends(_limit_body)])
+def save_wf(body: WorkflowIn, user=Depends(current_user)):
+    wf = _wf_dict(body)
     wid = wf.get("id") or uuid.uuid4().hex[:8]
     wf = {k: v for k, v in wf.items() if k != "id"}
     with db() as c:
@@ -192,8 +241,8 @@ def import_finalize(jid: str, body: Finalize, user=Depends(current_user)):
         c.execute("INSERT INTO workflows(id,name,data,updated,owner) VALUES(?,?,?,?,?)", (wid, wf["name"], json.dumps(wf, ensure_ascii=False), time.time(), user["id"]))
     return {"id": wid}
 
-@app.post("/api/validate")
-def validate_wf(wf: dict, user=Depends(current_user)): return {"errors": validate(wf)}
+@app.post("/api/validate", dependencies=[Depends(_limit_body)])
+def validate_wf(body: WorkflowIn, user=Depends(current_user)): return {"errors": validate(_wf_dict(body))}
 
 @app.get("/api/workflows/{wid}/runs")
 def runs(wid: str, user=Depends(current_user)):
@@ -202,9 +251,19 @@ def runs(wid: str, user=Depends(current_user)):
         return [{**dict(r), "input": json.loads(r["input"]), "final_state": json.loads(r["final_state"] or "null"), "events": json.loads(r["events"])}
                 for r in c.execute("SELECT * FROM runs WHERE workflow_id=? ORDER BY started DESC LIMIT 50", (wid,))]
 
+def _save_run(rid, wid, inp, events, final, status, t0):
+    events = cap_run([cap_event(e) for e in events])
+    final = cap_event({"state": final})["state"] if final is not None else None
+    with db() as c:
+        c.execute("INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)", (rid, wid or "adhoc", json.dumps(inp, ensure_ascii=False, default=str),
+                  json.dumps(events, ensure_ascii=False, default=str), json.dumps(final, ensure_ascii=False, default=str), status, t0, time.time()))
+
+
 @app.websocket("/ws/run")
 async def ws_run(ws: WebSocket):
-    """Connect with ?token=JWT. Client sends {workflow_id, workflow?, input}; server streams events."""
+    """Connect with ?token=JWT. Client sends {workflow_id, workflow?, input}; server streams events.
+    While running, the client may send {"type": "cancel"}; closing the socket also cancels.
+    Final status: ok | error | cancelled | timeout (stored in run history)."""
     tok = ws.query_params.get("token")
     try:
         p = decode_token(tok or ""); uid = p["sub"]
@@ -213,37 +272,96 @@ async def ws_run(ws: WebSocket):
     await ws.accept()
     try:
         req = await ws.receive_json()
-        wid = req.get("workflow_id")
-        if wid:
-            with db() as c:
-                r = c.execute("SELECT * FROM workflows WHERE id=? AND owner=?", (wid, uid)).fetchone()
-            if not r:
-                await ws.send_json({"type": "error", "errors": ["Không tìm thấy workflow"]}); await ws.close(); return
-        inp = req.get("input", {})
-        stored = json.loads(r["data"]) if wid else {}
-        wf = stored if stored.get("source") else (req.get("workflow") or stored)
-        gen = (lambda: importer.run_imported(wf, dict(inp))) if wf.get("source", {}).get("kind") == "langgraph_import" else (lambda: run_stream(wf, inp))
-        rid = uuid.uuid4().hex[:10]; t0 = time.time(); events = []; final = None; status = "ok"
-        q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop()
-        def worker():
-            try:
-                for ev in gen(): loop.call_soon_threadsafe(q.put_nowait, ev)
-            except ValidationError as e:
-                loop.call_soon_threadsafe(q.put_nowait, {"type": "error", "errors": e.errors})
-            except Exception as e:
-                loop.call_soon_threadsafe(q.put_nowait, {"type": "error", "errors": [f"{type(e).__name__}: {e}"]})
-            loop.call_soon_threadsafe(q.put_nowait, None)
-        start_ev = {"type": "run_started", "run_id": rid, "ts": t0}; events.append(start_ev)
-        await ws.send_json(start_ev)
-        threading.Thread(target=worker, daemon=True).start()
-        while (ev := await q.get()) is not None:
-            ev["ts"] = time.time(); events.append(ev)
-            if ev["type"] == "run_finished": final = ev["state"]
-            if ev["type"] == "error": status = "error"
-            await ws.send_json(ev)
+    except (WebSocketDisconnect, ValueError, KeyError):
+        return
+    if not isinstance(req, dict):
+        await ws.send_json({"type": "error", "errors": ["Yêu cầu phải là JSON object"]}); await ws.close(); return
+    wid = req.get("workflow_id"); r = None
+    if wid:
         with db() as c:
-            c.execute("INSERT INTO runs VALUES(?,?,?,?,?,?,?,?)", (rid, wid or "adhoc", json.dumps(inp, ensure_ascii=False),
-                      json.dumps(events, ensure_ascii=False), json.dumps(final, ensure_ascii=False), status, t0, time.time()))
-        await ws.close()
-    except WebSocketDisconnect:
-        pass
+            r = c.execute("SELECT * FROM workflows WHERE id=? AND owner=?", (wid, uid)).fetchone()
+        if not r:
+            await ws.send_json({"type": "error", "errors": ["Không tìm thấy workflow"]}); await ws.close(); return
+    inp = req.get("input", {})
+    if not isinstance(inp, dict) or limits.size(inp) > limits.input_max():
+        msg = "Input phải là một JSON object" if not isinstance(inp, dict) else f"Input quá lớn (> {limits.input_max() // 1024} KB)"
+        await ws.send_json({"type": "error", "errors": [msg]}); await ws.close(); return
+    stored = json.loads(r["data"]) if r else {}
+    wf = stored if stored.get("source") else (req.get("workflow") or stored)
+    if not isinstance(wf, dict) or limits.size(wf) > limits.workflow_max():
+        await ws.send_json({"type": "error", "errors": ["Workflow không hợp lệ hoặc quá lớn"]}); await ws.close(); return
+    imported = (wf.get("source") or {}).get("kind") == "langgraph_import"
+    gen = (lambda: importer.run_imported(wf, dict(inp))) if imported else (lambda: run_stream(wf, inp))
+    rid = uuid.uuid4().hex[:10]; t0 = time.time(); events = []; final = None; status = "ok"
+    q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop(); cancel = threading.Event()
+
+    def put(x):
+        try: loop.call_soon_threadsafe(q.put_nowait, x)
+        except RuntimeError: pass  # loop closed after client went away
+
+    def worker():
+        g = None
+        try:
+            g = gen()
+            for ev in g:
+                if cancel.is_set(): break  # cooperative cancel between steps
+                put(ev)
+        except ValidationError as e:
+            put({"type": "error", "errors": e.errors})
+        except Exception as e:
+            put({"type": "error", "errors": [safe_error(e)]})
+        finally:
+            if g is not None:
+                try: g.close()  # stops LangGraph stream / kills import subprocess
+                except Exception: pass
+            put(None)
+
+    async def listen():
+        try:
+            while True:
+                m = await ws.receive_json()
+                if isinstance(m, dict) and m.get("type") == "cancel": return "cancelled"
+        except (WebSocketDisconnect, RuntimeError, ValueError):
+            return "disconnected"
+
+    async def send(ev):
+        nonlocal connected
+        if not connected: return
+        try: await ws.send_json(cap_event(ev))
+        except Exception: connected = False
+
+    connected = True
+    start_ev = {"type": "run_started", "run_id": rid, "ts": t0}; events.append(start_ev)
+    await send(start_ev)
+    threading.Thread(target=worker, daemon=True).start()
+    listener = asyncio.create_task(listen()); deadline = t0 + limits.run_timeout(); ended = None
+    while True:
+        get = asyncio.ensure_future(q.get())
+        done, _ = await asyncio.wait({get, listener}, timeout=max(0.0, deadline - time.time()), return_when=asyncio.FIRST_COMPLETED)
+        if get in done:
+            ev = get.result()
+            if ev is None: break
+            ev["ts"] = time.time(); events.append(ev)
+            if ev["type"] == "run_finished": final = ev.get("state")
+            if ev["type"] == "error": status = "error"
+            await send(ev); continue
+        get.cancel()
+        if listener in done:
+            ended = listener.result(); connected = connected and ended == "cancelled"
+        else:
+            ended = "timeout"
+        cancel.set(); break
+    if not listener.done(): listener.cancel()
+    if ended in ("cancelled", "disconnected"):
+        status = "cancelled"
+        ev = {"type": "run_cancelled", "ts": time.time(), "reason": "client" if ended == "cancelled" else "disconnect"}
+        events.append(ev); await send(ev)
+    elif ended == "timeout":
+        status = "timeout"
+        ev = {"type": "error", "status": "timeout", "ts": time.time(),
+              "errors": [f"Run vượt quá thời gian cho phép ({limits.run_timeout():g}s, STUDIO_RUN_TIMEOUT)"]}
+        events.append(ev); await send(ev)
+    await asyncio.to_thread(_save_run, rid, wid, inp, events, final, status, t0)
+    if connected:
+        try: await ws.close()
+        except Exception: pass

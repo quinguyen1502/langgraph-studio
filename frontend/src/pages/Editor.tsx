@@ -20,7 +20,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
@@ -60,6 +61,7 @@ function StatusBadge({ s }: { s?: string }) {
   if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
   if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />done</Badge>
   if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />error</Badge>
+  if (s === 'cancelled') return <Badge variant="secondary" className="gap-1"><Square className="size-3" />cancelled</Badge>
   return null
 }
 
@@ -118,7 +120,7 @@ function Studio() {
   const [traceSel, setTraceSel] = useState<string | null>(null); const [replay, setReplay] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
   const { dark } = useTheme()
-  const rf = useReactFlow(); const idc = useRef(1)
+  const rf = useReactFlow(); const idc = useRef(1); const wsRef = useRef<WebSocket | null>(null)
 
   const load = (wf: any) => {
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
@@ -150,13 +152,14 @@ function Studio() {
     if (!tokenValid()) { setErrors(['Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập…']); setTab('logs'); setTimeout(sessionExpired, 1500); return }
     setLog([]); setErrors([]); setTab('logs'); setRunning(true); setReplay(null); setTraceSel(null)
     setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
-    const ws = new WebSocket(wsUrl('/ws/run'))
+    const ws = new WebSocket(wsUrl('/ws/run')); wsRef.current = ws
     ws.onopen = () => ws.send(JSON.stringify({ workflow_id: wid, workflow: toJSON(), input: inp }))
     ws.onmessage = m => {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
       if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
       if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
       if (ev.type === 'error') { setErrors(ev.errors || []); if (ev.node) mark(ev.node, { _status: 'error' }) }
+      if (ev.type === 'run_cancelled' || (ev.type === 'error' && (ev as any).status === 'timeout')) setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'cancelled' } } : n))
     }
     ws.onerror = () => setErrors(e => e.length ? e : ['Mất kết nối tới máy chủ khi đang chạy'])
     ws.onclose = ev => {
@@ -206,6 +209,7 @@ function Studio() {
       <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
       <Tip tip="Lưu workflow (SQLite)"><Button variant="outline" size="sm" onClick={save}><Save />Save</Button></Tip>
       <Tip tip="Chạy workflow với input hiện tại"><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}Run</Button></Tip>
+      {running && <Tip tip="Dừng run (huỷ giữa các bước)"><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />Cancel</Button></Tip>}
       <Dialog>
         <Tip tip="Xem JSON"><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
         <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>Workflow JSON</DialogTitle><DialogDescription>Định dạng gửi lên backend.</DialogDescription></DialogHeader>
@@ -311,7 +315,8 @@ function Studio() {
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
           <Textarea className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
-          {errors.length > 0 && <ScrollArea className="w-1/2 rounded-md border border-destructive/40 bg-destructive/5 p-2">{errors.map((e, i) => <div key={i} className="text-destructive text-xs">⚠ {e}</div>)}</ScrollArea>}
+          {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{errors.length} lỗi cần sửa</AlertTitle>
+            <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>
         <TabsContent value="logs" className="flex-1 min-h-0">
           <RunTrace trace={trace} events={log as any} meta={traceMeta} selected={traceSel} onSelect={sp => setTraceSel(sp?.key ?? null)}
@@ -322,7 +327,7 @@ function Studio() {
             {!history.length && <span className="text-muted-foreground text-xs">Chưa có lần chạy nào.</span>}
             {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setReplay(h.id); setTraceSel(null); setTab('logs') }}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'secondary' : 'destructive'}>{h.status}</Badge>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{h.status}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString()}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               <span className="truncate">{JSON.stringify(h.input)}</span>

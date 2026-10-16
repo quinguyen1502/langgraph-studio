@@ -54,6 +54,30 @@ Giới hạn: graph import là read-only (sửa trên canvas không ảnh hưở
 - "Raw events" hiện luồng sự kiện gốc; tab History replay dùng cùng timeline.
 - `STUDIO_RECURSION_LIMIT` (mặc định 25) giới hạn số bước mỗi run để vòng lặp vô hạn dừng sớm; mỗi payload trong event bị cắt ở 16 000 ký tự JSON.
 
+## Giới hạn runtime, huỷ & timeout (TASK-0004)
+| Biến môi trường | Mặc định | Ý nghĩa |
+|---|---|---|
+| `STUDIO_RECURSION_LIMIT` | 25 | Số bước tối đa mỗi run (vòng lặp qua Condition sẽ dừng với lỗi) |
+| `STUDIO_RUN_TIMEOUT` | 120 (giây) | Thời gian tối đa mỗi run → trạng thái `timeout` |
+| `STUDIO_EVENT_MAX_BYTES` | 262144 (256 KB) | Kích thước tối đa 1 event (gửi + lưu); trường quá lớn thay bằng `{"_truncated": true, ...}` |
+| `STUDIO_RUN_MAX_BYTES` | 2097152 (2 MB) | Tổng event lưu cho 1 run; phần giữa bị bỏ, thay bằng event `{"type":"truncated","dropped":n}` |
+| `STUDIO_INPUT_MAX_BYTES` | 262144 | Kích thước input của run |
+| `STUDIO_WORKFLOW_MAX_BYTES` | 1048576 | Kích thước workflow JSON (HTTP 413 nếu vượt) |
+
+Ngoài ra trường `input`/`delta` trong timeline được cắt ở 16 000 ký tự JSON (TASK-0016) để giao diện nhẹ — lớp cắt nhỏ hơn, nằm trong giới hạn 256 KB/event.
+- Nút **Cancel** (khi đang chạy) gửi `{"type":"cancel"}`; đóng tab/mất kết nối cũng huỷ run. Huỷ là *cooperative*: dừng giữa các bước, một lời gọi LLM/HTTP đang chạy có thể chạy xong ở nền. Trạng thái lưu: `ok`, `error`, `cancelled`, `timeout`.
+- Lỗi trả về chỉ là 1 dòng, không có stack trace; khoá dạng `sk-…`, `Bearer …`, `api_key=…` bị che.
+- Validator từ chối: edge trỏ node không tồn tại, trùng id, nhiều Start, node tự nối (trừ Condition), vòng lặp không đi qua Condition, node không đi tới được.
+- `STUDIO_ENABLE_DEMO_TOOLS=1` bật tool `sleep_demo` (ngủ 1.5 s) chỉ để thử cancel/timeout (E2E dùng).
+
+### Kiểm thử thủ công với provider thật
+1. `export OPENAI_API_KEY=sk-...` (key của bạn; không commit) rồi `./dev.sh`. Badge góc phải editor phải hiện `LLM: openai`.
+2. Đăng nhập `admin@example.com / admin123`, mở **Customer Support (example)**, bấm **Run** với input mặc định.
+3. Kỳ vọng: timeline đủ các bước, `Classify intent` trả `order_status`, `Reply with order info` có câu trả lời thật (không có tiền tố `[mock:`). Trạng thái `Hoàn thành`.
+4. Thử lỗi: đặt key sai → run kết thúc `Lỗi` với thông báo 1 dòng `HTTPStatusError: …401…`, key bị che. Thử Cancel trong lúc chạy.
+5. Ghi kết quả vào `.factory-state/artifacts/QA-0005-task-0004.md` (mục "Manual real-provider E2E").
+Khi TASK-0005 (PR #2, credentials theo workflow) được merge, làm lại bước 2–4 với credential lưu trong app.
+
 ## Dark mode
 Nút mặt trăng/mặt trời trên thanh trên cùng (mọi màn hình). Lựa chọn được lưu trong localStorage; có thể ép bằng `?theme=dark`. Giao diện dùng Tailwind CSS v4 + shadcn/ui (theme neutral mặc định), icon lucide-react.
 

@@ -220,6 +220,7 @@ def run_imported(wf: dict, inp: dict, on_proc=None):
         p.wait()
     finally:
         timer.cancel()
+        if p.poll() is None: p.kill()  # generator closed early (cancel/timeout) -> stop the subprocess
     if not got_end:
         err = p.stderr.read()[-800:]
         yield {"type": "error", "errors": [f"Subprocess kết thúc bất thường (code {p.returncode}, có thể timeout {RUN_TIMEOUT}s). {err}"]}

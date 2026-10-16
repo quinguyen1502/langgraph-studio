@@ -21,7 +21,7 @@ export default defineConfig({
     {
       command: `${process.env.E2E_UVICORN || '.venv/bin/uvicorn'} app.main:app --host 127.0.0.1 --port ${API}`,
       cwd: '../backend', url: `http://127.0.0.1:${API}/api/health`, reuseExistingServer: false, timeout: 60_000,
-      env: { STUDIO_DB: db, STUDIO_IMPORT_DIR: path.join(os.tmpdir(), 'lgs-e2e-imports'), OPENAI_API_KEY: '' },
+      env: { STUDIO_DB: db, STUDIO_IMPORT_DIR: path.join(os.tmpdir(), 'lgs-e2e-imports'), OPENAI_API_KEY: '', STUDIO_ENABLE_DEMO_TOOLS: '1', STUDIO_RUN_TIMEOUT: '5' },
     },
     {
       command: `npx vite --host 127.0.0.1 --port ${UI} --strictPort`,

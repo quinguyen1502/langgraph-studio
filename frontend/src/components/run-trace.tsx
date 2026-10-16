@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AlertTriangle, CheckCircle2, Clock, Coins, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Ban, CheckCircle2, Clock, TimerOff, Coins, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -18,13 +18,15 @@ type Meta = (type: string) => { icon: LucideIcon; color: string; label: string }
 const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; className?: string }) =>
   s === 'running' ? <Loader2 className={cn('size-4 animate-spin text-warning', className)} />
   : s === 'error' ? <XCircle className={cn('size-4 text-destructive', className)} />
+  : s === 'cancelled' ? <Ban className={cn('size-4 text-muted-foreground', className)} />
+  : s === 'timeout' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />
   : <CheckCircle2 className={cn('size-4 text-success', className)} />
 
-const STATUS_TEXT = { idle: 'Chưa chạy', running: 'Đang chạy', ok: 'Hoàn thành', error: 'Lỗi' } as const
+const STATUS_TEXT = { idle: 'Chưa chạy', running: 'Đang chạy', ok: 'Hoàn thành', error: 'Lỗi', cancelled: 'Đã huỷ', timeout: 'Quá thời gian' } as const
 
 function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; replay?: string; onExitReplay?: () => void; raw: boolean; setRaw: (b: boolean) => void }) {
-  return <div id="trace-summary" data-status={trace.status} className={cn('flex items-center gap-3 border-b px-3 py-1.5 text-xs', trace.status === 'error' && 'bg-destructive/5')}>
+  return <div id="trace-summary" data-status={trace.status} className={cn('flex items-center gap-3 border-b px-3 py-1.5 text-xs', (trace.status === 'error') && 'bg-destructive/5', trace.status === 'timeout' && 'bg-warning/10', trace.status === 'cancelled' && 'bg-muted')}>
     <span className="flex items-center gap-1.5 font-medium"><StatusIcon s={trace.status} />{STATUS_TEXT[trace.status]}</span>
     <Separator orientation="vertical" className="h-4" />
     <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3.5" />{fmtMs(trace.total)}</span>
@@ -112,7 +114,8 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('break-all', e.type === 'error' && 'text-destructive')}><span className="text-muted-foreground">{i}</span> {JSON.stringify(e)}</div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
-          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant="destructive" className="mx-3 my-1 w-auto py-2"><AlertTriangle /><AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
+          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'default' : 'destructive'} id="trace-run-error" className={cn('mx-3 my-1 w-auto py-2', trace.status === 'timeout' && 'border-warning/40 bg-warning/10 text-warning')}>{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
+          {trace.status === 'cancelled' && <Alert className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">Run đã bị huỷ{events.some(e => e.reason === 'disconnect') ? ' (mất kết nối)' : ''}. Các bước chưa xong được đánh dấu huỷ.</AlertDescription></Alert>}
           {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">Done · final state: {Object.keys(trace.final || {}).length} keys</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}

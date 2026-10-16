@@ -194,36 +194,42 @@ class RunService:
             except Exception: pass  # fan-out is best effort; the socket and history stay authoritative
             if connected: connected = await send(cap_event(ev))
 
-        await emit({"type": "run_resumed" if prev else "run_started", "run_id": rid, "ts": t0,
-                    **({"node": plan.resume["node"], "response": plan.resume["value"]} if prev else {})})
-        threading.Thread(target=worker, daemon=True).start()
-        listener = asyncio.create_task(listen()); deadline = t0 + config.run_timeout(); ended = None
-        while True:
-            get = asyncio.ensure_future(q.get())
-            done, _ = await asyncio.wait({get, listener}, timeout=max(0.0, deadline - time.time()), return_when=asyncio.FIRST_COMPLETED)
-            if get in done:
-                ev = get.result()
-                if ev is None: break
-                if ev is CANCEL_API: ended = "api"; cancel.set(); break
-                ev = _normalise(ev); ev["ts"] = time.time()
-                if ev["type"] == "run_finished": final = ev.get("state")
-                if ev["type"] == "error": status = "error"
-                if ev["type"] == "run_waiting": status = "waiting"; checkpoint = {**ev.pop("checkpoint"), "workflow": plan.workflow}
-                await emit(ev); continue
-            get.cancel()
-            if listener in done:
-                ended = listener.result(); connected = connected and ended == "cancelled"
-            else:
-                ended = "timeout"
-            cancel.set(); break
-        if not listener.done(): listener.cancel()
-        if ended in ("cancelled", "disconnected", "api"):
-            status = "cancelled"
-            reason = {"cancelled": "client", "disconnected": "disconnect"}.get(ended, "api")
-            await emit({"type": "run_cancelled", "ts": time.time(), "reason": reason})
-        elif ended == "timeout":
-            status = "timeout"
-            await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))
+        try:
+            await emit({"type": "run_resumed" if prev else "run_started", "run_id": rid, "ts": t0,
+                        **({"node": plan.resume["node"], "response": plan.resume["value"]} if prev else {})})
+            threading.Thread(target=worker, daemon=True).start()
+            listener = asyncio.create_task(listen()); deadline = t0 + config.run_timeout(); ended = None
+            while True:
+                get = asyncio.ensure_future(q.get())
+                done, _ = await asyncio.wait({get, listener}, timeout=max(0.0, deadline - time.time()), return_when=asyncio.FIRST_COMPLETED)
+                if get in done:
+                    ev = get.result()
+                    if ev is None: break
+                    if ev is CANCEL_API: ended = "api"; cancel.set(); break
+                    ev = _normalise(ev); ev["ts"] = time.time()
+                    if ev["type"] == "run_finished": final = ev.get("state")
+                    if ev["type"] == "error": status = "error"
+                    if ev["type"] == "run_waiting": status = "waiting"; checkpoint = {**ev.pop("checkpoint"), "workflow": plan.workflow}
+                    await emit(ev); continue
+                get.cancel()
+                if listener in done:
+                    ended = listener.result(); connected = connected and ended == "cancelled"
+                else:
+                    ended = "timeout"
+                cancel.set(); break
+            if not listener.done(): listener.cancel()
+            if ended in ("cancelled", "disconnected", "api"):
+                status = "cancelled"
+                reason = {"cancelled": "client", "disconnected": "disconnect"}.get(ended, "api")
+                await emit({"type": "run_cancelled", "ts": time.time(), "reason": reason})
+            elif ended == "timeout":
+                status = "timeout"
+                await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))
+        except asyncio.CancelledError:  # handler cancelled (server shutdown / client gone mid-await): still keep history
+            cancel.set(); status = "cancelled"
+            events.append({"type": "run_cancelled", "ts": time.time(), "reason": "disconnect"})
+            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None))
+            raise
         summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

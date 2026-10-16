@@ -3,37 +3,38 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0010
+- Task ID: TASK-0006
+- Previous ID: TASK-0005 (renumbered 2026-10-16, DEC-0007)
 - Status: backlog
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
-- Requirement IDs: REQ-0006
+- Requirement IDs: REQ-0003
 - Design IDs:
 - Architecture IDs: ARCH-0001
 
 ## Objective
 
-Implement REQ-0006: Support subgraphs and parallel branches in the builder.
+Implement REQ-0003: Add human-in-the-loop interrupt and resume.
 
 ## Scope
 
 ### In Scope
 
-- Deliver the in-scope items of `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
+- Deliver the in-scope items of `.factory-state/artifacts/REQ-0003-human-in-the-loop.md`
 
 ### Out Of Scope
 
-- Out-of-scope items listed in REQ-0006
+- Out-of-scope items listed in REQ-0003
 
 ## Inputs
 
-- `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
+- `.factory-state/artifacts/REQ-0003-human-in-the-loop.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
 ## Related Artifacts
 
-- Requirement: `.factory-state/artifacts/REQ-0006-subgraphs-parallel.md`
+- Requirement: `.factory-state/artifacts/REQ-0003-human-in-the-loop.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
 
@@ -52,9 +53,9 @@ Implement REQ-0006: Support subgraphs and parallel branches in the builder.
 
 ## Acceptance Criteria
 
-- A workflow containing a subgraph node compiles and runs, emitting events for inner nodes
-- Two parallel branches run in the same superstep and their outputs merge via declared reducers
-- Cycles between workflows via subgraph references are rejected by validation
+- A run reaching an interrupt node stops with status `waiting` and is listed as pending
+- Submitting a response resumes the same run from the checkpoint and completes
+- Resume works after a server restart (persistent checkpointer)
 
 ## Validation Plan
 
@@ -68,12 +69,13 @@ Implement REQ-0006: Support subgraphs and parallel branches in the builder.
 
 ## Open Questions
 
-- Which state reducers must be supported (append list, merge dict)?
+- Who may approve: owner only or any authenticated user?
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0005 -> TASK-0006 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0010-support-subgraphs-and-parallel-branches-in-the-builder` when implementation begins.
+- Use branch `factory/task-0006-add-human-in-the-loop-interrupt-and-resume` when implementation begins.

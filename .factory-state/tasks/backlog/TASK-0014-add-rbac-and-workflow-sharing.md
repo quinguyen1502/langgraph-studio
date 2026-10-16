@@ -3,37 +3,38 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0008
+- Task ID: TASK-0014
+- Previous ID: TASK-0013 (renumbered 2026-10-16, DEC-0007)
 - Status: backlog
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
-- Requirement IDs: REQ-0008
+- Requirement IDs: REQ-0012
 - Design IDs:
 - Architecture IDs: ARCH-0001
 
 ## Objective
 
-Implement REQ-0008: Move to Postgres and Redis with Docker Compose.
+Implement REQ-0012: Add RBAC and workflow sharing.
 
 ## Scope
 
 ### In Scope
 
-- Deliver the in-scope items of `.factory-state/artifacts/REQ-0008-postgres-redis-compose.md`
+- Deliver the in-scope items of `.factory-state/artifacts/REQ-0012-rbac-sharing.md`
 
 ### Out Of Scope
 
-- Out-of-scope items listed in REQ-0008
+- Out-of-scope items listed in REQ-0012
 
 ## Inputs
 
-- `.factory-state/artifacts/REQ-0008-postgres-redis-compose.md`
+- `.factory-state/artifacts/REQ-0012-rbac-sharing.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
 ## Related Artifacts
 
-- Requirement: `.factory-state/artifacts/REQ-0008-postgres-redis-compose.md`
+- Requirement: `.factory-state/artifacts/REQ-0012-rbac-sharing.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
 
@@ -52,9 +53,9 @@ Implement REQ-0008: Move to Postgres and Redis with Docker Compose.
 
 ## Acceptance Criteria
 
-- `docker compose up` starts the full stack and the seeded example runs end to end
-- Schema managed by migrations (e.g. Alembic)
-- Existing tests run against Postgres in CI
+- A viewer can open and run but not edit a shared workflow
+- An editor can edit; only owner/admin can delete or share
+- All existing ownership tests still pass
 
 ## Validation Plan
 
@@ -68,12 +69,13 @@ Implement REQ-0008: Move to Postgres and Redis with Docker Compose.
 
 ## Open Questions
 
-- Keep SQLite as a supported dev mode?
+- Is SSO (Google/Microsoft) required with RBAC?
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0013 -> TASK-0014 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0008-move-to-postgres-and-redis-with-docker-compose` when implementation begins.
+- Use branch `factory/task-0014-add-rbac-and-workflow-sharing` when implementation begins.

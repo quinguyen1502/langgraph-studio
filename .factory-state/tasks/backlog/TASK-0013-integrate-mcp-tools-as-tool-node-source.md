@@ -3,37 +3,38 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0004
+- Task ID: TASK-0013
+- Previous ID: TASK-0012 (renumbered 2026-10-16, DEC-0007)
 - Status: backlog
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
-- Requirement IDs: REQ-0009
+- Requirement IDs: REQ-0011
 - Design IDs:
 - Architecture IDs: ARCH-0001
 
 ## Objective
 
-Implement REQ-0009: Run repo imports inside a container sandbox.
+Implement REQ-0011: Integrate MCP tools as Tool node source.
 
 ## Scope
 
 ### In Scope
 
-- Deliver the in-scope items of `.factory-state/artifacts/REQ-0009-sandboxed-imports.md`
+- Deliver the in-scope items of `.factory-state/artifacts/REQ-0011-mcp-tools.md`
 
 ### Out Of Scope
 
-- Out-of-scope items listed in REQ-0009
+- Out-of-scope items listed in REQ-0011
 
 ## Inputs
 
-- `.factory-state/artifacts/REQ-0009-sandboxed-imports.md`
+- `.factory-state/artifacts/REQ-0011-mcp-tools.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
 ## Related Artifacts
 
-- Requirement: `.factory-state/artifacts/REQ-0009-sandboxed-imports.md`
+- Requirement: `.factory-state/artifacts/REQ-0011-mcp-tools.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
 
@@ -52,9 +53,9 @@ Implement REQ-0009: Run repo imports inside a container sandbox.
 
 ## Acceptance Criteria
 
-- Import and run of `new-langgraph-project` succeed inside the container with identical events
-- Imported code cannot read files outside its import directory or the server environment
-- A run exceeding limits is killed and reported as an error event
+- A configured MCP server's tools are listed in the Tool node config
+- Running the node calls the MCP tool and writes the result to the output field
+- MCP failures surface as node error events
 
 ## Validation Plan
 
@@ -68,12 +69,13 @@ Implement REQ-0009: Run repo imports inside a container sandbox.
 
 ## Open Questions
 
-- Container runtime available on the target host (Docker, gVisor, Firecracker)?
+- Which MCP servers are needed first?
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0012 -> TASK-0013 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0004-run-repo-imports-inside-a-container-sandbox` when implementation begins.
+- Use branch `factory/task-0013-integrate-mcp-tools-as-tool-node-source` when implementation begins.

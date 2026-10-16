@@ -4,13 +4,15 @@
 
 - Project: langgraph-studio
 - Decision ID: DEC-0004
-- Status: Accepted
+- Status: Superseded by DEC-0007 (2026-10-16)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Related Requirements: REQ-0001
 - Related Architecture: ARCH-0001
-- Related Tasks: TASK-0002, TASK-0003, TASK-0004
+- Related Tasks: TASK-0002, TASK-0005 (old TASK-0003), TASK-0015 (old TASK-0004)
+
+> Superseded by DEC-0007: phased re-plan and task renumbering. Task IDs below are the **old** IDs; see `docs/factory-task-renumbering.md`.
 
 ## Context
 

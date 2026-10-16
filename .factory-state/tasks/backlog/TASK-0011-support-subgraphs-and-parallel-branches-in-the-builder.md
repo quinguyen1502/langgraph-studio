@@ -3,7 +3,8 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0010
+- Task ID: TASK-0011
+- Previous ID: TASK-0010 (renumbered 2026-10-16, DEC-0007)
 - Status: backlog
 - Owner:
 - Created: 2026-10-16
@@ -72,8 +73,9 @@ Implement REQ-0006: Support subgraphs and parallel branches in the builder.
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0010 -> TASK-0011 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 
 ## Handoff Notes
 
-- Use branch `factory/task-0010-support-subgraphs-and-parallel-branches-in-the-builder` when implementation begins.
+- Use branch `factory/task-0011-support-subgraphs-and-parallel-branches-in-the-builder` when implementation begins.

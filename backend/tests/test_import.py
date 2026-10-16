@@ -30,7 +30,7 @@ def test_reject_bad_url_and_zip_slip():
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z: z.writestr("../evil.txt", "x")
     jid = importer.start_job("u", "zip", zip_bytes=buf.getvalue(), sync=True)
-    assert importer.JOBS[jid]["status"] == "error" and "không an toàn" in importer.JOBS[jid]["error"]
+    assert importer.JOBS[jid]["status"] == "error" and "unsafe path" in importer.JOBS[jid]["error"]
 
 def test_inspect_and_convert(job):
     assert job["graphs"][0]["id"] == "router" and job["required_env"] == ["OPENAI_API_KEY"]
@@ -58,19 +58,19 @@ def test_run_missing_key_is_clear_error(job):
 
 def test_api_import_finalize_ws():
     c = TestClient(app)
-    tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["token"]
+    tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
     H = {"Authorization": f"Bearer {tok}"}
-    jid = c.post("/api/import", files={"file": ("r.zip", zip_dir(os.path.join(FIX, "cond_repo")), "application/zip")}, headers=H).json()["job_id"]
+    jid = c.post("/api/import", files={"file": ("r.zip", zip_dir(os.path.join(FIX, "cond_repo")), "application/zip")}, headers=H).json()["data"]["job_id"]
     for _ in range(240):
-        st = c.get(f"/api/import/{jid}", headers=H).json()
+        st = c.get(f"/api/import/{jid}", headers=H).json()["data"]
         if st["status"] in ("ready", "error"): break
         time.sleep(0.5)
     assert st["status"] == "ready", st
-    wid = c.post(f"/api/import/{jid}/finalize", json={"graph_id": "router"}, headers=H).json()["id"]
-    wf = c.get(f"/api/workflows/{wid}", headers=H).json(); assert wf["source"]["kind"] == "langgraph_import"
+    wid = c.post(f"/api/import/{jid}/finalize", json={"graph_id": "router"}, headers=H).json()["data"]["id"]
+    wf = c.get(f"/api/workflows/{wid}", headers=H).json()["data"]; assert wf["source"]["kind"] == "langgraph_import"
     # client cannot tamper with source on save
     c.post("/api/workflows", json={**wf, "source": {"kind": "langgraph_import", "repo_dir": "/tmp"}}, headers=H)
-    assert c.get(f"/api/workflows/{wid}", headers=H).json()["source"]["repo_dir"] == wf["source"]["repo_dir"]
+    assert c.get(f"/api/workflows/{wid}", headers=H).json()["data"]["source"]["repo_dir"] == wf["source"]["repo_dir"]
     with c.websocket_connect(f"/ws/run?token={tok}") as ws:
         ws.send_json({"workflow_id": wid, "input": {"text": "why?"}})
         evs = []

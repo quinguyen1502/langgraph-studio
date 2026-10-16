@@ -6,7 +6,7 @@ import asyncio, json, threading, time, uuid
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Iterator, Optional
 from ..core import config
-from ..core.errors import BadRequest, NotFound
+from ..core.errors import CATALOG, AppError
 from ..engine import repo_import
 from ..engine.errors import ValidationError
 from ..engine.limits import cap_event, cap_run, safe_error, size
@@ -31,6 +31,22 @@ class RunPlan:
         return run_stream(self.workflow, self.input, self.resolve)
 
 
+def error_event(error: dict, **extra) -> dict:
+    """WebSocket error event: structured `error` {code, message, details?} plus the legacy `errors` list."""
+    details = error.get("details")
+    return {"type": "error", **extra, "error": error,
+            "errors": details if isinstance(details, list) and details else [error["message"]]}
+
+
+def _normalise(ev: dict) -> dict:
+    """Give engine/sandbox error events (which only carry `errors`) the structured `error` field."""
+    if ev.get("type") != "error" or "error" in ev: return ev
+    msgs = ev.get("errors") or [CATALOG["RUN_FAILED"][1]]
+    code = ev.pop("code", None) or ("NODE_FAILED" if ev.get("node") else "RUN_FAILED")
+    ev["error"] = {"code": code, "message": msgs[0], **({"details": msgs} if len(msgs) > 1 else {})}
+    return ev
+
+
 def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 
@@ -41,22 +57,22 @@ class RunService:
 
     # ---- planning / validation of the client request ----
     def plan(self, uid: str, req) -> RunPlan:
-        if not isinstance(req, dict): raise BadRequest("Yêu cầu phải là JSON object")
+        if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
         wid = req.get("workflow_id"); row = None
         if wid:
             row = self.workflows.get_owned(wid, uid)
-            if row is None: raise NotFound("Không tìm thấy workflow")
+            if row is None: raise AppError("WORKFLOW_NOT_FOUND")
         inp = req.get("input", {})
-        if not isinstance(inp, dict): raise BadRequest("Input phải là một JSON object")
-        if size(inp) > config.input_max(): raise BadRequest(f"Input quá lớn (> {config.input_max() // 1024} KB)")
+        if not isinstance(inp, dict): raise AppError("RUN_INPUT_INVALID")
+        if size(inp) > config.input_max(): raise AppError("RUN_INPUT_TOO_LARGE", max_kb=config.input_max() // 1024)
         stored = json.loads(row.data or "{}") if row else {}
         wf = stored if stored.get("source") else (req.get("workflow") or stored)
-        if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise BadRequest("Workflow không hợp lệ hoặc quá lớn")
+        if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
         return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None)
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
-        if self.workflows.get_owned(wid, uid) is None: raise NotFound("Không tìm thấy workflow")
+        if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
                  "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended}
                 for r in self.runs.list_for_workflow(wid)]
@@ -88,9 +104,11 @@ class RunService:
                     if cancel.is_set(): break  # cooperative cancel between steps
                     put(ev)
             except ValidationError as e:
-                put({"type": "error", "errors": e.errors})
+                put(error_event(AppError("WORKFLOW_INVALID", details=e.errors).to_dict()))
+            except AppError as e:
+                put(error_event(e.to_dict()))
             except Exception as e:
-                put({"type": "error", "errors": [safe_error(e)]})
+                put(error_event({"code": "RUN_FAILED", "message": safe_error(e)}))
             finally:
                 if g is not None:
                     try: g.close()  # stops LangGraph stream / kills import subprocess
@@ -111,7 +129,7 @@ class RunService:
             if get in done:
                 ev = get.result()
                 if ev is None: break
-                ev["ts"] = time.time()
+                ev = _normalise(ev); ev["ts"] = time.time()
                 if ev["type"] == "run_finished": final = ev.get("state")
                 if ev["type"] == "error": status = "error"
                 await emit(ev); continue
@@ -127,7 +145,6 @@ class RunService:
             await emit({"type": "run_cancelled", "ts": time.time(), "reason": "client" if ended == "cancelled" else "disconnect"})
         elif ended == "timeout":
             status = "timeout"
-            await emit({"type": "error", "status": "timeout", "ts": time.time(),
-                        "errors": [f"Run vượt quá thời gian cho phép ({config.run_timeout():g}s, STUDIO_RUN_TIMEOUT)"]})
+            await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))
         await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, t0)
         return status

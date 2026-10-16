@@ -11,6 +11,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
+    locale: 'vi-VN', // existing specs assert Vietnamese UI text; i18n.spec.ts covers English + switching
     baseURL: `http://127.0.0.1:${UI}`,
     headless: true,
     trace: 'retain-on-failure',

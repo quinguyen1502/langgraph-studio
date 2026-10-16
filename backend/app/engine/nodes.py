@@ -17,7 +17,7 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None):
         def fn(state):
             cred = None
             if d.get("credential_id"):
-                if resolve is None: raise LLMError("Node dùng credential nhưng không có resolver")
+                if resolve is None: raise LLMError("Node uses a credential but no resolver is available")
                 cred = resolve(d["credential_id"])
             return {d["output_field"]: call_llm(render(d.get("prompt", ""), state), d.get("model", "gpt-4o-mini"), cred)}
     elif t == "tool":

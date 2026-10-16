@@ -119,7 +119,7 @@ test('list: rename / duplicate / delete with confirm, edge cases, not-found', as
 test('100+ workflows render and filter quickly', async ({ page, request }) => {
   const email = `e2e-${uid()}@example.com`
   const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } })
-  const { token, user } = await r.json()
+  const { token, user } = (await r.json()).data
   await Promise.all(Array.from({ length: 110 }, (_, i) => request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: { name: `Bulk ${String(i).padStart(3, '0')}`, nodes: [], edges: [] } })))
   await page.goto('/login'); await page.evaluate(([t, u]) => { localStorage.setItem('token', t); localStorage.setItem('user', JSON.stringify(u)) }, [token, user] as const)
   await page.goto('/workflows')

@@ -36,7 +36,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None):
                 for k in mapping:  # case-insensitive / contains fallback
                     if k.lower() == v.lower() or k.lower() in v.lower(): return k
                 if default and default in mapping: return default
-                raise ValueError(f"Condition '{label}' ({nid}): giá trị {field}='{v[:100]}' không khớp label nào {list(mapping)} và không có default")
+                raise ValueError(f"Condition '{label}' ({nid}): value {field}='{v[:100]}' matches no label {list(mapping)} and there is no default")
             g.add_conditional_edges(nid, router, mapping)
         else:
             for e in out:

@@ -14,7 +14,7 @@ const slow = (n: number, name: string) => {
 }
 async function open(page: Page, token: string | null, wf: object) {
   const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })
-  await page.goto(`/workflows/${(await r.json()).id}`)
+  await page.goto(`/workflows/${(await r.json()).data.id}`)
 }
 
 
@@ -27,15 +27,15 @@ test('cancel a running workflow', async ({ page }) => {
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'cancelled', { timeout: 5000 })
   await expect(page.locator('#trace-cancelled')).toBeVisible()
   await expect(page.locator('#cancel-btn')).toHaveCount(0)
-  await page.getByRole('tab', { name: 'History' }).click()
-  await expect(page.locator('[role=tabpanel]').getByText('cancelled').first()).toBeVisible()
+  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await expect(page.locator('[role=tabpanel]').getByText('đã huỷ').first()).toBeVisible()
 })
 
 test('run timeout shows timeout status', async ({ page }) => {
   const t = await admin(page); await open(page, t, slow(6, 'Slow demo (timeout)'))
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'timeout', { timeout: 15000 })
-  await expect(page.locator('#trace-run-error')).toContainText('STUDIO_RUN_TIMEOUT')
+  await expect(page.locator('#trace-run-error')).toContainText('Run vượt quá thời gian cho phép (5s)') // RUN_TIMEOUT translated; seconds from error.details
 })
 
 test('validation errors are listed clearly', async ({ page }) => {
@@ -50,6 +50,6 @@ test('validation errors are listed clearly', async ({ page }) => {
   await page.locator('#run-btn').click()
   await page.getByRole('tab', { name: 'Input' }).click()
   const box = page.locator('#validation-errors')
-  await expect(box).toContainText('Vòng lặp không qua Condition')
-  await expect(box).toContainText('không đi tới được từ Start')
+  await expect(box).toContainText('Loop without a Condition') // validator details stay English (server messages)
+  await expect(box).toContainText('is not reachable from Start')
 })

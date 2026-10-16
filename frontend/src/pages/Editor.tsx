@@ -23,6 +23,9 @@ import { useParams, Link } from 'react-router-dom'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
+import i18n, { eventErrors } from '@/lib/i18n'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '@/components/language-switcher'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 import type { Credential } from '@/components/credentials-dialog'
@@ -30,15 +33,16 @@ import { RunTrace } from '@/components/run-trace'
 import { buildTrace } from '@/lib/trace'
 
 type Field = { name: string; type: string }
-type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
-const META: Record<string, { label: string; icon: LucideIcon; color: string; accent: string; desc: string }> = {
-  start: { label: 'Start', icon: CirclePlay, color: 'bg-node-start-muted text-node-start', accent: 'bg-node-start', desc: 'Điểm bắt đầu' },
-  llm: { label: 'LLM', icon: Brain, color: 'bg-node-llm-muted text-node-llm', accent: 'bg-node-llm', desc: 'Gọi model với prompt' },
-  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-node-tool-muted text-node-tool', accent: 'bg-node-tool', desc: 'HTTP hoặc Python function' },
-  condition: { label: 'Condition', icon: GitBranch, color: 'bg-node-condition-muted text-node-condition', accent: 'bg-node-condition', desc: 'Rẽ nhánh theo state field' },
-  end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end', desc: 'Kết thúc' },
+type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
+/** `desc` is resolved via i18n key `nodes.<type>`. */
+const META: Record<string, { label: string; icon: LucideIcon; color: string; accent: string }> = {
+  start: { label: 'Start', icon: CirclePlay, color: 'bg-node-start-muted text-node-start', accent: 'bg-node-start' },
+  llm: { label: 'LLM', icon: Brain, color: 'bg-node-llm-muted text-node-llm', accent: 'bg-node-llm' },
+  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-node-tool-muted text-node-tool', accent: 'bg-node-tool' },
+  condition: { label: 'Condition', icon: GitBranch, color: 'bg-node-condition-muted text-node-condition', accent: 'bg-node-condition' },
+  end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end' },
 }
-META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code', desc: 'Node Python từ repo import' }
+META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
 const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
@@ -49,20 +53,21 @@ function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
 }
 const styleEdges = (es: any[]): Edge[] => es.map(e => e.conditional ? { ...e, animated: true, style: { strokeDasharray: '6 4' }, labelBgPadding: [6, 3], labelBgBorderRadius: 4 } : e)
 function defaultInput(state: Field[]) {
-  return JSON.stringify(Object.fromEntries(state.map(f => [f.name, f.type === 'list' ? [{ role: 'user', content: 'Xin chào!' }] : f.type === 'number' || f.type === 'integer' ? 0 : f.type === 'boolean' ? false : f.type === 'object' ? {} : 'hello'])), null, 2)
+  return JSON.stringify(Object.fromEntries(state.map(f => [f.name, f.type === 'list' ? [{ role: 'user', content: i18n.t('samples.greeting') }] : f.type === 'number' || f.type === 'integer' ? 0 : f.type === 'boolean' ? false : f.type === 'object' ? {} : 'hello'])), null, 2)
 }
 const DEFAULTS: Record<string, any> = {
   start: { label: 'Start' }, end: { label: 'End' },
-  llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: 'Trả lời: {{state.message}}', output_field: '' },
+  llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: '', output_field: '' }, // prompt comes from i18n `samples.prompt` on drop
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
 }
 
 function StatusBadge({ s }: { s?: string }) {
-  if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
-  if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />done</Badge>
-  if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />error</Badge>
-  if (s === 'cancelled') return <Badge variant="secondary" className="gap-1"><Square className="size-3" />cancelled</Badge>
+  const { t } = useTranslation()
+  if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />{t('status.running')}</Badge>
+  if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />{t('status.done')}</Badge>
+  if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />{t('status.error')}</Badge>
+  if (s === 'cancelled') return <Badge variant="secondary" className="gap-1"><Square className="size-3" />{t('status.cancelled')}</Badge>
   return null
 }
 
@@ -92,24 +97,26 @@ function Tip({ tip, children }: { tip: string; children: React.ReactElement }) {
   return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{tip}</TooltipContent></Tooltip>
 }
 
-const Sel = ({ value, onChange, opts, ph }: { value?: string; onChange: (v: string) => void; opts: string[]; ph?: string }) =>
-    <Select value={value || undefined} onValueChange={onChange}>
-      <SelectTrigger className="w-full"><SelectValue placeholder={ph || 'Chọn…'} /></SelectTrigger>
+function Sel({ value, onChange, opts, ph }: { value?: string; onChange: (v: string) => void; opts: string[]; ph?: string }) {
+  const { t } = useTranslation()
+  return <Select value={value || undefined} onValueChange={onChange}>
+      <SelectTrigger className="w-full"><SelectValue placeholder={ph || t('common.choose')} /></SelectTrigger>
       <SelectContent>{opts.filter(Boolean).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
     </Select>
+}
 const F = ({ label, children }: { label: string; children: React.ReactNode }) => <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{label}</Label>{children}</div>
 
 export function EditorPage() { return <ReactFlowProvider><Studio /></ReactFlowProvider> }
 
 function Studio() {
-  const { id } = useParams()
+  const { t } = useTranslation(); const { id } = useParams()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [state, setState] = useState<Field[]>([])
   const [name, setName] = useState('Untitled')
   const [wid, setWid] = useState<string | undefined>()
   const [sel, setSel] = useState<{ kind: 'node' | 'edge'; id: string } | null>(null)
-  const [input, setInput] = useState('{\n  "message": "Đơn hàng A100 của tôi đâu rồi?"\n}')
+  const [input, setInput] = useState(() => i18n.t('samples.input'))
   const [log, setLog] = useState<LogItem[]>([])
   const [errors, setErrors] = useState<string[]>([])
   const [tools, setTools] = useState<{ name: string }[]>([])
@@ -135,7 +142,7 @@ function Studio() {
     api(`/api/workflows/${id}`).then(wf => { setLoadErr(null); load(wf); loadHistory(wf.id) }).catch(e => setLoadErr({ status: e.status ?? 0, msg: e.message }))
     api('/api/tools').then(setTools).catch(() => {})
     api<Credential[]>('/api/credentials').then(setCreds).catch(() => {})
-    fetch('/api/health').then(r => r.json()).then(h => setMode(h.llm_mode)).catch(() => {})
+    api('/api/health').then(h => setMode(h.llm_mode)).catch(() => {})
   }, [id])
 
   const toJSON = () => ({
@@ -147,12 +154,12 @@ function Studio() {
     try {
       const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
       setWid(r.id); setErrors(r.errors); if (r.errors.length) setTab('input')
-    } catch (e: any) { setErrors([`Lưu thất bại: ${e.message}`]); setTab('input') }
+    } catch (e: any) { setErrors([t('editor.saveFailed', { error: e.message })]); setTab('input') }
   }
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
   const run = () => {
-    let inp: any; try { inp = JSON.parse(input) } catch { setErrors(['Input không phải JSON hợp lệ']); setTab('input'); return }
-    if (!tokenValid()) { setErrors(['Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập…']); setTab('logs'); setTimeout(sessionExpired, 1500); return }
+    let inp: any; try { inp = JSON.parse(input) } catch { setErrors([t('editor.badInput')]); setTab('input'); return }
+    if (!tokenValid()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
     setLog([]); setErrors([]); setTab('logs'); setRunning(true); setReplay(null); setTraceSel(null)
     setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
     const ws = new WebSocket(wsUrl('/ws/run')); wsRef.current = ws
@@ -161,12 +168,12 @@ function Studio() {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
       if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
       if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
-      if (ev.type === 'error') { setErrors(ev.errors || []); if (ev.node) mark(ev.node, { _status: 'error' }) }
+      if (ev.type === 'error') { setErrors(eventErrors(ev)); if (ev.node) mark(ev.node, { _status: 'error' }) }
       if (ev.type === 'run_cancelled' || (ev.type === 'error' && (ev as any).status === 'timeout')) setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'cancelled' } } : n))
     }
-    ws.onerror = () => setErrors(e => e.length ? e : ['Mất kết nối tới máy chủ khi đang chạy'])
+    ws.onerror = () => setErrors(e => e.length ? e : [t('editor.wsLost')])
     ws.onclose = ev => {
-      if (ev.code === 4401) { setErrors(['Phiên đăng nhập đã hết hạn trong khi chạy. Đang chuyển tới trang đăng nhập…']); setTimeout(sessionExpired, 1500) }
+      if (ev.code === 4401) { setErrors([t('editor.expiredDuringRun')]); setTimeout(sessionExpired, 1500) }
       setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
   }
 
@@ -186,7 +193,7 @@ function Studio() {
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); const t = ev.dataTransfer.getData('nodetype'); if (!t) return
     const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
-    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t] } }])
+    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t], ...(t === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
   }
   const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
   const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined
@@ -197,32 +204,32 @@ function Studio() {
   if (loadErr) return <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 text-foreground">
     <div className="max-w-sm text-center space-y-3 rounded-xl border bg-card p-8 shadow-sm" id="editor-not-found">
       <div className="mx-auto w-fit rounded-full bg-muted p-3 text-muted-foreground"><ArrowLeft className="size-5" /></div>
-      <h1 className="text-lg font-semibold">{loadErr.status === 404 ? 'Không tìm thấy workflow' : 'Không mở được workflow'}</h1>
-      <p className="text-sm text-muted-foreground">{loadErr.status === 404 ? 'Workflow này đã bị xoá hoặc không thuộc tài khoản của bạn.' : loadErr.msg}</p>
-      <Button asChild><Link to="/workflows" id="back-to-list">Về danh sách workflow</Link></Button>
+      <h1 className="text-lg font-semibold">{t(loadErr.status === 404 ? 'editor.notFoundTitle' : 'editor.openFailedTitle')}</h1>
+      <p className="text-sm text-muted-foreground">{loadErr.status === 404 ? t('editor.notFoundBody') : loadErr.msg}</p>
+      <Button asChild><Link to="/workflows" id="back-to-list">{t('editor.backToList')}</Link></Button>
     </div>
   </div>
 
   return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
     {/* Top bar */}
     <header className="col-span-3 flex items-center gap-3 border-b px-4">
-      <Tip tip="Về danh sách workflow"><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
+      <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
       <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
-      <Tip tip="Lưu workflow (SQLite)"><Button variant="outline" size="sm" onClick={save}><Save />Save</Button></Tip>
-      <Tip tip="Chạy workflow với input hiện tại"><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}Run</Button></Tip>
-      {running && <Tip tip="Dừng run (huỷ giữa các bước)"><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />Cancel</Button></Tip>}
+      <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" onClick={save}><Save />{t('common.save')}</Button></Tip>
+      <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
+      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
       <Dialog>
-        <Tip tip="Xem JSON"><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
-        <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>Workflow JSON</DialogTitle><DialogDescription>Định dạng gửi lên backend.</DialogDescription></DialogHeader>
+        <Tip tip={t('editor.jsonTip')}><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
+        <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
           <ScrollArea className="h-96 rounded-md border bg-muted/40"><pre className="p-3 text-xs">{JSON.stringify(toJSON(), null, 2)}</pre></ScrollArea>
         </DialogContent>
       </Dialog>
       <div className="ml-auto flex items-center gap-2">
-        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
-        <Badge variant="secondary">LLM: {mode}</Badge>{wid && <Badge variant="outline">id: {wid}</Badge>}
-        <ThemeToggle /><UserMenu />
+        {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
+        <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
+        <LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>
 
@@ -230,17 +237,17 @@ function Studio() {
     <aside className="border-r bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><div className="p-3 space-y-4">
         <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">Node palette</div>
-          <div className="space-y-2">{TYPES.map(t => { const m = META[t]; const I = m.icon
-            return <Card key={t} draggable onDragStart={e => { e.dataTransfer.setData('nodetype', t); e.dataTransfer.effectAllowed = 'move' }}
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.palette')}</div>
+          <div className="space-y-2">{TYPES.map(t_ => { const m = META[t_]; const I = m.icon
+            return <Card key={t_} draggable onDragStart={e => { e.dataTransfer.setData('nodetype', t_); e.dataTransfer.effectAllowed = 'move' }}
               className="flex-row items-center gap-3 p-2.5 cursor-grab hover:bg-accent transition-colors py-2.5">
               <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
-              <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{m.desc}</div></div>
+              <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{t(`nodes.${t_}`)}</div></div>
             </Card> })}</div>
         </div>
         <Separator />
         <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">State schema</div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.stateSchema')}</div>
           <div className="space-y-1.5">{state.map((f, i) => <div className="flex gap-1" key={i}>
             <Input className="h-8 flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
             <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v } : x))}>
@@ -249,7 +256,7 @@ function Studio() {
             </Select>
             <Button variant="ghost" size="icon" className="size-8" onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
           </div>)}</div>
-          <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />Thêm field</Button>
+          <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
         </div>
       </div></ScrollArea>
     </aside>
@@ -266,48 +273,48 @@ function Studio() {
     {/* Right config */}
     <aside className="border-l bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><div className="p-4 space-y-4 w-[318px]">
-        <div className="text-xs font-semibold uppercase text-muted-foreground">Config</div>
-        {!selNode && !selEdge && <p className="text-muted-foreground text-xs">Chọn một node hoặc edge để cấu hình. Nhấn Delete để xoá.</p>}
+        <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
+        {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
-          <F label="Label (khớp với giá trị field của Condition)"><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
-          <Button variant="destructive" size="sm" onClick={() => { setEdges(es => es.filter(x => x.id !== selEdge.id)); setSel(null) }}><Trash2 />Xoá edge</Button>
+          <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
+          <Button variant="destructive" size="sm" onClick={() => { setEdges(es => es.filter(x => x.id !== selEdge.id)); setSel(null) }}><Trash2 />{t('editor.deleteEdge')}</Button>
         </div>}
         {selNode && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
             <div><div className="font-medium">{META[selNode.type!].label}</div><div className="text-[11px] text-muted-foreground font-mono">{selNode.id}</div></div></div>
-          <F label="Label"><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>
+          <F label={t('field.label')}><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>
           {selNode.type === 'llm' && <>
-            <F label="Credential (provider)"><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
+            <F label={t('editor.credential')}><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
               <SelectTrigger className="w-full" id="llm-credential"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="none">Mặc định (env OPENAI_API_KEY hoặc mock)</SelectItem>
+              <SelectContent><SelectItem value="none">{t('editor.credentialDefault')}</SelectItem>
                 {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select></F>
-            <F label="Model"><Input value={d.model} onChange={e => upd('model', e.target.value)} placeholder={creds.find(c => c.id === d.credential_id)?.provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gpt-4o-mini'} /></F>
-            <F label="Prompt template ({{state.field}})"><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
-            <F label="Output field"><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+            <F label={t('field.model')}><Input value={d.model} onChange={e => upd('model', e.target.value)} placeholder={creds.find(c => c.id === d.credential_id)?.provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gpt-4o-mini'} /></F>
+            <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'tool' && <>
-            <F label="Mode"><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="function">Python function</SelectItem><SelectItem value="http">HTTP request</SelectItem></SelectContent></Select></F>
+            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem></SelectContent></Select></F>
             {d.mode === 'http' ? <>
-              <F label="Method"><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
-              <F label="URL"><Input value={d.url} onChange={e => upd('url', e.target.value)} placeholder="https://…" /></F>
-              <F label="Body template"><Textarea rows={4} className="font-mono text-xs" value={d.body} onChange={e => upd('body', e.target.value)} /></F>
-            </> : <F label="Function"><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
-            <F label="Output field"><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+              <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
+              <F label={t('field.url')}><Input value={d.url} onChange={e => upd('url', e.target.value)} placeholder="https://…" /></F>
+              <F label={t('field.bodyTemplate')}><Textarea rows={4} className="font-mono text-xs" value={d.body} onChange={e => upd('body', e.target.value)} /></F>
+            </> : <F label={t('field.function')}><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'code' && <>
-            <div className="flex flex-wrap gap-1 max-w-[286px]">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />Có vẻ là LLM call</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">read-only</Badge></div>
-            <F label="Node name"><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
-            <F label="Reference (module:function)"><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
-            <F label="Source"><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
+            <div className="flex flex-wrap gap-1 max-w-[286px]">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />{t('editor.looksLlm')}</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">{t('editor.readOnly')}</Badge></div>
+            <F label={t('field.nodeName')}><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
+            <F label={t('field.reference')}><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
+            <F label={t('field.source')}><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
           </>}
           {selNode.type === 'condition' && <>
-            <F label="State field để rẽ nhánh"><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
-            <F label="Default label (tuỳ chọn)"><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
-            <p className="text-[11px] text-muted-foreground">Giá trị field được so khớp với label của các edge ra.</p>
+            <F label={t('editor.condField')}><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
+            <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
+            <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />Xoá node</Button>}
+          {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />{t('editor.deleteNode')}</Button>}
         </div>}
       </div></ScrollArea>
     </aside>
@@ -316,13 +323,13 @@ function Studio() {
     <section className="col-span-3 border-t min-h-0 flex flex-col">
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
         <div className="flex items-center gap-3 px-3 py-2 border-b">
-          <TabsList><TabsTrigger value="input">Input</TabsTrigger><TabsTrigger value="logs">Logs {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
-            <TabsTrigger value="history">History</TabsTrigger></TabsList>
-          {errors.length > 0 && <Badge variant="destructive">{errors.length} lỗi</Badge>}
+          <TabsList><TabsTrigger value="input">{t('editor.tabInput')}</TabsTrigger><TabsTrigger value="logs">{t('editor.tabLogs')} {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
+            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger></TabsList>
+          {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
           <Textarea className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
-          {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{errors.length} lỗi cần sửa</AlertTitle>
+          {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>
         <TabsContent value="logs" className="flex-1 min-h-0">
@@ -331,11 +338,11 @@ function Studio() {
         </TabsContent>
         <TabsContent value="history" className="flex-1 min-h-0">
           <ScrollArea className="h-full"><div className="p-3 space-y-1">
-            {!history.length && <span className="text-muted-foreground text-xs">Chưa có lần chạy nào.</span>}
+            {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
             {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setReplay(h.id); setTraceSel(null); setTab('logs') }}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{h.status}</Badge>
-              <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString()}</span>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
+              <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               <span className="truncate">{JSON.stringify(h.input)}</span>
               <span className="ml-auto text-muted-foreground">{Math.round((h.ended - h.started) * 1000)} ms</span>

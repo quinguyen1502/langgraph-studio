@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -13,6 +14,6 @@ export function useTheme() {
   return { dark, setDark }
 }
 export function ThemeToggle() {
-  const { dark, setDark } = useTheme()
-  return <Button variant="ghost" size="icon" id="theme-btn" title="Dark mode" onClick={() => setDark(!dark)}>{dark ? <Sun /> : <Moon />}</Button>
+  const { t } = useTranslation(); const { dark, setDark } = useTheme()
+  return <Button variant="ghost" size="icon" id="theme-btn" title={t('common.darkMode')} aria-label={t('common.darkMode')} onClick={() => setDark(!dark)}>{dark ? <Sun /> : <Moon />}</Button>
 }

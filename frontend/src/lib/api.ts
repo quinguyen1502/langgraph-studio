@@ -1,3 +1,4 @@
+import { errorText, type ApiErrorBody } from '@/lib/i18n'
 export const getToken = () => localStorage.getItem('token')
 export const getUser = (): { id: string; email: string } | null => JSON.parse(localStorage.getItem('user') || 'null')
 export const wasExpired = () => sessionStorage.getItem('lgs_expired') === '1'
@@ -28,17 +29,21 @@ export function scheduleExpiry() {
   timer = ms > 2 ** 31 - 1 ? window.setTimeout(scheduleExpiry, 2 ** 31 - 1) : window.setTimeout(sessionExpired, Math.max(0, ms))
 }
 
-export class ApiError extends Error { status: number; constructor(msg: string, status: number) { super(msg); this.status = status } }
+export class ApiError extends Error {
+  status: number; code?: string; details?: any
+  constructor(body: ApiErrorBody, status: number) { super(errorText(body)); this.status = status; this.code = body.code; this.details = body.details }
+}
 
+/** The one API client: adds auth, unwraps the {success, data, error} envelope, throws ApiError (translated message). */
 export async function api<T = any>(path: string, opts: RequestInit & { json?: any } = {}): Promise<T> {
   const headers: Record<string, string> = { ...(opts.headers as any) }
   const t = getToken(); if (t) headers.Authorization = `Bearer ${t}`
   if (opts.json !== undefined) { headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(opts.json) }
   let r: Response
-  try { r = await fetch(path, { ...opts, headers }) } catch { throw new ApiError('Không kết nối được máy chủ. Kiểm tra mạng rồi thử lại.', 0) }
-  if (r.status === 401 && !path.startsWith('/api/auth')) { sessionExpired(); throw new ApiError('Phiên đăng nhập đã hết hạn', 401) }
-  const data = await r.json().catch(() => ({}))
-  if (!r.ok) throw new ApiError(typeof data.detail === 'string' ? data.detail : r.status >= 500 ? 'Lỗi máy chủ, thử lại sau' : `HTTP ${r.status}`, r.status)
-  return data
+  try { r = await fetch(path, { ...opts, headers }) } catch { throw new ApiError({ code: 'NETWORK_ERROR' }, 0) }
+  const body = await r.json().catch(() => null)
+  if (r.status === 401 && !path.startsWith('/api/auth')) { sessionExpired(); throw new ApiError(body?.error ?? { code: 'AUTH_TOKEN_EXPIRED' }, 401) }
+  if (!body?.success) throw new ApiError(body?.error ?? { code: r.status >= 500 ? 'INTERNAL_ERROR' : 'HTTP_ERROR', message: `HTTP ${r.status}` }, r.status)
+  return body.data
 }
 export const wsUrl = (p: string) => `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${p}?token=${encodeURIComponent(getToken() || '')}`

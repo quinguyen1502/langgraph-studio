@@ -11,7 +11,7 @@ from app.main import app
 
 c = TestClient(app)
 def H(t): return {"Authorization": f"Bearer {t}"}
-def token(): return c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["token"]
+def token(): return c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
 def N(i, t, **d): return {"id": i, "type": t, "data": {"label": i, **d}}
 def E(i, s, t, label=None): return {"id": i, "source": s, "target": t, **({"label": label} if label else {})}
 def wf(nodes, edges, state=("message", "intent", "out")): return {"name": "t", "state": [{"name": s, "type": "string"} for s in state], "nodes": nodes, "edges": edges}
@@ -29,14 +29,14 @@ def test_valid_baseline():
     assert validate(LINEAR) == [] and validate(EXAMPLE) == []
 
 @pytest.mark.parametrize("mutate,frag", [
-    (lambda w: w["edges"].append(E("x", "l", "ghost")), "không tồn tại: ghost"),
-    (lambda w: w["nodes"].append(N("l", "end")), "Trùng id node: l"),
-    (lambda w: w["edges"].append(E("1", "s", "e")), "Trùng id edge: 1"),
-    (lambda w: w["nodes"].append(N("s2", "start")) or w["edges"].append(E("9", "s2", "l")), "Chỉ được 1 node Start"),
-    (lambda w: w["nodes"].pop(0) and w["edges"].pop(0), "chưa có"),
-    (lambda w: w["edges"].append(E("x", "l", "l")), "tự nối"),
-    (lambda w: w["nodes"].append(N("orphan", "llm", prompt="", output_field="out")) or w["edges"].append(E("o", "orphan", "e")), "không đi tới được"),
-    (lambda w: w.update(nodes=[{"type": "start"}]), "cần có id"),
+    (lambda w: w["edges"].append(E("x", "l", "ghost")), "missing node: ghost"),
+    (lambda w: w["nodes"].append(N("l", "end")), "Duplicate node id: l"),
+    (lambda w: w["edges"].append(E("1", "s", "e")), "Duplicate edge id: 1"),
+    (lambda w: w["nodes"].append(N("s2", "start")) or w["edges"].append(E("9", "s2", "l")), "Only one Start node"),
+    (lambda w: w["nodes"].pop(0) and w["edges"].pop(0), "none found"),
+    (lambda w: w["edges"].append(E("x", "l", "l")), "cannot connect to itself"),
+    (lambda w: w["nodes"].append(N("orphan", "llm", prompt="", output_field="out")) or w["edges"].append(E("o", "orphan", "e")), "not reachable from Start"),
+    (lambda w: w.update(nodes=[{"type": "start"}]), "needs an id"),
 ])
 def test_validation_rejections(mutate, frag):
     w = json.loads(json.dumps(LINEAR)); mutate(w)
@@ -45,7 +45,7 @@ def test_validation_rejections(mutate, frag):
 def test_cycle_without_condition_rejected_but_through_condition_ok():
     a = N("a", "llm", prompt="x", output_field="out"); b = N("b", "llm", prompt="x", output_field="out")
     bad = wf([N("s", "start"), a, b, N("e", "end")], [E("1", "s", "a"), E("2", "a", "b"), E("3", "b", "a")])
-    assert has(validate(bad), "Vòng lặp không qua Condition: a → b → a")[0]
+    assert has(validate(bad), "Loop without a Condition: a → b → a")[0]
     good = wf([N("s", "start"), a, N("c", "condition", field="intent", default="again"), N("e", "end")],
               [E("1", "s", "a"), E("2", "a", "c"), E("3", "c", "a", "again"), E("4", "c", "e", "done")])
     assert validate(good) == []
@@ -77,7 +77,7 @@ def test_empty_state_schema_and_missing_fields():
 
 def test_input_type_mismatch():
     w = dict(LINEAR, state=[{"name": "message", "type": "string"}, {"name": "n", "type": "number"}, {"name": "out", "type": "string"}])
-    assert check_input(w, {"n": "abc"}) == ["Input 'n' phải có kiểu number (nhận str)"]
+    assert check_input(w, {"n": "abc"}) == ["Input 'n' must be of type number (got str)"]
     assert check_input(w, {"n": True}) and check_input(w, [1]) and check_input(w, {"n": 2.5}) == []
 
 # ---------- caps & sanitising ----------
@@ -104,9 +104,9 @@ def slow_wf(n=3):
     return wf(nodes, [E(str(i), a, b) for i, (a, b) in enumerate(zip(ids, ids[1:]))])
 
 def last_run(t, wid):
-    return c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()[0]
+    return c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()["data"][0]
 
-def save(t, w): return c.post("/api/workflows", json=w, headers=H(t)).json()["id"]
+def save(t, w): return c.post("/api/workflows", json=w, headers=H(t)).json()["data"]["id"]
 
 def test_cancel_message_stops_run():
     t = token(); wid = save(t, slow_wf(5)); t0 = time.time()
@@ -127,7 +127,7 @@ def test_disconnect_cancels_run():
         ws.send_json({"workflow_id": wid, "input": {}}); ws.receive_json()
     for _ in range(40):
         time.sleep(0.1)
-        runs = c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()
+        runs = c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()["data"]
         if runs: break
     assert runs and runs[0]["status"] == "cancelled" and runs[0]["events"][-1]["reason"] == "disconnect"
 
@@ -142,7 +142,7 @@ def test_timeout(monkeypatch):
 
 def test_bad_run_input_over_ws():
     t = token()
-    for inp, frag in [([1, 2], "JSON object"), ({"x": "y" * (300 * 1024)}, "quá lớn")]:
+    for inp, frag in [([1, 2], "JSON object"), ({"x": "y" * (300 * 1024)}, "too large")]:
         with c.websocket_connect(f"/ws/run?token={t}") as ws:
             ws.send_json({"workflow": LINEAR, "input": inp}); e = ws.receive_json()
         assert e["type"] == "error" and frag in e["errors"][0]
@@ -172,8 +172,9 @@ def test_five_concurrent_runs_isolated():
 def test_readable_422_and_413():
     t = token()
     r = c.post("/api/workflows", json={"name": "x", "nodes": [{"id": "", "type": "start"}], "edges": "nope"}, headers=H(t))
-    assert r.status_code == 422 and r.json()["detail"].startswith("Dữ liệu không hợp lệ") and "nodes.0.id" in r.json()["detail"] and "edges" in r.json()["detail"]
+    err = r.json()["error"]; fields = [d["field"] for d in err["details"]]
+    assert r.status_code == 422 and err["code"] == "VALIDATION_ERROR" and "nodes.0.id" in fields and any(f.startswith("edges") for f in fields)
     r = c.post("/api/workflows", content=b"[1,2]", headers={**H(t), "Content-Type": "application/json"}); assert r.status_code == 422
     big = {"name": "big", "nodes": [], "edges": [], "blob": "x" * (1100 * 1024)}
-    r = c.post("/api/workflows", json=big, headers=H(t)); assert r.status_code == 413 and "quá lớn" in r.json()["detail"]
+    r = c.post("/api/workflows", json=big, headers=H(t)); assert r.status_code == 413 and r.json()["error"]["code"] == "WORKFLOW_TOO_LARGE"
     assert c.post("/api/validate", json={"nodes": [{"id": "a"}]}, headers=H(t)).status_code == 422

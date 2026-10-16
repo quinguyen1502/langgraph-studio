@@ -119,6 +119,11 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **Condition**: `field`; giá trị field được so khớp với `label` của các cạnh ra (chính xác → không phân biệt hoa thường → chứa chuỗi), `default` tuỳ chọn → `add_conditional_edges`.
 
 ## API
+Mọi endpoint trả về envelope: `{"success": true, "data": …, "error": null}` hoặc `{"success": false, "data": null, "error": {"code": "AUTH_INVALID_CREDENTIALS", "message": "…", "details": …}}`. Danh mục mã lỗi: `docs/api-errors.md` (DEC-0010).
+
+## Ngôn ngữ (i18n)
+UI có tiếng Anh và tiếng Việt (react-i18next, `frontend/src/locales/en.json` / `vi.json`). Mặc định theo ngôn ngữ trình duyệt; đổi bằng nút ngôn ngữ (màn hình đăng nhập và thanh trên cùng), lựa chọn lưu ở `localStorage.lang`. Lỗi API được dịch theo `error.code`; mã chưa có bản dịch thì hiện message tiếng Anh của server.
+
 - `GET/POST /api/credentials`, `DELETE /api/credentials/{id}`, `GET /api/providers` (secret không bao giờ được trả về)
 - `POST /api/auth/register`, `POST /api/auth/login` → `{token, user}`, `GET /api/me`
 - `PATCH /api/workflows/{id}` (đổi tên), `POST /api/workflows/{id}/duplicate`, `DELETE /api/workflows/{id}`

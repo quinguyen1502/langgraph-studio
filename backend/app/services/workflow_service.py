@@ -1,6 +1,6 @@
 """Workflow CRUD with ownership, naming rules and validation."""
 import json, time, uuid
-from ..core.errors import Forbidden, NotFound, Conflict
+from ..core.errors import AppError
 from ..engine.examples import EXAMPLE
 from ..engine.validator import validate
 from ..models import Workflow
@@ -18,7 +18,7 @@ class WorkflowService:
 
     def owned(self, wid: str, uid: str) -> Workflow:
         w = self.repo.get_owned(wid, uid)
-        if w is None: raise NotFound("Không tìm thấy workflow")
+        if w is None: raise AppError("WORKFLOW_NOT_FOUND")
         return w
 
     def list(self, uid: str) -> list[dict]:
@@ -37,7 +37,7 @@ class WorkflowService:
         wid = wf.get("id") or new_id()
         wf = {k: v for k, v in wf.items() if k != "id"}
         ex = self.repo.get(wid)
-        if ex and ex.owner != uid: raise Forbidden("Không có quyền")
+        if ex and ex.owner != uid: raise AppError("WORKFLOW_FORBIDDEN")
         old = json.loads(ex.data or "{}") if ex else {}
         wf["name"] = clean_name(wf.get("name", "Untitled workflow"))
         if not ex: wf["name"] = unique_name(self.repo.names_for_owner(uid), wf["name"])
@@ -48,7 +48,7 @@ class WorkflowService:
 
     def rename(self, wid: str, name: str, uid: str) -> dict:
         w = self.owned(wid, uid); name = clean_name(name)
-        if name in self.repo.names_for_owner(uid, exclude=wid): raise Conflict("Đã có workflow trùng tên")
+        if name in self.repo.names_for_owner(uid, exclude=wid): raise AppError("WORKFLOW_NAME_TAKEN")
         d = json.loads(w.data or "{}"); d["name"] = name
         self.repo.update_name(wid, name, _dumps(d), time.time())
         return {"ok": True, "name": name}

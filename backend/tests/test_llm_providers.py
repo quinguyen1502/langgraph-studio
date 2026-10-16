@@ -15,7 +15,7 @@ SECRET_ANT = "sk-ant-test-abcdef0123456789"
 def H(t): return {"Authorization": f"Bearer {t}"}
 def user():
     email = f"llm{uuid.uuid4().hex[:6]}@example.com"
-    return c.post("/api/auth/register", json={"email": email, "password": "secret12"}).json()["token"]
+    return c.post("/api/auth/register", json={"email": email, "password": "secret12"}).json()["data"]["token"]
 
 @pytest.fixture
 def mock_http(monkeypatch):
@@ -44,14 +44,14 @@ def wf_with(tok, cred_id, model="gpt-4o-mini"):
     wf = copy.deepcopy(EXAMPLE)
     for n in wf["nodes"]:
         if n["type"] == "llm": n["data"].update(credential_id=cred_id, model=model)
-    return c.post("/api/workflows", json=wf, headers=H(tok)).json()["id"]
+    return c.post("/api/workflows", json=wf, headers=H(tok)).json()["data"]["id"]
 
 def test_encrypted_at_rest_and_never_returned():
     t = user()
     r = c.post("/api/credentials", json={"name": "oai", "provider": "openai", "api_key": SECRET_OAI}, headers=H(t))
-    assert r.status_code == 200 and SECRET_OAI not in r.text and r.json()["hint"].endswith("cdef")
+    assert r.status_code == 200 and SECRET_OAI not in r.text and r.json()["data"]["hint"].endswith("cdef")
     assert SECRET_OAI not in c.get("/api/credentials", headers=H(t)).text
-    raw = sqlite3.connect(DB).execute("SELECT secret FROM credentials WHERE id=?", (r.json()["id"],)).fetchone()[0]
+    raw = sqlite3.connect(DB).execute("SELECT secret FROM credentials WHERE id=?", (r.json()["data"]["id"],)).fetchone()[0]
     assert SECRET_OAI not in raw and creds.decrypt(raw) == SECRET_OAI
 
 def test_validation_errors():
@@ -62,7 +62,7 @@ def test_validation_errors():
 
 def test_openai_run_uses_credential(mock_http):
     t = user()
-    cid = c.post("/api/credentials", json={"name": "oai", "provider": "openai", "api_key": SECRET_OAI, "base_url": "https://llm.example/v1"}, headers=H(t)).json()["id"]
+    cid = c.post("/api/credentials", json={"name": "oai", "provider": "openai", "api_key": SECRET_OAI, "base_url": "https://llm.example/v1"}, headers=H(t)).json()["data"]["id"]
     evs = run_ws(t, wf_with(t, cid), {"message": "A100?"})
     assert evs[-1]["type"] == "run_finished", evs[-1]
     st = evs[-1]["state"]
@@ -76,16 +76,16 @@ def test_anthropic_provider(mock_http):
 
 def test_provider_error_is_event_without_secret(mock_http):
     t = user()
-    cid = c.post("/api/credentials", json={"name": "bad", "provider": "openai", "api_key": SECRET_OAI, "base_url": "https://fail.example/v1"}, headers=H(t)).json()["id"]
+    cid = c.post("/api/credentials", json={"name": "bad", "provider": "openai", "api_key": SECRET_OAI, "base_url": "https://fail.example/v1"}, headers=H(t)).json()["data"]["id"]
     evs = run_ws(t, wf_with(t, cid), {"message": "hi"})
     assert evs[-1]["type"] == "error" and "HTTP 401" in evs[-1]["errors"][0]
     assert SECRET_OAI not in json.dumps(evs)
 
 def test_cannot_use_other_users_credential(mock_http):
     a, b = user(), user()
-    cid = c.post("/api/credentials", json={"name": "a", "provider": "openai", "api_key": SECRET_OAI}, headers=H(a)).json()["id"]
+    cid = c.post("/api/credentials", json={"name": "a", "provider": "openai", "api_key": SECRET_OAI}, headers=H(a)).json()["data"]["id"]
     evs = run_ws(b, wf_with(b, cid), {"message": "hi"})
-    assert evs[-1]["type"] == "error" and "không thuộc về bạn" in evs[-1]["errors"][0] and not mock_http
+    assert evs[-1]["type"] == "error" and evs[-1]["error"]["code"] == "CREDENTIAL_NOT_FOUND" and not mock_http
     assert c.delete(f"/api/credentials/{cid}", headers=H(b)).status_code == 404
     assert c.delete(f"/api/credentials/{cid}", headers=H(a)).status_code == 200
 

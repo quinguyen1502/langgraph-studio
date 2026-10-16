@@ -25,13 +25,13 @@ PY_TYPES = {"number": (int, float), "integer": (int,), "boolean": (bool,), "list
 
 def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
     """Run input must be a JSON object whose known fields match the state schema types."""
-    if not isinstance(inputs, dict): return ["Input phải là một JSON object, ví dụ {\"message\": \"hi\"}"]
+    if not isinstance(inputs, dict): return ["Input must be a JSON object, e.g. {\"message\": \"hi\"}"]
     errs = []
     for f in wf.get("state", []) or []:
         name, typ = f.get("name"), f.get("type", "string")
         if name in inputs and inputs[name] is not None and typ in PY_TYPES:
             v = inputs[name]; ok = isinstance(v, PY_TYPES[typ]) and not (typ in ("number", "integer") and isinstance(v, bool))
-            if not ok: errs.append(f"Input '{name}' phải có kiểu {typ} (nhận {type(v).__name__})")
+            if not ok: errs.append(f"Input '{name}' must be of type {typ} (got {type(v).__name__})")
     return errs
 
 
@@ -72,7 +72,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
         nid = pending[-1] if pending else None
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
                "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
-               "errors": [safe_error(e)]}
+               "code": getattr(e, "code", "NODE_FAILED"), "errors": [safe_error(e)]}
         return
     yield {"type": "run_finished", "state": state}
 

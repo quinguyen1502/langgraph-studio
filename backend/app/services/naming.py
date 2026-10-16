@@ -1,13 +1,13 @@
 """Workflow naming rules (pure functions)."""
 import re
 from ..core.config import NAME_MAX
-from ..core.errors import BadRequest
+from ..core.errors import AppError
 
 
 def clean_name(name) -> str:
     n = " ".join(str(name or "").split())
-    if not n: raise BadRequest("Tên workflow không được để trống")
-    if len(n) > NAME_MAX: raise BadRequest(f"Tên workflow tối đa {NAME_MAX} ký tự")
+    if not n: raise AppError("WORKFLOW_NAME_REQUIRED")
+    if len(n) > NAME_MAX: raise AppError("WORKFLOW_NAME_TOO_LONG", max=NAME_MAX)
     return n
 
 

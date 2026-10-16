@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import { AlertTriangle, Ban, CheckCircle2, Clock, TimerOff, Coins, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -23,19 +24,19 @@ const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; cla
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />
   : <CheckCircle2 className={cn('size-4 text-success', className)} />
 
-const STATUS_TEXT = { idle: 'Chưa chạy', running: 'Đang chạy', ok: 'Hoàn thành', error: 'Lỗi', cancelled: 'Đã huỷ', timeout: 'Quá thời gian' } as const
 
 function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; replay?: string; onExitReplay?: () => void; raw: boolean; setRaw: (b: boolean) => void }) {
+  const { t } = useTranslation()
   return <div id="trace-summary" data-status={trace.status} className={cn('flex items-center gap-3 border-b px-3 py-1.5 text-xs', (trace.status === 'error') && 'bg-destructive/5', trace.status === 'timeout' && 'bg-warning/10', trace.status === 'cancelled' && 'bg-muted')}>
-    <span className="flex items-center gap-1.5 font-medium"><StatusIcon s={trace.status} />{STATUS_TEXT[trace.status]}</span>
+    <span className="flex items-center gap-1.5 font-medium"><StatusIcon s={trace.status} />{t(`trace.${trace.status}`)}</span>
     <Separator orientation="vertical" className="h-4" />
     <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3.5" />{fmtMs(trace.total)}</span>
-    <span className="flex items-center gap-1 text-muted-foreground"><Layers className="size-3.5" />{trace.spans.length} bước</span>
+    <span className="flex items-center gap-1 text-muted-foreground"><Layers className="size-3.5" />{t('trace.steps', { count: trace.spans.length })}</span>
     {trace.tokens != null && <span className="flex items-center gap-1 text-muted-foreground"><Coins className="size-3.5" />{trace.tokens} tokens</span>}
-    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label="Thoát replay" onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
+    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label={t('trace.exitReplay')} onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
     <div className="ml-auto flex items-center gap-2">
       <Switch id="raw-toggle" size="sm" checked={raw} onCheckedChange={setRaw} />
-      <Label htmlFor="raw-toggle" className="text-xs font-normal text-muted-foreground">Raw events</Label></div>
+      <Label htmlFor="raw-toggle" className="text-xs font-normal text-muted-foreground">{t('trace.rawEvents')}</Label></div>
   </div>
 }
 
@@ -65,8 +66,8 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
 }
 
 function DiffView({ s }: { s: Span }) {
-  const rows = stateDiff(s.input, s.output)
-  if (!rows.length) return <p className="text-muted-foreground text-xs p-2">Không có thay đổi state.</p>
+  const { t } = useTranslation(); const rows = stateDiff(s.input, s.output)
+  if (!rows.length) return <p className="text-muted-foreground text-xs p-2">{t('trace.noDiff')}</p>
   const v = (x: any) => typeof x === 'string' ? x : JSON.stringify(x)
   return <div className="rounded-md border font-mono text-[11px] divide-y" id="trace-diff">
     {rows.map(r => <div key={r.key} data-kind={r.kind} className={cn('grid grid-cols-[16px_120px_1fr] gap-2 px-2 py-1',
@@ -79,7 +80,7 @@ function DiffView({ s }: { s: Span }) {
 }
 
 function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void }) {
-  const m = meta(s.type); const I = m.icon
+  const { t } = useTranslation(); const m = meta(s.type); const I = m.icon
   const [tab, setTab] = useState(s.status === 'error' ? 'output' : 'diff')
   return <div className="w-[46%] min-w-80 border-l flex flex-col min-h-0" id="trace-detail">
     <div className="flex items-center gap-2 px-3 py-1.5 border-b text-xs">
@@ -87,10 +88,10 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
       <span className="font-medium truncate">{s.label}{s.iter > 1 && ` #${s.iter}`}</span>
       <Badge variant="outline" className="h-4 px-1 text-[10px]">{m.label}</Badge>
       <span className="text-muted-foreground tabular-nums">{fmtMs(s.duration)}</span>
-      <Button variant="ghost" size="icon" className="size-6 ml-auto" onClick={onClose} aria-label="Đóng chi tiết"><X className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon" className="size-6 ml-auto" onClick={onClose} aria-label={t('trace.closeDetail')}><X className="size-3.5" /></Button>
     </div>
     <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
-      <TabsList className="mx-3 mt-1.5 h-7">{['input', 'output', 'diff', 'raw'].map(t => <TabsTrigger key={t} value={t} className="text-xs h-5 px-2">{{ input: 'Input', output: 'Output', diff: 'State diff', raw: 'Raw' }[t]}</TabsTrigger>)}</TabsList>
+      <TabsList className="mx-3 mt-1.5 h-7">{['input', 'output', 'diff', 'raw'].map(k => <TabsTrigger key={k} value={k} className="text-xs h-5 px-2">{t(`trace.${k}`)}</TabsTrigger>)}</TabsList>
       <ScrollArea className="flex-1 min-h-0"><div className="p-3 pt-2">
         {s.error && <Alert variant="destructive" className="mb-2 py-2 text-xs"><AlertTriangle /><AlertDescription className="break-all text-xs">{s.error}</AlertDescription></Alert>}
         <TabsContent value="input"><JsonView value={s.input} /></TabsContent>
@@ -105,9 +106,9 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
 export function RunTrace({ trace, events, meta, selected, onSelect, replay, onExitReplay }: {
   trace: Trace; events: RunEvent[]; meta: Meta; selected: string | null; onSelect: (s: Span | null) => void; replay?: string; onExitReplay?: () => void
 }) {
-  const [raw, setRaw] = useState(false)
+  const { t } = useTranslation(); const [raw, setRaw] = useState(false)
   const sel = trace.spans.find(s => s.key === selected) || null
-  if (!events.length) return <div className="p-3 text-xs text-muted-foreground">Nhấn Run để chạy workflow…</div>
+  if (!events.length) return <div className="p-3 text-xs text-muted-foreground">{t('trace.empty')}</div>
   return <div className="h-full flex flex-col min-h-0">
     <Summary trace={trace} replay={replay} onExitReplay={onExitReplay} raw={raw} setRaw={setRaw} />
     <div className="flex-1 min-h-0 flex">
@@ -115,8 +116,8 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('break-all', e.type === 'error' && 'text-destructive')}><span className="text-muted-foreground">{i}</span> {JSON.stringify(e)}</div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
           {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'default' : 'destructive'} id="trace-run-error" className={cn('mx-3 my-1 w-auto py-2', trace.status === 'timeout' && 'border-warning/40 bg-warning/10 text-warning')}>{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
-          {trace.status === 'cancelled' && <Alert className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">Run đã bị huỷ{events.some(e => e.reason === 'disconnect') ? ' (mất kết nối)' : ''}. Các bước chưa xong được đánh dấu huỷ.</AlertDescription></Alert>}
-          {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">Done · final state: {Object.keys(trace.final || {}).length} keys</div>}</>}
+          {trace.status === 'cancelled' && <Alert className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
+          {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">{t('trace.done', { count: Object.keys(trace.final || {}).length })}</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}
     </div>

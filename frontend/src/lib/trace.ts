@@ -2,22 +2,26 @@ import i18n, { eventErrors, type ApiErrorBody } from '@/lib/i18n'
 // Turns the run event stream into one span per node execution (LangSmith/Langfuse-style trace).
 export type RunEvent = { type: string; node?: string; label?: string; node_type?: string; iteration?: number; duration_ms?: number
   input?: any; delta?: any; state?: any; errors?: string[]; error?: ApiErrorBody; ts?: number; tokens?: number; usage?: Usage & { total_tokens?: number }; run_id?: string; status?: string; reason?: string
-  metrics?: RunMetrics | null; trace_id?: string | null; trace_url?: string | null }
+  metrics?: RunMetrics | null; trace_id?: string | null; trace_url?: string | null; prompt?: string; response?: string }
 // TASK-0010: token usage on node_finished, per-run metrics on the final run_summary event (and in run history)
 export type Usage = { provider?: string; model?: string; tokens?: number; tokens_in?: number; tokens_out?: number; cost_usd?: number | null; estimated?: boolean }
 export type RunMetrics = { duration_ms: number; tokens: number; tokens_in: number; tokens_out: number; cost_usd: number | null; error_count: number }
-export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled'
+export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled' | 'waiting'
   start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; cost?: number | null; usage?: Usage; events: RunEvent[] }
-export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout'; start?: number; end?: number; total?: number
-  tokens?: number; errors: string[]; final?: any; metrics?: RunMetrics; traceUrl?: string }
+export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout' | 'waiting'; start?: number; end?: number; total?: number
+  tokens?: number; errors: string[]; final?: any; metrics?: RunMetrics; traceUrl?: string
+  waiting?: { runId?: string; node?: string; label?: string; prompt?: string } }
 
 export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: string; type?: string } = () => ({})): Trace {
   const spans: Span[] = []; const counts: Record<string, number> = {}; const errors: string[] = []; let summary: RunEvent | undefined
+  let runId: string | undefined; let waitingEv: RunEvent | undefined; let resumed: string | undefined
   const st = { v: (events.length ? 'running' : 'idle') as Trace['status'] }; let final: any
   const open = (n: string) => [...spans].reverse().find(s => s.node === n && s.status === 'running')
   const t = (e: RunEvent, i: number) => e.ts ?? i / 1000
   events.forEach((e, i) => {
     const n = e.node
+    if ((e.type === 'run_started' || e.type === 'run_resumed') && e.run_id) runId = e.run_id
+    if (e.type === 'node_started' && n && n === resumed) { resumed = undefined; return } // resumed Human node keeps its span
     if (e.type === 'node_started' && n) {
       const it = (counts[n] = (counts[n] || 0) + 1); const m = meta(n)
       spans.push({ key: `${n}#${it}`, node: n, label: e.label || m.label || n, type: e.node_type || m.type || 'code', iter: it, status: 'running', start: t(e, i), events: [e] })
@@ -32,7 +36,10 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
       if (s) { Object.assign(s, { status: 'error', end: t(e, i), duration: e.duration_ms ?? s.duration, error: msg, input: e.input ?? s.input }); s.events.push(e) }
     } else if (e.type === 'run_cancelled') { st.v = 'cancelled'
     } else if (e.type === 'run_finished') { if (st.v !== 'error') st.v = 'ok'; final = e.state
-    } else if (e.type === 'run_summary') { summary = e }
+    } else if (e.type === 'run_summary') { summary = e
+    } else if (e.type === 'run_waiting') { st.v = 'waiting'; waitingEv = e; const s = n ? open(n) : undefined; if (s) { s.status = 'waiting'; s.events.push(e) }
+    } else if (e.type === 'run_resumed') { st.v = 'running'; waitingEv = undefined; resumed = n
+      const s = n ? [...spans].reverse().find(x => x.node === n && x.status === 'waiting') : undefined; if (s) { s.status = 'running'; s.events.push(e) } }
   })
   // Speculative "started" rows (predicted next nodes) that never ran are dropped once the run ends.
   const status = st.v; const done = status !== 'running' && status !== 'idle'
@@ -46,7 +53,8 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
   const tokens = kept.reduce((a, s) => a + (s.tokens || 0), 0)
   const metrics = summary?.metrics ?? undefined
   return { spans: kept, status, start, end, total: metrics?.duration_ms ?? (start != null && end != null ? (end - start) * 1000 : undefined),
-    tokens: metrics?.tokens ?? (tokens || undefined), errors, final, metrics, traceUrl: summary?.trace_url ?? undefined }
+    tokens: metrics?.tokens ?? (tokens || undefined), errors, final, metrics, traceUrl: summary?.trace_url ?? undefined,
+    waiting: status === 'waiting' && waitingEv ? { runId, node: waitingEv.node, label: waitingEv.label, prompt: waitingEv.prompt } : undefined }
 }
 
 export type DiffRow = { key: string; kind: 'added' | 'changed' | 'removed' | 'same'; before?: any; after?: any }

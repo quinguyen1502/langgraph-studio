@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { PendingRuns } from '@/components/pending-runs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -77,6 +78,7 @@ export function WorkflowsPage() {
       {notice && <div role="status" id="wf-notice" className="fixed bottom-4 right-4 z-50 max-w-sm rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-2 text-sm">{notice}</div>}
       {loadErr && <Alert variant="destructive" id="wf-load-error"><AlertCircle /><AlertDescription className="flex items-center gap-2">{t('list.loadError', { error: loadErr })}
         <Button size="sm" variant="outline" className="ml-auto" onClick={() => { setLoading(true); load() }}><RefreshCw />{t('common.retry')}</Button></AlertDescription></Alert>}
+      <PendingRuns />
       <Card className="p-0 overflow-hidden">
         <Table>
           <TableHeader><TableRow><TableHead className="pl-4">{t('list.colName')}</TableHead><TableHead>{t('list.colNodes')}</TableHead><TableHead>{t('list.colUpdated')}</TableHead><TableHead>{t('list.colLastRun')}</TableHead><TableHead className="w-12" /></TableRow></TableHeader>

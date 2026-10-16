@@ -25,7 +25,8 @@
     "timeout": "quá giờ",
     "cancelled": "đã huỷ",
     "running": "đang chạy",
-    "done": "xong"
+    "done": "xong",
+    "waiting": "đang chờ"
   },
   "auth": {
     "loginTitle": "Đăng nhập LangGraph Studio",
@@ -125,7 +126,8 @@
     "tool": "HTTP hoặc Python function",
     "condition": "Rẽ nhánh theo state field",
     "end": "Kết thúc",
-    "code": "Node Python từ repo import"
+    "code": "Node Python từ repo import",
+    "human": "Tạm dừng để duyệt hoặc nhập"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -153,7 +155,8 @@
     "errorCount_other": "{{count}} lỗi",
     "openTrace": "Mở trace",
     "usageDetail": "{{model}}: {{tin}} vào / {{tout}} ra token · {{cost}}",
-    "estimated": "(ước tính)"
+    "estimated": "(ước tính)",
+    "waiting": "Đang chờ người duyệt"
   },
   "import": {
     "button": "Import repo",
@@ -230,7 +233,9 @@
     "IMPORT_ZIP_TOO_LARGE": "Zip quá lớn (tối đa 50 MB)",
     "IMPORT_INVALID": "Import thất bại: {{reason}}",
     "IMPORT_JOB_NOT_FOUND": "Không tìm thấy import job",
-    "IMPORT_NOT_READY": "Job chưa sẵn sàng hoặc graph không hợp lệ"
+    "IMPORT_NOT_READY": "Job chưa sẵn sàng hoặc graph không hợp lệ",
+    "RUN_NOT_WAITING": "Run này không chờ phản hồi",
+    "RUN_RESPONSE_INVALID": "Phản hồi phải là văn bản (tối đa {{max}} ký tự)"
   },
   "lang": {
     "en": "English",
@@ -248,11 +253,26 @@
     "promptTemplate": "Prompt template ({{field}})",
     "reference": "Tham chiếu (module:function)",
     "source": "Mã nguồn",
-    "url": "URL"
+    "url": "URL",
+    "humanPrompt": "Câu hỏi cho người duyệt ({{field}})"
   },
   "samples": {
     "input": "{\n  \"message\": \"Đơn hàng A100 của tôi đâu rồi?\"\n}",
     "prompt": "Trả lời: {{var}}",
     "greeting": "Xin chào!"
+  },
+  "human": {
+    "title": "Đang chờ phản hồi của bạn",
+    "node": "Node: {{label}}",
+    "response": "Phản hồi",
+    "placeholder": "Nhập phản hồi, hoặc duyệt / từ chối",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "submit": "Gửi phản hồi",
+    "pendingTitle": "Đang chờ bạn",
+    "pendingDesc": "Các run đang dừng ở node Human",
+    "respond": "Phản hồi",
+    "cancelRun": "Huỷ run",
+    "resumeFailed": "Không tiếp tục được: {{error}}"
   }
 }

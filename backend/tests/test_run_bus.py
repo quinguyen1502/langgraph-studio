@@ -47,13 +47,16 @@ def test_redis_publishes_events_on_run_channel():
 class _Runs:
     def __init__(self): self.rows = []
     def add(self, r): self.rows.append(r)
+    def get(self, rid): return next((r for r in self.rows if r.id == rid), None)
 
 
 def _slow_plan(steps=50):
     def events():
         for i in range(steps): time.sleep(0.02); yield {"type": "node_finished", "node": f"n{i}"}
         yield {"type": "run_finished", "state": {}}
-    return NS(workflow_id="w1", input={}, events=events)
+    from app.services.run_service import RunPlan
+    plan = RunPlan("w1", {}, {}); plan.events = events
+    return plan
 
 
 def test_cancel_through_bus_stops_run(bus):

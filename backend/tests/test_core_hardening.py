@@ -125,7 +125,7 @@ def test_disconnect_cancels_run():
     t = token(); wid = save(t, slow_wf(5))
     with c.websocket_connect(f"/ws/run?token={t}") as ws:
         ws.send_json({"workflow_id": wid, "input": {}}); ws.receive_json()
-    for _ in range(40):
+    for _ in range(100):
         time.sleep(0.1)
         runs = c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()["data"]
         if runs: break

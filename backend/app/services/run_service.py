@@ -23,6 +23,10 @@ class RunPlan:
     workflow: dict
     input: dict
     resolve: Optional[Callable[[str], dict]] = None  # credential lookup bound to the run's user
+    # resuming a waiting run (TASK-0006): same run id, earlier events, {node, value, state}
+    run_id: Optional[str] = None
+    previous: Optional["Run"] = None
+    resume: Optional[dict] = None
 
     @property
     def imported(self) -> bool:
@@ -30,7 +34,7 @@ class RunPlan:
 
     def events(self) -> Iterator[dict]:
         if self.imported: return repo_import.run_imported(self.workflow, dict(self.input))
-        return run_stream(self.workflow, self.input, self.resolve)
+        return run_stream(self.workflow, self.input, self.resolve, self.resume)
 
 
 def error_event(error: dict, **extra) -> dict:
@@ -49,6 +53,7 @@ def _normalise(ev: dict) -> dict:
     return ev
 
 
+RESPONSE_MAX = 10_000  # characters of a human response
 CANCEL_API = object()  # worker -> loop marker: the bus reported a cancel request
 
 
@@ -66,12 +71,15 @@ class RunService:
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
+        if self.bus.owner(rid) is None and self.runs.get(rid) is not None:  # not running here or elsewhere: maybe waiting
+            return self.cancel_waiting(rid, uid)
         if self.bus.owner(rid) != uid: raise AppError("RUN_NOT_FOUND")  # unknown, finished or not yours
         self.bus.request_cancel(rid)
 
     # ---- planning / validation of the client request ----
     def plan(self, uid: str, req) -> RunPlan:
         if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
+        if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"))
         wid = req.get("workflow_id"); row = None
         if wid:
             row = self.workflows.get_owned(wid, uid)
@@ -84,6 +92,36 @@ class RunService:
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
         return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None)
 
+    # ---- human-in-the-loop (TASK-0006) ----
+    def waiting_run(self, rid: str, uid: str) -> Run:
+        r = self.runs.get(rid)
+        if r is None or r.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only (DEC-0013)
+        if r.status != "waiting" or not r.checkpoint: raise AppError("RUN_NOT_WAITING")
+        return r
+
+    def plan_resume(self, uid: str, rid: str, response) -> RunPlan:
+        if isinstance(response, bool): response = "approved" if response else "rejected"
+        if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
+        r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
+        return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
+                       self.credentials.resolver(uid) if self.credentials else None,
+                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response})
+
+    def pending(self, uid: str) -> list[dict]:
+        """Runs of this user waiting for a human response (newest first)."""
+        out = []
+        for r in self.runs.list_waiting(uid):
+            ev = next((e for e in reversed(json.loads(r.events or "[]")) if e.get("type") == "run_waiting"), {})
+            w = self.workflows.get(r.workflow_id) if r.workflow_id and r.workflow_id != "adhoc" else None
+            out.append({"id": r.id, "workflow_id": r.workflow_id, "workflow_name": w.name if w else None, "node": ev.get("node"),
+                        "label": ev.get("label"), "prompt": ev.get("prompt"), "started": r.started, "waiting_since": r.ended})
+        return out
+
+    def cancel_waiting(self, rid: str, uid: str) -> None:
+        r = self.waiting_run(rid, uid); events = json.loads(r.events or "[]")
+        events.append({"type": "run_cancelled", "ts": time.time(), "reason": "api"})
+        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid)
+
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
@@ -94,15 +132,19 @@ class RunService:
                  "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
                 for r in self.runs.list_for_workflow(wid)]
 
-    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "") -> dict:
-        """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}."""
+    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None) -> dict:
+        """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}.
+        A waiting run keeps its checkpoint and gets its (single) trace only once it ends."""
         t1 = time.time(); metrics = summarize(events, t0, t1)  # from the full events, before capping
-        try: trace_id = self.telemetry.record_run({"id": rid, "workflow_id": wid, "owner": uid, "status": status, "started": t0, "ended": t1}, events, metrics)
-        except Exception: trace_id = None  # tracing must never fail a run
+        trace_id = None
+        if status != "waiting":
+            try: trace_id = self.telemetry.record_run({"id": rid, "workflow_id": wid, "owner": uid, "status": status, "started": t0, "ended": t1}, events, metrics)
+            except Exception: trace_id = None  # tracing must never fail a run
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
-                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, **metrics))
+                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None,
+                          checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics))
         return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
 
     # ---- execution ----
@@ -111,12 +153,14 @@ class RunService:
         """Stream events through `send` (returns False once the client is gone). `listen` resolves to
         "cancelled" or "disconnected"; a cancel can also arrive through the RunBus (reason "api").
         Returns the final status: ok | error | cancelled | timeout."""
-        rid = uuid.uuid4().hex[:10]; self.bus.start(rid, uid)  # registered so REST/other workers can cancel it
+        rid = plan.run_id or uuid.uuid4().hex[:10]; self.bus.start(rid, uid)  # registered so REST/other workers can cancel it
         try: return await self._execute(rid, plan, send, listen, uid)
         finally: self.bus.finish(rid)
 
     async def _execute(self, rid, plan, send, listen, uid) -> str:
-        t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus
+        t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus; checkpoint = None
+        prev = plan.previous; started = prev.started if prev else t0
+        if prev: events.extend(json.loads(prev.events or "[]"))  # resumed: one run, one event log
         q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop(); cancel = threading.Event()
 
         def put(x):
@@ -150,7 +194,8 @@ class RunService:
             except Exception: pass  # fan-out is best effort; the socket and history stay authoritative
             if connected: connected = await send(cap_event(ev))
 
-        await emit({"type": "run_started", "run_id": rid, "ts": t0})
+        await emit({"type": "run_resumed" if prev else "run_started", "run_id": rid, "ts": t0,
+                    **({"node": plan.resume["node"], "response": plan.resume["value"]} if prev else {})})
         threading.Thread(target=worker, daemon=True).start()
         listener = asyncio.create_task(listen()); deadline = t0 + config.run_timeout(); ended = None
         while True:
@@ -163,6 +208,7 @@ class RunService:
                 ev = _normalise(ev); ev["ts"] = time.time()
                 if ev["type"] == "run_finished": final = ev.get("state")
                 if ev["type"] == "error": status = "error"
+                if ev["type"] == "run_waiting": status = "waiting"; checkpoint = {**ev.pop("checkpoint"), "workflow": plan.workflow}
                 await emit(ev); continue
             get.cancel()
             if listener in done:
@@ -178,6 +224,6 @@ class RunService:
         elif ended == "timeout":
             status = "timeout"
             await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))
-        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, t0, uid)
+        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

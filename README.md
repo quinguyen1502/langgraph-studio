@@ -17,6 +17,13 @@ Dùng LLM thật: `export OPENAI_API_KEY=sk-...` (tuỳ chọn `OPENAI_BASE_URL`
 - Mọi API workflow/run cần header `Authorization: Bearer <token>`; WebSocket dùng `ws://.../ws/run?token=<token>`.
 - Workflow thuộc về user tạo ra nó; user mới đăng ký được tặng 1 bản workflow ví dụ.
 
+### Quy tắc mật khẩu & phiên đăng nhập (TASK-0003)
+- Đăng ký: mật khẩu ≥ 8 ký tự, có cả chữ và số (tối đa 128). Tài khoản demo `admin123` được seed sẵn nên không bị áp quy tắc này.
+- Email được chuẩn hoá (trim + chữ thường). Lỗi đăng nhập luôn là "Sai email hoặc mật khẩu" (không lộ email nào tồn tại).
+- Token hết hạn hoặc không hợp lệ → tự đăng xuất, chuyển tới `/login?expired=1&next=…` kèm thông báo, đăng nhập lại sẽ quay về trang cũ. Frontend cũng tự đăng xuất đúng lúc token hết hạn.
+- `JWT_TTL_SECONDS` (mặc định 86400). Khi `JWT_SECRET` còn là giá trị placeholder, backend log cảnh báo; với `STUDIO_ENV=production` thì backend từ chối khởi động.
+- Giới hạn số lần đăng nhập sai / khoá tài khoản: **chưa làm** (hoãn, ngoài phạm vi TASK-0003).
+
 ## Các màn hình
 - `/login`, `/register`: form shadcn Card, báo lỗi (sai mật khẩu, email trùng…), link qua lại.
 - `/workflows`: bảng workflow (tên, số node, thời gian cập nhật, trạng thái lần chạy cuối), ô tìm kiếm, nút **New workflow**, menu ⋯ để đổi tên / nhân bản / xoá (có Dialog xác nhận).
@@ -49,6 +56,14 @@ Nút mặt trăng/mặt trời trên thanh trên cùng (mọi màn hình). Lựa
 cd backend && .venv/bin/python -m pytest -q   # cấu hình trong backend/pyproject.toml
 cd frontend && npm run build && npm run lint
 ```
+E2E (Playwright, headless) — tự khởi động backend riêng ở :8100 (DB tạm) và Vite ở :5190:
+```bash
+cd frontend && npx playwright install chromium   # lần đầu; hoặc dùng Chrome có sẵn: PW_CHROME=/usr/bin/google-chrome
+npm run e2e                                      # login → list → open → run, sai mật khẩu, token hết hạn, rename/duplicate/delete, 100+ workflow
+SHOTS=1 npm run e2e -- screenshots               # chụp lại docs/screenshots/auth-*, list-*, editor-not-found
+```
+`E2E_UVICORN` cho phép chỉ định đường dẫn uvicorn khác (mặc định `backend/.venv/bin/uvicorn`). E2E chưa chạy trên CI.
+
 GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build trên Node 20/22, có cache) và `factory-verify.yml` (sinh bởi `factory stack apply`). Cài backend thủ công: `pip install -e "backend[dev]"`.
 
 ## Giao diện

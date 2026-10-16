@@ -6,10 +6,28 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from .compiler import validate, run_stream, TOOLS, ValidationError
 from .example import EXAMPLE
-from .auth import hash_password, verify_password, make_token, decode_token, current_user
+from .auth import hash_password, verify_password, make_token, decode_token, current_user, password_problem, check_secret
 
 DB = os.environ.get("STUDIO_DB", os.path.join(os.path.dirname(__file__), "..", "studio.db"))
 app = FastAPI(title="LangGraph Studio MVP")
+check_secret()
+NAME_MAX = 120
+
+def clean_name(name) -> str:
+    n = " ".join(str(name or "").split())
+    if not n: raise HTTPException(400, "Tên workflow không được để trống")
+    if len(n) > NAME_MAX: raise HTTPException(400, f"Tên workflow tối đa {NAME_MAX} ký tự")
+    return n
+
+def unique_name(c, owner, base, exclude=None) -> str:
+    """'X' -> 'X (copy)' -> 'X (copy 2)'... unique among the owner's workflows."""
+    names = {r["name"] for r in c.execute("SELECT id, name FROM workflows WHERE owner=?", (owner,)) if r["id"] != exclude}
+    if base not in names: return base
+    root = re.sub(r" \(copy(?: \d+)?\)$", "", base)
+    def mk(suffix): return f"{root[:NAME_MAX - len(suffix)].rstrip()}{suffix}"
+    n, cand = 1, mk(" (copy)")
+    while cand in names: n += 1; cand = mk(f" (copy {n})")
+    return cand
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 DEMO_EMAIL, DEMO_PW = "admin@example.com", "admin123"
 
@@ -46,7 +64,8 @@ class Creds(BaseModel):
 def register(cr: Creds):
     email = cr.email.strip().lower()
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email): raise HTTPException(400, "Email không hợp lệ")
-    if len(cr.password) < 6: raise HTTPException(400, "Mật khẩu tối thiểu 6 ký tự")
+    if len(email) > 254: raise HTTPException(400, "Email không hợp lệ")
+    if (msg := password_problem(cr.password)): raise HTTPException(400, msg)
     uid = uuid.uuid4().hex[:10]
     with db() as c:
         if c.execute("SELECT 1 FROM users WHERE email=?", (email,)).fetchone(): raise HTTPException(409, "Email đã được đăng ký")
@@ -59,7 +78,8 @@ def login(cr: Creds):
     email = cr.email.strip().lower()
     with db() as c:
         u = c.execute("SELECT * FROM users WHERE email=?", (email,)).fetchone()
-    if not u or not verify_password(cr.password, u["password"]): raise HTTPException(401, "Sai email hoặc mật khẩu")
+    if not u or not verify_password(cr.password, u["password"]):
+        raise HTTPException(401, "Sai email hoặc mật khẩu")  # generic: no user enumeration
     return {"token": make_token(u["id"], email), "user": {"id": u["id"], "email": email}}
 
 @app.get("/api/me")
@@ -100,6 +120,8 @@ def save_wf(wf: dict, user=Depends(current_user)):
         ex = c.execute("SELECT owner FROM workflows WHERE id=?", (wid,)).fetchone()
         if ex and ex["owner"] != user["id"]: raise HTTPException(403, "Không có quyền")
         old = json.loads(c.execute("SELECT data FROM workflows WHERE id=?", (wid,)).fetchone()["data"]) if ex else {}
+        wf["name"] = clean_name(wf.get("name", "Untitled workflow"))
+        if not ex: wf["name"] = unique_name(c, user["id"], wf["name"])
         wf.pop("source", None)  # never trust client-provided source metadata
         if old.get("source"): wf["source"] = old["source"]
         c.execute("INSERT OR REPLACE INTO workflows(id,name,data,updated,owner) VALUES(?,?,?,?,?)",
@@ -112,17 +134,20 @@ class Rename(BaseModel):
 @app.patch("/api/workflows/{wid}")
 def rename_wf(wid: str, body: Rename, user=Depends(current_user)):
     with db() as c:
-        r = _own(c, wid, user["id"]); d = json.loads(r["data"]); d["name"] = body.name
-        c.execute("UPDATE workflows SET name=?, data=?, updated=? WHERE id=?", (body.name, json.dumps(d, ensure_ascii=False), time.time(), wid))
-    return {"ok": True}
+        r = _own(c, wid, user["id"]); name = clean_name(body.name)
+        if any(x["name"] == name for x in c.execute("SELECT name FROM workflows WHERE owner=? AND id!=?", (user["id"], wid))):
+            raise HTTPException(409, "Đã có workflow trùng tên")
+        d = json.loads(r["data"]); d["name"] = name
+        c.execute("UPDATE workflows SET name=?, data=?, updated=? WHERE id=?", (name, json.dumps(d, ensure_ascii=False), time.time(), wid))
+    return {"ok": True, "name": name}
 
 @app.post("/api/workflows/{wid}/duplicate")
 def dup_wf(wid: str, user=Depends(current_user)):
     nid = uuid.uuid4().hex[:8]
     with db() as c:
-        r = _own(c, wid, user["id"]); d = json.loads(r["data"]); d["name"] = r["name"] + " (copy)"
+        r = _own(c, wid, user["id"]); d = json.loads(r["data"]); d["name"] = unique_name(c, user["id"], r["name"])
         c.execute("INSERT INTO workflows(id,name,data,updated,owner) VALUES(?,?,?,?,?)", (nid, d["name"], json.dumps(d, ensure_ascii=False), time.time(), user["id"]))
-    return {"id": nid}
+    return {"id": nid, "name": d["name"]}
 
 @app.delete("/api/workflows/{wid}")
 def del_wf(wid: str, user=Depends(current_user)):

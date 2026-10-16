@@ -1,13 +1,16 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
-import { getToken } from '@/lib/api'
+import { getToken, loginUrl, scheduleExpiry, tokenValid } from '@/lib/api'
 import { AuthPage } from '@/pages/Auth'
 import { WorkflowsPage } from '@/pages/Workflows'
 import { EditorPage } from '@/pages/Editor'
 
 function Protected({ children }: { children: React.ReactElement }) {
-  return getToken() ? children : <Navigate to="/login" replace />
+  const loc = useLocation()
+  if (tokenValid()) return children
+  return <Navigate to={loginUrl(!!getToken(), loc.pathname + loc.search)} replace />
 }
+scheduleExpiry()
 export default function App() {
   return <TooltipProvider delayDuration={300}><BrowserRouter><Routes>
     <Route path="/login" element={<AuthPage mode="login" />} />

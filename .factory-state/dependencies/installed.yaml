@@ -1,12 +1,12 @@
 schema_version: 1
 status: installed
-updated_at: '2026-10-16T12:38:41.012677+00:00'
-source_sha256: 59c53d294d70a2578c01bfa40d9410982f4c83826a929a3c0793edb957b702bf
+updated_at: '2026-10-16T13:13:40.971692+00:00'
+source_sha256: 9750d66dbebd5fef6b6750060b0f1f61e4b91a3bbab46a0a02bec60577f948e9
 inputs:
   backend/pyproject.toml: 8a1fc60eb4737c4bb4ab5e206079e63b6e4eb29f206c933eea8252fc8b8560a6
   backend/requirements.txt: 09e2aa2a5d945e66ea7ea0f2e346f1c1ef1cdb6b0f8eeac1e08e26d201c5a31d
-  frontend/package-lock.json: 98b1f5113afd7a0ba0378eb44948c30ef17e463ebc8e0587186c4b94b447b2ab
-  frontend/package.json: a09e6ba6e1591dad955c20441c434c0b68c74dfa80b890f39f9c6a89cfaf9149
+  frontend/package-lock.json: abb245160af13694841b09c19134dff89486f11bfb9d8d6a17ae5d22283b2581
+  frontend/package.json: 3de110f2e7106a45421d5658cd039c0289cbba918543bf19d8f30645e886e27b
 commands:
 - target_id: node:frontend
   manager: npm
@@ -24,7 +24,7 @@ commands:
   - ls
   - --depth=0
   - --include=dev
-  started_at: '2026-10-16T12:38:34.914450+00:00'
+  started_at: '2026-10-16T13:13:34.615007+00:00'
   returncode: 0
   status: observed
   integrity:
@@ -50,7 +50,7 @@ commands:
   expected_paths:
   - backend/.venv/bin/python
   integrity_argv: []
-  started_at: '2026-10-16T12:38:39.338265+00:00'
+  started_at: '2026-10-16T13:13:38.900142+00:00'
   returncode: 0
   status: observed
 failure: null

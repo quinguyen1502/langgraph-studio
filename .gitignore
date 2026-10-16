@@ -24,3 +24,5 @@ backend/imports/
 .DS_Store
 *.log
 *.egg-info/
+frontend/test-results/
+frontend/playwright-report/

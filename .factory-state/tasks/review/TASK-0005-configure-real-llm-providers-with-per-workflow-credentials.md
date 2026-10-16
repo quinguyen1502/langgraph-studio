@@ -3,7 +3,8 @@
 ## Metadata
 
 - Project: langgraph-studio
-- Task ID: TASK-0003
+- Task ID: TASK-0005
+- Previous ID: TASK-0003 (renumbered 2026-10-16, DEC-0007)
 - Status: review
 - Owner:
 - Created: 2026-10-16
@@ -75,6 +76,7 @@ Implement REQ-0002: Configure real LLM providers with per-workflow credentials.
 
 ## Activity Log
 
+- 2026-10-16: Renumbered TASK-0003 -> TASK-0005 (Phase 1 step 5) per DEC-0007. Branch name keeps the old ID.
 - 2026-10-16: Moved todo -> doing on `factory/task-0003-configure-real-llm-providers-with-per-workflow-credentials` (stacked on TASK-0002).
 - 2026-10-16: Implemented `backend/app/credentials.py` (Fernet at rest, masked hints), credential CRUD API, provider calls for OpenAI/compatible + Anthropic via injectable httpx client, per-node `credential_id`, Credentials dialog + LLM node credential select. Tests: `backend/tests/test_llm_providers.py` (7 tests, mocked HTTP). Local: pytest 26 passed; factory verify run --profile full PASSED. Moved to review.
 
@@ -82,7 +84,7 @@ Implement REQ-0002: Configure real LLM providers with per-workflow credentials.
 
 ## Handoff Notes
 
-- Review: `.factory-state/artifacts/REV-0002-task-0003.md`; QA: `.factory-state/artifacts/QA-0002-task-0003.md`; decision: `.factory-state/decisions/DEC-0006-llm-credential-model.md`
+- Review: `.factory-state/artifacts/REV-0002-task-0005.md`; QA: `.factory-state/artifacts/QA-0002-task-0005.md`; decision: `.factory-state/decisions/DEC-0006-llm-credential-model.md`
 - No real API keys were used; real-provider smoke test is left for the owner.
 - GitHub Actions blocked by account billing (same as TASK-0002).
 

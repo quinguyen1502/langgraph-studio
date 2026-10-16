@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0002
-- Status: In Progress (TASK-0003)
+- Status: In Progress (TASK-0005)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
 - Updated: 2026-10-16

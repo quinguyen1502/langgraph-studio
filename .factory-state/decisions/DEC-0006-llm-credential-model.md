@@ -4,13 +4,13 @@
 
 - Project: langgraph-studio
 - Decision ID: DEC-0006
-- Status: Proposed (agent decision within TASK-0003; owner confirms in PR review)
+- Status: Proposed (agent decision within TASK-0005; owner confirms in PR review)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Related Requirements: REQ-0002
 - Related Architecture: ARCH-0001
-- Related Tasks: TASK-0003
+- Related Tasks: TASK-0005
 
 ## Context
 
@@ -50,7 +50,7 @@ Smallest model that satisfies per-workflow selection without adding workspaces/R
 
 ## Approval
 
-- Approved By: pending (owner review on TASK-0003 PR)
+- Approved By: pending (owner review on TASK-0005 PR)
 - Approved On:
 - Scope And Limits: langgraph-studio backend
 

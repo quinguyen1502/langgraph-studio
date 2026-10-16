@@ -20,6 +20,7 @@ Init creates a valid factory skeleton. It is not ready for implementation until 
 - Allocate new artifact IDs after `git fetch --all --prune` with `factory ids next <TYPE> --all-refs`. Do not guess the next number.
 - Use task branches named `factory/task-<id>-<short-name>` unless project standards define another convention.
 - Do not merge without explicit human approval.
+- UI work: use shadcn/ui components and theme tokens only; no hard-coded colours; new status colours go in as shadcn-style CSS variables (`--success`, `--warning`, `--info`). Follow `docs/ui-conventions.md` (DEC-0008) and run its review checklist.
 - Do not start implementation source work until `factory ready` exits 0, unless the owner explicitly overrides that gate.
 
 ## Workflow Skills

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Check, ChevronRight, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
 
 export function CopyButton({ value, className }: { value: any; className?: string }) {
@@ -15,9 +16,9 @@ export function CopyButton({ value, className }: { value: any; className?: strin
 
 function Leaf({ v }: { v: any }) {
   if (v === null) return <span className="text-muted-foreground">null</span>
-  if (typeof v === 'string') return <span className="text-emerald-700 dark:text-emerald-400 break-all whitespace-pre-wrap">"{v}"</span>
-  if (typeof v === 'number') return <span className="text-sky-700 dark:text-sky-400">{v}</span>
-  if (typeof v === 'boolean') return <span className="text-violet-700 dark:text-violet-400">{String(v)}</span>
+  if (typeof v === 'string') return <span className="text-success break-all whitespace-pre-wrap">"{v}"</span>
+  if (typeof v === 'number') return <span className="text-info">{v}</span>
+  if (typeof v === 'boolean') return <span className="text-warning">{String(v)}</span>
   return <span>{String(v)}</span>
 }
 
@@ -28,12 +29,12 @@ function Node({ k, v, depth }: { k?: string; v: any; depth: number }) {
   if (!isObj) return <div className="pl-4">{keyEl}<Leaf v={v} /></div>
   const entries = Array.isArray(v) ? v.map((x, i) => [String(i), x] as const) : Object.entries(v)
   const [o, c] = Array.isArray(v) ? ['[', ']'] : ['{', '}']
-  return <div className={cn(depth > 0 && 'pl-4')}>
-    <button type="button" className="inline-flex items-center -ml-4 hover:text-foreground text-muted-foreground" onClick={() => setOpen(!open)} aria-expanded={open}>
-      <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} /></button>
+  return <Collapsible open={open} onOpenChange={setOpen} className={cn(depth > 0 && 'pl-4')}>
+    <CollapsibleTrigger asChild><Button variant="ghost" size="icon" className="size-4 -ml-4 align-middle text-muted-foreground" aria-label={open ? 'Thu gọn' : 'Mở rộng'}>
+      <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} /></Button></CollapsibleTrigger>
     {keyEl}<span className="text-muted-foreground">{o}{!open && <> {entries.length} {Array.isArray(v) ? 'items' : 'keys'} {c}</>}</span>
-    {open && <>{entries.map(([kk, vv]) => <Node key={kk} k={kk} v={vv} depth={depth + 1} />)}<div className="text-muted-foreground">{c}</div></>}
-  </div>
+    <CollapsibleContent>{entries.map(([kk, vv]) => <Node key={kk} k={kk} v={vv} depth={depth + 1} />)}<div className="text-muted-foreground">{c}</div></CollapsibleContent>
+  </Collapsible>
 }
 
 export function JsonView({ value, className }: { value: any; className?: string }) {

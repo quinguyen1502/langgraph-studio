@@ -3,6 +3,11 @@ import { AlertTriangle, CheckCircle2, Clock, Coins, Layers, Loader2, X, XCircle,
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { JsonView } from '@/components/json-view'
 import { fmtMs, stateDiff, type RunEvent, type Span, type Trace } from '@/lib/trace'
@@ -11,22 +16,24 @@ import { cn } from '@/lib/utils'
 type Meta = (type: string) => { icon: LucideIcon; color: string; label: string }
 
 const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; className?: string }) =>
-  s === 'running' ? <Loader2 className={cn('size-4 animate-spin text-amber-500', className)} />
+  s === 'running' ? <Loader2 className={cn('size-4 animate-spin text-warning', className)} />
   : s === 'error' ? <XCircle className={cn('size-4 text-destructive', className)} />
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />
-  : <CheckCircle2 className={cn('size-4 text-emerald-600 dark:text-emerald-500', className)} />
+  : <CheckCircle2 className={cn('size-4 text-success', className)} />
 
 const STATUS_TEXT = { idle: 'Chưa chạy', running: 'Đang chạy', ok: 'Hoàn thành', error: 'Lỗi' } as const
 
 function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; replay?: string; onExitReplay?: () => void; raw: boolean; setRaw: (b: boolean) => void }) {
   return <div id="trace-summary" data-status={trace.status} className={cn('flex items-center gap-3 border-b px-3 py-1.5 text-xs', trace.status === 'error' && 'bg-destructive/5')}>
     <span className="flex items-center gap-1.5 font-medium"><StatusIcon s={trace.status} />{STATUS_TEXT[trace.status]}</span>
+    <Separator orientation="vertical" className="h-4" />
     <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3.5" />{fmtMs(trace.total)}</span>
     <span className="flex items-center gap-1 text-muted-foreground"><Layers className="size-3.5" />{trace.spans.length} bước</span>
     {trace.tokens != null && <span className="flex items-center gap-1 text-muted-foreground"><Coins className="size-3.5" />{trace.tokens} tokens</span>}
-    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <button aria-label="Thoát replay" onClick={onExitReplay}><X className="size-3" /></button>}</Badge>}
-    <label className="ml-auto flex items-center gap-1.5 text-muted-foreground cursor-pointer select-none">
-      <input type="checkbox" id="raw-toggle" className="accent-primary" checked={raw} onChange={e => setRaw(e.target.checked)} />Raw events</label>
+    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label="Thoát replay" onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
+    <div className="ml-auto flex items-center gap-2">
+      <Switch id="raw-toggle" size="sm" checked={raw} onCheckedChange={setRaw} />
+      <Label htmlFor="raw-toggle" className="text-xs font-normal text-muted-foreground">Raw events</Label></div>
   </div>
 }
 
@@ -45,11 +52,12 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
       {s.iter > 1 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">#{s.iter}</Badge>}
       <span className="truncate shrink-0 max-w-[25%] text-muted-foreground font-mono text-[10px]">{s.node}</span>
       {s.tokens != null && <span className="text-muted-foreground text-[10px]">· {s.tokens} tok</span>}
-      {s.error && <span className="truncate min-w-0 text-destructive text-[11px]">— {s.error}</span>}
+      {s.error && <Tooltip><TooltipTrigger asChild><span className="truncate min-w-0 text-destructive text-[11px]">— {s.error}</span></TooltipTrigger>
+        <TooltipContent className="max-w-md break-all">{s.error}</TooltipContent></Tooltip>}
     </span>
     <span className="text-right tabular-nums text-muted-foreground">{s.status === 'running' && s.duration == null ? '…' : fmtMs(s.duration)}</span>
     <span className="relative h-1.5 rounded-full bg-muted overflow-hidden">
-      <span className={cn('absolute inset-y-0 rounded-full', s.status === 'error' ? 'bg-destructive' : s.status === 'running' ? 'bg-amber-500 animate-pulse' : 'bg-primary/70')} style={{ left: `${left}%`, width: `${width}%` }} />
+      <span className={cn('absolute inset-y-0 rounded-full', s.status === 'error' ? 'bg-destructive' : s.status === 'running' ? 'bg-warning animate-pulse' : 'bg-primary/70')} style={{ left: `${left}%`, width: `${width}%` }} />
     </span>
   </button>
 }
@@ -60,8 +68,8 @@ function DiffView({ s }: { s: Span }) {
   const v = (x: any) => typeof x === 'string' ? x : JSON.stringify(x)
   return <div className="rounded-md border font-mono text-[11px] divide-y" id="trace-diff">
     {rows.map(r => <div key={r.key} data-kind={r.kind} className={cn('grid grid-cols-[16px_120px_1fr] gap-2 px-2 py-1',
-      r.kind === 'added' && 'bg-emerald-500/10', r.kind === 'changed' && 'bg-amber-500/10', r.kind === 'removed' && 'bg-destructive/10', r.kind === 'same' && 'text-muted-foreground')}>
-      <span className={cn(r.kind === 'added' && 'text-emerald-600', r.kind === 'changed' && 'text-amber-600', r.kind === 'removed' && 'text-destructive')}>{{ added: '+', changed: '~', removed: '−', same: ' ' }[r.kind]}</span>
+      r.kind === 'added' && 'bg-success/10', r.kind === 'changed' && 'bg-warning/10', r.kind === 'removed' && 'bg-destructive/10', r.kind === 'same' && 'text-muted-foreground')}>
+      <span className={cn(r.kind === 'added' && 'text-success', r.kind === 'changed' && 'text-warning', r.kind === 'removed' && 'text-destructive')}>{{ added: '+', changed: '~', removed: '−', same: ' ' }[r.kind]}</span>
       <span className="truncate font-semibold" title={r.key}>{r.key}</span>
       <span className="break-all whitespace-pre-wrap">{r.kind === 'changed' ? <><span className="line-through opacity-60">{v(r.before)}</span>{' → '}<span>{v(r.after)}</span></> : v(r.kind === 'removed' ? r.before : r.after)}</span>
     </div>)}
@@ -82,7 +90,7 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
     <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
       <TabsList className="mx-3 mt-1.5 h-7">{['input', 'output', 'diff', 'raw'].map(t => <TabsTrigger key={t} value={t} className="text-xs h-5 px-2">{{ input: 'Input', output: 'Output', diff: 'State diff', raw: 'Raw' }[t]}</TabsTrigger>)}</TabsList>
       <ScrollArea className="flex-1 min-h-0"><div className="p-3 pt-2">
-        {s.error && <div role="alert" className="mb-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive"><AlertTriangle className="size-3.5 mt-0.5 shrink-0" /><span className="break-all">{s.error}</span></div>}
+        {s.error && <Alert variant="destructive" className="mb-2 py-2 text-xs"><AlertTriangle /><AlertDescription className="break-all text-xs">{s.error}</AlertDescription></Alert>}
         <TabsContent value="input"><JsonView value={s.input} /></TabsContent>
         <TabsContent value="output"><JsonView value={s.output} /></TabsContent>
         <TabsContent value="diff"><DiffView s={s} /></TabsContent>
@@ -104,7 +112,7 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('break-all', e.type === 'error' && 'text-destructive')}><span className="text-muted-foreground">{i}</span> {JSON.stringify(e)}</div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
-          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <div role="alert" className="mx-3 my-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1 text-xs text-destructive">{trace.errors.join('; ')}</div>}
+          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant="destructive" className="mx-3 my-1 w-auto py-2"><AlertTriangle /><AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
           {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">Done · final state: {Object.keys(trace.final || {}).length} keys</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}

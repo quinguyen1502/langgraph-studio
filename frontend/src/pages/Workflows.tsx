@@ -82,7 +82,7 @@ export function WorkflowsPage() {
               <TableCell><Badge variant="secondary">{w.node_count}</Badge></TableCell>
               <TableCell className="text-muted-foreground">{fmt(w.updated)}</TableCell>
               <TableCell>{w.last_run_status ? <div className="flex items-center gap-2">
-                <Badge className={w.last_run_status === 'ok' ? 'bg-emerald-600 text-white' : ''} variant={w.last_run_status === 'ok' ? 'default' : 'destructive'}>{w.last_run_status}</Badge>
+                <Badge variant={w.last_run_status === 'ok' ? 'success' : 'destructive'}>{w.last_run_status}</Badge>
                 <span className="text-xs text-muted-foreground">{fmt(w.last_run_at!)}</span></div> : <span className="text-xs text-muted-foreground">Chưa chạy</span>}</TableCell>
               <TableCell onClick={e => e.stopPropagation()}>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={`Thao tác cho ${w.name}`} className="wf-actions"><MoreHorizontal /></Button></DropdownMenuTrigger>

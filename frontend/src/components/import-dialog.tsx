@@ -49,7 +49,7 @@ export function ImportDialog() {
     <DialogContent className="sm:max-w-2xl">
       <DialogHeader><DialogTitle>Import LangGraph repo</DialogTitle>
         <DialogDescription>Clone repo, cài dependencies vào venv riêng, đọc graph từ <code>langgraph.json</code> (hoặc quét StateGraph đã compile).</DialogDescription></DialogHeader>
-      <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+      <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-xs text-warning">
         <ShieldAlert className="size-4 shrink-0" />Code của repo sẽ được thực thi (trong subprocess + venv riêng, không phải sandbox đầy đủ). Chỉ import repo bạn tin tưởng.</div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList><TabsTrigger value="url"><GitFork />GitHub URL</TabsTrigger><TabsTrigger value="zip"><Upload />Zip upload</TabsTrigger></TabsList>
@@ -68,7 +68,7 @@ export function ImportDialog() {
       {job && <div className="space-y-2">
         <div className="flex items-center gap-2 text-xs">{STEPS.map((s, i) => { const cur = STEPS.indexOf(job.status); const done = cur > i || job.status === 'ready'
           return <div key={s} className="flex items-center gap-1.5">
-            <Badge variant={done ? 'default' : 'outline'} className={cn(done && 'bg-emerald-600 text-white', cur === i && job.status !== 'ready' && 'border-amber-500')}>
+            <Badge variant={done ? 'success' : 'outline'} className={cn(cur === i && job.status !== 'ready' && 'border-warning')}>
               {cur === i && busy ? <Loader2 className="size-3 animate-spin" /> : done ? <CheckCircle2 className="size-3" /> : null}{s}</Badge>{i < 3 && <span className="text-muted-foreground">→</span>}</div> })}
           {job.status === 'error' && <Badge variant="destructive">error</Badge>}</div>
         <ScrollArea className="h-40 rounded-md border bg-muted/40"><pre className="p-2 text-[11px] whitespace-pre-wrap">{job.log.join('\n') || 'Đang chờ…'}</pre></ScrollArea>

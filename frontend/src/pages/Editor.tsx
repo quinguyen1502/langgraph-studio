@@ -30,13 +30,13 @@ import { buildTrace } from '@/lib/trace'
 type Field = { name: string; type: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
 const META: Record<string, { label: string; icon: LucideIcon; color: string; desc: string }> = {
-  start: { label: 'Start', icon: CirclePlay, color: 'text-sky-500 bg-sky-500/10', desc: 'Điểm bắt đầu' },
-  llm: { label: 'LLM', icon: Brain, color: 'text-violet-500 bg-violet-500/10', desc: 'Gọi model với prompt' },
-  tool: { label: 'Tool/API', icon: Wrench, color: 'text-orange-500 bg-orange-500/10', desc: 'HTTP hoặc Python function' },
-  condition: { label: 'Condition', icon: GitBranch, color: 'text-amber-500 bg-amber-500/10', desc: 'Rẽ nhánh theo state field' },
-  end: { label: 'End', icon: Flag, color: 'text-zinc-500 bg-zinc-500/10', desc: 'Kết thúc' },
+  start: { label: 'Start', icon: CirclePlay, color: 'bg-muted text-foreground', desc: 'Điểm bắt đầu' },
+  llm: { label: 'LLM', icon: Brain, color: 'bg-muted text-foreground', desc: 'Gọi model với prompt' },
+  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-muted text-foreground', desc: 'HTTP hoặc Python function' },
+  condition: { label: 'Condition', icon: GitBranch, color: 'bg-muted text-foreground', desc: 'Rẽ nhánh theo state field' },
+  end: { label: 'End', icon: Flag, color: 'bg-muted text-muted-foreground', desc: 'Kết thúc' },
 }
-META.code = { label: 'Code', icon: Code2, color: 'text-teal-600 bg-teal-500/10 dark:text-teal-400', desc: 'Node Python từ repo import' }
+META.code = { label: 'Code', icon: Code2, color: 'bg-secondary text-secondary-foreground', desc: 'Node Python từ repo import' }
 const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
@@ -57,17 +57,17 @@ const DEFAULTS: Record<string, any> = {
 }
 
 function StatusBadge({ s }: { s?: string }) {
-  if (s === 'running') return <Badge className="bg-amber-500 text-white gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
-  if (s === 'done') return <Badge className="bg-emerald-600 text-white gap-1"><CheckCircle2 className="size-3" />done</Badge>
+  if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
+  if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />done</Badge>
   if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />error</Badge>
   return null
 }
 
 function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
-  return <div className={cn(type === 'code' && 'border-teal-500/60 border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
-    selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-amber-500 ring-4 ring-amber-500/30',
-    d._status === 'done' && 'border-emerald-500', d._status === 'error' && 'border-destructive')}>
+  return <div className={cn(type === 'code' && 'border-ring border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
+    selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
+    d._status === 'done' && 'border-success', d._status === 'error' && 'border-destructive')}>
     {type !== 'start' && <Handle type="target" position={Position.Left} />}
     <div className="flex items-center gap-2">
       <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
@@ -212,7 +212,7 @@ function Studio() {
         </DialogContent>
       </Dialog>
       <div className="ml-auto flex items-center gap-2">
-        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge className="bg-teal-600 text-white gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
+        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
         <Badge variant="secondary">LLM: {mode}</Badge>{wid && <Badge variant="outline">id: {wid}</Badge>}
         <ThemeToggle /><UserMenu />
       </div>

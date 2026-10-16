@@ -27,6 +27,7 @@ langgraph-studio
 
 - Internal use; SQLite for MVP; must run offline in mock mode
 - Imported code only runs in a subprocess with its own venv
+- UI: shadcn/ui components and theme tokens only, no hard-coded colours (DEC-0008, `docs/ui-conventions.md`)
 
 ## Declared Technology Direction
 

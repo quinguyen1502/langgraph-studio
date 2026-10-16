@@ -5,7 +5,9 @@ from __future__ import annotations
 import json, os, re, shutil, subprocess, sys, threading, time, uuid, zipfile
 from typing import Any, Dict, List, Optional
 
-ROOT = os.environ.get("STUDIO_IMPORT_DIR", os.path.join(os.path.dirname(__file__), "..", "imports"))
+# Import workspaces live OUTSIDE the repository by default (keeps cloned repos/venvs out of git and tooling scans).
+# Override with STUDIO_IMPORT_DIR. Workflows imported earlier keep their absolute paths and still run.
+ROOT = os.path.expanduser(os.environ.get("STUDIO_IMPORT_DIR") or "~/.langgraph-studio/imports")
 RUNNER = os.path.join(os.path.dirname(__file__), "sandbox", "runner.py")
 INSPECT_TIMEOUT = int(os.environ.get("STUDIO_INSPECT_TIMEOUT", "120"))
 RUN_TIMEOUT = int(os.environ.get("STUDIO_RUN_TIMEOUT", "300"))

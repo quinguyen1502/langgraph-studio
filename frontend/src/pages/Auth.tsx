@@ -49,17 +49,17 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
         <CardContent className="space-y-4">
           {expired && !error && <div id="expired-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><Clock className="size-4 shrink-0" />Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</div>}
           {error && <div id="auth-error" className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert"><AlertCircle className="size-4 shrink-0" />{error}</div>}
-          <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
+          <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
           <div className="space-y-1.5"><Label htmlFor="password">Mật khẩu</Label>
-            <Input id="password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby={isLogin ? undefined : 'pw-rules'} />
+            <Input id="password" className="h-10" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby={isLogin ? undefined : 'pw-rules'} />
             {!isLogin && <ul id="pw-rules" className="mt-1.5 space-y-0.5 text-xs">{PW_RULES.map(([t, f]) => { const ok = f(password); return <li key={t} className={cn('flex items-center gap-1.5', ok ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground')}>{ok ? <Check className="size-3" /> : <X className="size-3" />}{t}</li> })}</ul>}
           </div>
           {!isLogin && <div className="space-y-1.5"><Label htmlFor="confirm">Xác nhận mật khẩu</Label>
-            <Input id="confirm" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
+            <Input id="confirm" className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
             {mismatch && <p className="text-xs text-destructive">Mật khẩu xác nhận không khớp</p>}</div>}
         </CardContent>
         <CardFooter className="flex-col gap-3 mt-6">
-          <Button type="submit" id="auth-submit" className="w-full" disabled={!canSubmit}>{busy && <Loader2 className="animate-spin" />}{isLogin ? 'Đăng nhập' : 'Đăng ký'}</Button>
+          <Button type="submit" id="auth-submit" size="lg" className="w-full h-11 text-base" disabled={!canSubmit}>{busy && <Loader2 className="animate-spin" />}{isLogin ? 'Đăng nhập' : 'Đăng ký'}</Button>
           <p className="text-sm text-muted-foreground">{isLogin ? 'Chưa có tài khoản? ' : 'Đã có tài khoản? '}<Link className="underline text-foreground" to={next !== '/workflows' ? `${other}?next=${encodeURIComponent(next)}` : other}>{isLogin ? 'Đăng ký' : 'Đăng nhập'}</Link></p>
         </CardFooter>
       </form>

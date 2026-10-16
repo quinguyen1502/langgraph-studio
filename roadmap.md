@@ -7,6 +7,7 @@
 ## P0
 
 - TASK-0002 CI for backend tests and frontend build
+- REQ-0001 / TASK-0014 Review and harden core MVP (compiler, runtime, run API)
 - REQ-0009 / TASK-0004 Container-sandboxed imports (security)
 - REQ-0002 / TASK-0003 Real LLM providers with credentials
 

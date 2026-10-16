@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+langgraph
+httpx
+pyjwt
+python-multipart
+cryptography
+pytest
+
+[dev]

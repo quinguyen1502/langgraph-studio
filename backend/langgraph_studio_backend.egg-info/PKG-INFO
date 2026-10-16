@@ -1,0 +1,14 @@
+Metadata-Version: 2.4
+Name: langgraph-studio-backend
+Version: 0.1.0
+Summary: FastAPI backend for LangGraph Studio (compiler, runner, auth, repo import)
+Requires-Python: >=3.12
+Requires-Dist: fastapi
+Requires-Dist: uvicorn[standard]
+Requires-Dist: langgraph
+Requires-Dist: httpx
+Requires-Dist: pyjwt
+Requires-Dist: python-multipart
+Requires-Dist: cryptography
+Requires-Dist: pytest
+Provides-Extra: dev

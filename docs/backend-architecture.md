@@ -35,6 +35,12 @@
 - Repositories hold no rules; each method opens its own short session (safe from the run worker thread).
 - Service unit tests use in-memory fake repositories (`tests/test_services.py`).
 
+## Responses and errors (DEC-0010)
+
+- Every REST response is the envelope `{success, data, error}`. Routes return plain data; `EnvelopeResponse` (the FastAPI default response class) wraps it.
+- Services raise `AppError("CODE", details=…, **params)`; codes and messages live only in `core/errors.py` `CATALOG`. `api/error_handlers.py` is the only place that builds error responses. Format and code catalog: `docs/api-errors.md`.
+- Engine messages (validator, node errors) are English free text carried in `details` / `errors`.
+
 ## Database
 
 - `DATABASE_URL` (SQLAlchemy URL) overrides `STUDIO_DB`; default `sqlite:///<STUDIO_DB or backend/studio.db>`. SQLite keeps WAL + 15 s busy timeout.

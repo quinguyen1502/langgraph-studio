@@ -2,7 +2,7 @@
 import hashlib, hmac, re, secrets, time
 import jwt
 from . import config
-from .errors import Unauthorized
+from .errors import AppError
 from .logging import get_logger
 
 log = get_logger("auth")
@@ -20,11 +20,11 @@ def check_secret():
         return False
     return True
 
-def password_problem(pw: str) -> str | None:
+def password_problem(pw: str) -> AppError | None:
     """Return a user-facing message if the password is too weak, else None."""
-    if len(pw) < 8: return "Mật khẩu phải có ít nhất 8 ký tự"
-    if len(pw) > 128: return "Mật khẩu tối đa 128 ký tự"
-    if not re.search(r"[A-Za-z]", pw) or not re.search(r"\d", pw): return "Mật khẩu phải có cả chữ và số"
+    if len(pw) < 8: return AppError("AUTH_PASSWORD_TOO_SHORT", min=8)
+    if len(pw) > 128: return AppError("AUTH_PASSWORD_TOO_LONG", max=128)
+    if not re.search(r"[A-Za-z]", pw) or not re.search(r"\d", pw): return AppError("AUTH_PASSWORD_WEAK")
     return None
 
 def hash_password(pw: str) -> str:
@@ -43,10 +43,10 @@ def make_token(uid: str, email: str, ttl: int | None = None) -> str:
     return jwt.encode({"sub": uid, "email": email, "exp": int(time.time()) + (TTL if ttl is None else ttl)}, SECRET, algorithm="HS256")
 
 def decode_token(tok: str) -> dict:
-    """Return the JWT payload or raise Unauthorized (expired tokens carry X-Auth-Error: expired)."""
+    """Return the JWT payload or raise Unauthorized (expired: AUTH_TOKEN_EXPIRED + header X-Auth-Error: expired)."""
     try:
         return jwt.decode(tok, SECRET, algorithms=["HS256"])
     except jwt.ExpiredSignatureError:
-        raise Unauthorized("Phiên đăng nhập đã hết hạn", headers={"X-Auth-Error": "expired"})
+        raise AppError("AUTH_TOKEN_EXPIRED", headers={"X-Auth-Error": "expired"})
     except jwt.PyJWTError:
-        raise Unauthorized("Token không hợp lệ hoặc đã hết hạn")
+        raise AppError("AUTH_TOKEN_INVALID")

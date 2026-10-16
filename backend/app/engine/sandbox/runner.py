@@ -58,7 +58,7 @@ def node_info(g, name):
             except Exception: info["source"] = repr(target)
         info["is_llm"] = any(h in (info["source"] or "") for h in LLM_HINTS)
     except Exception as e:
-        info["source"] = f"(không lấy được source: {e})"
+        info["source"] = f"(source unavailable: {e})"
     return info
 
 def schema_fields(g):
@@ -124,7 +124,7 @@ def main():
     except BaseException as e:
         msg = f"{type(e).__name__}: {e}"
         if any(h in msg for h in KEY_HINTS) or "environment variable" in msg.lower():
-            msg = "Thiếu biến môi trường / API key cho repo import: " + msg
+            msg = "Missing environment variable / API key for the imported repo: " + msg
         emit({"type": "error", "errors": [msg], "trace": traceback.format_exc()[-3000:]}); sys.exit(1)
 
 if __name__ == "__main__":

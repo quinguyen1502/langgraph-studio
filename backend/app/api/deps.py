@@ -3,7 +3,7 @@ from functools import lru_cache
 from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
-from ..core.errors import TooLarge
+from ..core.errors import AppError
 from ..models.database import Database
 from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository
 from ..services.auth_service import AuthService
@@ -42,4 +42,4 @@ def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) ->
 
 async def limit_body(request: Request):
     n = int(request.headers.get("content-length") or 0)
-    if n > config.workflow_max(): raise TooLarge(f"Workflow quá lớn (> {config.workflow_max() // 1024} KB)")
+    if n > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)

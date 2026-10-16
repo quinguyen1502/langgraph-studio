@@ -34,7 +34,7 @@ test('trace timeline: rows, detail tabs, diff, canvas sync, raw toggle, history 
   await page.locator('#raw-toggle').check(); await expect(page.locator('#raw-events')).toContainText('node_finished')
   await page.locator('#raw-toggle').uncheck()
   // history replay uses same timeline
-  await page.getByRole('tab', { name: 'History' }).click()
+  await page.getByRole('tab', { name: 'Lịch sử' }).click()
   await page.locator('[role=tabpanel] button').first().click()
   await expect(summary).toContainText('Replay')
   await expect(rows.first()).toBeVisible()
@@ -44,7 +44,7 @@ test('trace timeline: loop iterations (#2, #3) and node error highlighted', asyn
   await loginAdmin(page)
   const token = await page.evaluate(() => localStorage.getItem('token'))
   const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: LOOP })
-  await page.goto(`/workflows/${(await r.json()).id}`)
+  await page.goto(`/workflows/${(await r.json()).data.id}`)
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'error', { timeout: 30_000 })
   await expect(page.locator('.trace-row[data-span="think#3"]')).toContainText('#3')

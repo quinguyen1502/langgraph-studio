@@ -22,6 +22,10 @@ Init creates a valid factory skeleton. It is not ready for implementation until 
 - Do not merge without explicit human approval.
 - UI work: use shadcn/ui components and theme tokens only; no hard-coded colours; new status colours go in as shadcn-style CSS variables (`--success`, `--warning`, `--info`). Follow `docs/ui-conventions.md` (DEC-0008) and run its review checklist.
 - Backend work: keep the layers in `docs/backend-architecture.md` (DEC-0009): routers call services, services call repositories/engine, no FastAPI in services, no raw SQL (SQLAlchemy models + Alembic migrations for every schema change). `tests/test_layers.py` must pass.
+- Coding rules: **DRY, SOLID, KISS**. One source of truth per concern, minimal abstractions, no speculative layers. Concretely:
+  - API responses: use the shared envelope (`schemas/envelope.py`) and the central handlers in `api/error_handlers.py`; no per-route try/except or hand-built error JSON.
+  - Errors: add new codes only to `core/errors.py` `CATALOG` (English message), `docs/api-errors.md`, and both `frontend/src/locales/*.json` (`errors.<CODE>`). `tests/test_api_envelope.py` enforces this.
+  - Frontend: call the API only through `lib/api.ts` `api()` (it unwraps the envelope). Show errors via `errorText`/`eventErrors` (`lib/i18n.ts`). Put every UI string in `locales/en.json` + `locales/vi.json` with identical keys; no literal UI text in components.
 - Do not start implementation source work until `factory ready` exits 0, unless the owner explicitly overrides that gate.
 
 ## Workflow Skills

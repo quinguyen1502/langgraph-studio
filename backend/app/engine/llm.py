@@ -41,7 +41,7 @@ def _post(provider: str, url: str, headers: Dict[str, str], body: Dict[str, Any]
         with http_client() as c:
             r = c.post(url, headers=headers, json=body)
     except httpx.HTTPError as e:
-        raise LLMError(f"{provider}: không kết nối được ({type(e).__name__})") from None
+        raise LLMError(f"{provider}: connection failed ({type(e).__name__})") from None
     if r.status_code >= 400:
         try: msg = r.json().get("error", {}).get("message") or r.text
         except Exception: msg = r.text
@@ -62,8 +62,8 @@ def call_llm(prompt: str, model: str, cred: Optional[Dict[str, Any]] = None) -> 
                      {"x-api-key": key, "anthropic-version": "2023-06-01"},
                      {"model": model or "claude-3-5-haiku-latest", "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]})
         try: return "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text").strip()
-        except Exception: raise LLMError("anthropic: response không hợp lệ") from None
+        except Exception: raise LLMError("anthropic: invalid response") from None
     data = _post("openai", f"{base or 'https://api.openai.com/v1'}/chat/completions", {"Authorization": f"Bearer {key}"},
                  {"model": model or "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]})
     try: return data["choices"][0]["message"]["content"].strip()
-    except Exception: raise LLMError("openai: response không hợp lệ") from None
+    except Exception: raise LLMError("openai: invalid response") from None

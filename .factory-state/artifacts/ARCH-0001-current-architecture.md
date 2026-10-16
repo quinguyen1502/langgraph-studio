@@ -47,6 +47,8 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 
 ## Boundaries And Interfaces
 
+- REST responses use the envelope `{success, data, error{code,message,details?}}` (DEC-0010, `docs/api-errors.md`). Error codes come from `core/errors.py` `CATALOG`. The frontend translates codes with react-i18next (`frontend/src/locales/{en,vi}.json`).
+
 - REST: `/api/auth/*`, `/api/me`, `/api/workflows*`, `/api/import*`, `/api/tools`, `/api/health`
 - WebSocket: `/ws/run?token=`
 - Subprocess contract: `runner.py inspect|run <repo> <file:var>` emitting JSON lines

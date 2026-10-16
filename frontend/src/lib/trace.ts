@@ -1,6 +1,7 @@
+import i18n, { eventErrors, type ApiErrorBody } from '@/lib/i18n'
 // Turns the run event stream into one span per node execution (LangSmith/Langfuse-style trace).
 export type RunEvent = { type: string; node?: string; label?: string; node_type?: string; iteration?: number; duration_ms?: number
-  input?: any; delta?: any; state?: any; errors?: string[]; ts?: number; tokens?: number; usage?: { total_tokens?: number }; run_id?: string; status?: string; reason?: string }
+  input?: any; delta?: any; state?: any; errors?: string[]; error?: ApiErrorBody; ts?: number; tokens?: number; usage?: { total_tokens?: number }; run_id?: string; status?: string; reason?: string }
 export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled'
   start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; events: RunEvent[] }
 export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout'; start?: number; end?: number; total?: number
@@ -22,7 +23,7 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
       Object.assign(s, { status: 'done', end: t(e, i), duration: e.duration_ms, input: e.input, output: e.delta, tokens: e.tokens ?? e.usage?.total_tokens })
       s.events.push(e)
     } else if (e.type === 'error') {
-      st.v = e.status === 'timeout' ? 'timeout' : 'error'; const msg = (e.errors || []).join('; ') || 'Error'; errors.push(msg)
+      st.v = e.status === 'timeout' ? 'timeout' : 'error'; const msg = eventErrors(e).join('; ') || i18n.t('trace.error'); errors.push(msg)
       const s = (n ? open(n) ?? [...spans].reverse().find(x => x.node === n) : undefined) ?? (e.status === 'timeout' ? undefined : [...spans].reverse().find(x => x.status === 'running'))
       if (s) { Object.assign(s, { status: 'error', end: t(e, i), duration: e.duration_ms ?? s.duration, error: msg, input: e.input ?? s.input }); s.events.push(e) }
     } else if (e.type === 'run_cancelled') { st.v = 'cancelled'

@@ -14,9 +14,9 @@ test('capture auth and list states', async ({ page, request }) => {
   await page.goto('/register'); await page.getByLabel('Email').fill(email)
   await page.getByLabel('Mật khẩu', { exact: true }).fill('abcdefg'); await page.getByLabel('Xác nhận mật khẩu').fill('abcdefx')
   await page.screenshot({ path: out('auth-register-password-rules') })
-  const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } }); const { token, user } = await r.json()
+  const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } }); const { token, user } = (await r.json()).data
   const H = { Authorization: `Bearer ${token}` }
-  for (const w of await (await request.get('/api/workflows', { headers: H })).json()) await request.delete(`/api/workflows/${w.id}`, { headers: H })
+  for (const w of (await (await request.get('/api/workflows', { headers: H })).json()).data) await request.delete(`/api/workflows/${w.id}`, { headers: H })
   await page.evaluate(([t, u]) => { localStorage.setItem('token', t); localStorage.setItem('user', JSON.stringify(u)) }, [token, user] as const)
   await page.goto('/workflows'); await expect(page.locator('#wf-empty')).toBeVisible(); await page.screenshot({ path: out('list-empty-state') })
   await request.post('/api/workflows', { headers: H, data: { name: 'A very long workflow name that keeps going to show truncation in the list view without breaking the table layout at all', nodes: [], edges: [] } })
@@ -59,7 +59,7 @@ test.describe('trace', () => {
         { id: '3', source: 'check', target: 'think', label: 'again' }, { id: '4', source: 'check', target: 'e', label: 'done' }],
     }
     const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: loop })
-    await page.goto(`/workflows/${(await r.json()).id}`); await page.locator('#run-btn').click()
+    await page.goto(`/workflows/${(await r.json()).data.id}`); await page.locator('#run-btn').click()
     await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'error', { timeout: 30_000 })
     await page.locator('.trace-row.bg-destructive\\/5').click(); await page.mouse.move(5, 5); await page.waitForTimeout(300)
     await page.screenshot({ path: out('trace-loop-or-error') })
@@ -80,7 +80,7 @@ test.describe('node colors', () => {
       edges: [{ id: 'a', source: 'start', target: 'llm' }, { id: 'b', source: 'llm', target: 'cond' }, { id: 'c', source: 'cond', target: 'tool', label: 'order_status' },
         { id: 'd', source: 'cond', target: 'code', label: 'general' }, { id: 'e', source: 'tool', target: 'end' }, { id: 'f', source: 'code', target: 'end' }] }
     const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })
-    await page.goto(`/workflows/${(await r.json()).id}`); await expect(page.locator('.react-flow__node')).toHaveCount(6)
+    await page.goto(`/workflows/${(await r.json()).data.id}`); await expect(page.locator('.react-flow__node')).toHaveCount(6)
     await page.waitForTimeout(600); await page.mouse.move(5, 5)
     await page.screenshot({ path: out('node-colors-light') })
     await page.getByRole('button', { name: /dark mode/i }).click(); await page.waitForTimeout(500); await page.mouse.move(5, 5)
@@ -103,7 +103,7 @@ const slow = (n: number, name: string) => {
 }
 async function open(page: Page, token: string | null, wf: object) {
   const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })
-  await page.goto(`/workflows/${(await r.json()).id}`)
+  await page.goto(`/workflows/${(await r.json()).data.id}`)
 }
 
 test.describe('runtime states', () => {

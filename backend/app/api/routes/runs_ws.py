@@ -1,7 +1,8 @@
 """WebSocket run controller: auth + socket I/O only; the run lifecycle lives in RunService."""
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
-from ...core.errors import DomainError, Unauthorized
+from ...core.errors import AppError
 from ...services.auth_service import AuthService
+from ...services.run_service import error_event
 from ..deps import run_service
 
 router = APIRouter()
@@ -14,7 +15,7 @@ async def ws_run(ws: WebSocket):
     Final status: ok | error | cancelled | timeout (stored in run history)."""
     try:
         uid = AuthService.user_from_token(ws.query_params.get("token") or "")["id"]
-    except Unauthorized:
+    except AppError:
         await ws.close(code=4401); return
     await ws.accept()
     try:
@@ -24,8 +25,8 @@ async def ws_run(ws: WebSocket):
     svc = run_service()
     try:
         plan = svc.plan(uid, req)
-    except DomainError as e:
-        await ws.send_json({"type": "error", "errors": [e.message]}); await ws.close(); return
+    except AppError as e:
+        await ws.send_json(error_event(e.to_dict())); await ws.close(); return
 
     state = {"connected": True}
 

@@ -2,7 +2,7 @@
 import asyncio, json
 from types import SimpleNamespace as NS
 import pytest
-from app.core.errors import BadRequest, Conflict, Forbidden, NotFound, Unauthorized
+from app.core.errors import AppError
 from app.services.auth_service import AuthService
 from app.services.run_service import RunService
 from app.services.workflow_service import WorkflowService
@@ -44,10 +44,10 @@ def test_workflow_crud_naming_and_ownership(svc):
     a = s.save({"name": "  Flow   A ", "nodes": [], "edges": []}, "u1")
     b = s.save({"name": "Flow A"}, "u1")
     assert s.get(a["id"], "u1")["name"] == "Flow A" and s.get(b["id"], "u1")["name"] == "Flow A (copy)"
-    with pytest.raises(NotFound): s.get(a["id"], "u2")
-    with pytest.raises(Forbidden): s.save({"id": a["id"], "name": "x"}, "u2")
-    with pytest.raises(Conflict): s.rename(b["id"], "Flow A", "u1")
-    with pytest.raises(BadRequest): s.rename(b["id"], "   ", "u1")
+    with pytest.raises(AppError): s.get(a["id"], "u2")
+    with pytest.raises(AppError): s.save({"id": a["id"], "name": "x"}, "u2")
+    with pytest.raises(AppError): s.rename(b["id"], "Flow A", "u1")
+    with pytest.raises(AppError): s.rename(b["id"], "   ", "u1")
     assert s.duplicate(a["id"], "u1")["name"] == "Flow A (copy 2)"
     s.delete(a["id"], "u1"); assert len(s.list("u1")) == 2
 
@@ -66,27 +66,27 @@ def test_list_includes_last_run(svc):
     [row] = svc.workflows.list("u1")
     assert row["last_run_status"] == "ok" and row["last_run_at"] == 5.0 and row["node_count"] > 0
     assert svc.runner.history(wid, "u1")[0]["final_state"] == {"x": 1}
-    with pytest.raises(NotFound): svc.runner.history(wid, "u2")
+    with pytest.raises(AppError): svc.runner.history(wid, "u2")
 
 
 def test_auth_register_login(svc):
     users = FakeUsers(); a = AuthService(users, svc.workflows)
     out = a.register(" Bob@Example.com ", "abc12345")
     assert out["user"]["email"] == "bob@example.com" and svc.workflows.list(out["user"]["id"])  # example seeded
-    with pytest.raises(Conflict): a.register("bob@example.com", "abc12345")
-    with pytest.raises(BadRequest): a.register("nope", "abc12345")
-    with pytest.raises(BadRequest): a.register("c@d.ef", "short")
+    with pytest.raises(AppError): a.register("bob@example.com", "abc12345")
+    with pytest.raises(AppError): a.register("nope", "abc12345")
+    with pytest.raises(AppError): a.register("c@d.ef", "short")
     assert AuthService.user_from_token(a.login("BOB@example.com", "abc12345")["token"])["email"] == "bob@example.com"
-    with pytest.raises(Unauthorized): a.login("bob@example.com", "wrong999")
-    with pytest.raises(Unauthorized): AuthService.user_from_token(None)
+    with pytest.raises(AppError): a.login("bob@example.com", "wrong999")
+    with pytest.raises(AppError): AuthService.user_from_token(None)
 
 
 def test_run_plan_rejections(svc):
     p = svc.runner.plan
-    with pytest.raises(BadRequest): p("u1", [1])
-    with pytest.raises(NotFound): p("u1", {"workflow_id": "missing"})
-    with pytest.raises(BadRequest): p("u1", {"input": "x"})
-    with pytest.raises(BadRequest): p("u1", {"workflow": "x"})
+    with pytest.raises(AppError): p("u1", [1])
+    with pytest.raises(AppError): p("u1", {"workflow_id": "missing"})
+    with pytest.raises(AppError): p("u1", {"input": "x"})
+    with pytest.raises(AppError): p("u1", {"workflow": "x"})
 
 
 def test_run_execute_records_history(svc):
@@ -134,14 +134,14 @@ def test_credential_service_encrypts_and_masks():
 
 def test_credential_service_rejections_and_ownership():
     s = CredentialService(FakeCredentials())
-    with pytest.raises(BadRequest): s.create("u1", "x", "nope", "k", None)
-    with pytest.raises(BadRequest): s.create("u1", "x", "openai", "  ", None)
-    with pytest.raises(BadRequest): s.create("u1", "x", "openai", "k", "ftp://x")
+    with pytest.raises(AppError): s.create("u1", "x", "nope", "k", None)
+    with pytest.raises(AppError): s.create("u1", "x", "openai", "  ", None)
+    with pytest.raises(AppError): s.create("u1", "x", "openai", "k", "ftp://x")
     cid = s.create("u1", "", "anthropic", "sk-ant-123456789", None)["id"]
     r = s.resolver("u1")(cid)
     assert r["api_key"] == "sk-ant-123456789" and r["base_url"] == "https://api.anthropic.com" and r["name"] == "anthropic"
-    with pytest.raises(ValueError, match="không thuộc về bạn"): s.resolver("u2")(cid)
-    with pytest.raises(NotFound): s.delete(cid, "u2")
+    with pytest.raises(AppError, match="not yours"): s.resolver("u2")(cid)
+    with pytest.raises(AppError): s.delete(cid, "u2")
     assert s.delete(cid, "u1") == {"ok": True}
 
 

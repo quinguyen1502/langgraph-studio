@@ -15,7 +15,7 @@ def test_hash():
 
 def test_login_demo_and_me():
     r = login(); assert r.status_code == 200
-    assert c.get("/api/me", headers=H(r.json()["token"])).json()["email"] == "admin@example.com"
+    assert c.get("/api/me", headers=H(r.json()["data"]["token"])).json()["data"]["email"] == "admin@example.com"
 
 def test_bad_login():
     assert login(p="wrong").status_code == 401
@@ -31,15 +31,15 @@ def test_ws_requires_token():
 def test_register_ownership_crud():
     email = f"u{uuid.uuid4().hex[:6]}@example.com"
     r = c.post("/api/auth/register", json={"email": email, "password": "secret12"}); assert r.status_code == 200
-    t = r.json()["token"]
+    t = r.json()["data"]["token"]
     assert c.post("/api/auth/register", json={"email": email, "password": "secret12"}).status_code == 409
-    wfs = c.get("/api/workflows", headers=H(t)).json(); assert len(wfs) == 1 and wfs[0]["node_count"] == 7
+    wfs = c.get("/api/workflows", headers=H(t)).json()["data"]; assert len(wfs) == 1 and wfs[0]["node_count"] == 7
     assert c.get("/api/workflows/example", headers=H(t)).status_code == 404  # admin's workflow
     wid = wfs[0]["id"]
-    d = c.post(f"/api/workflows/{wid}/duplicate", headers=H(t)).json()["id"]
+    d = c.post(f"/api/workflows/{wid}/duplicate", headers=H(t)).json()["data"]["id"]
     assert c.patch(f"/api/workflows/{d}", json={"name": "Renamed"}, headers=H(t)).status_code == 200
-    assert any(w["name"] == "Renamed" for w in c.get("/api/workflows", headers=H(t)).json())
+    assert any(w["name"] == "Renamed" for w in c.get("/api/workflows", headers=H(t)).json()["data"])
     assert c.delete(f"/api/workflows/{d}", headers=H(t)).status_code == 200
-    assert len(c.get("/api/workflows", headers=H(t)).json()) == 1
-    admin = login().json()["token"]
+    assert len(c.get("/api/workflows", headers=H(t)).json()["data"]) == 1
+    admin = login().json()["data"]["token"]
     assert c.delete(f"/api/workflows/{wid}", headers=H(admin)).status_code == 404

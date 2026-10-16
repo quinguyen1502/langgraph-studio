@@ -36,7 +36,7 @@ def _sh(job, cmd, cwd=None, timeout=INSTALL_TIMEOUT):
     p = subprocess.run(cmd, cwd=cwd, env=sub_env(), capture_output=True, text=True, timeout=timeout)
     tail = (p.stdout + p.stderr).strip().splitlines()[-15:]
     for l in tail: job["log"].append("  " + l)
-    if p.returncode != 0: raise ImportError_(f"Lệnh thất bại ({p.returncode}): {' '.join(cmd[:3])}…")
+    if p.returncode != 0: raise ImportError_(f"Command failed ({p.returncode}): {' '.join(cmd[:3])}…")
 
 
 def safe_extract(zpath: str, dest: str) -> str:
@@ -44,7 +44,7 @@ def safe_extract(zpath: str, dest: str) -> str:
         for m in z.infolist():
             target = os.path.realpath(os.path.join(dest, m.filename))
             if not target.startswith(os.path.realpath(dest) + os.sep) and target != os.path.realpath(dest):
-                raise ImportError_(f"Zip chứa đường dẫn không an toàn: {m.filename}")
+                raise ImportError_(f"Zip contains an unsafe path: {m.filename}")
         z.extractall(dest)
     entries = [e for e in os.listdir(dest) if not e.startswith("__MACOSX")]
     return os.path.join(dest, entries[0]) if len(entries) == 1 and os.path.isdir(os.path.join(dest, entries[0])) else dest
@@ -95,7 +95,7 @@ def inspect_ref(job_dir, repo, ref) -> dict:
     for e in evs:
         if e.get("type") == "graph": return e
     err = next((e for e in evs if e.get("type") == "error"), None)
-    raise ImportError_((err or {}).get("errors", [p.stderr.strip()[-800:] or "Không inspect được graph"])[0])
+    raise ImportError_((err or {}).get("errors", [p.stderr.strip()[-800:] or "Could not inspect the graph"])[0])
 
 
 def required_env(repo: str) -> List[str]:
@@ -120,7 +120,7 @@ def do_import(job_id: str):
         else:
             os.makedirs(src); src = safe_extract(job["zip_path"], src)
         repo = os.path.realpath(os.path.join(src, job.get("subdir") or ""))
-        if not repo.startswith(os.path.realpath(d)) or not os.path.isdir(repo): raise ImportError_("subdir không hợp lệ")
+        if not repo.startswith(os.path.realpath(d)) or not os.path.isdir(repo): raise ImportError_("Invalid subdir")
         job["repo"] = repo
         job["status"] = "installing"
         _sh(job, ["uv", "venv", "-q", os.path.join(d, "venv"), "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "venv", os.path.join(d, "venv")])
@@ -134,27 +134,27 @@ def do_import(job_id: str):
             _sh(job, pip + ["langgraph", "python-dotenv"])
         job["status"] = "inspecting"
         refs = find_graphs(repo)
-        if not refs: raise ImportError_("Không tìm thấy graph (langgraph.json hoặc biến StateGraph đã compile)")
-        _log(job, f"Tìm thấy {len(refs)} graph: " + ", ".join(r["ref"] for r in refs))
+        if not refs: raise ImportError_("No graph found (langgraph.json or a compiled StateGraph variable)")
+        _log(job, f"Found {len(refs)} graph(s): " + ", ".join(r["ref"] for r in refs))
         graphs = []
         for r in refs:
             try:
                 g = inspect_ref(d, repo, r["ref"]); graphs.append({**r, "graph": g}); _log(job, f"✓ {r['id']}: {len(g['nodes'])} nodes, {len(g['edges'])} edges")
             except Exception as e:
                 _log(job, f"✗ {r['id']}: {e}")
-        if not graphs: raise ImportError_("Không load được graph nào (xem log)")
+        if not graphs: raise ImportError_("No graph could be loaded (see log)")
         job["graphs"] = graphs; job["required_env"] = required_env(repo)
-        job["status"] = "ready"; _log(job, "Hoàn tất — chọn graph để tạo workflow")
+        job["status"] = "ready"; _log(job, "Done — pick a graph to create a workflow")
     except subprocess.TimeoutExpired as e:
         job["status"] = "error"; job["error"] = f"Timeout: {e.cmd[0]}"; _log(job, job["error"])
     except Exception as e:
-        job["status"] = "error"; job["error"] = str(e); _log(job, f"Lỗi: {e}")
+        job["status"] = "error"; job["error"] = str(e); _log(job, f"Error: {e}")
 
 
 def start_job(owner: str, kind: str, url: str = None, branch: str = None, subdir: str = None, zip_bytes: bytes = None, sync=False) -> str:
-    if kind == "url" and not GH_RE.match(url or ""): raise ImportError_("Chỉ hỗ trợ URL GitHub public dạng https://github.com/owner/repo")
-    if branch and not re.match(r"^[\w./-]+$", branch): raise ImportError_("Branch không hợp lệ")
-    if subdir and (".." in subdir.split("/") or subdir.startswith("/")): raise ImportError_("subdir không hợp lệ")
+    if kind == "url" and not GH_RE.match(url or ""): raise ImportError_("Only public GitHub URLs like https://github.com/owner/repo are supported")
+    if branch and not re.match(r"^[\w./-]+$", branch): raise ImportError_("Invalid branch")
+    if subdir and (".." in subdir.split("/") or subdir.startswith("/")): raise ImportError_("Invalid subdir")
     jid = uuid.uuid4().hex[:10]; d = os.path.realpath(os.path.join(ROOT, jid)); os.makedirs(d)
     job = {"id": jid, "owner": owner, "kind": kind, "url": url, "branch": branch, "subdir": subdir, "dir": d,
            "status": "queued", "log": [], "graphs": [], "error": None, "created": time.time()}
@@ -199,7 +199,7 @@ def run_imported(wf: dict, inp: dict, on_proc=None):
     s = wf["source"]
     missing = [k for k in s.get("required_env", []) if k not in os.environ and not _in_dotenv(s["repo_dir"], k)]
     if not os.path.exists(os.path.join(s["job_dir"], "venv", "bin", "python")):
-        yield {"type": "error", "errors": ["Môi trường import không còn (venv đã bị xoá). Hãy import lại repo."]}; return
+        yield {"type": "error", "errors": ["The import environment is gone (venv deleted). Please import the repo again."]}; return
     p = subprocess.Popen(runner_cmd(s["job_dir"], "run", s["repo_dir"], s["ref"]), cwd=s["repo_dir"], env=sub_env(),
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     timer = threading.Timer(RUN_TIMEOUT, p.kill); timer.start()
@@ -212,7 +212,7 @@ def run_imported(wf: dict, inp: dict, on_proc=None):
             try: ev = json.loads(line)
             except Exception: continue
             if ev.get("type") == "error" and missing:
-                ev["errors"] = ev.get("errors", []) + [f"Repo khai báo cần các biến: {', '.join(missing)} (chưa được đặt trong env của server hoặc .env của repo)"]
+                ev["errors"] = ev.get("errors", []) + [f"The repo requires variables: {', '.join(missing)} (not set in the server env or the repo .env)"]
             ev.pop("trace", None)
             if ev.get("node"): ev.setdefault("label", {"__start__": "Start", "__end__": "End"}.get(ev["node"], ev["node"]))
             if ev.get("type") in ("run_finished", "error"): got_end = True
@@ -223,7 +223,7 @@ def run_imported(wf: dict, inp: dict, on_proc=None):
         if p.poll() is None: p.kill()  # generator closed early (cancel/timeout) -> stop the subprocess
     if not got_end:
         err = p.stderr.read()[-800:]
-        yield {"type": "error", "errors": [f"Subprocess kết thúc bất thường (code {p.returncode}, có thể timeout {RUN_TIMEOUT}s). {err}"]}
+        yield {"type": "error", "errors": [f"Subprocess exited abnormally (code {p.returncode}, possibly a {RUN_TIMEOUT}s timeout). {err}"]}
 
 
 def _in_dotenv(repo, key):

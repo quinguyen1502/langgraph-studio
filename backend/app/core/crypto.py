@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 from typing import Optional
 from cryptography.fernet import Fernet, InvalidToken
+from .errors import AppError
 
 _fernet: Optional[Fernet] = None
 
@@ -35,7 +36,7 @@ def encrypt(secret: str) -> str: return fernet().encrypt(secret.encode()).decode
 
 def decrypt(token: str) -> str:
     try: return fernet().decrypt(token.encode()).decode()
-    except InvalidToken: raise ValueError("Không giải mã được credential (secret key đã thay đổi?)")
+    except InvalidToken: raise AppError("CREDENTIAL_DECRYPT_FAILED")
 
 
 def mask(secret: str) -> str: return ("•" * 4) + secret[-4:] if len(secret) >= 8 else "•" * 4

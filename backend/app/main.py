@@ -233,7 +233,8 @@ async def ws_run(ws: WebSocket):
             except Exception as e:
                 loop.call_soon_threadsafe(q.put_nowait, {"type": "error", "errors": [f"{type(e).__name__}: {e}"]})
             loop.call_soon_threadsafe(q.put_nowait, None)
-        await ws.send_json({"type": "run_started", "run_id": rid})
+        start_ev = {"type": "run_started", "run_id": rid, "ts": t0}; events.append(start_ev)
+        await ws.send_json(start_ev)
         threading.Thread(target=worker, daemon=True).start()
         while (ev := await q.get()) is not None:
             ev["ts"] = time.time(); events.append(ev)

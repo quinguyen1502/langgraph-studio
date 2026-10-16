@@ -186,25 +186,56 @@ def compile_workflow(wf: Dict[str, Any]):
     return g.compile()
 
 
+RECURSION_LIMIT = int(os.environ.get("STUDIO_RECURSION_LIMIT", 25))  # max super-steps per run (loops)
+TRACE_CAP = 16_000  # max JSON chars per traced payload (input/delta) in an event
+
+
+def cap_payload(obj: Any, limit: int = TRACE_CAP) -> Any:
+    """Return obj unchanged if its JSON is small, else a truncated preview marker."""
+    try:
+        txt = json.dumps(obj, ensure_ascii=False, default=str)
+    except Exception:
+        txt = str(obj)
+    if len(txt) <= limit: return obj
+    return {"_truncated": True, "size": len(txt), "preview": txt[:limit]}
+
+
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any]):
-    """Yield per-node events: started / finished(duration, delta). Sync generator."""
+    """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator."""
     app = compile_workflow(wf)
     nodes = {n["id"]: n for n in wf["nodes"]}
-    state = dict(inputs)
+    state = dict(inputs); counts: Dict[str, int] = {}
+
+    def meta(nid):
+        return {"node": nid, "label": nodes[nid]["data"].get("label"), "node_type": nodes[nid]["type"]}
+
+    def started(nid):
+        counts[nid] = counts.get(nid, 0) + 1
+        return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
+
     start_id = next(n["id"] for n in wf["nodes"] if n["type"] == "start")
-    yield {"type": "node_started", "node": start_id, "label": nodes[start_id]["data"].get("label")}
-    t0 = time.perf_counter(); pending = start_id
-    for chunk in app.stream(inputs, stream_mode="updates"):
-        for nid, delta in chunk.items():
-            delta = delta or {}
-            state.update(delta)
-            yield {"type": "node_finished", "node": nid, "label": nodes[nid]["data"].get("label"),
-                   "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "delta": delta}
-        # predict next node(s) to mark as started
-        nxt = _next_nodes(wf, list(chunk)[-1], state)
-        t0 = time.perf_counter()
-        for n2 in nxt:
-            yield {"type": "node_started", "node": n2, "label": nodes[n2]["data"].get("label")}
+    yield started(start_id)
+    t0 = time.perf_counter(); pending = [start_id]
+    try:
+        for chunk in app.stream(inputs, {"recursion_limit": RECURSION_LIMIT}, stream_mode="updates"):
+            before = dict(state)
+            for nid, delta in chunk.items():
+                delta = delta or {}
+                state.update(delta)
+                yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
+                       "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
+                       "input": cap_payload(before), "delta": cap_payload(delta)}
+            # predict next node(s) to mark as started
+            pending = _next_nodes(wf, list(chunk)[-1], state)
+            t0 = time.perf_counter()
+            for n2 in pending:
+                yield started(n2)
+    except Exception as e:  # attribute runtime failures to the node that was running
+        nid = pending[-1] if pending else None
+        yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
+               "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
+               "errors": [f"{type(e).__name__}: {e}"]}
+        return
     yield {"type": "run_finished", "state": state}
 
 

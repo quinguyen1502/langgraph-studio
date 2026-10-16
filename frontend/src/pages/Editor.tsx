@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, addEdge,
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
@@ -24,17 +24,19 @@ import { ArrowLeft } from 'lucide-react'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
+import { RunTrace } from '@/components/run-trace'
+import { buildTrace } from '@/lib/trace'
 
 type Field = { name: string; type: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[] }
-const META: Record<string, { label: string; icon: LucideIcon; color: string; desc: string }> = {
-  start: { label: 'Start', icon: CirclePlay, color: 'text-sky-500 bg-sky-500/10', desc: 'Điểm bắt đầu' },
-  llm: { label: 'LLM', icon: Brain, color: 'text-violet-500 bg-violet-500/10', desc: 'Gọi model với prompt' },
-  tool: { label: 'Tool/API', icon: Wrench, color: 'text-orange-500 bg-orange-500/10', desc: 'HTTP hoặc Python function' },
-  condition: { label: 'Condition', icon: GitBranch, color: 'text-amber-500 bg-amber-500/10', desc: 'Rẽ nhánh theo state field' },
-  end: { label: 'End', icon: Flag, color: 'text-zinc-500 bg-zinc-500/10', desc: 'Kết thúc' },
+const META: Record<string, { label: string; icon: LucideIcon; color: string; accent: string; desc: string }> = {
+  start: { label: 'Start', icon: CirclePlay, color: 'bg-node-start-muted text-node-start', accent: 'bg-node-start', desc: 'Điểm bắt đầu' },
+  llm: { label: 'LLM', icon: Brain, color: 'bg-node-llm-muted text-node-llm', accent: 'bg-node-llm', desc: 'Gọi model với prompt' },
+  tool: { label: 'Tool/API', icon: Wrench, color: 'bg-node-tool-muted text-node-tool', accent: 'bg-node-tool', desc: 'HTTP hoặc Python function' },
+  condition: { label: 'Condition', icon: GitBranch, color: 'bg-node-condition-muted text-node-condition', accent: 'bg-node-condition', desc: 'Rẽ nhánh theo state field' },
+  end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end', desc: 'Kết thúc' },
 }
-META.code = { label: 'Code', icon: Code2, color: 'text-teal-600 bg-teal-500/10 dark:text-teal-400', desc: 'Node Python từ repo import' }
+META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code', desc: 'Node Python từ repo import' }
 const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
@@ -55,17 +57,18 @@ const DEFAULTS: Record<string, any> = {
 }
 
 function StatusBadge({ s }: { s?: string }) {
-  if (s === 'running') return <Badge className="bg-amber-500 text-white gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
-  if (s === 'done') return <Badge className="bg-emerald-600 text-white gap-1"><CheckCircle2 className="size-3" />done</Badge>
+  if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />running</Badge>
+  if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />done</Badge>
   if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />error</Badge>
   return null
 }
 
 function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
-  return <div className={cn(type === 'code' && 'border-teal-500/60 border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
-    selected && 'ring-2 ring-ring', d._status === 'running' && 'border-amber-500 ring-4 ring-amber-500/30',
-    d._status === 'done' && 'border-emerald-500', d._status === 'error' && 'border-destructive')}>
+  return <div className={cn(type === 'code' && 'border-node-code/60 border-dashed', 'relative rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
+    selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
+    d._status === 'done' && 'border-success', d._status === 'error' && 'border-destructive')}>
+    <span aria-hidden className={cn('absolute inset-y-0 left-0 w-1 rounded-l-xl', m.accent)} />
     {type !== 'start' && <Handle type="target" position={Position.Left} />}
     <div className="flex items-center gap-2">
       <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
@@ -112,6 +115,7 @@ function Studio() {
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
   const [running, setRunning] = useState(false)
+  const [traceSel, setTraceSel] = useState<string | null>(null); const [replay, setReplay] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
   const { dark } = useTheme()
   const rf = useReactFlow(); const idc = useRef(1)
@@ -144,7 +148,7 @@ function Studio() {
   const run = () => {
     let inp: any; try { inp = JSON.parse(input) } catch { setErrors(['Input không phải JSON hợp lệ']); setTab('input'); return }
     if (!tokenValid()) { setErrors(['Phiên đăng nhập đã hết hạn. Đang chuyển tới trang đăng nhập…']); setTab('logs'); setTimeout(sessionExpired, 1500); return }
-    setLog([]); setErrors([]); setTab('logs'); setRunning(true)
+    setLog([]); setErrors([]); setTab('logs'); setRunning(true); setReplay(null); setTraceSel(null)
     setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
     const ws = new WebSocket(wsUrl('/ws/run'))
     ws.onopen = () => ws.send(JSON.stringify({ workflow_id: wid, workflow: toJSON(), input: inp }))
@@ -152,7 +156,7 @@ function Studio() {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
       if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
       if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
-      if (ev.type === 'error') setErrors(ev.errors || [])
+      if (ev.type === 'error') { setErrors(ev.errors || []); if (ev.node) mark(ev.node, { _status: 'error' }) }
     }
     ws.onerror = () => setErrors(e => e.length ? e : ['Mất kết nối tới máy chủ khi đang chạy'])
     ws.onclose = ev => {
@@ -160,6 +164,18 @@ function Studio() {
       setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
   }
 
+  const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
+  const traceMeta = (t: string) => META[t] || META.code
+  const hlNode = traceSel ? trace.spans.find(x => x.key === traceSel)?.node : undefined
+  const nodesView = useMemo(() => hlNode ? nodes.map(n => n.id === hlNode ? { ...n, data: { ...n.data, _hl: true } } : n) : nodes, [nodes, hlNode])
+  const onNodeClick = (id: string) => {
+    setSel({ kind: 'node', id })
+    const spans = trace.spans.filter(x => x.node === id)
+    if (spans.length) {
+      const cur = spans.findIndex(x => x.key === traceSel) // repeated clicks cycle through loop iterations
+      setTraceSel(spans[cur >= 0 ? (cur + 1) % spans.length : spans.length - 1].key); setTab('logs')
+    }
+  }
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); const t = ev.dataTransfer.getData('nodetype'); if (!t) return
@@ -181,7 +197,7 @@ function Studio() {
     </div>
   </div>
 
-  return <div className="h-screen grid grid-rows-[56px_1fr_250px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
+  return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
     {/* Top bar */}
     <header className="col-span-3 flex items-center gap-3 border-b px-4">
       <Tip tip="Về danh sách workflow"><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
@@ -197,7 +213,7 @@ function Studio() {
         </DialogContent>
       </Dialog>
       <div className="ml-auto flex items-center gap-2">
-        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge className="bg-teal-600 text-white gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
+        {source && <Tip tip={`Chạy code gốc trong venv riêng (subprocess). ${source.repo_url || 'zip'} · ${source.ref}`}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />Imported repo</Badge></Tip>}
         <Badge variant="secondary">LLM: {mode}</Badge>{wid && <Badge variant="outline">id: {wid}</Badge>}
         <ThemeToggle /><UserMenu />
       </div>
@@ -233,8 +249,8 @@ function Studio() {
 
     {/* Canvas */}
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
-      <ReactFlow nodes={nodes} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-        colorMode={dark ? 'dark' : 'light'} onConnect={onConnect} onNodeClick={(_, n) => setSel({ kind: 'node', id: n.id })}
+      <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
+        colorMode={dark ? 'dark' : 'light'} onConnect={onConnect} onNodeClick={(_, n) => onNodeClick(n.id)}
         onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={['Delete', 'Backspace']} fitView>
         <Background /><Controls /><MiniMap pannable zoomable />
       </ReactFlow>
@@ -289,7 +305,7 @@ function Studio() {
     <section className="col-span-3 border-t min-h-0 flex flex-col">
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
         <div className="flex items-center gap-3 px-3 py-2 border-b">
-          <TabsList><TabsTrigger value="input">Input</TabsTrigger><TabsTrigger value="logs">Logs {log.length > 0 && <Badge variant="secondary" className="ml-1">{log.length}</Badge>}</TabsTrigger>
+          <TabsList><TabsTrigger value="input">Input</TabsTrigger><TabsTrigger value="logs">Logs {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger></TabsList>
           {errors.length > 0 && <Badge variant="destructive">{errors.length} lỗi</Badge>}
         </div>
@@ -298,21 +314,13 @@ function Studio() {
           {errors.length > 0 && <ScrollArea className="w-1/2 rounded-md border border-destructive/40 bg-destructive/5 p-2">{errors.map((e, i) => <div key={i} className="text-destructive text-xs">⚠ {e}</div>)}</ScrollArea>}
         </TabsContent>
         <TabsContent value="logs" className="flex-1 min-h-0">
-          <ScrollArea className="h-full"><div className="p-3 font-mono text-xs space-y-1">
-            {!log.length && <span className="text-muted-foreground">Nhấn Run để chạy workflow…</span>}
-            {log.map((l, i) => <div key={i} className="flex items-start gap-2">
-              {l.type === 'run_started' && <span className="text-muted-foreground">… run started</span>}
-              {l.type === 'node_started' && <><Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">started</Badge><span>{l.label} <span className="text-muted-foreground">({l.node})</span></span></>}
-              {l.type === 'node_finished' && <><Badge className="bg-emerald-600 text-white">finished</Badge><span>{l.label} <span className="text-muted-foreground">({l.node}) · {l.duration_ms} ms</span> <span className="text-sky-600 dark:text-sky-400">Δ {JSON.stringify(l.delta)}</span></span></>}
-              {l.type === 'run_finished' && <><Badge>done</Badge><span className="break-all">Done. State: {JSON.stringify(l.state)}</span></>}
-              {l.type === 'error' && <><Badge variant="destructive">error</Badge><span className="text-destructive">{l.errors?.join('; ')}</span></>}
-            </div>)}
-          </div></ScrollArea>
+          <RunTrace trace={trace} events={log as any} meta={traceMeta} selected={traceSel} onSelect={sp => setTraceSel(sp?.key ?? null)}
+            replay={replay ?? undefined} onExitReplay={() => { setReplay(null); setLog([]); setTraceSel(null) }} />
         </TabsContent>
         <TabsContent value="history" className="flex-1 min-h-0">
           <ScrollArea className="h-full"><div className="p-3 space-y-1">
             {!history.length && <span className="text-muted-foreground text-xs">Chưa có lần chạy nào.</span>}
-            {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setTab('logs') }}
+            {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setReplay(h.id); setTraceSel(null); setTab('logs') }}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
               <Badge variant={h.status === 'ok' ? 'secondary' : 'destructive'}>{h.status}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString()}</span>

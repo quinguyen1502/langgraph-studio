@@ -48,6 +48,12 @@ Chạy workflow import: WebSocket như cũ, nhưng backend chạy **graph gốc*
 
 Giới hạn: graph import là read-only (sửa trên canvas không ảnh hưởng code gốc); subgraph chỉ hiển thị khi xray hoạt động, sự kiện run chỉ ở cấp graph cha; job import lưu trong memory (restart server thì mất job đang chạy, workflow đã tạo vẫn còn); không hỗ trợ repo private, monorepo JS, hay `langgraph.json` dạng phức tạp.
 
+## Run trace (tab Logs)
+- Mỗi lần node chạy là 1 dòng: trạng thái, tên + loại node, thời lượng, thanh waterfall, tokens (nếu có). Vòng lặp hiện #2, #3…
+- Bấm dòng (hoặc bấm node trên canvas) → chi tiết: Input (state trước), Output, State diff, Raw; JSON gập/mở được, có nút copy.
+- "Raw events" hiện luồng sự kiện gốc; tab History replay dùng cùng timeline.
+- `STUDIO_RECURSION_LIMIT` (mặc định 25) giới hạn số bước mỗi run để vòng lặp vô hạn dừng sớm; mỗi payload trong event bị cắt ở 16 000 ký tự JSON.
+
 ## Dark mode
 Nút mặt trăng/mặt trời trên thanh trên cùng (mọi màn hình). Lựa chọn được lưu trong localStorage; có thể ép bằng `?theme=dark`. Giao diện dùng Tailwind CSS v4 + shadcn/ui (theme neutral mặc định), icon lucide-react.
 

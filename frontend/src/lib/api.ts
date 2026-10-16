@@ -1,8 +1,9 @@
 export const getToken = () => localStorage.getItem('token')
 export const getUser = (): { id: string; email: string } | null => JSON.parse(localStorage.getItem('user') || 'null')
-export function setSession(token: string, user: any) { localStorage.setItem('token', token); localStorage.setItem('user', JSON.stringify(user)) }
+export const wasExpired = () => sessionStorage.getItem('lgs_expired') === '1'
+export function setSession(token: string, user: any) { sessionStorage.removeItem('lgs_expired'); localStorage.setItem('token', token); localStorage.setItem('user', JSON.stringify(user)) }
 function clearSession() { localStorage.removeItem('token'); localStorage.removeItem('user') }
-export function logout() { clearSession(); location.href = '/login' }
+export function logout() { clearSession(); sessionStorage.removeItem('lgs_expired'); location.href = '/login' }
 
 /** Seconds-since-epoch expiry from the JWT payload (no signature check; server is authoritative). */
 export function tokenExp(t = getToken()): number | null {
@@ -15,7 +16,8 @@ export const loginUrl = (expired: boolean, next = location.pathname + location.s
 /** Clear session and send the user to /login with an "expired" notice, coming back here afterwards. */
 export function sessionExpired() {
   if (location.pathname === '/login') return
-  clearSession(); location.href = loginUrl(true)
+  // Flag survives the race with <Protected> re-rendering after the token is cleared.
+  clearSession(); sessionStorage.setItem('lgs_expired', '1'); location.href = loginUrl(true)
 }
 /** Auto-logout exactly when the token expires (call once at app start). */
 let timer: number | undefined

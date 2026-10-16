@@ -13,6 +13,7 @@ Phases accepted by the owner on 2026-10-16 (DEC-0007, supersedes the P0/P1/P2 ba
 3. TASK-0003 Harden auth/login and workflow list (REQ-0001)
 4. TASK-0004 Review and harden core MVP compiler, runtime and run API (REQ-0001; PR #3)
 5. TASK-0005 Real LLM providers with per-workflow credentials (REQ-0002; PR #2)
+6. TASK-0016 Run trace timeline UI (REQ-0001; added 2026-10-16, stacked on TASK-0003)
 
 ## Phase 2 — Usable
 

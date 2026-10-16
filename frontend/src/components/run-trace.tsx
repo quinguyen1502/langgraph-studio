@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { AlertTriangle, Ban, CheckCircle2, Clock, TimerOff, Coins, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Ban, CheckCircle2, Clock, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { JsonView } from '@/components/json-view'
-import { fmtMs, stateDiff, type RunEvent, type Span, type Trace } from '@/lib/trace'
+import { fmtCost, fmtMs, stateDiff, type RunEvent, type Span, type Trace } from '@/lib/trace'
 import { cn } from '@/lib/utils'
 
 type Meta = (type: string) => { icon: LucideIcon; color: string; label: string }
@@ -32,7 +32,10 @@ function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; r
     <Separator orientation="vertical" className="h-4" />
     <span className="flex items-center gap-1 text-muted-foreground"><Clock className="size-3.5" />{fmtMs(trace.total)}</span>
     <span className="flex items-center gap-1 text-muted-foreground"><Layers className="size-3.5" />{t('trace.steps', { count: trace.spans.length })}</span>
-    {trace.tokens != null && <span className="flex items-center gap-1 text-muted-foreground"><Coins className="size-3.5" />{trace.tokens} tokens</span>}
+    {trace.tokens != null && <span id="trace-tokens" className="flex items-center gap-1 text-muted-foreground"><Coins className="size-3.5" />{t('trace.tokens', { count: trace.tokens })}</span>}
+    {trace.metrics && <span id="trace-cost" className="flex items-center gap-1 text-muted-foreground"><DollarSign className="size-3.5" />{fmtCost(trace.metrics.cost_usd)}</span>}
+    {trace.metrics && trace.metrics.error_count > 0 && <Badge variant="destructive" id="trace-error-count">{t('trace.errorCount', { count: trace.metrics.error_count })}</Badge>}
+    {trace.traceUrl && <Button asChild variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs" id="trace-link"><a href={trace.traceUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-3.5" />{t('trace.openTrace')}</a></Button>}
     {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label={t('trace.exitReplay')} onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
     <div className="ml-auto flex items-center gap-2">
       <Switch id="raw-toggle" size="sm" checked={raw} onCheckedChange={setRaw} />
@@ -41,7 +44,7 @@ function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; r
 }
 
 function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; meta: Meta; selected: boolean; onClick: () => void }) {
-  const m = meta(s.type); const I = m.icon
+  const { t } = useTranslation(); const m = meta(s.type); const I = m.icon
   const total = Math.max(trace.total || 0, 1); const t0 = trace.start ?? s.start
   const left = Math.min(100, ((s.start - t0) * 1000 / total) * 100)
   const width = Math.max(1.5, Math.min(100 - left, ((s.duration ?? ((s.end ?? trace.end ?? s.start) - s.start) * 1000) / total) * 100))
@@ -54,7 +57,8 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
       <span className={cn('truncate font-medium shrink-0 max-w-[45%]', s.status === 'error' && 'text-destructive')}>{s.label}</span>
       {s.iter > 1 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">#{s.iter}</Badge>}
       <span className="truncate shrink-0 max-w-[25%] text-muted-foreground font-mono text-[10px]">{s.node}</span>
-      {s.tokens != null && <span className="text-muted-foreground text-[10px]">· {s.tokens} tok</span>}
+      {s.tokens != null && <Tooltip><TooltipTrigger asChild><span className="text-muted-foreground text-[10px]" data-testid="span-tokens">· {t('trace.tokensShort', { count: s.tokens })}{s.cost ? ` · ${fmtCost(s.cost)}` : ''}</span></TooltipTrigger>
+        <TooltipContent>{t('trace.usageDetail', { model: s.usage?.model ?? '—', tin: s.usage?.tokens_in ?? 0, tout: s.usage?.tokens_out ?? 0, cost: fmtCost(s.cost) })}{s.usage?.estimated ? ` ${t('trace.estimated')}` : ''}</TooltipContent></Tooltip>}
       {s.error && <Tooltip><TooltipTrigger asChild><span className="truncate min-w-0 text-destructive text-[11px]">— {s.error}</span></TooltipTrigger>
         <TooltipContent className="max-w-md break-all">{s.error}</TooltipContent></Tooltip>}
     </span>

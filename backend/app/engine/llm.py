@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 from typing import Any, Dict, Optional
 import httpx
+from .usage import estimate_tokens, make_usage
 
 PROVIDERS = {
     "openai": {"label": "OpenAI / OpenAI-compatible", "default_base_url": "https://api.openai.com/v1"},
@@ -49,21 +50,32 @@ def _post(provider: str, url: str, headers: Dict[str, str], body: Dict[str, Any]
     return r.json()
 
 
-def call_llm(prompt: str, model: str, cred: Optional[Dict[str, Any]] = None) -> str:
-    """cred: decrypted credential {provider, base_url, api_key}. Without cred falls back to env OPENAI_API_KEY, then mock."""
+def call_llm(prompt: str, model: str, cred: Optional[Dict[str, Any]] = None, on_usage=None) -> str:
+    """cred: decrypted credential {provider, base_url, api_key}. Without cred falls back to env OPENAI_API_KEY, then mock.
+    on_usage(usage): optional callback with the token usage record (engine/usage.make_usage)."""
+    report = on_usage or (lambda u: None)
     if cred is None:
         key = os.environ.get("OPENAI_API_KEY")
         if not key:
-            return mock_llm(prompt, model)
+            out = mock_llm(prompt, model)
+            report(make_usage("mock", model, estimate_tokens(prompt), estimate_tokens(out), estimated=True))
+            return out
         cred = {"provider": "openai", "api_key": key, "base_url": os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")}
     provider, key, base = cred["provider"], cred["api_key"], (cred.get("base_url") or "").rstrip("/")
     if provider == "anthropic":
         data = _post("anthropic", f"{base or 'https://api.anthropic.com'}/v1/messages",
                      {"x-api-key": key, "anthropic-version": "2023-06-01"},
                      {"model": model or "claude-3-5-haiku-latest", "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]})
-        try: return "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text").strip()
+        try: out = "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text").strip()
         except Exception: raise LLMError("anthropic: invalid response") from None
+        u = data.get("usage") or {}
+        report(make_usage("anthropic", data.get("model") or model, u.get("input_tokens", 0), u.get("output_tokens", 0)))
+        return out
     data = _post("openai", f"{base or 'https://api.openai.com/v1'}/chat/completions", {"Authorization": f"Bearer {key}"},
                  {"model": model or "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]})
-    try: return data["choices"][0]["message"]["content"].strip()
+    try: out = data["choices"][0]["message"]["content"].strip()
     except Exception: raise LLMError("openai: invalid response") from None
+    u = data.get("usage") or {}
+    if u: report(make_usage("openai", data.get("model") or model, u.get("prompt_tokens", 0), u.get("completion_tokens", 0)))
+    else: report(make_usage("openai", model, estimate_tokens(prompt), estimate_tokens(out), estimated=True))
+    return out

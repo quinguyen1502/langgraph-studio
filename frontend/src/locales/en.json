@@ -146,7 +146,14 @@
     "empty": "Press Run to run the workflow…",
     "cancelledMsg": "The run was cancelled. Unfinished steps are marked cancelled.",
     "cancelledDisconnect": "The run was cancelled (connection lost). Unfinished steps are marked cancelled.",
-    "done": "Done · final state: {{count}} keys"
+    "done": "Done · final state: {{count}} keys",
+    "tokens": "{{count}} tokens",
+    "tokensShort": "{{count}} tok",
+    "errorCount_one": "{{count}} error",
+    "errorCount_other": "{{count}} errors",
+    "openTrace": "Open trace",
+    "usageDetail": "{{model}}: {{tin}} in / {{tout}} out tokens · {{cost}}",
+    "estimated": "(estimated)"
   },
   "import": {
     "button": "Import repo",

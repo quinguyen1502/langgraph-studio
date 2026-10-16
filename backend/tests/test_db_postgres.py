@@ -33,6 +33,6 @@ def test_migrations_and_seed_on_fresh_postgres(fresh_pg):
     assert fresh_pg.engine.dialect.name == "postgresql"
     assert {"users", "workflows", "runs", "credentials", "alembic_version"} <= set(insp.get_table_names())
     with fresh_pg.engine.connect() as c:
-        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0002_credentials"
+        assert c.execute(text("SELECT version_num FROM alembic_version")).scalar_one() == "0003_run_metrics"
         assert c.execute(text("SELECT count(*) FROM users WHERE email='admin@example.com'")).scalar_one() == 1
         assert c.execute(text("SELECT count(*) FROM workflows")).scalar_one() >= 1

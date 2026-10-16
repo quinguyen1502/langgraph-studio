@@ -159,3 +159,26 @@ python scripts/compose_smoke.py http://localhost:8080   # kiểm tra: health, đ
 - `STUDIO_SECRET_KEY` (khoá Fernet cho credential) để trống thì được sinh một lần vào volume `apidata` (`/data/secret.key`); muốn chạy production hãy đặt cố định và `STUDIO_ENV=production`.
 - Mỗi stack chạy một container `api` (migration lúc khởi động không khoá chống chạy song song).
 - Test backend trên Postgres + Redis tại máy: `DATABASE_URL=postgresql://… TEST_DATABASE_URL=postgresql://… REDIS_URL=redis://localhost:6379/0 .venv/bin/python -m pytest -q` (role cần quyền `CREATEDB` cho `tests/test_db_postgres.py`).
+
+## Tracing & số liệu run (TASK-0010)
+Mỗi run có số liệu tóm tắt (thời gian, token vào/ra, chi phí USD, số lỗi). Chúng hiện ở thanh tóm tắt của tab Logs, ở từng span LLM (rê chuột để xem model và token) và trong tab Lịch sử.
+
+- Chế độ mock: token là ước tính, chi phí `$0`, không cần key.
+- Model không có trong bảng giá (`backend/app/engine/usage.py`) hiển thị chi phí `—`.
+
+Trace theo chuẩn OpenTelemetry: một trace cho mỗi run, một span cho mỗi node (thời gian, trạng thái, lỗi, `gen_ai.usage.*`, chi phí). Không cấu hình exporter thì tracing tắt hẳn (no-op).
+
+| Đích | Biến môi trường |
+|---|---|
+| OTLP (Jaeger, Tempo, OTel Collector…) | `OTEL_EXPORTER_OTLP_ENDPOINT` (+ các biến `OTEL_*` chuẩn, ví dụ `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_SERVICE_NAME`) |
+| LangSmith (tuỳ chọn) | `LANGSMITH_API_KEY` **và** `LANGSMITH_TRACING=true` (+ `LANGSMITH_PROJECT`, `LANGSMITH_ENDPOINT`) |
+| Link "Mở trace" trong UI | `STUDIO_TRACE_URL`, ví dụ `http://localhost:16686/trace/{trace_id}` |
+
+Xem trace bằng Jaeger trong compose:
+```bash
+# trong .env:
+OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318
+STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
+docker compose --profile tracing up --build   # Jaeger UI: http://localhost:16686 (service "langgraph-studio")
+```
+Chạy dev không dùng compose: `docker run -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one`, rồi chạy backend với `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`.

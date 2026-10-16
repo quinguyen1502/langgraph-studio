@@ -14,6 +14,7 @@ from ..engine.runtime import run_stream
 from ..models import Run
 from ..repositories import RunRepository, WorkflowRepository
 from .run_bus import InMemoryRunBus, RunBus
+from .telemetry import Telemetry, summarize, trace_url
 
 
 @dataclass
@@ -55,11 +56,13 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 
 class RunService:
-    def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None):
+    def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
+                 telemetry: Telemetry | None = None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
         self.bus = bus or InMemoryRunBus()
+        self.telemetry = telemetry or Telemetry(exporters=[])  # no-op unless an exporter is configured
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -85,14 +88,22 @@ class RunService:
     def history(self, wid: str, uid: str) -> list[dict]:
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
-                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended}
+                 "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended,
+                 "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
+                                                                "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
+                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
                 for r in self.runs.list_for_workflow(wid)]
 
-    def record(self, rid, wid, inp, events, final, status, t0) -> None:
+    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "") -> dict:
+        """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}."""
+        t1 = time.time(); metrics = summarize(events, t0, t1)  # from the full events, before capping
+        try: trace_id = self.telemetry.record_run({"id": rid, "workflow_id": wid, "owner": uid, "status": status, "started": t0, "ended": t1}, events, metrics)
+        except Exception: trace_id = None  # tracing must never fail a run
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
-                          final_state=_dumps(final), status=status, started=t0, ended=time.time()))
+                          final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, **metrics))
+        return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
 
     # ---- execution ----
     async def execute(self, plan: RunPlan, send: Callable[[dict], Awaitable[bool]],
@@ -101,10 +112,10 @@ class RunService:
         "cancelled" or "disconnected"; a cancel can also arrive through the RunBus (reason "api").
         Returns the final status: ok | error | cancelled | timeout."""
         rid = uuid.uuid4().hex[:10]; self.bus.start(rid, uid)  # registered so REST/other workers can cancel it
-        try: return await self._execute(rid, plan, send, listen)
+        try: return await self._execute(rid, plan, send, listen, uid)
         finally: self.bus.finish(rid)
 
-    async def _execute(self, rid, plan, send, listen) -> str:
+    async def _execute(self, rid, plan, send, listen, uid) -> str:
         t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus
         q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop(); cancel = threading.Event()
 
@@ -167,5 +178,6 @@ class RunService:
         elif ended == "timeout":
             status = "timeout"
             await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))
-        await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, t0)
+        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, t0, uid)
+        if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

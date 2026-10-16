@@ -81,3 +81,14 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `RedisRunBus` when `REDIS_URL` is set: keys `run:{id}:owner` and `run:{id}:cancel` (24 h TTL), events published on `run:{id}:events`.
 
 `RunService.execute` registers each run, publishes every event (best effort) and checks the cancel flag between steps. `POST /api/runs/{id}/cancel` → `RunService.cancel` (owner only, else `RUN_NOT_FOUND`). The bus is built once in `api/deps.get_run_bus`.
+
+## Telemetry (TASK-0010, DEC-0012)
+
+- `engine/usage.py`: price table and the usage record `{provider, model, tokens_in, tokens_out, tokens, cost_usd, estimated}`. `call_llm(..., on_usage)` reports it; `runtime.run_stream` attaches it to `node_finished.usage`. Mock runs are estimated and cost 0.
+- `services/telemetry.py`:
+  - `summarize(events)` gives the persisted run metrics;
+  - `Telemetry.record_run(...)` builds the run's trace from event timestamps after the run;
+  - `exporter_configs()` reads `OTEL_*` / `LANGSMITH_*`;
+  - `trace_url()` fills `STUDIO_TRACE_URL`.
+- `RunService.record` computes the metrics, records the trace (errors swallowed), stores both, and the socket gets a final `run_summary` event (not stored in `events`). History items carry `metrics`, `trace_id` and `trace_url`.
+- Built once in `api/deps.get_telemetry`; tests inject `InMemorySpanExporter`.

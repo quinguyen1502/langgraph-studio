@@ -5,6 +5,7 @@ from typing import Any, Dict, List
 from .compiler import compile_workflow
 from .errors import ValidationError
 from .limits import safe_error
+from .usage import merge as merge_usage
 from ..core.config import recursion_limit
 
 TRACE_CAP = 16_000  # max JSON chars per traced payload (input/delta) in an event
@@ -38,7 +39,8 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator."""
     if (bad := check_input(wf, inputs)): raise ValidationError(bad)
-    app = compile_workflow(wf, resolve)
+    usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
+    app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)))
     nodes = {n["id"]: n for n in wf["nodes"]}
     state = dict(inputs); counts: Dict[str, int] = {}
 
@@ -60,7 +62,8 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
                 state.update(delta)
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
                        "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
-                       "input": cap_payload(before), "delta": cap_payload(delta)}
+                       "input": cap_payload(before), "delta": cap_payload(delta),
+                       **({"usage": usage.pop(nid)} if nid in usage else {})}
             # predict next node(s) to mark as started; keep a Condition as "current" so routing errors name it
             last = list(chunk)[-1]
             nxt = _next_nodes(wf, last, state)

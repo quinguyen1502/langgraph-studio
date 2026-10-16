@@ -96,8 +96,11 @@ def test_run_execute_records_history(svc):
     async def send(ev): sent.append(ev); return True
     async def listen(): await asyncio.sleep(3600)
     assert asyncio.run(svc.runner.execute(plan, send, listen)) == "ok"
-    assert sent[0]["type"] == "run_started" and sent[-1]["type"] == "run_finished"
-    [r] = svc.runs.rows; assert r.status == "ok" and r.workflow_id == wid
+    assert sent[0]["type"] == "run_started" and sent[-2]["type"] == "run_finished"
+    summary = sent[-1]; assert summary["type"] == "run_summary" and summary["status"] == "ok"
+    m = summary["metrics"]; assert m["tokens"] > 0 and m["cost_usd"] == 0.0 and m["error_count"] == 0  # mock: estimated tokens, free
+    assert summary["trace_id"] is None and summary["trace_url"] is None  # no exporter -> no trace
+    [r] = svc.runs.rows; assert r.status == "ok" and r.workflow_id == wid and r.tokens_in == m["tokens_in"] and r.duration_ms > 0
 
 
 def test_run_execute_cancel(svc):

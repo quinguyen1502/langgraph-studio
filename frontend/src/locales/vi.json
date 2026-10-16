@@ -146,7 +146,14 @@
     "empty": "Nhấn Run để chạy workflow…",
     "cancelledMsg": "Run đã bị huỷ. Các bước chưa xong được đánh dấu huỷ.",
     "cancelledDisconnect": "Run đã bị huỷ (mất kết nối). Các bước chưa xong được đánh dấu huỷ.",
-    "done": "Done · final state: {{count}} keys"
+    "done": "Done · final state: {{count}} keys",
+    "tokens": "{{count}} token",
+    "tokensShort": "{{count}} tok",
+    "errorCount_one": "{{count}} lỗi",
+    "errorCount_other": "{{count}} lỗi",
+    "openTrace": "Mở trace",
+    "usageDetail": "{{model}}: {{tin}} vào / {{tout}} ra token · {{cost}}",
+    "estimated": "(ước tính)"
   },
   "import": {
     "button": "Import repo",

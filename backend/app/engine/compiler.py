@@ -9,7 +9,7 @@ from .validator import validate
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
 
 
-def compile_workflow(wf: Dict[str, Any]):
+def compile_workflow(wf: Dict[str, Any], resolve=None):
     errs = validate(wf)
     if errs: raise ValidationError(errs)
     ann = {f["name"]: Optional[TYPE_MAP.get(f.get("type", "string"), str)] for f in wf.get("state", [])}
@@ -17,7 +17,7 @@ def compile_workflow(wf: Dict[str, Any]):
     g = StateGraph(State)
     nodes = {n["id"]: n for n in wf["nodes"]}
     for nid, n in nodes.items():
-        g.add_node(nid, node_fn(n))
+        g.add_node(nid, node_fn(n, resolve))
     for nid, n in nodes.items():
         out = [e for e in wf["edges"] if e["source"] == nid]
         if n["type"] == "start":

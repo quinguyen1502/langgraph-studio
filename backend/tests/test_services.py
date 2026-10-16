@@ -106,3 +106,49 @@ def test_run_execute_cancel(svc):
     async def listen(): return "cancelled"
     status = asyncio.run(svc.runner.execute(plan, send, listen))
     assert status in ("cancelled", "error") and svc.runs.rows[0].workflow_id == "adhoc"
+
+
+# ---- credentials (TASK-0005) ----
+from app.core import crypto
+from app.services.credential_service import CredentialService
+
+
+class FakeCredentials:
+    def __init__(self): self.rows = {}
+    def add(self, c): self.rows[c.id] = c; return c
+    def list_for_owner(self, o): return sorted([c for c in self.rows.values() if c.owner == o], key=lambda c: -c.created)
+    def get_owned(self, cid, o): c = self.rows.get(cid); return c if c and c.owner == o else None
+    def delete_owned(self, cid, o):
+        if self.get_owned(cid, o): del self.rows[cid]; return True
+        return False
+
+
+def test_credential_service_encrypts_and_masks():
+    repo = FakeCredentials(); s = CredentialService(repo)
+    out = s.create("u1", " oai ", "openai", " sk-abcdef123456 ", None)
+    stored = repo.rows[out["id"]]
+    assert "sk-abcdef123456" not in stored.secret and crypto.decrypt(stored.secret) == "sk-abcdef123456"
+    assert out["hint"] == "••••3456" and out["name"] == "oai" and "secret" not in out
+    assert s.list("u1") == [out] and s.list("u2") == []
+
+
+def test_credential_service_rejections_and_ownership():
+    s = CredentialService(FakeCredentials())
+    with pytest.raises(BadRequest): s.create("u1", "x", "nope", "k", None)
+    with pytest.raises(BadRequest): s.create("u1", "x", "openai", "  ", None)
+    with pytest.raises(BadRequest): s.create("u1", "x", "openai", "k", "ftp://x")
+    cid = s.create("u1", "", "anthropic", "sk-ant-123456789", None)["id"]
+    r = s.resolver("u1")(cid)
+    assert r["api_key"] == "sk-ant-123456789" and r["base_url"] == "https://api.anthropic.com" and r["name"] == "anthropic"
+    with pytest.raises(ValueError, match="không thuộc về bạn"): s.resolver("u2")(cid)
+    with pytest.raises(NotFound): s.delete(cid, "u2")
+    assert s.delete(cid, "u1") == {"ok": True}
+
+
+def test_run_plan_carries_user_bound_resolver(svc):
+    repo = FakeCredentials(); creds = CredentialService(repo)
+    cid = creds.create("u1", "k", "openai", "sk-0123456789", "https://llm.example/v1")["id"]
+    runner = RunService(svc.wf, svc.runs, creds)
+    plan = runner.plan("u1", {"workflow": {"name": "x"}, "input": {}})
+    assert plan.resolve(cid)["base_url"] == "https://llm.example/v1"
+    assert RunService(svc.wf, svc.runs).plan("u1", {"workflow": {}, "input": {}}).resolve is None

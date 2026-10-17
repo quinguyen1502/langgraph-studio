@@ -50,10 +50,16 @@ class RunWorker:
             except StaleLease: return "fenced"
             status = "error"
         if status == "fenced": return status  # the worker that owns the run now reports its result
-        if job.get("callback_url") and self.deliveries:
-            r = svc.runs.get(rid)
-            await asyncio.to_thread(self.deliveries().create, job["workflow_id"], rid, job.get("token_id"), job["callback_url"], run_result(r))
+        await self._deliver(svc, rid, job.get("callback_url"), job.get("token_id"))
         return status
+
+    async def _deliver(self, svc: RunService, rid: str, url: Optional[str] = None, token_id: Optional[str] = None) -> None:
+        """Queue the callback_url webhook with the run's current result (DeliveryService: signed, retried, logged).
+        Without an explicit URL the one stored on the run is used (API runs, TASK-0022 follow-up)."""
+        r = svc.runs.get(rid)
+        if r is None or not self.deliveries: return
+        url, token_id = url or r.callback_url, token_id or r.callback_token_id
+        if url: await asyncio.to_thread(self.deliveries().create, r.workflow_id, rid, token_id, url, run_result(r))
 
     async def resume_job(self, svc: RunService, job: dict) -> Optional[str]:
         """Continue a waiting run with a decision from an approval channel (TASK-0022). The claim (waiting -> running,
@@ -67,7 +73,9 @@ class RunWorker:
         plan.fence, plan.checkpointing, plan.resumed_by = gen, True, job.get("by")
         async def send(ev): return True
         async def listen(): await asyncio.Event().wait()
-        return await svc.execute(plan, send, listen, owner)
+        status = await svc.execute(plan, send, listen, owner)
+        if status != "fenced": await self._deliver(svc, rid)  # API run: its callback_url gets the result (or the next pause)
+        return status
 
     async def _with_lease(self, job: dict) -> None:
         """Run the job while renewing its lease so the reaper leaves it alone."""

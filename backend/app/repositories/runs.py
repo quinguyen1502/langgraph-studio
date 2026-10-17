@@ -14,10 +14,11 @@ class RunRepository:
 
     def add(self, run: Run, fence: Optional[int] = None) -> None:
         """Insert or update (a resumed run keeps its id). With `fence` (a queue job's lease generation) the row is
-        only updated while it still carries that generation; otherwise StaleLease is raised."""
+        only updated while it still carries that generation; otherwise StaleLease is raised. Only the attributes set
+        on `run` are written (like merge), so columns the caller does not know about (callback_url) are kept."""
         with self.db.session() as s:
             if fence is None: s.merge(run); s.commit(); return
-            vals = {c.key: getattr(run, c.key) for c in Run.__mapper__.column_attrs if c.key not in ("id", "lease_gen")}
+            vals = {c.key: getattr(run, c.key) for c in Run.__mapper__.column_attrs if c.key not in ("id", "lease_gen") and c.key in vars(run)}
             if s.execute(update(Run).where(Run.id == run.id, Run.lease_gen == fence).values(**vals)).rowcount != 1:
                 s.rollback(); raise StaleLease(run.id)
             s.commit()

@@ -94,7 +94,7 @@ class TriggerService:
         callback_url = check_callback_url(callback_url)
         rid = uuid.uuid4().hex[:10]
         self.runs.add(Run(id=rid, workflow_id=tok.workflow_id, input=json.dumps(inp, ensure_ascii=False), events="[]", status="queued",
-                          started=time.time(), owner=tok.owner, source="api"))
+                          started=time.time(), owner=tok.owner, source="api", callback_url=callback_url, callback_token_id=tok.id if callback_url else None))
         self.jobs.enqueue({"run_id": rid, "workflow_id": tok.workflow_id, "owner": tok.owner, "input": inp, "callback_url": callback_url, "token_id": tok.id})
         return rid
 

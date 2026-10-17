@@ -358,3 +358,27 @@ def test_send_failure_is_audited_and_the_run_keeps_waiting(c, api):
     log = until(lambda: [e for e in c.get("/api/approvals/audit", headers=H(owner["token"])).json()["data"] if e["action"] == "send_failed"])
     assert log[0]["code"] == "CHANNEL_API_FAILED" and log[0]["run_id"] == rid
     assert run_row(c, owner, wid, rid)["status"] == "waiting"
+
+
+def test_api_run_resumed_from_a_channel_sends_its_callback(c, api, monkeypatch):
+    """TASK-0022 follow-up: the callback_url of an API-triggered run gets the final result after a chat approval."""
+    from app.services import webhooks
+    got = []
+    def hook(req): got.append((req.headers["x-studio-event"], json.loads(req.content), req)); return httpx.Response(204)
+    monkeypatch.setattr(webhooks, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(hook)))
+    monkeypatch.setenv("STUDIO_ALLOW_PRIVATE_CALLBACKS", "1")
+    owner = user(c); uo = f"U{uuid.uuid4().hex[:8].upper()}"; link(c, api, owner, "slack", uo)
+    ch = c.get("/api/approvals/channels", headers=H(owner["token"])).json()["data"]["channels"][0]
+    wid = workflow(c, owner, {"channel_id": ch["id"], "channel": "slack", "target": "C0API"})
+    tok = c.post(f"/api/workflows/{wid}/tokens", json={"name": "ci"}, headers=H(owner["token"])).json()["data"]
+    rid = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "order A100"}, "callback_url": "http://localhost:9/hook"},
+                 headers=H(tok["token"])).json()["data"]["run_id"]
+    first = until(lambda: [b for _, b, _ in got if b["run_id"] == rid])[0]
+    assert first["status"] == "waiting"  # the pause is reported as before
+    post = until(lambda: [p for p in api.requests() if p["channel"] == "C0API"])[-1]
+    assert slack_post(c, ch["id"], press(post["blocks"][1]["elements"][0]["value"], uo)).json()["data"] == {"outcome": "approved"}
+    final = until(lambda: [(e, b, r) for e, b, r in got if b["run_id"] == rid and b["status"] == "ok"])[0]
+    assert final[0] == "run.finished" and final[1]["final_state"]["decision"] == "approved"
+    assert webhooks.verify_signature(tok["signing_secret"], final[2].headers["x-studio-signature"], final[2].content)  # same pipeline: signed
+    log = c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"]
+    assert sorted(d["status"] for d in log if d["run_id"] == rid) == ["ok", "ok"]

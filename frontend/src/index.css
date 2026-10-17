@@ -128,9 +128,9 @@
     --node-subgraph: oklch(0.55 0.14 240);
     --node-subgraph-foreground: oklch(0.985 0 0);
     --node-subgraph-muted: oklch(0.55 0.14 240 / 0.12);
-    --node-retriever: oklch(0.55 0.12 180);
+    --node-retriever: oklch(0.56 0.13 150);
     --node-retriever-foreground: oklch(0.985 0 0);
-    --node-retriever-muted: oklch(0.55 0.12 180 / 0.12);
+    --node-retriever-muted: oklch(0.56 0.13 150 / 0.12);
     /* Status tokens (project extension, shadcn convention): success / warning / info */
     --success: oklch(0.596 0.145 163.225);
     --success-foreground: oklch(0.985 0 0);
@@ -200,9 +200,9 @@
     --node-subgraph: oklch(0.72 0.13 240);
     --node-subgraph-foreground: oklch(0.145 0 0);
     --node-subgraph-muted: oklch(0.72 0.13 240 / 0.18);
-    --node-retriever: oklch(0.74 0.12 180);
+    --node-retriever: oklch(0.75 0.13 150);
     --node-retriever-foreground: oklch(0.145 0 0);
-    --node-retriever-muted: oklch(0.74 0.12 180 / 0.18);
+    --node-retriever-muted: oklch(0.75 0.13 150 / 0.18);
     --success: oklch(0.696 0.17 162.48);
     --success-foreground: oklch(0.145 0 0);
     --warning: oklch(0.769 0.188 70.08);

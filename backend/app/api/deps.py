@@ -6,7 +6,7 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, CredentialRepository as _Creds
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.policy_service import PolicyService
 from ..services.team_service import TeamService
@@ -15,6 +15,7 @@ from ..core import permissions as P
 from ..services.access import AccessService
 from ..services.share_service import ShareService
 from ..services.user_service import UserService
+from ..services.template_service import TemplateService
 from ..services.slack_oauth import SlackOAuthService
 from ..services.mcp_service import McpService
 from ..services.knowledge_service import KnowledgeService
@@ -90,6 +91,9 @@ def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
                                           access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db),
                                           teams=TeamRepository(db), audit=audit_service())
+
+def template_service() -> TemplateService:
+    return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service())
 
 def access_service() -> AccessService:
     db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db), TeamRepository(db))

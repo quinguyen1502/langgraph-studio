@@ -351,7 +351,12 @@
     "USER_HAS_WORKFLOWS": "This user owns {{count}} workflow(s): choose who takes them over first",
     "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
     "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})"
+    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})",
+    "TEMPLATE_NOT_FOUND": "Template not found",
+    "TEMPLATE_READ_ONLY": "This template cannot be deleted",
+    "TEMPLATE_INVALID": "Not a valid template file",
+    "TEMPLATE_NAME_REQUIRED": "Template name is required",
+    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation"
   },
   "lang": {
     "en": "English",
@@ -957,5 +962,32 @@
     "undoTip": "Undo (Ctrl/⌘+Z)",
     "redoTip": "Redo (Ctrl/⌘+Shift+Z)",
     "unsaved": "Unsaved changes"
+  },
+  "templates": {
+    "title": "New workflow",
+    "subtitle": "Start from a blank canvas or a template. Credentials and knowledge bases are never included — pick your own after creating.",
+    "blank": "Blank workflow",
+    "blankHint": "Start and End only",
+    "import": "Import template",
+    "export": "Export",
+    "useNamed": "Create a workflow from {{name}}",
+    "noDescription": "No description",
+    "invalidJson": "The file is not valid JSON",
+    "deleteTitle": "Delete template",
+    "deleteBody": "The template \"{{name}}\" will be removed. Workflows created from it are not affected.",
+    "scope": {
+      "builtin": "Built-in",
+      "user": "Only me",
+      "org": "Organisation"
+    },
+    "saveAs": "Save as template",
+    "saveAsTitle": "Save as template",
+    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channels, subgraph links, headers and API keys are removed.",
+    "saveAsConfirm": "Save template",
+    "unsavedNote": "You have unsaved changes. The template uses the last saved version — save the workflow first to include them.",
+    "name": "Name",
+    "description": "Description",
+    "visibility": "Visible to",
+    "saved": "Template \"{{name}}\" saved. Find it under New workflow."
   }
 }

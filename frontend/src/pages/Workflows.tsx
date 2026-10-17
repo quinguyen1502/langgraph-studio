@@ -20,6 +20,7 @@ import { UserMenu } from '@/components/user-menu'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
 import { ImportDialog } from '@/components/import-dialog'
+import { TemplateGallery } from '@/components/template-gallery'
 import { CredentialsDialog } from '@/components/credentials-dialog'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -34,7 +35,7 @@ export function WorkflowsPage() {
   const [loading, setLoading] = useState(true); const [loadErr, setLoadErr] = useState('')
   const [notice, setNotice] = useState('')
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(false); const [gallery, setGallery] = useState(false)
   const me = useMe(); const [all, setAll] = useState(false)
   const creates = can(me, 'workflows.create')
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
@@ -47,7 +48,7 @@ export function WorkflowsPage() {
         nodes: [{ id: 'start', type: 'start', position: { x: 80, y: 200 }, data: { label: 'Start' } }, { id: 'end', type: 'end', position: { x: 480, y: 200 }, data: { label: 'End' } }],
         edges: [{ id: 'e1', source: 'start', target: 'end' }] } })
       nav(`/workflows/${r.id}`)
-    } catch (e: any) { flash(e.message) } finally { setBusy(false) }
+    } catch (e: any) { setGallery(false); flash(e.message) } finally { setBusy(false) }
   }
   const dup = async (w: W) => { try { const r = await api(`/api/workflows/${w.id}/duplicate`, { method: 'POST' }); flash(t('list.duplicated', { name: r.name })); load() } catch (e: any) { flash(e.message) } }
   const trimmed = newName.trim()
@@ -87,7 +88,7 @@ export function WorkflowsPage() {
           {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
           {can(me, 'resources.manage') && <CredentialsDialog />}
           {creates && <ImportDialog />}
-          {creates && <Button onClick={create} id="new-wf" disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Plus />}{t('common.newWorkflow')}</Button>}
+          {creates && <Button onClick={() => setGallery(true)} id="new-wf"><Plus />{t('common.newWorkflow')}</Button>}
         </div>
       </div>
       {notice && <div role="status" id="wf-notice" className="fixed bottom-4 right-4 z-50 max-w-sm rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-2 text-sm">{notice}</div>}
@@ -133,5 +134,6 @@ export function WorkflowsPage() {
         <DialogFooter><Button variant="outline" onClick={() => setRename(null)}>{t('common.cancel')}</Button><Button id="rename-save" onClick={doRename} disabled={!trimmed || busy}>{busy && <Loader2 className="animate-spin" />}{t('common.save')}</Button></DialogFooter></DialogContent>
     </Dialog>
     {confirmDel.dialog}
+    {creates && <TemplateGallery open={gallery} onOpenChange={setGallery} onBlank={create} />}
   </div>
 }

@@ -62,6 +62,11 @@
 | `WORKFLOW_NAME_TAKEN` | 409 | A workflow with this name already exists |
 | `WORKFLOW_TOO_LARGE` | 413 | Workflow is too large (max {max_kb} KB) |
 | `WORKFLOW_INVALID` | 400 | Workflow is invalid |
+| `TEMPLATE_NOT_FOUND` | 404 | Template not found |
+| `TEMPLATE_READ_ONLY` | 403 | This template cannot be deleted |
+| `TEMPLATE_INVALID` | 400 | Not a valid template file |
+| `TEMPLATE_NAME_REQUIRED` | 400 | Template name is required |
+| `TEMPLATE_SCOPE_FORBIDDEN` | 403 | Only administrators can share templates with the whole organisation |
 | `RUN_REQUEST_INVALID` | 400 | Run request must be a JSON object |
 | `RUN_INPUT_INVALID` | 400 | Run input must be a JSON object |
 | `RUN_INPUT_TOO_LARGE` | 413 | Run input is too large (max {max_kb} KB) |

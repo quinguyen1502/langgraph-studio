@@ -119,7 +119,19 @@
     "idBadge": "id: {{id}}",
     "pyFunction": "Python function",
     "httpRequest": "HTTP request",
-    "readOnly": "read-only"
+    "readOnly": "read-only",
+    "reducer": "Reducer",
+    "reducers": {
+      "replace": "Replace (last write wins)",
+      "append": "Append (collect all)",
+      "merge": "Merge keys",
+      "add": "Add (sum)"
+    },
+    "joinHint": "Runs once, after every incoming branch has finished. Fields written by several branches need a reducer in the state schema.",
+    "subgraphWorkflow": "Workflow to run",
+    "subgraphOpen": "Open workflow",
+    "subgraphMissing": "This workflow no longer exists or is not yours.",
+    "subgraphHint": "Its nodes run inside this run and show up in the trace as \"Subgraph › node\". State is shared by field name; its extra fields are added to this run."
   },
   "nodes": {
     "start": "Start point",
@@ -128,7 +140,9 @@
     "condition": "Branch on a state field",
     "end": "Finish",
     "code": "Python node from an imported repo",
-    "human": "Pause for approval or input"
+    "human": "Pause for approval or input",
+    "join": "Wait for all parallel branches",
+    "subgraph": "Run another saved workflow"
   },
   "trace": {
     "idle": "Not run",

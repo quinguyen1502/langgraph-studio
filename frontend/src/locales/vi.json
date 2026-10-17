@@ -153,7 +153,10 @@
     "mcpArgsHint": "Văn bản, hoặc {{field}} để truyền giá trị state giữ nguyên kiểu.",
     "mcpManage": "Quản lý máy chủ MCP",
     "viewOnly": "Chỉ xem",
-    "nameLabel": "Tên workflow"
+    "nameLabel": "Tên workflow",
+    "more": "Thao tác khác",
+    "moreTip": "Thao tác khác (bố cục, phiên bản, chia sẻ, API…)",
+    "deleteWorkflow": "Xoá workflow"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -957,7 +960,8 @@
       "cut": "Cắt node đang chọn",
       "paste": "Dán node",
       "duplicate": "Nhân bản node đang chọn",
-      "layout": "Tự sắp xếp bố cục"
+      "layout": "Tự sắp xếp bố cục",
+      "palette": "Mở bảng lệnh"
     }
   },
   "history": {
@@ -1013,5 +1017,20 @@
     "direction": "Hướng bố cục",
     "lr": "Trái sang phải",
     "tb": "Trên xuống dưới"
+  },
+  "palette": {
+    "title": "Bảng lệnh",
+    "description": "Tìm thao tác, node, workflow và trang",
+    "placeholder": "Gõ lệnh hoặc tìm kiếm…",
+    "empty": "Không có kết quả",
+    "addNode": "Thêm node {{type}}",
+    "goWorkflows": "Đến danh sách workflow",
+    "groups": {
+      "actions": "Thao tác",
+      "add": "Thêm node",
+      "nodes": "Đến node",
+      "workflows": "Mở workflow",
+      "navigation": "Đi tới"
+    }
   }
 }

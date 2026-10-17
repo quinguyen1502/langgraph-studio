@@ -1,5 +1,5 @@
 /** Editor "Save as template" (TASK-0025): copies the saved workflow, minus credentials / resource refs / secrets (server-side sanitiser). */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle2, LayoutTemplate, Loader2, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -10,15 +10,17 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import { can, useMe } from '@/lib/rbac'
 
-export function SaveTemplateDialog({ wid, defaultName, isDirty }: { wid?: string | null; defaultName: string; isDirty: () => boolean }) {
+export function SaveTemplateDialog(props: { wid?: string | null; defaultName: string; isDirty: () => boolean; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const { wid, defaultName, isDirty } = props
   const { t } = useTranslation(); const me = useMe()
-  const [open, setOpen] = useState(false); const [dirty, setDirty] = useState(false)
+  const [open, setOpen, controlled] = useOpenState(props.open, props.onOpenChange); const [dirty, setDirty] = useState(false)
   const [name, setName] = useState(''); const [desc, setDesc] = useState(''); const [scope, setScope] = useState<'user' | 'org'>('user')
   const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [done, setDone] = useState('')
-  const onOpen = (v: boolean) => { setOpen(v); if (v) { setName(defaultName); setDesc(''); setScope('user'); setErr(''); setDone(''); setDirty(isDirty()) } }
+  useEffect(() => { if (open) { setName(defaultName); setDesc(''); setScope('user'); setErr(''); setDone(''); setDirty(isDirty()) } }, [open])
   const save = async () => {
     if (!wid || !name.trim() || busy) return
     setBusy(true); setErr('')
@@ -26,10 +28,10 @@ export function SaveTemplateDialog({ wid, defaultName, isDirty }: { wid?: string
     catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }
   return (
-    <Dialog open={open} onOpenChange={onOpen}>
-      <Tooltip><TooltipTrigger asChild><span className="inline-flex">{/* icon-only keeps the editor toolbar compact */}
+    <Dialog open={open} onOpenChange={setOpen}>
+      {!controlled && <Tooltip><TooltipTrigger asChild><span className="inline-flex">{/* icon-only keeps the editor toolbar compact */}
         <DialogTrigger asChild><Button size="icon-sm" variant="outline" id="save-template-btn" aria-label={t('templates.saveAs')} disabled={!wid}><LayoutTemplate /></Button></DialogTrigger>
-      </span></TooltipTrigger><TooltipContent>{t('templates.saveAs')}</TooltipContent></Tooltip>
+      </span></TooltipTrigger><TooltipContent>{t('templates.saveAs')}</TooltipContent></Tooltip>}
       <DialogContent id="save-template">
         <DialogHeader><DialogTitle>{t('templates.saveAsTitle')}</DialogTitle><DialogDescription>{t('templates.saveAsDesc')}</DialogDescription></DialogHeader>
         {done ? <Alert id="tpl-saved"><CheckCircle2 /><AlertDescription>{t('templates.saved', { name: done })}</AlertDescription></Alert> : <>

@@ -27,7 +27,7 @@ test('team share, transfer, activity log and delete user with reassignment', asy
   // share a workflow with the team from the editor
   const name = `Team wf ${stamp}`
   const wid = (await (await page.request.post('/api/workflows', { headers: auth, data: WF(name) })).json()).data.id
-  await page.goto(`/workflows/${wid}`); await page.locator('#share-btn').click()
+  await page.goto(`/workflows/${wid}`); await page.locator('#more-btn').click(); await page.locator('#share-btn').click()
   await page.locator('#share-kind').click(); await page.getByRole('option', { name: 'Nhóm' }).click()
   await page.locator('#share-team').click(); await page.getByRole('option', { name: new RegExp(`Ops ${stamp}`) }).click()
   await page.locator('#share-add').click(); await expect(page.locator('#share-list')).toContainText(`Ops ${stamp}`)
@@ -50,7 +50,7 @@ test('team share, transfer, activity log and delete user with reassignment', asy
   // remove the member, stop the team share, then delete the team — each asks for the name
   await page.goto('/settings/teams'); await card.getByRole('button', { name: `Gỡ ${member}` }).click(); await confirmDelete(page, member)
   await expect(card).not.toContainText(member)
-  await page.goto(`/workflows/${wid}`); await page.locator('#share-btn').click()
+  await page.goto(`/workflows/${wid}`); await page.locator('#more-btn').click(); await page.locator('#share-btn').click()
   await page.locator('#share-list').getByRole('button', { name: `Ngừng chia sẻ với Ops ${stamp}` }).click(); await confirmDelete(page, `Ops ${stamp}`)
   await expect(page.locator('#share-list')).not.toContainText(`Ops ${stamp}`); await page.keyboard.press('Escape')
   await page.goto('/settings/teams'); await card.getByRole('button', { name: `Xoá nhóm Ops ${stamp}` }).click(); await confirmDelete(page, `Ops ${stamp}`)

@@ -59,5 +59,5 @@ Added on 2026-10-17 at the owner's request. Status: in review (stacked draft PRs
 - TASK-0025 Workflow template library: starter templates, save as template, import/export (REQ-0015) — review, DEC-0028
 - TASK-0026 Copy, paste and duplicate nodes (REQ-0016) — review, DEC-0029
 - TASK-0027 Auto-layout for the workflow canvas (REQ-0017) — review, DEC-0030
-- TASK-0028 Command palette (REQ-0018)
+- TASK-0028 Command palette (REQ-0018) — review, DEC-0031
 

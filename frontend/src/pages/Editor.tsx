@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, addEdge,
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ChevronDown, ArrowRight, ArrowDown, Check } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -17,14 +17,19 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { HumanPanel } from '@/components/human-panel'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
+import { freeSpot, menuSections, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
+import { useDeleteWorkflow } from '@/components/delete-workflow'
+import { isMac, keyCaps } from '@/lib/shortcuts'
+const isMacPlatform = isMac()
+import { SHORTCUTS } from '@/lib/shortcuts'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
@@ -119,6 +124,10 @@ function StudioNode({ data, type, selected }: NodeProps) {
     {type !== 'end' && <Handle type="source" position={Position.Right} />}
   </div>
 }
+/** Where registry actions appear in the editor's ⋯ menu (others stay keyboard/palette only), with stable ids for tests. */
+const MENU_OF: Record<string, 'arrange' | 'help' | undefined> = { layout: 'arrange', fitView: 'arrange', cheatsheet: 'help' }
+const MENU_IDS: Record<string, string> = { layout: 'layout-btn', fitView: 'fit-btn', cheatsheet: 'shortcuts-btn' }
+const ACTION_ICONS: Record<string, LucideIcon> = { layout: Network, fitView: Maximize, cheatsheet: Keyboard, save: Save, run: Play, stop: Square, undo: Undo2, redo: Redo2, delete: Trash2, copy: Copy, cut: Scissors, paste: ClipboardPaste, duplicate: CopyPlus, selectAll: BoxSelect, zoomIn: ZoomIn, zoomOut: ZoomOut }
 const nodeTypes = Object.fromEntries([...TYPES, 'code'].map(t => [t, StudioNode]))
 
 function Tip({ tip, children }: { tip: string; children: React.ReactElement }) {
@@ -260,7 +269,7 @@ function Studio() {
   }
     // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
-  useShortcuts({
+  const handlers: Record<string, () => void | boolean> = {
     save: () => { if (edit) save() },
     run: () => { if (!running) run() },
     stop: () => { if (running) cancelRun() },
@@ -278,7 +287,48 @@ function Studio() {
     duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
     undo: () => { if (edit) hist.undo() },
     redo: () => { if (edit) hist.redo() },
-  })
+  }
+  useShortcuts(handlers)
+  // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
+  const addNode = (type: string, pos: { x: number; y: number }, select = false) => {
+    const id = `${type}_${Date.now().toString(36)}${idc.current++}`
+    setNodes(ns => [...(select ? ns.map(n => n.selected ? { ...n, selected: false } : n) : ns), { id, type, position: pos, selected: select,
+      data: { ...DEFAULTS[type], ...(type === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    if (select) setSel({ kind: 'node', id })
+  }
+  const off: Record<string, boolean> = { save: !edit, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
+    ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
+  const paletteRef = useRef<Record<string, () => void>>({})
+  // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
+  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
+  const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
+  const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
+  const menuExtras: PaletteCommand[] = [
+    ...(['LR', 'TB'] as Direction[]).map(d => ({ id: `action:layout${d}`, group: 'actions' as const, label: `${t('layout.button')}: ${t(d === 'LR' ? 'layout.lr' : 'layout.tb')}`, icon: d === 'LR' ? ArrowRight : ArrowDown,
+      menu: 'arrange' as const, elementId: `layout-${d.toLowerCase()}`, disabled: !editable, hint: layoutDir === d ? '✓' : undefined, run: () => { tidy(d) } })),
+    { id: 'action:versions', group: 'actions', label: t('versions.button'), icon: History, menu: 'workflow', elementId: 'versions-btn', disabled: !wid, run: () => setDlg('versions') },
+    { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !edit || !wid, run: () => setDlg('template') },
+    { id: 'action:share', group: 'actions', label: t('share.button'), icon: Share2, menu: 'workflow', elementId: 'share-btn', disabled: !wid, run: () => setDlg('share') },
+    { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
+    { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
+    { id: 'action:openPalette', group: 'actions', label: t('palette.title'), icon: Search, shortcut: 'palette', menu: 'help', elementId: 'palette-btn', run: openPalette },
+    { id: 'action:deleteWorkflow', group: 'actions', label: t('editor.deleteWorkflow'), icon: Trash2, menu: 'danger', destructive: true, elementId: 'delete-wf-btn',
+      disabled: !wid || access !== 'owner', run: () => { if (wid) delWf.ask({ id: wid, name }) } },
+  ]
+  const paletteCmds: PaletteCommand[] = [
+    ...SHORTCUTS.filter(x => handlers[x.id] && x.id !== 'escape').map(x => ({ id: `action:${x.id}`, group: 'actions' as const, label: t(`shortcuts.actions.${x.id}`), shortcut: x.id, disabled: off[x.id],
+      icon: ACTION_ICONS[x.id], menu: MENU_OF[x.id], elementId: MENU_IDS[x.id], run: () => { handlers[x.id]() } })),
+    ...menuExtras,
+    ...(editable ? TYPES.filter(x => x !== 'start' && x !== 'end').map(x => ({ id: `add:${x}`, group: 'add' as const, label: t('palette.addNode', { type: META[x].label }), hint: t(`nodes.${x}`), icon: META[x].icon, keywords: [x],
+      run: () => { const c = rf.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }); addNode(x, freeSpot(c, nodes.map(n => n.position)), true) } })) : []),
+    ...nodes.map(n => ({ id: `node:${n.id}`, group: 'nodes' as const, label: String((n.data as any)?.label || n.id), hint: `${META[n.type!]?.label ?? n.type} · ${n.id}`, icon: META[n.type!]?.icon, keywords: [n.id, n.type!],
+      run: () => { setNodes(ns => ns.map(x => ({ ...x, selected: x.id === n.id }))); setSel({ kind: 'node', id: n.id }); rf.fitView({ nodes: [{ id: n.id }], duration: 300, maxZoom: 1.2 }) } })),
+  ]
+  paletteCmds.forEach(c => { paletteRef.current[c.id] = c.run })
+  const paletteSig = paletteCmds.map(c => `${c.id}|${c.label}|${c.hint ?? ''}|${c.disabled ? 1 : 0}`).join('\n')
+  // re-register only when the visible content changes (runs read the latest closures through paletteRef)
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => registerCommands('editor', paletteCmds.map(c => ({ ...c, run: () => paletteRef.current[c.id]?.() }))), [paletteSig])
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
@@ -296,8 +346,7 @@ function Studio() {
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
-    const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
-    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t], ...(t === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    addNode(t, rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY }))
   }
   const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
   const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined
@@ -325,30 +374,34 @@ function Studio() {
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
-      {wid && <ShareDialog workflowId={wid} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
-      {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} />}
-      <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
-      {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
         <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
-      {editable && <div className="flex items-center" role="group" aria-label={t('layout.group')}>
-        <Tip tip={t('layout.tip')}><Button variant="outline" size="icon-sm" id="layout-btn" className="rounded-r-none" aria-label={t('layout.button')} onClick={() => tidy()}><Network className={layoutDir === 'TB' ? 'rotate-90' : undefined} /></Button></Tip>
-        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" id="layout-dir" className="h-7 rounded-l-none border-l-0 px-1" aria-label={t('layout.direction')}><ChevronDown /></Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-44">
-            <DropdownMenuItem id="layout-lr" onSelect={() => tidy('LR')}><ArrowRight />{t('layout.lr')}{layoutDir === 'LR' && <Check className="ml-auto" />}</DropdownMenuItem>
-            <DropdownMenuItem id="layout-tb" onSelect={() => tidy('TB')}><ArrowDown />{t('layout.tb')}{layoutDir === 'TB' && <Check className="ml-auto" />}</DropdownMenuItem>
-          </DropdownMenuContent></DropdownMenu></div>}
-      <Tip tip={t('shortcuts.button')}><Button variant="ghost" size="icon" id="shortcuts-btn" aria-label={t('shortcuts.button')} onClick={() => setCheat(true)}><Keyboard /></Button></Tip>
+      <DropdownMenu>
+        <Tip tip={t('editor.moreTip')}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="more-btn" aria-label={t('editor.more')}><MoreHorizontal /></Button></DropdownMenuTrigger></Tip>
+        <DropdownMenuContent align="start" className="min-w-64" id="more-menu">
+          {menuSections(paletteCmds).map(([sec, items], k) => <Fragment key={sec}>{k > 0 && <DropdownMenuSeparator />}
+            {items.map(c => { const I = c.icon; const combo = c.shortcut ? SHORTCUTS.find(x => x.id === c.shortcut)?.keys[0] : undefined
+              return <DropdownMenuItem key={c.id} id={c.elementId} data-testid="more-item" disabled={c.disabled} variant={c.destructive ? 'destructive' : 'default'} onSelect={() => c.run()}>
+                {I && <I className={c.id === 'action:layout' && layoutDir === 'TB' ? 'rotate-90' : undefined} />}<span>{c.label}</span>
+                {c.hint === '✓' && <Check className="ml-auto" />}
+                {combo && <DropdownMenuShortcut>{keyCaps(combo).join(isMacPlatform ? '' : '+')}</DropdownMenuShortcut>}
+              </DropdownMenuItem> })}</Fragment>)}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
-      <Dialog>
-        <Tip tip={t('editor.jsonTip')}><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
+      {wid && <ShareDialog workflowId={wid} open={dlg === 'share'} onOpenChange={v => setDlg(v ? 'share' : null)} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
+      {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={isDirty} open={dlg === 'template'} onOpenChange={v => setDlg(v ? 'template' : null)} />}
+      <VersionsDialog wid={wid} isDirty={isDirty} open={dlg === 'versions'} onOpenChange={v => setDlg(v ? 'versions' : null)} onRestored={wf => { load(wf); setErrors([]) }} />
+      {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
+      <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
         <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
           <ScrollArea className="h-96 rounded-md border bg-muted/40"><pre className="p-3 text-xs">{JSON.stringify(toJSON(), null, 2)}</pre></ScrollArea>
         </DialogContent>
       </Dialog>
+      {delWf.dialog}
       <div className="ml-auto flex items-center gap-2">
         {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
         <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}

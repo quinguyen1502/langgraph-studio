@@ -921,5 +921,31 @@
     "remove": "Remove",
     "revoke": "Revoke",
     "unlink": "Unlink"
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "intro": "Shortcuts work on the canvas. Text fields keep their normal keys, except save, run and stop.",
+    "button": "Keyboard shortcuts (?)",
+    "or": "or",
+    "groups": {
+      "general": "General",
+      "canvas": "Canvas",
+      "run": "Run",
+      "history": "History",
+      "clipboard": "Clipboard",
+      "navigation": "Navigation"
+    },
+    "actions": {
+      "save": "Save workflow",
+      "cheatsheet": "Show this cheat sheet",
+      "escape": "Clear selection / close panel",
+      "run": "Run workflow",
+      "stop": "Stop the run",
+      "delete": "Delete selection (not Start/End)",
+      "selectAll": "Select all",
+      "fitView": "Fit to view",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out"
+    }
   }
 }

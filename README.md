@@ -127,6 +127,11 @@ Mẫu không bao giờ chứa credential, knowledge base, MCP server, kênh phê
 được làm trống, người dùng tự chọn lại. Xoá mẫu cần gõ tên mẫu. API: `GET/POST /api/templates`, `POST /api/templates/import`,
 `GET /api/templates/{id}/export`, `POST /api/templates/{id}/use`, `DELETE /api/templates/{id}` (mã lỗi `TEMPLATE_*`, xem docs/api-errors.md).
 
+### Sao chép / dán / nhân bản (TASK-0026)
+`Ctrl/⌘+C`, `Ctrl/⌘+X`, `Ctrl/⌘+V`, `Ctrl/⌘+D` (hoặc nút **Nhân bản** trong panel node). Start/End không bao giờ được sao chép; chỉ cạnh nối giữa
+các node được chọn đi kèm; node dán ra có id mới và được chọn sẵn; mỗi lần dán là một bước hoàn tác. Có thể dán sang workflow khác trong cùng
+trình duyệt (vùng nhớ `localStorage`, định dạng `langgraph-studio/nodes` v1). Credential không thuộc quyền dùng của bạn sẽ bị bỏ trống khi dán.
+
 ## Định dạng workflow
 ```json
 {"name": "...", "state": [{"name":"message","type":"string"}],

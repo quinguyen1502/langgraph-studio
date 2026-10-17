@@ -26,7 +26,7 @@ test('save, run, delete with the keyboard; typing is safe; cheat sheet lists eve
   // ? opens the cheat sheet
   await page.locator('.react-flow__pane').click(); await page.keyboard.press('Shift+?')
   const sheet = page.locator('#shortcut-cheatsheet'); await expect(sheet).toBeVisible()
-  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(12)
+  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(16)
   await expect(sheet).toContainText('Ctrl'); await expect(sheet).toContainText('Lưu workflow')
   await page.keyboard.press('Escape'); await expect(sheet).toHaveCount(0)
 })

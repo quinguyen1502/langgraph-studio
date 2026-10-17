@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,6 +25,7 @@ import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
+import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -236,7 +237,26 @@ function Studio() {
     const r = removeElements(nodes, edges, nodeIds, edgeIds); if (!r.removed) return
     setNodes(r.nodes); setEdges(r.edges); if (sel && (nodeIds.includes(sel.id) || edgeIds.includes(sel.id))) setSel(null)
   }
-  // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
+  // clipboard (TASK-0026, DEC-0029): pure copy/paste in lib/clipboard.ts; one paste = one render = one undo step
+  const clipMem = useRef<Clip | null>(null); const pasteN = useRef(0)
+  const [clipNote, setClipNote] = useState(''); const noteTimer = useRef<number>(0)
+  const note = (m: string) => { setClipNote(m); window.clearTimeout(noteTimer.current); noteTimer.current = window.setTimeout(() => setClipNote(''), 2500) }
+  const selClip = () => { const s = selectionIds(nodes, edges, sel); return copySelection(nodes, edges, s.nodeIds) }
+  const insert = (clip: Clip, n: number) => {
+    const sameCanvas = clip.nodes.some(c => nodes.some(x => x.id === c.id))
+    const view = rf.screenToFlowPosition({ x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 60 })
+    const r = pasteClip(clip, { existing: nodes.map(x => x.id), usableCredentials: new Set(creds.map(c => c.id)), offset: 40 * n, at: sameCanvas ? undefined : view })
+    setNodes(ns => [...ns.map(x => x.selected ? { ...x, selected: false } : x), ...r.nodes]); setEdges(es => [...es.map(x => x.selected ? { ...x, selected: false } : x), ...styleEdges(r.edges)])
+    setSel(r.nodes.length === 1 ? { kind: 'node', id: r.nodes[0].id } : null)
+    note(r.clearedCredentials ? t('clipboard.pastedCleared', { count: r.nodes.length, creds: r.clearedCredentials }) : t('clipboard.pasted', { count: r.nodes.length }))
+  }
+  const copy = (cut = false) => {
+    const c = selClip(); if (!c) return false
+    clipMem.current = c; pasteN.current = 0; clipStore.write(c)
+    if (cut) { removeIds(c.nodes.map(n => n.id)); note(t('clipboard.cut', { count: c.nodes.length })) } else note(t('clipboard.copied', { count: c.nodes.length }))
+  }
+  const editable = edit && !source
+    // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
   useShortcuts({
     save: () => { if (edit) save() },
@@ -249,6 +269,10 @@ function Studio() {
     zoomOut: () => { rf.zoomOut({ duration: 150 }) },
     escape: () => { setSel(null); setNodes(ns => ns.map(n => n.selected ? { ...n, selected: false } : n)); setEdges(es => es.map(e => e.selected ? { ...e, selected: false } : e)); return false },
     cheatsheet: () => setCheat(true),
+    copy: () => copy(),
+    cut: () => editable ? copy(true) : false,
+    paste: () => { if (!editable) return false; const c = clipStore.read() ?? clipMem.current; if (!c) return false; insert(c, ++pasteN.current) },
+    duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
     undo: () => { if (edit) hist.undo() },
     redo: () => { if (edit) hist.redo() },
   })
@@ -357,6 +381,7 @@ function Studio() {
 
     {/* Canvas */}
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
+      {clipNote && <div role="status" id="clip-notice" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-1.5 text-sm">{clipNote}</div>}
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={edit ? onConnect : undefined} nodesConnectable={edit} nodesDraggable={edit} edgesReconnectable={edit} onNodeClick={(_, n) => onNodeClick(n.id)}
         onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
@@ -424,7 +449,9 @@ function Studio() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {!source && !PROTECTED.has(selNode.type!) && <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button>}
+          {!source && !PROTECTED.has(selNode.type!) && <div className="flex gap-2">
+            <Button variant="outline" size="sm" id="duplicate-node" onClick={() => { const c = copySelection(nodes, edges, [selNode.id]); if (c) insert(c, 1) }}><CopyPlus />{t('clipboard.duplicate')}</Button>
+            <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button></div>}
         </div>}
       </div></fieldset></ScrollArea>
     </aside>

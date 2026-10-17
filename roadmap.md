@@ -57,7 +57,7 @@ Added on 2026-10-17 at the owner's request. Status: in review (stacked draft PRs
 - TASK-0023 Editor hotkeys and shortcut cheatsheet (REQ-0013) — review, DEC-0026
 - TASK-0024 Editor undo and redo history (REQ-0014), after TASK-0023 — review, DEC-0027
 - TASK-0025 Workflow template library: starter templates, save as template, import/export (REQ-0015) — review, DEC-0028
-- TASK-0026 Copy, paste and duplicate nodes (REQ-0016)
+- TASK-0026 Copy, paste and duplicate nodes (REQ-0016) — review, DEC-0029
 - TASK-0027 Auto-layout for the workflow canvas (REQ-0017)
 - TASK-0028 Command palette (REQ-0018)
 

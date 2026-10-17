@@ -6,7 +6,8 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository
+from ..services.knowledge_service import KnowledgeService
 from ..services.approval_service import ApprovalService
 from ..services.identity_service import IdentityService
 from ..services.channel_service import ChannelService
@@ -80,7 +81,8 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service)
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
+                      knowledge=knowledge_service())
 
 def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
@@ -91,6 +93,9 @@ def approval_service() -> ApprovalService:
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))
+
+def knowledge_service() -> KnowledgeService:
+    return KnowledgeService(KnowledgeRepository(get_db()), credential_service())
 
 def import_service() -> ImportService:
     return ImportService(workflow_service())

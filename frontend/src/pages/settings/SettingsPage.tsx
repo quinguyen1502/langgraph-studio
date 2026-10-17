@@ -3,7 +3,7 @@
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, MessageSquareShare, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Database, MessageSquareShare, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/lib/theme'
@@ -12,12 +12,14 @@ import { cn } from '@/lib/utils'
 import { ChannelsSection } from './ChannelsSection'
 import { AccountsSection } from './AccountsSection'
 import { AuditSection } from './AuditSection'
+import { KnowledgeSection } from './KnowledgeSection'
 
 type Section = { id: string; icon: LucideIcon; Component: ComponentType }
 export const SECTIONS: Section[] = [
   { id: 'channels', icon: MessageSquareShare, Component: ChannelsSection },
   { id: 'accounts', icon: UserCheck, Component: AccountsSection },
   { id: 'audit', icon: ScrollText, Component: AuditSection },
+  { id: 'knowledge', icon: Database, Component: KnowledgeSection },
 ]
 
 export function SettingsPage() {

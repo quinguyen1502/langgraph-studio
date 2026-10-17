@@ -12,6 +12,7 @@ from ..engine import subgraphs
 from ..engine.errors import ValidationError
 from ..engine.limits import cap_event, cap_run, safe_error, size
 from ..engine.effects import Effects
+from ..engine.ports import Ports
 from ..engine.runtime import resume_nodes, run_stream
 from ..models import Run
 from ..repositories import RunRepository, StaleLease, WorkflowRepository
@@ -40,6 +41,7 @@ class RunPlan:
     attempt: int = 1              # queue delivery attempt, sent to side effects as X-Studio-Attempt
     effects: Optional[Effects] = None  # idempotency keys / ledger / fencing guard, set by RunService._execute
     resumed_by: Optional[dict] = None  # {channel, user_id} when an approval channel answered (TASK-0022)
+    ports: Optional[Ports] = None  # knowledge base / MCP services bound to the run's user (TASK-0012/0013)
     invalid: Optional[list] = None  # subgraph reference errors found while planning (TASK-0011), reported as WORKFLOW_INVALID
 
     @property
@@ -49,7 +51,7 @@ class RunPlan:
     def events(self) -> Iterator[dict]:
         if self.imported: return repo_import.run_imported(self.workflow, dict(self.input), resume=self.resume, checkpointing=self.checkpointing)
         if self.invalid: raise ValidationError(self.invalid)
-        return run_stream(self.workflow, self.input, self.resolve, self.resume, self.effects)
+        return run_stream(self.workflow, self.input, self.resolve, self.resume, self.effects, ports=self.ports)
 
 
 def error_event(error: dict, **extra) -> dict:
@@ -90,7 +92,7 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -101,6 +103,7 @@ class RunService:
         self.ledger = ledger      # NodeResultRepository (optional): node-result ledger of queue jobs (TASK-0021)
         self.deliveries = deliveries  # -> DeliveryService (optional): callback_url webhook when an API run settles
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
+        self.knowledge = knowledge  # KnowledgeService (optional): Retriever nodes (TASK-0012)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -127,7 +130,12 @@ class RunService:
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
         version = self._version_of(wid, wf)
         wf, invalid = self._expand(uid, wid, wf)
-        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=version, invalid=invalid)
+        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=version, invalid=invalid,
+                       ports=self.ports(uid))
+
+    def ports(self, uid: str) -> Ports:
+        """Services nodes may call during a run, bound to the run's owner."""
+        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None)
 
     def _expand(self, uid: str, wid: Optional[str], wf: dict) -> tuple[dict, Optional[list]]:
         """Inline subgraph nodes (TASK-0011) with the workflows this user may read. The expanded graph is what runs and
@@ -188,7 +196,7 @@ class RunService:
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(uid) if self.credentials else None,
                        run_id=rid, previous=r, resume={**{k: cp[k] for k in RESUME_KEYS if k in cp}, "value": response}, source=r.source or "ui",
-                       version=r.workflow_version, trace_parent=cp.get("trace"))
+                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(uid))
 
     def plan_recover(self, r: Run, fence: Optional[int] = None, attempt: int = 2) -> RunPlan:
         """A recovered queue job (its worker died or lost its lease mid-run). With a progress checkpoint it continues
@@ -207,7 +215,8 @@ class RunService:
             return plan
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(r.owner) if self.credentials else None, previous=r,
-                       resume={k: cp[k] for k in RESUME_KEYS if k in cp}, version=r.workflow_version, recovered=True, **common)
+                       resume={k: cp[k] for k in RESUME_KEYS if k in cp}, version=r.workflow_version, recovered=True,
+                       ports=self.ports(r.owner or ""), **common)
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""

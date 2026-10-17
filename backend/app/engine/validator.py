@@ -5,8 +5,8 @@ from .templating import VAR_RE
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit")
-WRITERS = ("llm", "tool", "human")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever")
+WRITERS = ("llm", "tool", "human", "retriever")
 
 
 def validate(wf: Dict[str, Any]) -> List[str]:
@@ -49,7 +49,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             errs.append(f"End node {nid} must not have outgoing edges")
         if t == "start" and any(e["target"] == nid for e in edges):
             errs.append("Start must not have incoming edges")
-        if t in ("llm", "tool", "human"):
+        if t in WRITERS:
             of = d.get("output_field")
             if not of: errs.append(f"Node {nid}: output_field is missing")
             elif fields and of not in fields: errs.append(f"Node {nid}: output_field '{of}' is not in the state")
@@ -63,6 +63,12 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if len(inc) < 2: errs.append(f"Join node {nid}: needs at least two incoming edges (the branches it waits for)")
             if any(types.get(e["source"]) == "condition" for e in inc):
                 errs.append(f"Join node {nid}: a Condition cannot feed a Join directly (the Join would wait for a branch that may never run)")
+        if t == "retriever":
+            if not d.get("knowledge_base_id"): errs.append(f"Retriever node {nid}: choose a knowledge base")
+            k = d.get("top_k", 4)
+            if not isinstance(k, int) or isinstance(k, bool) or not 1 <= k <= 20: errs.append(f"Retriever node {nid}: top_k must be 1-20")
+            for v in VAR_RE.findall(d.get("query", "")):
+                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")
         if t == "condition":

@@ -9,5 +9,6 @@ from .notifications import NotificationRepository
 from .webhook_deliveries import WebhookDeliveryRepository
 from .node_results import NodeResultRepository
 from .approvals import ApprovalRepository
+from .knowledge import KnowledgeRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository"]

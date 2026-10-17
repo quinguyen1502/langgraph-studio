@@ -4,7 +4,7 @@ name: langgraph-studio
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: pgvector/pgvector:pg17  # Postgres 17 + pgvector (TASK-0012, DEC-0021): same major version, existing volumes keep working
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-studio}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}

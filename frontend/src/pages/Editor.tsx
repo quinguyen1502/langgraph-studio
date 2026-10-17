@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, type LucideIcon } from 'lucide-react'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,6 +39,7 @@ import type { Credential } from '@/components/credentials-dialog'
 import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 import { SubgraphSettings } from '@/components/subgraph-settings'
+import { RetrieverSettings } from '@/components/retriever-settings'
 
 type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -54,8 +55,9 @@ const META: Record<string, { label: string; icon: LucideIcon; color: string; acc
 META.join = { label: 'Join', icon: Merge, color: 'bg-node-join-muted text-node-join', accent: 'bg-node-join' }
 META.subgraph = { label: 'Subgraph', icon: Layers, color: 'bg-node-subgraph-muted text-node-subgraph', accent: 'bg-node-subgraph' }
 META.subgraph_exit = META.subgraph
+META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-const TYPES = ['start', 'llm', 'tool', 'condition', 'human', 'join', 'subgraph', 'end']
+const TYPES = ['start', 'llm', 'retriever', 'tool', 'condition', 'human', 'join', 'subgraph', 'end']
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
@@ -77,6 +79,7 @@ const DEFAULTS: Record<string, any> = {
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
   human: { label: 'Approval', prompt: '', output_field: '' },
+  retriever: { label: 'Retriever', knowledge_base_id: '', query: '{{state.message}}', top_k: 4, output_field: '' },
   join: { label: 'Join' }, subgraph: { label: 'Subgraph', workflow_id: '' }, // response (text, or approved / rejected) goes to output_field
 }
 
@@ -358,6 +361,11 @@ function Studio() {
             <F label={t('field.nodeName')}><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
             <F label={t('field.reference')}><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
             <F label={t('field.source')}><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
+          </>}
+          {selNode.type === 'retriever' && <>
+            <RetrieverSettings kb={d.knowledge_base_id} topK={d.top_k} onKb={v => upd('knowledge_base_id', v)} onTopK={v => upd('top_k', v)} />
+            <F label={t('field.queryTemplate', { field: '{{state.field}}' })}><Textarea rows={3} id="retriever-query" className="font-mono text-xs" value={d.query} onChange={e => upd('query', e.target.value)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'subgraph' && <SubgraphSettings wid={wid} value={d.workflow_id} onChange={v => upd('workflow_id', v)} />}
           {selNode.type === 'join' && <p className="text-[11px] text-muted-foreground" id="join-hint">{t('editor.joinHint')}</p>}

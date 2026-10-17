@@ -131,7 +131,12 @@
     "subgraphWorkflow": "Workflow cần chạy",
     "subgraphOpen": "Mở workflow",
     "subgraphMissing": "Workflow này không còn tồn tại hoặc không thuộc về bạn.",
-    "subgraphHint": "Các node của nó chạy trong lượt chạy này và hiện trong trace dạng \"Subgraph › node\". State dùng chung theo tên trường; trường riêng của nó được thêm vào lượt chạy."
+    "subgraphHint": "Các node của nó chạy trong lượt chạy này và hiện trong trace dạng \"Subgraph › node\". State dùng chung theo tên trường; trường riêng của nó được thêm vào lượt chạy.",
+    "retrieverKb": "Kho tri thức",
+    "retrieverMissing": "Kho tri thức này không còn tồn tại hoặc không thuộc về bạn.",
+    "retrieverNone": "Chưa có kho tri thức: tạo trong Cài đặt.",
+    "retrieverTopK": "Số đoạn trả về (1-20)",
+    "retrieverManage": "Quản lý kho tri thức"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -142,7 +147,8 @@
     "code": "Node Python từ repo import",
     "human": "Tạm dừng để duyệt hoặc nhập",
     "join": "Chờ mọi nhánh song song",
-    "subgraph": "Chạy một workflow đã lưu"
+    "subgraph": "Chạy một workflow đã lưu",
+    "retriever": "Tìm trong kho tri thức"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -277,7 +283,19 @@
     "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn.",
     "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời.",
     "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong LangGraph Studio (Cài đặt → Tài khoản của tôi) để phê duyệt.",
-    "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này."
+    "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này.",
+    "KB_NOT_FOUND": "Không tìm thấy kho tri thức hoặc không thuộc về bạn",
+    "KB_NAME_REQUIRED": "Cần nhập tên kho tri thức",
+    "KB_NAME_TOO_LONG": "Tên kho tri thức tối đa {{max}} ký tự",
+    "KB_DOCUMENT_NOT_FOUND": "Không tìm thấy tài liệu",
+    "KB_FILE_REQUIRED": "Hãy chọn tệp để tải lên",
+    "KB_FILE_TYPE_UNSUPPORTED": "Loại tệp không được hỗ trợ (cho phép: {{allowed}})",
+    "KB_FILE_TOO_LARGE": "Tệp quá lớn (tối đa {{max_mb}} MB)",
+    "KB_FILE_UNREADABLE": "Không đọc được tệp: {{reason}}",
+    "KB_FILE_EMPTY": "Tệp không có nội dung văn bản",
+    "KB_QUERY_REQUIRED": "Hãy nhập câu truy vấn",
+    "KB_EMBEDDING_FAILED": "Tạo embedding thất bại: {{reason}}",
+    "KB_EMBEDDER_CHANGED": "Model hoặc khoá embedding đã đổi kể từ khi lập chỉ mục; hãy lập chỉ mục lại kho tri thức"
   },
   "lang": {
     "en": "English",
@@ -296,7 +314,8 @@
     "reference": "Tham chiếu (module:function)",
     "source": "Mã nguồn",
     "url": "URL",
-    "humanPrompt": "Câu hỏi cho người duyệt ({{field}})"
+    "humanPrompt": "Câu hỏi cho người duyệt ({{field}})",
+    "queryTemplate": "Câu truy vấn ({{field}})"
   },
   "samples": {
     "input": "{\n  \"message\": \"Đơn hàng A100 của tôi đâu rồi?\"\n}",
@@ -511,12 +530,14 @@
     "nav": {
       "channels": "Kênh",
       "accounts": "Tài khoản của tôi",
-      "audit": "Nhật ký"
+      "audit": "Nhật ký",
+      "knowledge": "Kho tri thức"
     },
     "intro": {
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
       "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
-      "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat."
+      "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
+      "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình."
     },
     "status": {
       "connected": "Đã kết nối",
@@ -548,5 +569,41 @@
     },
     "noMatch": "Không có mục nào khớp bộ lọc.",
     "auditCount": "{{shown}} / {{total}} mục"
+  },
+  "kb": {
+    "new": "Kho tri thức mới",
+    "newHelp": "Đặt tên rồi tải tài liệu lên.",
+    "create": "Tạo",
+    "name": "Tên",
+    "description": "Mô tả",
+    "model": "Model embedding",
+    "credential": "Khoá embedding",
+    "credentialDefault": "Mặc định của server (OPENAI_API_KEY, nếu không có thì mock offline)",
+    "documents_other": "{{count}} tài liệu",
+    "chunks_other": "{{count}} đoạn",
+    "noDescription": "Chưa có mô tả",
+    "upload": "Tải tài liệu lên",
+    "uploadHelp": ".txt, .md hoặc .pdf, tối đa 10 MB",
+    "uploaded": "{{name}}: đã lập chỉ mục {{chunks}} đoạn",
+    "file": "Tệp",
+    "size": "Dung lượng",
+    "chunkCol": "Số đoạn",
+    "deleteFile": "Xoá tài liệu",
+    "fileDeleted": "Đã xoá tài liệu",
+    "noFiles": "Chưa có tài liệu.",
+    "testSearch": "Thử tìm kiếm",
+    "queryPlaceholder": "Hỏi điều mà tài liệu của bạn trả lời được…",
+    "search": "Tìm",
+    "noHits": "Không có đoạn phù hợp.",
+    "settings": "Cài đặt",
+    "embedHelp": "Không chọn khoá thì dùng OPENAI_API_KEY của server, hoặc embedding offline cố định. Đổi model hoặc khoá sẽ lập chỉ mục lại tài liệu.",
+    "saved": "Đã lưu",
+    "reindex": "Lập chỉ mục lại",
+    "reindexed": "Đã lập chỉ mục lại {{count}} đoạn",
+    "delete": "Xoá kho tri thức",
+    "confirmDelete": "Xoá kho tri thức \"{{name}}\" và toàn bộ tài liệu?",
+    "none": "Chưa có kho tri thức nào.",
+    "documents_one": "{{count}} tài liệu",
+    "chunks_one": "{{count}} đoạn"
   }
 }

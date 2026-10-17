@@ -65,7 +65,7 @@ Users can attach documents to a knowledge base and use a Retriever node that wri
 
 ## Open Questions
 
-- Vector store choice (pgvector vs. Chroma) depends on REQ-0008
+- Resolved 2026-10-17 (owner): pgvector on Postgres, brute-force fallback on SQLite, mock embedding offline, OpenAI `text-embedding-3-small` by default; txt/md/pdf ≤ 10 MB. See DEC-0021.
 
 ## Related Artifacts
 

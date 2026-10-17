@@ -10,7 +10,7 @@ from .validator import validate
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
 
 
-def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, resume=None, effects=None, checkpointer=None):
+def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, resume=None, effects=None, checkpointer=None, ports=None):
     """entry: start the graph at this node (or these nodes, run in parallel) instead of Start (resuming a paused or
     recovered run, TASK-0006/0021). effects: idempotency keys + node-result ledger (TASK-0021).
     checkpointer: LangGraph saver, used by the runtime to observe superstep checkpoints."""
@@ -26,7 +26,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
     nodes = {n["id"]: n for n in wf["nodes"]}
     joins = {nid for nid, n in nodes.items() if n["type"] == "join"}
     for nid, n in nodes.items():
-        fn = node_fn(n, resolve, usage, resume, effects)
+        fn = node_fn(n, resolve, usage, resume, effects, ports)
         g.add_node(nid, effects.wrap(n, fn) if effects else fn)
     for nid, n in nodes.items():
         out = [e for e in wf["edges"] if e["source"] == nid]

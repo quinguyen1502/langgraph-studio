@@ -59,8 +59,8 @@ class TeamService:
         self.access.require(uid, P.USERS_MANAGE); t = self._team(tid)
         u = self.users.get_by_email(normalise_email(email or ""))
         if u is None or not u.active: raise AppError("SHARE_USER_NOT_FOUND")
-        self.teams.add_member(TeamMember(team_id=tid, user_id=u.id, added=time.time()))
-        self.audit.record(uid, "team.member_add", "team", tid, t.name, member=u.email)
+        if self.teams.add_member(TeamMember(team_id=tid, user_id=u.id, added=time.time())):
+            self.audit.record(uid, "team.member_add", "team", tid, t.name, member=u.email)
         return {"members": self._members(tid)}
 
     def remove_member(self, uid: str, tid: str, member: str) -> dict:

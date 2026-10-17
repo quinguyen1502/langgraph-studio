@@ -49,8 +49,8 @@ class ShareService:
         if role not in P.SHARE_ROLES: raise AppError("SHARE_ROLE_INVALID")
         t = self.teams.get(team_id or "")
         if t is None: raise AppError("TEAM_NOT_FOUND")
-        self.teams.upsert_share(WorkflowTeamShare(workflow_id=wid, team_id=t.id, role=role, created=time.time(), shared_by=uid))
-        self._log(uid, "share.team", w, team=t.name, role=role)
+        if self.teams.upsert_share(WorkflowTeamShare(workflow_id=wid, team_id=t.id, role=role, created=time.time(), shared_by=uid)):
+            self._log(uid, "share.team", w, team=t.name, role=role)
         return self.list(wid, uid)
 
     def remove_team(self, wid: str, uid: str, team_id: str) -> dict:

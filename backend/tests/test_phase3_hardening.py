@@ -39,6 +39,8 @@ def test_teams_and_team_shares():
     assert c.get(f"/api/workflows/{wid}", headers=H(b.token)).status_code == 404
     r = c.put(f"/api/workflows/{wid}/team-shares", json={"team_id": t["id"], "role": "viewer"}, headers=H(a.token)).json()["data"]
     assert r["teams"][0]["name"] == name
+    c.put(f"/api/workflows/{wid}/team-shares", json={"team_id": t["id"], "role": "viewer"}, headers=H(a.token))  # unchanged: not audited again
+    c.post(f"/api/teams/{t['id']}/members", json={"email": b.email}, headers=H(adm))  # already a member: not audited again
     assert c.get(f"/api/workflows/{wid}", headers=H(b.token)).json()["data"]["access"] == "viewer"
     c.put(f"/api/workflows/{wid}/shares", json={"email": b.email, "role": "editor"}, headers=H(a.token))  # best of direct + team
     assert c.get(f"/api/workflows/{wid}", headers=H(b.token)).json()["data"]["access"] == "editor"
@@ -50,7 +52,8 @@ def test_teams_and_team_shares():
     assert c.get(f"/api/workflows/{wid}", headers=H(b.token)).status_code == 404
     assert c.delete(f"/api/teams/{t['id']}", headers=H(adm)).status_code == 200
     acts = [e["action"] for e in audit(adm, q=name)["items"]]
-    assert {"team.create", "team.member_add", "team.member_remove", "team.delete"} <= set(acts)
+    assert {"team.create", "team.member_add", "team.member_remove", "team.delete"} <= set(acts) and acts.count("team.member_add") == 1
+    assert sum(e["action"] == "share.team" and e["details"]["team"] == name for e in audit(adm, category="share", limit=200)["items"]) == 1
     assert any(e["action"] == "share.team" and e["details"]["team"] == name for e in audit(adm, category="share", limit=200)["items"])
 
 

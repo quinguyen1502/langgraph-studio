@@ -32,8 +32,11 @@ class TeamRepository:
         with self.db.session() as s:
             return list(s.execute(select(TeamMember, User).join(User, User.id == TeamMember.user_id).where(TeamMember.team_id == tid).order_by(User.email)).tuples())
 
-    def add_member(self, m: TeamMember) -> None:
-        with self.db.session() as s: s.merge(m); s.commit()
+    def add_member(self, m: TeamMember) -> bool:
+        """True when the user was not a member yet."""
+        with self.db.session() as s:
+            if s.get(TeamMember, (m.team_id, m.user_id)) is not None: return False
+            s.add(m); s.commit(); return True
 
     def remove_member(self, tid: str, uid: str) -> bool:
         with self.db.session() as s:
@@ -58,8 +61,12 @@ class TeamRepository:
             for w, r in s.execute(q): out.setdefault(w, []).append(r)
         return out
 
-    def upsert_share(self, row: WorkflowTeamShare) -> None:
-        with self.db.session() as s: s.merge(row); s.commit()
+    def upsert_share(self, row: WorkflowTeamShare) -> bool:
+        """True when the share is new or its role changed."""
+        with self.db.session() as s:
+            old = s.get(WorkflowTeamShare, (row.workflow_id, row.team_id))
+            if old is not None and old.role == row.role: return False
+            s.merge(row); s.commit(); return True
 
     def remove_share(self, wid: str, tid: str) -> bool:
         with self.db.session() as s:

@@ -292,7 +292,7 @@ function Studio() {
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={onConnect} onNodeClick={(_, n) => onNodeClick(n.id)}
         onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={['Delete', 'Backspace']} fitView>
-        <Background /><Controls /><MiniMap pannable zoomable />
+        <Background /><Controls /><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
     </main>
 

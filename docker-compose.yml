@@ -38,6 +38,9 @@ services:
       STUDIO_ENV: ${STUDIO_ENV:-dev}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      STUDIO_MCP_STDIO: ${STUDIO_MCP_STDIO:-0}                  # TASK-0013: 1 = admins may register stdio MCP servers (processes in this container)
+      STUDIO_MCP_ALLOW_PRIVATE: ${STUDIO_MCP_ALLOW_PRIVATE:-0}  # 1 = HTTP MCP servers on private addresses (e.g. a sidecar)
+      STUDIO_MCP_TIMEOUT: ${STUDIO_MCP_TIMEOUT:-30}
       STUDIO_RUN_TIMEOUT: ${STUDIO_RUN_TIMEOUT:-120}
       # approval channels (TASK-0022): public https URL for Slack/Telegram callbacks, org-channel admins, callback limits.
       # STUDIO_TRUSTED_PROXIES: CIDRs of proxies whose X-Forwarded-For hops are skipped (right to left). The default covers

@@ -136,7 +136,15 @@
     "retrieverMissing": "This knowledge base no longer exists or is not yours.",
     "retrieverNone": "No knowledge base yet: create one in Settings.",
     "retrieverTopK": "Chunks to return (1-20)",
-    "retrieverManage": "Manage knowledge bases"
+    "retrieverManage": "Manage knowledge bases",
+    "mcpServer": "MCP server",
+    "mcpTool": "Tool",
+    "mcpNoTools": "No tools yet: refresh",
+    "mcpMissing": "This server no longer exists or you cannot use it.",
+    "mcpNone": "No MCP server yet: add one in Settings.",
+    "mcpArgs": "Arguments",
+    "mcpArgsHint": "Text, or {{field}} to pass a state value with its type.",
+    "mcpManage": "Manage MCP servers"
   },
   "nodes": {
     "start": "Start point",
@@ -148,7 +156,8 @@
     "human": "Pause for approval or input",
     "join": "Wait for all parallel branches",
     "subgraph": "Run another saved workflow",
-    "retriever": "Search a knowledge base"
+    "retriever": "Search a knowledge base",
+    "mcp": "Call a tool on an MCP server"
   },
   "trace": {
     "idle": "Not run",
@@ -295,7 +304,19 @@
     "KB_FILE_EMPTY": "The file contains no text",
     "KB_QUERY_REQUIRED": "Enter a search query",
     "KB_EMBEDDING_FAILED": "Embedding failed: {{reason}}",
-    "KB_EMBEDDER_CHANGED": "The embedding model or key changed since the documents were indexed; re-index the knowledge base"
+    "KB_EMBEDDER_CHANGED": "The embedding model or key changed since the documents were indexed; re-index the knowledge base",
+    "MCP_SERVER_NOT_FOUND": "MCP server not found",
+    "MCP_NAME_REQUIRED": "MCP server name is required",
+    "MCP_NAME_TOO_LONG": "MCP server name must be at most {{max}} characters",
+    "MCP_TRANSPORT_UNSUPPORTED": "Unsupported MCP transport: {{transport}}",
+    "MCP_CONFIG_INVALID": "MCP server setting {{field}} is missing or invalid",
+    "MCP_URL_INVALID": "The MCP server URL must be a public http(s) URL",
+    "MCP_STDIO_DISABLED": "stdio MCP servers are disabled on this server (STUDIO_MCP_STDIO)",
+    "MCP_ADMIN_REQUIRED": "Only an admin can manage stdio or organization MCP servers",
+    "MCP_CONNECT_FAILED": "Could not talk to the MCP server: {{reason}}",
+    "MCP_TOOL_NOT_FOUND": "The MCP server has no tool named {{tool}}",
+    "MCP_TOOL_FAILED": "The MCP tool failed: {{reason}}",
+    "MCP_ARGUMENT_INVALID": "Argument {{name}} must be of type {{type}}"
   },
   "lang": {
     "en": "English",
@@ -531,13 +552,15 @@
       "channels": "Channels",
       "accounts": "My accounts",
       "audit": "Audit log",
-      "knowledge": "Knowledge bases"
+      "knowledge": "Knowledge bases",
+      "mcp": "MCP servers"
     },
     "intro": {
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
       "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
       "audit": "Every approval request and decision made through a chat channel.",
-      "knowledge": "Documents that Retriever nodes search. Text is split into chunks and embedded; only you can use your knowledge bases."
+      "knowledge": "Documents that Retriever nodes search. Text is split into chunks and embedded; only you can use your knowledge bases.",
+      "mcp": "Tools from Model Context Protocol servers, used by MCP tool nodes. Secrets are encrypted and never shown again."
     },
     "status": {
       "connected": "Connected",
@@ -605,5 +628,40 @@
     "delete": "Delete knowledge base",
     "confirmDelete": "Delete the knowledge base \"{{name}}\" and all its documents?",
     "none": "No knowledge bases yet."
+  },
+  "mcp": {
+    "new": "Add MCP server",
+    "newHelp": "Streamable HTTP endpoint, or a local command (stdio) when the server allows it.",
+    "create": "Add server",
+    "name": "Name",
+    "transport": "Transport",
+    "http": "Streamable HTTP",
+    "stdio": "stdio (local command)",
+    "scope": "Available to",
+    "url": "Server URL",
+    "command": "Command",
+    "args": "Arguments",
+    "argsHint": "One per line",
+    "headers": "HTTP headers (secret)",
+    "env": "Environment variables (secret)",
+    "secretName": "Name",
+    "secretValue": "Value",
+    "keepSecret": "Stored — leave empty to keep",
+    "removeSecret": "Remove",
+    "addSecret": "Add secret",
+    "secretHelp": "Values are encrypted on the server and never shown again. A stdio server sees only these variables, not the studio's environment.",
+    "tools_one": "{{count}} tool",
+    "tools_other": "{{count}} tools",
+    "discover": "Discover tools",
+    "discovered": "{{count}} tools found",
+    "discoveredAt": "Last discovery {{at}}",
+    "notDiscovered": "Tools not discovered yet",
+    "edit": "Edit",
+    "saved": "Saved (discover the tools again)",
+    "delete": "Delete server",
+    "confirmDelete": "Delete the MCP server \"{{name}}\"? Nodes that use it will fail.",
+    "none": "No MCP servers yet.",
+    "stdioOn": "stdio servers are enabled: admins can register local commands. They run on the studio host with a clean environment, an empty temporary home directory and a time limit, but no further isolation: only add commands you trust, or run the studio in a container.",
+    "stdioOff": "stdio servers are disabled on this server (STUDIO_MCP_STDIO=1 enables them for admins). HTTP servers must use public addresses unless STUDIO_MCP_ALLOW_PRIVATE=1."
   }
 }

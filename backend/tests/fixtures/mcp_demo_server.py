@@ -60,7 +60,7 @@ class H(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     if len(sys.argv) > 2 and sys.argv[1] == "http":
-        ThreadingHTTPServer(("127.0.0.1", int(sys.argv[2])), H).serve_forever()
+        ThreadingHTTPServer((os.environ.get("MCP_BIND", "127.0.0.1"), int(sys.argv[2])), H).serve_forever()
     else:
         for line in sys.stdin:
             if not line.strip(): continue

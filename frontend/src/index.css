@@ -55,6 +55,9 @@
     --color-node-retriever: var(--node-retriever);
     --color-node-retriever-foreground: var(--node-retriever-foreground);
     --color-node-retriever-muted: var(--node-retriever-muted);
+    --color-node-mcp: var(--node-mcp);
+    --color-node-mcp-foreground: var(--node-mcp-foreground);
+    --color-node-mcp-muted: var(--node-mcp-muted);
     --color-success: var(--success);
     --color-success-foreground: var(--success-foreground);
     --color-warning: var(--warning);
@@ -131,6 +134,9 @@
     --node-retriever: oklch(0.56 0.13 150);
     --node-retriever-foreground: oklch(0.985 0 0);
     --node-retriever-muted: oklch(0.56 0.13 150 / 0.12);
+    --node-mcp: oklch(0.6 0.16 15);
+    --node-mcp-foreground: oklch(0.985 0 0);
+    --node-mcp-muted: oklch(0.6 0.16 15 / 0.12);
     /* Status tokens (project extension, shadcn convention): success / warning / info */
     --success: oklch(0.596 0.145 163.225);
     --success-foreground: oklch(0.985 0 0);
@@ -203,6 +209,9 @@
     --node-retriever: oklch(0.75 0.13 150);
     --node-retriever-foreground: oklch(0.145 0 0);
     --node-retriever-muted: oklch(0.75 0.13 150 / 0.18);
+    --node-mcp: oklch(0.74 0.14 15);
+    --node-mcp-foreground: oklch(0.145 0 0);
+    --node-mcp-muted: oklch(0.74 0.14 15 / 0.18);
     --success: oklch(0.696 0.17 162.48);
     --success-foreground: oklch(0.145 0 0);
     --warning: oklch(0.769 0.188 70.08);

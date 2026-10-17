@@ -25,6 +25,8 @@ import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
+import { freeSpot, registerCommands, type PaletteCommand } from '@/lib/palette'
+import { SHORTCUTS } from '@/lib/shortcuts'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
@@ -260,7 +262,7 @@ function Studio() {
   }
     // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
-  useShortcuts({
+  const handlers: Record<string, () => void | boolean> = {
     save: () => { if (edit) save() },
     run: () => { if (!running) run() },
     stop: () => { if (running) cancelRun() },
@@ -278,7 +280,30 @@ function Studio() {
     duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
     undo: () => { if (edit) hist.undo() },
     redo: () => { if (edit) hist.redo() },
-  })
+  }
+  useShortcuts(handlers)
+  // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
+  const addNode = (type: string, pos: { x: number; y: number }, select = false) => {
+    const id = `${type}_${Date.now().toString(36)}${idc.current++}`
+    setNodes(ns => [...(select ? ns.map(n => n.selected ? { ...n, selected: false } : n) : ns), { id, type, position: pos, selected: select,
+      data: { ...DEFAULTS[type], ...(type === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    if (select) setSel({ kind: 'node', id })
+  }
+  const off: Record<string, boolean> = { save: !edit, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
+    ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
+  const paletteRef = useRef<Record<string, () => void>>({})
+  const paletteCmds: PaletteCommand[] = [
+    ...SHORTCUTS.filter(x => handlers[x.id] && x.id !== 'escape').map(x => ({ id: `action:${x.id}`, group: 'actions' as const, label: t(`shortcuts.actions.${x.id}`), shortcut: x.id, disabled: off[x.id], run: () => { handlers[x.id]() } })),
+    ...(editable ? TYPES.filter(x => x !== 'start' && x !== 'end').map(x => ({ id: `add:${x}`, group: 'add' as const, label: t('palette.addNode', { type: META[x].label }), hint: t(`nodes.${x}`), icon: META[x].icon, keywords: [x],
+      run: () => { const c = rf.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }); addNode(x, freeSpot(c, nodes.map(n => n.position)), true) } })) : []),
+    ...nodes.map(n => ({ id: `node:${n.id}`, group: 'nodes' as const, label: String((n.data as any)?.label || n.id), hint: `${META[n.type!]?.label ?? n.type} · ${n.id}`, icon: META[n.type!]?.icon, keywords: [n.id, n.type!],
+      run: () => { setNodes(ns => ns.map(x => ({ ...x, selected: x.id === n.id }))); setSel({ kind: 'node', id: n.id }); rf.fitView({ nodes: [{ id: n.id }], duration: 300, maxZoom: 1.2 }) } })),
+  ]
+  paletteCmds.forEach(c => { paletteRef.current[c.id] = c.run })
+  const paletteSig = paletteCmds.map(c => `${c.id}|${c.label}|${c.hint ?? ''}|${c.disabled ? 1 : 0}`).join('\n')
+  // re-register only when the visible content changes (runs read the latest closures through paletteRef)
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => registerCommands('editor', paletteCmds.map(c => ({ ...c, run: () => paletteRef.current[c.id]?.() }))), [paletteSig])
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
@@ -296,8 +321,7 @@ function Studio() {
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
-    const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
-    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t], ...(t === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    addNode(t, rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY }))
   }
   const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
   const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined

@@ -5,6 +5,7 @@ import { getToken, loginUrl, scheduleExpiry, tokenValid, wasExpired } from '@/li
 import { AuthPage } from '@/pages/Auth'
 import { WorkflowsPage } from '@/pages/Workflows'
 import { EditorPage } from '@/pages/Editor'
+import { CommandPalette } from '@/components/command-palette'
 
 function Protected({ children }: { children: React.ReactElement }) {
   const loc = useLocation()
@@ -13,7 +14,7 @@ function Protected({ children }: { children: React.ReactElement }) {
 }
 scheduleExpiry()
 export default function App() {
-  return <TooltipProvider delayDuration={300}><BrowserRouter><Routes>
+  return <TooltipProvider delayDuration={300}><BrowserRouter><CommandPalette /><Routes>
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/workflows" element={<Protected><WorkflowsPage /></Protected>} />

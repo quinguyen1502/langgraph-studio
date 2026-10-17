@@ -136,6 +136,10 @@ trình duyệt (vùng nhớ `localStorage`, định dạng `langgraph-studio/nod
 Nút **Sắp xếp** (hoặc `Shift+L`) xếp lại toàn bộ node theo lớp bằng dagre, dùng kích thước thật của từng node, không chồng lấn; mũi tên bên cạnh
 chọn *Trái sang phải* / *Trên xuống dưới* (trình duyệt ghi nhớ). Góc trên-trái của đồ thị giữ nguyên; một lần sắp xếp là một bước hoàn tác.
 
+### Bảng lệnh (TASK-0028)
+`Ctrl/⌘+K` ở mọi trang (kể cả khi đang gõ): tìm gần đúng các thao tác của editor (kèm phím tắt), **Thêm node** (đặt giữa màn hình và được chọn),
+**Đến node**, **Mở workflow**, **Workflow mới** (mở thư viện mẫu) và các trang **Cài đặt**. Từ khoá tiếng Anh (vd. `retriever`, `mcp`) cũng tìm được.
+
 ## Định dạng workflow
 ```json
 {"name": "...", "state": [{"name":"message","type":"string"}],

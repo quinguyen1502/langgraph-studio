@@ -5,6 +5,7 @@ export type Shortcut = { id: string; keys: string[]; group: ShortcutGroup; allow
 
 export const SHORTCUTS: Shortcut[] = [
   { id: 'save', keys: ['mod+s'], group: 'general', allowInInputs: true },
+  { id: 'palette', keys: ['mod+k'], group: 'general', allowInInputs: true },
   { id: 'cheatsheet', keys: ['?', 'mod+/'], group: 'general' },
   { id: 'escape', keys: ['escape'], group: 'general' },
   { id: 'run', keys: ['mod+enter'], group: 'run', allowInInputs: true },

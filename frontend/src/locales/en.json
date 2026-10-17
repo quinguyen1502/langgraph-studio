@@ -957,7 +957,8 @@
       "cut": "Cut selected nodes",
       "paste": "Paste nodes",
       "duplicate": "Duplicate selected nodes",
-      "layout": "Tidy up the layout"
+      "layout": "Tidy up the layout",
+      "palette": "Open the command palette"
     }
   },
   "history": {
@@ -1013,5 +1014,20 @@
     "direction": "Layout direction",
     "lr": "Left to right",
     "tb": "Top to bottom"
+  },
+  "palette": {
+    "title": "Command palette",
+    "description": "Search actions, nodes, workflows and pages",
+    "placeholder": "Type a command or search…",
+    "empty": "No results",
+    "addNode": "Add {{type}} node",
+    "goWorkflows": "Go to workflows",
+    "groups": {
+      "actions": "Actions",
+      "add": "Add node",
+      "nodes": "Jump to node",
+      "workflows": "Open workflow",
+      "navigation": "Go to"
+    }
   }
 }

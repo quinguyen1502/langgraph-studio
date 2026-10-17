@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Workflow, Plus, Search, Copy, Pencil, Trash2, MoreHorizontal, Loader2, AlertCircle, RefreshCw, SearchX, FolderOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +36,8 @@ export function WorkflowsPage() {
   const [notice, setNotice] = useState('')
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
   const [busy, setBusy] = useState(false); const [gallery, setGallery] = useState(false)
+  const [params, setParams] = useSearchParams()
+  useEffect(() => { if (params.get('new') === '1') { setGallery(true); setParams({}, { replace: true }) } }, [params])
   const me = useMe(); const [all, setAll] = useState(false)
   const creates = can(me, 'workflows.create')
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))

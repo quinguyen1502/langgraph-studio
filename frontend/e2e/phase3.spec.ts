@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { confirmDelete } from './confirm'
 // TASK-0029: teams + team share, ownership transfer, activity log, delete user with reassignment, org-resource policy, dependents on delete.
 async function login(page: Page, email = 'admin@example.com', password = 'admin123') {
   await page.goto('/login'); await page.getByLabel('Email').fill(email); await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
@@ -43,9 +44,20 @@ test('team share, transfer, activity log and delete user with reassignment', asy
   // delete heir: owns a workflow, must reassign back to admin
   await page.goto('/settings/users'); const row = page.locator(`.user-row[data-email="${heir}"]`)
   await row.getByRole('button', { name: `Xoá ${heir}` }).click()
-  await page.locator('#delete-reassign').fill('admin@example.com'); await page.locator('#delete-user-confirm').click()
+  await page.locator('#delete-reassign').fill('admin@example.com'); await confirmDelete(page, heir)
   await expect(page.locator('#users-notice')).toContainText(heir); await expect(row).toHaveCount(0)
   const w = await (await page.request.get(`/api/workflows/${wid}`, { headers: auth })).json(); expect(w.data.id).toBe(wid)
+  // server side: a high-risk delete without the typed name is refused
+  const tid = (await (await page.request.get('/api/teams', { headers: auth })).json()).data.teams.find((x: any) => x.name === `Ops ${stamp}`).id
+  expect((await (await page.request.delete(`/api/teams/${tid}?confirm_name=ops`, { headers: auth })).json()).error.code).toBe('CONFIRM_NAME_MISMATCH')
+  // remove the member, stop the team share, then delete the team — each asks for the name
+  await page.goto('/settings/teams'); await card.getByRole('button', { name: `Gỡ ${member}` }).click(); await confirmDelete(page, member)
+  await expect(card).not.toContainText(member)
+  await page.goto(`/workflows/${wid}`); await page.locator('#share-btn').click()
+  await page.locator('#share-list').getByRole('button', { name: `Ngừng chia sẻ với Ops ${stamp}` }).click(); await confirmDelete(page, `Ops ${stamp}`)
+  await expect(page.locator('#share-list')).not.toContainText(`Ops ${stamp}`); await page.keyboard.press('Escape')
+  await page.goto('/settings/teams'); await card.getByRole('button', { name: `Xoá nhóm Ops ${stamp}` }).click(); await confirmDelete(page, `Ops ${stamp}`)
+  await expect(card).toHaveCount(0)
 })
 
 test('org-resource policy and delete warning with dependents', async ({ page }) => {
@@ -64,6 +76,6 @@ test('org-resource policy and delete warning with dependents', async ({ page }) 
   await page.goto('/workflows'); await page.locator('#wf-search').fill(`Child ${stamp}`)
   const row = page.getByRole('row', { name: new RegExp(`Child ${stamp}`) })
   await row.getByRole('button').last().click(); await page.getByRole('menuitem', { name: 'Xoá' }).click()
-  await page.locator('#delete-confirm').click(); await expect(page.locator('#delete-dependents')).toContainText(`Parent ${stamp}`)
-  await page.locator('#delete-confirm').click(); await expect(row).toHaveCount(0)
+  await expect(page.locator('#delete-dependents')).toContainText(`Parent ${stamp}`)
+  await confirmDelete(page, `Child ${stamp}`); await expect(page.locator('#wf-no-results')).toBeVisible()
 })

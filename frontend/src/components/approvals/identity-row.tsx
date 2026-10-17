@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ErrorAlert } from '@/components/approvals/channel-parts'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 
 export type Slot = { kind: string; team_id: string | null; team_name: string | null; available: boolean; external_id: string | null; verified: boolean; code_pending: boolean; code_expires: number | null }
@@ -28,7 +29,13 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
     setErr(''); setBusy(true)
     try { onChange(await api<Slots>(path, init)); return true } catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
   }
+  const confirmDel = useConfirmDelete()
   const linkAndSend = async () => {
+    if (!ext.trim() && slot.external_id) {  // unlinking is a delete: type the linked ID to confirm
+      const id = slot.external_id
+      return confirmDel.ask({ title: t('approvals.unlinkTitle', { name: id }), name: id, description: t('approvals.unlinkBody'), confirmLabel: t('confirmDelete.unlink'),
+        onConfirm: async () => { onChange(await api<Slots>('/api/approvals/identities', { method: 'PUT', json: { kind, external_id: '', ...team } })) } })
+    }
     if (await call('/api/approvals/identities', { method: 'PUT', json: { kind, external_id: ext.trim(), ...team } }) && ext.trim())
       await call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST', json: team })
   }
@@ -57,6 +64,7 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
       {kind === 'telegram' && <p className="text-xs text-muted-foreground">{t('approvals.telegramStart')}</p>}
     </div>}
     {err && <ErrorAlert>{err}</ErrorAlert>}
+    {confirmDel.dialog}
   </div>
 }
 

@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DeliveriesList } from '@/components/deliveries-list'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 
@@ -35,7 +36,9 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
     setErr('')
     try { setCreated(await api<Token>(`/api/workflows/${wid}/tokens/${id}/rotate-secret`, { method: 'POST' })); load() } catch (e: any) { setErr(e.message) }
   }
-  const revoke = async (id: string) => { try { await api(`/api/workflows/${wid}/tokens/${id}`, { method: 'DELETE' }); load() } catch (e: any) { setErr(e.message) } }
+  const confirmDel = useConfirmDelete()
+  const revoke = (tk: Token) => confirmDel.ask({ title: t('api.revokeTitle', { name: tk.name }), name: tk.name, description: t('api.revokeBody'), confirmLabel: t('confirmDelete.revoke'),
+    onConfirm: async () => { await api(`/api/workflows/${wid}/tokens/${tk.id}`, { method: 'DELETE' }); load() } })
   const revokedCount = items.filter(tk => tk.revoked).length
   const visible = showRevoked ? items : items.filter(tk => !tk.revoked)
   const url = `${location.origin}/api/hooks/workflows/${wid}/runs`
@@ -70,7 +73,7 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
           {tk.revoked ? <Badge variant="secondary">{t('api.revoked')}</Badge> : <Badge variant="success">{t('api.active')}</Badge>}
           <span className="ml-auto text-xs text-muted-foreground">{t('api.lastUsed', { when: when(tk.last_used) })}</span>
           {!tk.revoked && tk.signed && <Tip tip={t('api.rotate')}><Button variant="ghost" size="icon" className="size-7" data-testid="api-rotate" aria-label={t('api.rotateAria', { name: tk.name })} onClick={() => rotate(tk.id)}><RefreshCw /></Button></Tip>}
-          {!tk.revoked && <Button variant="ghost" size="icon" className="size-7" aria-label={t('api.revokeAria', { name: tk.name })} onClick={() => revoke(tk.id)}><Trash2 /></Button>}
+          {!tk.revoked && <Button variant="ghost" size="icon" className="size-7" aria-label={t('api.revokeAria', { name: tk.name })} onClick={() => revoke(tk)}><Trash2 /></Button>}
         </div>)}
         {!visible.length && <p className="text-xs text-muted-foreground">{t('api.empty')}</p>}
       </div>
@@ -84,5 +87,6 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
         <p className="text-xs text-muted-foreground">{t('api.modes')}</p></div>
       </TabsContent></div></Tabs>
     </DialogContent>
+    {confirmDel.dialog}
   </Dialog>
 }

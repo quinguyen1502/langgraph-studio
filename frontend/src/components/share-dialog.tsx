@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 import type { Issue, Shares, Teams } from '@/lib/rbac'
 import { TransferDialog } from '@/components/transfer-dialog'
@@ -25,8 +26,11 @@ export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowI
   const change = (em: string, r: string) => run(async () => setData(await api(`/api/workflows/${workflowId}/shares`, { method: 'PUT', json: { email: em, role: r } })))
   const addTeam = () => run(async () => { setData(await api(`/api/workflows/${workflowId}/team-shares`, { method: 'PUT', json: { team_id: team, role } })); setTeam('') })
   const changeTeam = (tid: string, r: string) => run(async () => setData(await api(`/api/workflows/${workflowId}/team-shares`, { method: 'PUT', json: { team_id: tid, role: r } })))
-  const removeTeam = (tid: string) => run(async () => { await api(`/api/workflows/${workflowId}/team-shares/${tid}`, { method: 'DELETE' }); await load() })
-  const remove = (uid: string) => run(async () => { await api(`/api/workflows/${workflowId}/shares/${uid}`, { method: 'DELETE' }); await load() })
+  const confirmDel = useConfirmDelete()
+  const removeTeam = (tid: string, name: string) => confirmDel.ask({ title: t('share.removeTeamTitle', { name }), name, description: t('share.removeBody'), confirmLabel: t('confirmDelete.remove'),
+    onConfirm: async () => { await api(`/api/workflows/${workflowId}/team-shares/${tid}`, { method: 'DELETE' }); await load() } })
+  const remove = (uid: string, email: string) => confirmDel.ask({ title: t('share.removeTitle', { name: email }), name: email, description: t('share.removeBody'), confirmLabel: t('confirmDelete.remove'),
+    onConfirm: async () => { await api(`/api/workflows/${workflowId}/shares/${uid}`, { method: 'DELETE' }); await load() } })
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button variant="outline" size="sm" id="share-btn" disabled={disabled}><Share2 />{t('share.button')}</Button></DialogTrigger>
     <DialogContent className="sm:max-w-lg">
@@ -51,7 +55,7 @@ export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowI
           {data.can_share ? <>
             <Select value={s.role} onValueChange={v => change(s.email, v)}><SelectTrigger size="sm" className="w-28" aria-label={t('share.roleFor', { email: s.email })}><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="viewer">{t('share.roles.viewer')}</SelectItem><SelectItem value="editor">{t('share.roles.editor')}</SelectItem></SelectContent></Select>
-            <Button variant="ghost" size="icon" aria-label={t('share.remove', { email: s.email })} onClick={() => remove(s.user_id)} disabled={busy}><Trash2 /></Button>
+            <Button variant="ghost" size="icon" aria-label={t('share.remove', { email: s.email })} onClick={() => remove(s.user_id, s.email)} disabled={busy}><Trash2 /></Button>
           </> : <Badge variant="outline">{t(`share.roles.${s.role}`)}</Badge>}
         </li>)}
         {data?.teams.map(s => <li key={s.team_id} className="flex items-center gap-2 px-3 py-2 text-sm share-team-row">
@@ -59,7 +63,7 @@ export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowI
           {data.can_share ? <>
             <Select value={s.role} onValueChange={v => changeTeam(s.team_id, v)}><SelectTrigger size="sm" className="w-28" aria-label={t('share.roleFor', { email: s.name })}><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="viewer">{t('share.roles.viewer')}</SelectItem><SelectItem value="editor">{t('share.roles.editor')}</SelectItem></SelectContent></Select>
-            <Button variant="ghost" size="icon" aria-label={t('share.remove', { email: s.name })} onClick={() => removeTeam(s.team_id)} disabled={busy}><Trash2 /></Button>
+            <Button variant="ghost" size="icon" aria-label={t('share.remove', { email: s.name })} onClick={() => removeTeam(s.team_id, s.name)} disabled={busy}><Trash2 /></Button>
           </> : <Badge variant="outline">{t(`share.roles.${s.role}`)}</Badge>}
         </li>)}
         {data && !data.shares.length && !data.teams.length && <li className="px-3 py-3 text-sm text-muted-foreground" id="share-empty">{t('share.empty')}</li>}
@@ -67,5 +71,6 @@ export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowI
       {data?.can_transfer && <div className="flex items-center justify-between gap-2 border-t pt-3"><p className="text-xs text-muted-foreground">{t('transfer.hint')}</p>
         <TransferDialog workflowId={workflowId} onDone={(o, f) => { setOpen(false); onTransferred?.(o, f) }} /></div>}
     </DialogContent>
+    {confirmDel.dialog}
   </Dialog>
 }

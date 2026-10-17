@@ -27,9 +27,15 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
 
 6. **Dark mode must work.** Use tokens only (never `dark:` colour overrides), and check that the screen looks right in both themes.
 
+7. **Every delete is confirmed by typing the item's name** (TASK-0029). This covers deleting, removing, revoking and unlinking anything: workflows, users, teams and members, shares, credentials, knowledge bases and documents, MCP servers, approval connections, API tokens, linked chat accounts.
+   - Use the one shared `ConfirmDeleteDialog` (`components/confirm-delete-dialog.tsx`: shadcn AlertDialog + Input), usually through `useConfirmDelete().ask({ title, name, description, children, onConfirm })`. Never `window.confirm`, and never a hand-made dialog.
+   - The destructive button stays disabled until the typed text matches `name` exactly. Consequences such as dependents, reassignment or mode go in the `children` slot. Strings live in en + vi.
+   - High-risk deletes (workflow, user, team) also send the typed text as `confirm_name`. The server refuses a mismatch with `CONFIRM_NAME_MISMATCH` (`core.errors.require_confirm_name`).
+
 ## Review checklist
 
 - [ ] No custom widget where shadcn has a component.
 - [ ] This command finds no hard-coded colours:
   `rg -n "(text|bg|border|ring)-(red|emerald|green|amber|yellow|orange|sky|blue|violet|purple|teal|zinc|gray|slate)-[0-9]|text-white|bg-white" frontend/src --glob '!components/ui/**'`
+- [ ] Every new delete/remove/revoke/unlink goes through `ConfirmDeleteDialog` (type the name; `confirm_name` on high-risk endpoints).
 - [ ] Screenshots are taken in both light and dark mode for UI changes.

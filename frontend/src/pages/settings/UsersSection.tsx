@@ -5,7 +5,7 @@ import { AlertCircle, Check, Loader2, Minus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,30 +21,24 @@ type Data = RoleMatrix & { users: AdminUser[] }
 /** Delete or anonymise an account (TASK-0029): owned workflows must go to another editor/admin first. */
 function DeleteUserDialog({ user, onClose, onDone }: { user: AdminUser | null; onClose: () => void; onDone: (msg: string) => void }) {
   const { t } = useTranslation(); const [mode, setMode] = useState('anonymize'); const [to, setTo] = useState('')
-  const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
-  useEffect(() => { setMode('anonymize'); setTo(''); setErr('') }, [user])
-  const go = async () => {
-    if (!user) return; setBusy(true); setErr('')
-    try {
-      const r = await api<{ reassigned: string[]; flagged: any[] }>(`/api/admin/users/${user.id}`, { method: 'DELETE', json: { mode, reassign_to: to.trim() || null } })
-      onDone(t('users.deleted', { email: user.email, count: r.reassigned.length, flagged: r.flagged.length }))
-    } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
+  useEffect(() => { setMode('anonymize'); setTo('') }, [user])
+  if (!user) return null
+  const go = async (typed: string) => {
+    const r = await api<{ reassigned: string[]; flagged: any[] }>(`/api/admin/users/${user.id}`, { method: 'DELETE', json: { mode, reassign_to: to.trim() || null, confirm_name: typed } })
+    onDone(t('users.deleted', { email: user.email, count: r.reassigned.length, flagged: r.flagged.length }))
   }
-  return <Dialog open={!!user} onOpenChange={o => !o && onClose()}>
-    <DialogContent><DialogHeader><DialogTitle>{t('users.deleteTitle', { email: user?.email })}</DialogTitle><DialogDescription>{t('users.deleteIntro')}</DialogDescription></DialogHeader>
-      <div className="space-y-3">
-        <div className="space-y-1.5"><Label htmlFor="delete-mode">{t('users.deleteMode')}</Label>
-          <Select value={mode} onValueChange={setMode}><SelectTrigger id="delete-mode" className="w-full"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="anonymize">{t('users.modes.anonymize')}</SelectItem><SelectItem value="delete">{t('users.modes.delete')}</SelectItem></SelectContent></Select>
-          <p className="text-xs text-muted-foreground">{t(`users.modeHelp.${mode}`)}</p></div>
-        {!!user?.workflows && <div className="space-y-1.5"><Label htmlFor="delete-reassign">{t('users.reassign', { count: user.workflows })}</Label>
-          <Input id="delete-reassign" type="email" placeholder="name@example.com" value={to} onChange={e => setTo(e.target.value)} />
-          <p className="text-xs text-muted-foreground">{t('users.reassignHelp')}</p></div>}
-        {err && <p role="alert" className="text-sm text-destructive" id="delete-error">{err}</p>}
-      </div>
-      <DialogFooter><Button variant="outline" onClick={onClose}>{t('common.cancel')}</Button>
-        <Button variant="destructive" id="delete-user-confirm" onClick={go} disabled={busy || (!!user?.workflows && !to.trim())}>{busy && <Loader2 className="animate-spin" />}{t(`users.modes.${mode}`)}</Button></DialogFooter>
-    </DialogContent></Dialog>
+  return <ConfirmDeleteDialog open onOpenChange={o => !o && onClose()} title={t('users.deleteTitle', { email: user.email })} name={user.email}
+    description={t('users.deleteIntro')} confirmLabel={t(`users.modes.${mode}`)} disabled={!!user.workflows && !to.trim()} onConfirm={go}>
+    <div className="space-y-3">
+      <div className="space-y-1.5"><Label htmlFor="delete-mode">{t('users.deleteMode')}</Label>
+        <Select value={mode} onValueChange={setMode}><SelectTrigger id="delete-mode" className="w-full"><SelectValue /></SelectTrigger>
+          <SelectContent><SelectItem value="anonymize">{t('users.modes.anonymize')}</SelectItem><SelectItem value="delete">{t('users.modes.delete')}</SelectItem></SelectContent></Select>
+        <p className="text-xs text-muted-foreground">{t(`users.modeHelp.${mode}`)}</p></div>
+      {!!user.workflows && <div className="space-y-1.5"><Label htmlFor="delete-reassign">{t('users.reassign', { count: user.workflows })}</Label>
+        <Input id="delete-reassign" type="email" placeholder="name@example.com" value={to} onChange={e => setTo(e.target.value)} />
+        <p className="text-xs text-muted-foreground">{t('users.reassignHelp')}</p></div>}
+    </div>
+  </ConfirmDeleteDialog>
 }
 
 /** Which roles may use org-wide approval channels and MCP servers at run time (TASK-0029). */

@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
 import { ErrorAlert, useAction } from '@/components/approvals/channel-parts'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 import type { McpList, McpServer } from '@/lib/mcp'
@@ -67,7 +68,7 @@ function ServerFields({ form, set, idp, fixed, data }: { form: Form; set: (f: Fo
 
 function ServerCard({ s, data, reload, defaultOpen }: { s: McpServer; data: McpList; reload: () => void; defaultOpen: boolean }) {
   const { t } = useTranslation(); const [open, setOpen] = useState(defaultOpen); const [edit, setEdit] = useState(false); const [form, setForm] = useState(toForm(s))
-  const act = useAction(reload)
+  const act = useAction(reload); const confirmDel = useConfirmDelete()
   useEffect(() => { setForm(toForm(s)) }, [s])
   return <Collapsible open={open} onOpenChange={setOpen} asChild>
     <Card data-testid={`mcp-card-${s.id}`} className="gap-4">
@@ -98,10 +99,11 @@ function ServerCard({ s, data, reload, defaultOpen }: { s: McpServer; data: McpL
             <div className="flex flex-wrap gap-2">
               <Button size="sm" disabled={act.busy} onClick={() => act.run(() => api(`/api/mcp/servers/${s.id}`, { method: 'PUT', json: toBody(form) }), t('mcp.saved'))}>{t('common.save')}</Button>
               <Button size="sm" variant="destructive" className="ml-auto" disabled={act.busy} id={`mcp-${s.id}-delete`}
-                onClick={() => { if (confirm(t('mcp.confirmDelete', { name: s.name }))) act.run(() => api(`/api/mcp/servers/${s.id}`, { method: 'DELETE' }), '') }}><Trash2 />{t('mcp.delete')}</Button>
+                onClick={() => confirmDel.ask({ title: t('mcp.deleteTitle', { name: s.name }), name: s.name, description: t('mcp.deleteBody'), onConfirm: () => act.run(() => api(`/api/mcp/servers/${s.id}`, { method: 'DELETE' }), '') })}><Trash2 />{t('mcp.delete')}</Button>
             </div></div></>}
         </CardContent>
       </CollapsibleContent>
+      {confirmDel.dialog}
     </Card>
   </Collapsible>
 }

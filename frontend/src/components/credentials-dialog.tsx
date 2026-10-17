@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 
 export type Credential = { id: string; name: string; provider: string; base_url: string | null; hint: string; created: number }
@@ -24,7 +25,9 @@ export function CredentialsDialog() {
     try { await api('/api/credentials', { method: 'POST', json: { name, provider, api_key: key, base_url: baseUrl || null } }); setName(''); setKey(''); setBaseUrl(''); load() }
     catch (e: any) { setErr(e.message) }
   }
-  const del = async (id: string) => { await api(`/api/credentials/${id}`, { method: 'DELETE' }); load() }
+  const confirmDel = useConfirmDelete()
+  const del = (c: Credential) => confirmDel.ask({ title: t('creds.deleteTitle', { name: c.name }), name: c.name, description: t('creds.deleteBody'),
+    onConfirm: async () => { await api(`/api/credentials/${c.id}`, { method: 'DELETE' }); load() } })
   return <Dialog open={open} onOpenChange={setOpen}>
     <DialogTrigger asChild><Button variant="outline" id="creds-btn"><KeyRound />{t('creds.button')}</Button></DialogTrigger>
     <DialogContent className="sm:max-w-xl">
@@ -35,7 +38,7 @@ export function CredentialsDialog() {
           <Badge variant="secondary">{c.provider}</Badge><span className="font-medium">{c.name}</span>
           <span className="font-mono text-xs text-muted-foreground">{c.hint}</span>
           {c.base_url && <span className="truncate text-xs text-muted-foreground">{c.base_url}</span>}
-          <Button variant="ghost" size="icon" className="ml-auto size-7" aria-label={t('creds.deleteAria', { name: c.name })} onClick={() => del(c.id)}><Trash2 /></Button></div>)}
+          <Button variant="ghost" size="icon" className="ml-auto size-7" aria-label={t('creds.deleteAria', { name: c.name })} onClick={() => del(c)}><Trash2 /></Button></div>)}
         {!items.length && <p className="text-xs text-muted-foreground">{t('creds.empty')}</p>}
       </div>
       <div className="grid grid-cols-2 gap-3 border-t pt-3">
@@ -48,5 +51,6 @@ export function CredentialsDialog() {
       {err && <Alert variant="destructive" id="cred-error"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
       <div className="flex justify-end"><Button onClick={add} disabled={!key.trim()}><Plus />{t('creds.add')}</Button></div>
     </DialogContent>
+    {confirmDel.dialog}
   </Dialog>
 }

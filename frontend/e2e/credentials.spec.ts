@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { confirmDelete } from './confirm'
 
 async function loginAdmin(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
@@ -29,6 +30,6 @@ test('credentials: add (masked), invalid base URL error, pick on LLM node, delet
   await page.keyboard.press('Escape')
 
   await page.goto('/workflows'); await page.locator('#creds-btn').click()
-  await page.getByRole('dialog').getByRole('button', { name: `Xoá ${name}` }).click()
+  await page.getByRole('dialog').getByRole('button', { name: `Xoá ${name}` }).click(); await confirmDelete(page, name)
   await expect(page.getByRole('dialog')).not.toContainText(name)
 })

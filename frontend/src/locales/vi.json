@@ -229,7 +229,9 @@
     "key": "API key",
     "baseUrl": "Base URL (tuỳ chọn, cho endpoint OpenAI-compatible)",
     "add": "Thêm credential",
-    "deleteAria": "Xoá {{name}}"
+    "deleteAria": "Xoá {{name}}",
+    "deleteTitle": "Xoá thông tin xác thực {{name}}?",
+    "deleteBody": "Workflow và kho tri thức dùng khoá này sẽ lỗi cho tới khi chọn khoá khác. Không thể hoàn tác."
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -349,7 +351,8 @@
     "USER_HAS_WORKFLOWS": "Người dùng này sở hữu {{count}} workflow: hãy chọn người nhận trước",
     "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
     "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})"
+    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})",
+    "CONFIRM_NAME_MISMATCH": "Nhập đúng tên để xác nhận xoá"
   },
   "lang": {
     "en": "English",
@@ -413,7 +416,9 @@
     "rotateAria": "Đổi khoá ký của {{name}}",
     "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",
     "tokensTab": "Token",
-    "showRevoked": "Hiện token đã thu hồi ({{count}})"
+    "showRevoked": "Hiện token đã thu hồi ({{count}})",
+    "revokeTitle": "Thu hồi token {{name}}?",
+    "revokeBody": "Client dùng token này bị từ chối ngay. Không thể hoàn tác."
   },
   "versions": {
     "button": "Phiên bản",
@@ -575,7 +580,11 @@
     "replaceSecrets": "Thay khoá bí mật",
     "sharedUrl": "Request URL (mọi workspace)",
     "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app.",
-    "noConnection": "Chưa có kết nối"
+    "noConnection": "Chưa có kết nối",
+    "removeTitle": "Gỡ kết nối {{name}}?",
+    "removeBody": "Node Human dùng kết nối này sẽ ngừng gửi yêu cầu phê duyệt tới đây. Không thể hoàn tác.",
+    "unlinkTitle": "Huỷ liên kết {{name}}?",
+    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại."
   },
   "settings": {
     "title": "Cài đặt",
@@ -665,10 +674,13 @@
     "reindex": "Lập chỉ mục lại",
     "reindexed": "Đã lập chỉ mục lại {{count}} đoạn",
     "delete": "Xoá kho tri thức",
-    "confirmDelete": "Xoá kho tri thức \"{{name}}\" và toàn bộ tài liệu?",
     "none": "Chưa có kho tri thức nào.",
     "documents_one": "{{count}} tài liệu",
-    "chunks_one": "{{count}} đoạn"
+    "chunks_one": "{{count}} đoạn",
+    "deleteTitle": "Xoá kho tri thức {{name}}?",
+    "deleteBody": "Tài liệu và chỉ mục bị xoá; node Retriever dùng kho này sẽ lỗi. Không thể hoàn tác.",
+    "deleteFileTitle": "Xoá tài liệu {{name}}?",
+    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác."
   },
   "mcp": {
     "new": "Thêm máy chủ MCP",
@@ -700,10 +712,11 @@
     "edit": "Sửa",
     "saved": "Đã lưu (hãy tìm lại công cụ)",
     "delete": "Xoá máy chủ",
-    "confirmDelete": "Xoá máy chủ MCP \"{{name}}\"? Các node đang dùng sẽ lỗi.",
     "none": "Chưa có máy chủ MCP nào.",
     "stdioOn": "Máy chủ stdio đang bật: admin có thể đăng ký lệnh cục bộ. Lệnh chạy trên máy studio với môi trường sạch, thư mục home tạm rỗng và giới hạn thời gian, nhưng không cô lập thêm: chỉ thêm lệnh bạn tin cậy, hoặc chạy studio trong container.",
-    "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1."
+    "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1.",
+    "deleteTitle": "Xoá máy chủ MCP {{name}}?",
+    "deleteBody": "Node MCP tool dùng máy chủ này sẽ lỗi. Không thể hoàn tác."
   },
   "users": {
     "adminOnly": "Chỉ quản trị viên mới quản lý được người dùng.",
@@ -787,7 +800,10 @@
     "kindTeam": "Nhóm",
     "team": "Nhóm",
     "pickTeam": "Chọn nhóm",
-    "noTeams": "Chưa có nhóm (quản trị viên tạo)"
+    "noTeams": "Chưa có nhóm (quản trị viên tạo)",
+    "removeTitle": "Gỡ quyền truy cập của {{name}}?",
+    "removeTeamTitle": "Ngừng chia sẻ với nhóm {{name}}?",
+    "removeBody": "Họ không mở được workflow này nữa, trừ khi được chia sẻ theo cách khác."
   },
   "slackOauth": {
     "title": "Thêm vào Slack",
@@ -806,7 +822,11 @@
     "namePlaceholder": "Tên nhóm mới",
     "name": "Tên nhóm",
     "create": "Tạo nhóm",
-    "empty": "Chưa có nhóm. Tạo nhóm, thêm thành viên rồi chia sẻ workflow với nhóm từ trình chỉnh sửa."
+    "empty": "Chưa có nhóm. Tạo nhóm, thêm thành viên rồi chia sẻ workflow với nhóm từ trình chỉnh sửa.",
+    "deleteTitle": "Xoá nhóm {{name}}?",
+    "deleteBody": "Thành viên mất quyền đã chia sẻ cho nhóm này. Không thể hoàn tác.",
+    "removeTitle": "Gỡ {{email}} khỏi {{team}}?",
+    "removeBody": "Họ mất quyền đã chia sẻ cho nhóm này."
   },
   "activity": {
     "search": "Tìm người thực hiện, đối tượng hoặc thao tác…",
@@ -892,5 +912,15 @@
     "adminAlways": "luôn được phép",
     "blockedMcp": "Vai trò của bạn không được dùng máy chủ MCP của tổ chức khi chạy (chính sách quản trị).",
     "blockedChannels": "Vai trò của bạn không được dùng kênh phê duyệt của tổ chức khi chạy (chính sách quản trị)."
+  },
+  "confirmDelete": {
+    "typeToConfirm": "Nhập <b>{{name}}</b> để xác nhận",
+    "placeholder": "Nhập chính xác tên",
+    "irreversible": "Không thể hoàn tác.",
+    "delete": "Xoá",
+    "cancel": "Huỷ",
+    "remove": "Gỡ",
+    "revoke": "Thu hồi",
+    "unlink": "Huỷ liên kết"
   }
 }

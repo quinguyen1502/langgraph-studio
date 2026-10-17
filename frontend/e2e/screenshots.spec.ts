@@ -16,7 +16,7 @@ test('capture auth and list states', async ({ page, request }) => {
   await page.screenshot({ path: out('auth-register-password-rules') })
   const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } }); const { token, user } = (await r.json()).data
   const H = { Authorization: `Bearer ${token}` }
-  for (const w of (await (await request.get('/api/workflows', { headers: H })).json()).data) await request.delete(`/api/workflows/${w.id}`, { headers: H })
+  for (const w of (await (await request.get('/api/workflows', { headers: H })).json()).data) await request.delete(`/api/workflows/${w.id}?force=true&confirm_name=${encodeURIComponent(w.name)}`, { headers: H })
   await page.evaluate(([t, u]) => { localStorage.setItem('token', t); localStorage.setItem('user', JSON.stringify(u)) }, [token, user] as const)
   await page.goto('/workflows'); await expect(page.locator('#wf-empty')).toBeVisible(); await page.screenshot({ path: out('list-empty-state') })
   await request.post('/api/workflows', { headers: H, data: { name: 'A very long workflow name that keeps going to show truncation in the list view without breaking the table layout at all', nodes: [], edges: [] } })

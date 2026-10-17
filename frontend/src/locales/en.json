@@ -229,7 +229,9 @@
     "key": "API key",
     "baseUrl": "Base URL (optional, for OpenAI-compatible endpoints)",
     "add": "Add credential",
-    "deleteAria": "Delete {{name}}"
+    "deleteAria": "Delete {{name}}",
+    "deleteTitle": "Delete credential {{name}}?",
+    "deleteBody": "Workflows and knowledge bases that use this key fail until another one is chosen. This cannot be undone."
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -349,7 +351,8 @@
     "USER_HAS_WORKFLOWS": "This user owns {{count}} workflow(s): choose who takes them over first",
     "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
     "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})"
+    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})",
+    "CONFIRM_NAME_MISMATCH": "Type the exact name to confirm the deletion"
   },
   "lang": {
     "en": "English",
@@ -413,7 +416,9 @@
     "rotateAria": "Rotate the signing secret of {{name}}",
     "rotated": "New signing secret. The previous one keeps signing callbacks until {{when}}, so receivers can switch over.",
     "tokensTab": "Tokens",
-    "showRevoked": "Show revoked ({{count}})"
+    "showRevoked": "Show revoked ({{count}})",
+    "revokeTitle": "Revoke token {{name}}?",
+    "revokeBody": "Clients using this token are refused immediately. This cannot be undone."
   },
   "versions": {
     "button": "Versions",
@@ -575,7 +580,11 @@
     "replaceSecrets": "Replace secrets",
     "sharedUrl": "Request URL (all workspaces)",
     "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret.",
-    "noConnection": "No connection"
+    "noConnection": "No connection",
+    "removeTitle": "Remove connection {{name}}?",
+    "removeBody": "Human nodes using it stop sending approval requests here. This cannot be undone.",
+    "unlinkTitle": "Unlink {{name}}?",
+    "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again."
   },
   "settings": {
     "title": "Settings",
@@ -667,8 +676,11 @@
     "reindex": "Re-index",
     "reindexed": "{{count}} chunks re-indexed",
     "delete": "Delete knowledge base",
-    "confirmDelete": "Delete the knowledge base \"{{name}}\" and all its documents?",
-    "none": "No knowledge bases yet."
+    "none": "No knowledge bases yet.",
+    "deleteTitle": "Delete knowledge base {{name}}?",
+    "deleteBody": "Its documents and index are removed; Retriever nodes using it will fail. This cannot be undone.",
+    "deleteFileTitle": "Delete document {{name}}?",
+    "deleteFileBody": "Its passages are removed from the index. This cannot be undone."
   },
   "mcp": {
     "new": "Add MCP server",
@@ -700,10 +712,11 @@
     "edit": "Edit",
     "saved": "Saved (discover the tools again)",
     "delete": "Delete server",
-    "confirmDelete": "Delete the MCP server \"{{name}}\"? Nodes that use it will fail.",
     "none": "No MCP servers yet.",
     "stdioOn": "stdio servers are enabled: admins can register local commands. They run on the studio host with a clean environment, an empty temporary home directory and a time limit, but no further isolation: only add commands you trust, or run the studio in a container.",
-    "stdioOff": "stdio servers are disabled on this server (STUDIO_MCP_STDIO=1 enables them for admins). HTTP servers must use public addresses unless STUDIO_MCP_ALLOW_PRIVATE=1."
+    "stdioOff": "stdio servers are disabled on this server (STUDIO_MCP_STDIO=1 enables them for admins). HTTP servers must use public addresses unless STUDIO_MCP_ALLOW_PRIVATE=1.",
+    "deleteTitle": "Delete MCP server {{name}}?",
+    "deleteBody": "MCP tool nodes using this server will fail. This cannot be undone."
   },
   "users": {
     "adminOnly": "Only admins can manage users.",
@@ -787,7 +800,10 @@
     "kindTeam": "Team",
     "team": "Team",
     "pickTeam": "Choose a team",
-    "noTeams": "No teams (an admin creates them)"
+    "noTeams": "No teams (an admin creates them)",
+    "removeTitle": "Remove access for {{name}}?",
+    "removeTeamTitle": "Stop sharing with team {{name}}?",
+    "removeBody": "They can no longer open this workflow unless it is shared with them another way."
   },
   "slackOauth": {
     "title": "Add to Slack",
@@ -806,7 +822,11 @@
     "namePlaceholder": "New team name",
     "name": "Team name",
     "create": "Create team",
-    "empty": "No teams yet. Create one, add members, then share workflows with it from the editor."
+    "empty": "No teams yet. Create one, add members, then share workflows with it from the editor.",
+    "deleteTitle": "Delete team {{name}}?",
+    "deleteBody": "Members lose the access that was shared with this team. This cannot be undone.",
+    "removeTitle": "Remove {{email}} from {{team}}?",
+    "removeBody": "They lose the access shared with this team."
   },
   "activity": {
     "search": "Search actor, target or action…",
@@ -892,5 +912,15 @@
     "adminAlways": "always allowed",
     "blockedMcp": "Your role cannot use organization MCP servers at run time (admin policy).",
     "blockedChannels": "Your role cannot use organization approval channels at run time (admin policy)."
+  },
+  "confirmDelete": {
+    "typeToConfirm": "Type <b>{{name}}</b> to confirm",
+    "placeholder": "Type the name exactly",
+    "irreversible": "This cannot be undone.",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "remove": "Remove",
+    "revoke": "Revoke",
+    "unlink": "Unlink"
   }
 }

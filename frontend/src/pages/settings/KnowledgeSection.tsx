@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ErrorAlert, useAction } from '@/components/approvals/channel-parts'
 import type { Credential } from '@/components/credentials-dialog'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 import { KB_ACCEPT, fmtBytes, type KbHit, type KnowledgeBase } from '@/lib/knowledge'
 import { cn } from '@/lib/utils'
@@ -43,7 +44,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
   const file = useRef<HTMLInputElement>(null)
   const load = () => api<KnowledgeBase>(`/api/knowledge-bases/${kb.id}`).then(setFull)
   const done = () => { load(); reload() }
-  const act = useAction(done)
+  const act = useAction(done); const confirmDel = useConfirmDelete()
   useEffect(() => { if (open) load() }, [open, kb.documents, kb.chunks])
   const upload = (f?: File) => { if (!f) return; const fd = new FormData(); fd.append('file', f)
     act.run(() => api(`/api/knowledge-bases/${kb.id}/documents`, { method: 'POST', body: fd }), r => t('kb.uploaded', { name: r.filename, chunks: r.chunks }))
@@ -78,7 +79,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
               <Button size="sm" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'PUT', json: { ...form, credential_id: form.credential_id || null } }), t('kb.saved'))}>{t('common.save')}</Button>
               <Button size="sm" variant="outline" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}/reindex`, { method: 'POST' }), r => t('kb.reindexed', { count: r.chunks }))}><RefreshCw />{t('kb.reindex')}</Button>
               <Button size="sm" variant="destructive" className="ml-auto" disabled={act.busy} id={`kb-${kb.id}-delete`}
-                onClick={() => { if (confirm(t('kb.confirmDelete', { name: kb.name }))) act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'DELETE' }), '') }}><Trash2 />{t('kb.delete')}</Button>
+                onClick={() => confirmDel.ask({ title: t('kb.deleteTitle', { name: kb.name }), name: kb.name, description: t('kb.deleteBody'), onConfirm: () => act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'DELETE' }), '') })}><Trash2 />{t('kb.delete')}</Button>
             </div>
           </div>}
           {files.length ? <div className="rounded-md border"><Table>
@@ -87,7 +88,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
               <TableCell><span className="flex items-center gap-2"><FileText className="size-4 text-muted-foreground" />{f.filename}</span></TableCell>
               <TableCell className="text-right text-xs text-muted-foreground">{fmtBytes(f.size)}</TableCell>
               <TableCell className="text-right text-xs">{f.chunks}</TableCell>
-              <TableCell className="w-10"><Button variant="ghost" size="icon" aria-label={t('kb.deleteFile')} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}/documents/${f.id}`, { method: 'DELETE' }), t('kb.fileDeleted'))}><Trash2 /></Button></TableCell>
+              <TableCell className="w-10"><Button variant="ghost" size="icon" aria-label={t('kb.deleteFile')} onClick={() => confirmDel.ask({ title: t('kb.deleteFileTitle', { name: f.filename }), name: f.filename, description: t('kb.deleteFileBody'), onConfirm: () => act.run(() => api(`/api/knowledge-bases/${kb.id}/documents/${f.id}`, { method: 'DELETE' }), t('kb.fileDeleted')) })}><Trash2 /></Button></TableCell>
             </TableRow>)}</TableBody></Table></div>
             : <p className="text-sm text-muted-foreground" data-testid="kb-empty">{t('kb.noFiles')}</p>}
           <Separator />
@@ -104,6 +105,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
           </div>
         </CardContent>
       </CollapsibleContent>
+      {confirmDel.dialog}
     </Card>
   </Collapsible>
 }

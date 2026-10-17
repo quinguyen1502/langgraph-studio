@@ -1,0 +1,59 @@
+/** The one delete confirmation (UI rule, docs/ui-conventions.md): the destructive button stays disabled until the user
+ * types the item's exact name. `children` is the reasons/warnings slot; `onConfirm(typed)` gets the typed name so
+ * high-risk deletes can pass it on as `confirm_name`. Errors thrown by `onConfirm` are shown inside the dialog. */
+import { useState, type ReactNode } from 'react'
+import { Trans, useTranslation } from 'react-i18next'
+import { Loader2, Trash2 } from 'lucide-react'
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+export type ConfirmDeleteOptions = {
+  title: string
+  name: string                 // what the user must type
+  description?: ReactNode
+  confirmLabel?: string
+  children?: ReactNode         // reasons / warnings / extra fields
+  disabled?: boolean           // extra condition (e.g. a required field in the slot)
+  onConfirm: (typed: string) => Promise<unknown> | unknown
+}
+
+export function ConfirmDeleteDialog({ open, onOpenChange, title, name, description, confirmLabel, children, disabled, onConfirm }:
+  ConfirmDeleteOptions & { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { t } = useTranslation()
+  const [typed, setTyped] = useState(''); const [busy, setBusy] = useState(false); const [err, setErr] = useState('')
+  const change = (o: boolean) => { if (busy) return; if (!o) { setTyped(''); setErr('') } onOpenChange(o) }
+  const go = async () => {
+    setBusy(true); setErr('')
+    try { await onConfirm(typed); setTyped(''); onOpenChange(false) } catch (e: any) { setErr(e?.message || String(e)) } finally { setBusy(false) }
+  }
+  const match = typed === name
+  return <AlertDialog open={open} onOpenChange={change}>
+    <AlertDialogContent id="confirm-delete">
+      <AlertDialogHeader><AlertDialogTitle className="break-all">{title}</AlertDialogTitle>
+        <AlertDialogDescription>{description ?? t('confirmDelete.irreversible')}</AlertDialogDescription></AlertDialogHeader>
+      {children}
+      <div className="space-y-1.5">
+        <Label htmlFor="confirm-delete-input" className="block break-all font-normal">
+          <Trans i18nKey="confirmDelete.typeToConfirm" values={{ name }} components={{ b: <span className="font-mono font-semibold" /> }} /></Label>
+        <Input id="confirm-delete-input" autoComplete="off" spellCheck={false} placeholder={t('confirmDelete.placeholder')} value={typed}
+          onChange={e => setTyped(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && match && !disabled && !busy) go() }} aria-invalid={!!typed && !match} />
+      </div>
+      {err && <p role="alert" id="confirm-delete-error" className="text-sm text-destructive">{err}</p>}
+      <AlertDialogFooter><AlertDialogCancel disabled={busy}>{t('confirmDelete.cancel')}</AlertDialogCancel>
+        <Button id="confirm-delete-submit" variant="destructive" disabled={!match || disabled || busy} onClick={go}>
+          {busy ? <Loader2 className="animate-spin" /> : <Trash2 />}{confirmLabel ?? t('confirmDelete.delete')}</Button></AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+}
+
+/** `const del = useConfirmDelete(); del.ask({...}); return <>{del.dialog}</>` — one dialog per screen, opened on demand. */
+export function useConfirmDelete() {
+  const [opts, setOpts] = useState<ConfirmDeleteOptions | null>(null)
+  return {
+    ask: (o: ConfirmDeleteOptions) => setOpts(o),
+    close: () => setOpts(null),
+    dialog: opts && <ConfirmDeleteDialog open onOpenChange={o => { if (!o) setOpts(null) }} {...opts} />,
+  }
+}

@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { confirmDelete } from './confirm'
 
 const uid = () => Math.random().toString(36).slice(2, 8)
 async function register(page: Page, email: string, pw = 'goodpass1') {
@@ -105,8 +106,8 @@ test('list: rename / duplicate / delete with confirm, edge cases, not-found', as
   await openMenu(0, 'Xoá')
   await page.getByRole('button', { name: 'Huỷ' }).click(); await expect(rows).toHaveCount(2)
   for (let i = 0; i < 2; i++) {
-    await openMenu(0, 'Xoá'); await page.locator('#delete-confirm').click()
-    await expect(page.locator('[role=dialog]')).toHaveCount(0)
+    await openMenu(0, 'Xoá'); await confirmDelete(page)
+    await expect(page.locator('[role=dialog], [role=alertdialog]')).toHaveCount(0)
   }
   await expect(page.locator('#wf-empty')).toBeVisible()
   // deleted and foreign workflow URLs show not-found

@@ -6,7 +6,12 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository
+from ..core import permissions as P
+from ..services.access import AccessService
+from ..services.share_service import ShareService
+from ..services.user_service import UserService
+from ..services.slack_oauth import SlackOAuthService
 from ..services.mcp_service import McpService
 from ..services.knowledge_service import KnowledgeService
 from ..services.approval_service import ApprovalService
@@ -54,7 +59,8 @@ def get_rate_limiter() -> RateLimiter:
 
 
 def delivery_service() -> DeliveryService:
-    db = get_db(); return DeliveryService(WebhookDeliveryRepository(db), WorkflowRepository(db), get_job_queue(), trigger_service().signing_secrets)
+    db = get_db(); return DeliveryService(WebhookDeliveryRepository(db), WorkflowRepository(db), get_job_queue(), trigger_service().signing_secrets,
+                                          access=access_service())
 
 
 @lru_cache
@@ -67,7 +73,8 @@ def notification_service() -> NotificationService:
 
 
 def trigger_service() -> TriggerService:
-    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue(), get_rate_limiter())
+    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue(), get_rate_limiter(),
+                                         access=access_service())
 
 
 @lru_cache
@@ -76,14 +83,24 @@ def get_telemetry() -> Telemetry:
 
 
 def workflow_service() -> WorkflowService:
-    db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db))
+    db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
+                                          access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db))
+
+def access_service() -> AccessService:
+    db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db))
+
+def user_service() -> UserService:
+    return UserService(UserRepository(get_db()), access_service())
+
+def share_service() -> ShareService:
+    db = get_db(); return ShareService(WorkflowShareRepository(db), UserRepository(db), access_service())
 
 def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
-                      knowledge=knowledge_service(), mcp=mcp_service())
+                      knowledge=knowledge_service(), mcp=mcp_service(), access=access_service())
 
 def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
@@ -91,6 +108,9 @@ def channel_service() -> ChannelService:
 def approval_service() -> ApprovalService:
     db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
                                          limiter=get_rate_limiter())
+
+def slack_oauth_service() -> SlackOAuthService:
+    return SlackOAuthService(channel_service(), access_service())
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))
@@ -100,7 +120,7 @@ def knowledge_service() -> KnowledgeService:
 
 def mcp_service() -> McpService:
     db = get_db(); users = UserRepository(db)
-    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.is_admin))
+    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.active and P.can(u.role, P.ORG_MANAGE)))
 
 def import_service() -> ImportService:
     return ImportService(workflow_service())
@@ -109,7 +129,21 @@ def import_service() -> ImportService:
 bearer = HTTPBearer(auto_error=False)
 
 def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
-    return AuthService.user_from_token(cred.credentials if cred else None)
+    """The signed-in, active user with role and permissions (database-checked per request, TASK-0014)."""
+    return AuthService(UserRepository(get_db())).current(cred.credentials if cred else None)
+
+
+def ws_user(token: str | None) -> dict:
+    """WebSocket variant of current_user (token from the query string)."""
+    return AuthService(UserRepository(get_db())).current(token)
+
+
+def need(permission: str):
+    """Route dependency: the current user if their role grants `permission`, else PERMISSION_DENIED."""
+    def dep(user: dict = Depends(current_user)) -> dict:
+        if permission not in user["permissions"]: raise AppError("PERMISSION_DENIED", permission=permission)
+        return user
+    return dep
 
 
 async def limit_body(request: Request):

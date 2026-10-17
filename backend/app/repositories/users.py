@@ -1,6 +1,6 @@
 from typing import Optional
-from sqlalchemy import select
-from ..models import User
+from sqlalchemy import func, select, update
+from ..models import User, Workflow
 from ..models.database import Database
 
 
@@ -28,6 +28,25 @@ class UserRepository:
             s.commit(); s.refresh(u); return u
 
     def set_admin(self, uid: str, admin: bool = True) -> None:
+        """Shortcut kept for seeds and tests: admin role, or back to the default role."""
+        self.set_role(uid, "admin" if admin else "editor")
+
+    def set_role(self, uid: str, role: str) -> None:
+        with self.db.session() as s: s.execute(update(User).where(User.id == uid).values(role=role)); s.commit()
+
+    def set_active(self, uid: str, active: bool) -> None:
+        with self.db.session() as s: s.execute(update(User).where(User.id == uid).values(active=active)); s.commit()
+
+    def list_all(self) -> list[tuple[User, int]]:
+        """(user, owned workflow count), oldest account first."""
+        counts = select(Workflow.owner, func.count(Workflow.id).label("n")).group_by(Workflow.owner).subquery()
         with self.db.session() as s:
-            u = s.get(User, uid)
-            if u is not None: u.is_admin = admin; s.commit()
+            return [(u, int(n or 0)) for u, n in s.execute(select(User, counts.c.n).outerjoin(counts, counts.c.owner == User.id).order_by(User.created))]
+
+    def count_active_admins(self) -> int:
+        with self.db.session() as s:
+            return int(s.scalar(select(func.count(User.id)).where(User.role == "admin", User.active.is_(True))) or 0)
+
+    def by_ids(self, ids: list[str]) -> dict[str, User]:
+        if not ids: return {}
+        with self.db.session() as s: return {u.id: u for u in s.scalars(select(User).where(User.id.in_(ids)))}

@@ -74,7 +74,10 @@
     "nameRequired": "Tên không được để trống",
     "deleteTitle": "Xoá workflow?",
     "deleteBody": "“{{name}}” và toàn bộ lịch sử chạy sẽ bị xoá vĩnh viễn.",
-    "title": "Workflows"
+    "title": "Workflows",
+    "showAll": "Mọi workflow",
+    "sharedBy": "Được chia sẻ bởi {{email}}",
+    "emptyViewer": "Chưa có workflow nào được chia sẻ với bạn. Hãy nhờ chủ sở hữu chia sẻ."
   },
   "editor": {
     "notFoundTitle": "Không tìm thấy workflow",
@@ -144,7 +147,9 @@
     "mcpNone": "Chưa có máy chủ MCP: thêm trong Cài đặt.",
     "mcpArgs": "Tham số",
     "mcpArgsHint": "Văn bản, hoặc {{field}} để truyền giá trị state giữ nguyên kiểu.",
-    "mcpManage": "Quản lý máy chủ MCP"
+    "mcpManage": "Quản lý máy chủ MCP",
+    "viewOnly": "Chỉ xem",
+    "nameLabel": "Tên workflow"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -316,7 +321,20 @@
     "MCP_CONNECT_FAILED": "Không giao tiếp được với máy chủ MCP: {{reason}}",
     "MCP_TOOL_NOT_FOUND": "Máy chủ MCP không có công cụ {{tool}}",
     "MCP_TOOL_FAILED": "Công cụ MCP thất bại: {{reason}}",
-    "MCP_ARGUMENT_INVALID": "Tham số {{name}} phải có kiểu {{type}}"
+    "MCP_ARGUMENT_INVALID": "Tham số {{name}} phải có kiểu {{type}}",
+    "AUTH_ACCOUNT_DISABLED": "Tài khoản này đã bị vô hiệu hoá",
+    "PERMISSION_DENIED": "Vai trò của bạn không cho phép thao tác này ({{permission}})",
+    "USER_NOT_FOUND": "Không tìm thấy người dùng",
+    "USER_ROLE_INVALID": "Vai trò phải là một trong: {{roles}}",
+    "USER_LAST_ADMIN": "Studio cần ít nhất một quản trị viên đang hoạt động",
+    "USER_SELF_CHANGE": "Bạn không thể đổi vai trò hoặc vô hiệu hoá tài khoản của chính mình",
+    "SHARE_USER_NOT_FOUND": "Không có tài khoản đang hoạt động với email này",
+    "SHARE_ROLE_INVALID": "Quyền chia sẻ phải là người xem hoặc người chỉnh sửa",
+    "SHARE_OWNER": "Chủ sở hữu đã có toàn quyền",
+    "SHARE_NOT_FOUND": "Workflow này chưa được chia sẻ với người dùng đó",
+    "SLACK_OAUTH_NOT_CONFIGURED": "Chưa cấu hình Thêm vào Slack (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET)",
+    "SLACK_OAUTH_STATE_INVALID": "Liên kết đăng nhập Slack không hợp lệ hoặc đã hết hạn, vui lòng thử lại",
+    "SLACK_OAUTH_FAILED": "Slack chưa hoàn tất cài đặt: {{reason}}"
   },
   "lang": {
     "en": "English",
@@ -553,14 +571,16 @@
       "accounts": "Tài khoản của tôi",
       "audit": "Nhật ký",
       "knowledge": "Kho tri thức",
-      "mcp": "Máy chủ MCP"
+      "mcp": "Máy chủ MCP",
+      "users": "Người dùng"
     },
     "intro": {
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
       "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
       "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình.",
-      "mcp": "Công cụ từ máy chủ Model Context Protocol, dùng trong node MCP. Secret được mã hoá và không hiển thị lại."
+      "mcp": "Công cụ từ máy chủ Model Context Protocol, dùng trong node MCP. Secret được mã hoá và không hiển thị lại.",
+      "users": "Ai có thể đăng nhập và vai trò của họ cho phép gì. Workflow được chia sẻ từ trình chỉnh sửa."
     },
     "status": {
       "connected": "Đã kết nối",
@@ -663,5 +683,71 @@
     "none": "Chưa có máy chủ MCP nào.",
     "stdioOn": "Máy chủ stdio đang bật: admin có thể đăng ký lệnh cục bộ. Lệnh chạy trên máy studio với môi trường sạch, thư mục home tạm rỗng và giới hạn thời gian, nhưng không cô lập thêm: chỉ thêm lệnh bạn tin cậy, hoặc chạy studio trong container.",
     "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1."
+  },
+  "users": {
+    "adminOnly": "Chỉ quản trị viên mới quản lý được người dùng.",
+    "email": "Email",
+    "role": "Vai trò",
+    "workflows": "Workflow",
+    "created": "Tham gia",
+    "active": "Hoạt động",
+    "you": "Bạn",
+    "roleFor": "Vai trò của {{email}}",
+    "activeFor": "{{email}} có thể đăng nhập",
+    "statusActive": "Đang hoạt động",
+    "statusDisabled": "Đã vô hiệu hoá",
+    "roles": {
+      "admin": "Quản trị viên",
+      "editor": "Người chỉnh sửa",
+      "viewer": "Người xem"
+    },
+    "matrixTitle": "Vai trò",
+    "matrixIntro": "Mỗi vai trò được làm gì trong toàn studio.",
+    "permission": "Quyền",
+    "perms": {
+      "users_manage": "Quản lý người dùng và vai trò",
+      "org_manage": "Kênh và máy chủ MCP của tổ chức",
+      "workflows_all": "Toàn quyền với mọi workflow",
+      "workflows_create": "Tạo, nhập và nhân bản workflow",
+      "resources_manage": "Thông tin xác thực, kho tri thức, máy chủ MCP và kênh riêng"
+    },
+    "yes": "Được phép",
+    "no": "Không được phép",
+    "accessTitle": "Quyền với một workflow",
+    "accessNote": "Vai trò người xem giới hạn mọi chia sẻ ở mức người xem. Lần chạy workflow được chia sẻ dùng thông tin xác thực, kho tri thức và máy chủ MCP của chủ sở hữu."
+  },
+  "share": {
+    "button": "Chia sẻ",
+    "title": "Chia sẻ workflow",
+    "intro": "Người xem có thể mở và chạy. Người chỉnh sửa còn có thể thay đổi. Chỉ chủ sở hữu và quản trị viên mới chia sẻ hoặc xoá được.",
+    "email": "Email",
+    "role": "Quyền",
+    "add": "Thêm",
+    "owner": "Chủ sở hữu",
+    "empty": "Chưa chia sẻ với ai.",
+    "roleFor": "Quyền của {{email}}",
+    "remove": "Ngừng chia sẻ với {{email}}",
+    "roles": {
+      "viewer": "Người xem",
+      "editor": "Người chỉnh sửa"
+    },
+    "access": {
+      "owner": "Chủ sở hữu",
+      "editor": "Có thể sửa",
+      "viewer": "Chỉ xem"
+    },
+    "actions": {
+      "view": "Mở",
+      "run": "Chạy",
+      "edit": "Sửa",
+      "delete": "Xoá",
+      "share": "Chia sẻ"
+    }
+  },
+  "slackOauth": {
+    "title": "Thêm vào Slack",
+    "help": "Cài ứng dụng Slack của studio vào một workspace chỉ với một cú nhấp, không cần dán token.",
+    "button": "Thêm vào Slack",
+    "installed": "Đã kết nối workspace Slack."
   }
 }

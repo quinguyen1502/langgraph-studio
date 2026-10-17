@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AddConnection, ConnectionItem, ErrorAlert } from '@/components/approvals/channel-parts'
 import { IdentityRow, slotKey, useSlots, type Slot, type Slots } from '@/components/approvals/identity-row'
+import { AddToSlack, SlackOAuthNotice } from '@/components/approvals/add-to-slack'
 import { FilterBar } from '@/components/settings/filter-bar'
 import type { Channel, ChannelKind, Channels } from '@/lib/approvals'
 import { api } from '@/lib/api'
@@ -50,7 +51,7 @@ function PlatformCard({ k, data, conns, slots, onSlots, reload, initialScope }: 
               {conns.filter(c => c.scope === s).map(c => <ConnectionItem key={c.id} c={c} k={k} publicUrl={data.public_url} onChange={reload} />)}
               {s === 'org' && !data.is_admin
                 ? !has('org') && <p className="text-sm text-muted-foreground">{t('settings.orgAskAdmin')}</p>
-                : <AddConnection k={k} scope={s} onChange={reload} collapsed={has(s)} />}
+                : <>{k.kind === 'slack' && <AddToSlack scope={s} />}<AddConnection k={k} scope={s} onChange={reload} collapsed={has(s)} /></>}
             </TabsContent>)}
           </Tabs>
           <Separator />
@@ -82,6 +83,7 @@ export function ChannelsSection() {
   }), [data, q, status, scope, t])
   const all = (label: string) => ({ value: 'all', label })
   return <div className="space-y-4">
+    <SlackOAuthNotice />
     <FilterBar id="channel-filters" q={q} onQ={setQ} placeholder={t('settings.searchChannels')} filters={[
       { id: 'status', label: t('settings.filter.status'), value: status, onChange: setStatus,
         options: [all(t('settings.filter.anyStatus')), { value: 'connected', label: t('settings.status.connected') }, { value: 'not_set_up', label: t('settings.status.notSetUp') }] },

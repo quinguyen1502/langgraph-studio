@@ -30,7 +30,9 @@ class FakeRuns:
 class FakeUsers:
     def __init__(self): self.rows = {}
     def get_by_email(self, e): return self.rows.get(e)
-    def add(self, uid, email, pw, created): self.rows[email] = NS(id=uid, email=email, password=pw, created=created)
+    def add(self, uid, email, pw, created): self.rows[email] = NS(id=uid, email=email, password=pw, created=created, role="editor", active=True)
+    def get_by_id(self, uid): return next((u for u in self.rows.values() if u.id == uid), None)
+    def set_role(self, uid, role): self.get_by_id(uid).role = role
 
 
 @pytest.fixture

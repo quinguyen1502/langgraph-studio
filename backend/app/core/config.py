@@ -72,6 +72,12 @@ def otel_metrics() -> bool: return os.environ.get("STUDIO_OTEL_METRICS", "").low
 # --- TASK-0022: approval through external channels ---
 def approval_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_APPROVAL_TTL", 24 * 3600)))  # approval buttons expire (s)
 def slack_api_url() -> str: return (os.environ.get("SLACK_API_URL") or "https://slack.com/api").rstrip("/")
+# Add to Slack / OAuth app distribution (TASK-0014): all three from the Slack app's "Basic Information" page
+def slack_client_id() -> str: return (os.environ.get("SLACK_CLIENT_ID") or "").strip()
+def slack_client_secret() -> str: return (os.environ.get("SLACK_CLIENT_SECRET") or "").strip()
+def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET") or "").strip()
+def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
+SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write,users:read"
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
 # --- TASK-0022 follow-up: identity verification codes sent by the bot ---
@@ -80,6 +86,9 @@ def identity_code_attempts() -> int: return max(1, _int("STUDIO_IDENTITY_CODE_AT
 def identity_code_resend() -> int: return max(0, _int("STUDIO_IDENTITY_CODE_RESEND", 30))     # min seconds between two codes
 # --- TASK-0022 follow-up: org-wide approval channels ---
 def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.get("STUDIO_ADMIN_EMAILS") or "").split(",") if e.strip()}
+def default_role() -> str:  # role of newly registered accounts (TASK-0014): editor | viewer (admin is never a default)
+    r = (os.environ.get("STUDIO_DEFAULT_ROLE") or "editor").strip().lower()
+    return r if r in ("editor", "viewer") else "editor"
 # --- TASK-0022 follow-up: rate limits of the public approval callbacks (fixed window, shared via Redis) ---
 def callback_rate_limit_ip() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_IP", 60))        # per client IP and window (0 = off)
 def callback_rate_limit_channel() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", 300))  # per connection / Slack team

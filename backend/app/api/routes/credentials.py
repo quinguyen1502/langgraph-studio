@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from ...schemas.credential import CredentialIn
-from ..deps import credential_service, current_user
+from ...core import permissions as P
+from ..deps import credential_service, current_user, need
 
 router = APIRouter(prefix="/api", tags=["credentials"])
 
@@ -11,8 +12,8 @@ def providers(user=Depends(current_user), svc=Depends(credential_service)): retu
 def list_creds(user=Depends(current_user), svc=Depends(credential_service)): return svc.list(user["id"])
 
 @router.post("/credentials")
-def create_cred(body: CredentialIn, user=Depends(current_user), svc=Depends(credential_service)):
+def create_cred(body: CredentialIn, user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(credential_service)):
     return svc.create(user["id"], body.name, body.provider, body.api_key, body.base_url)
 
 @router.delete("/credentials/{cid}")
-def delete_cred(cid: str, user=Depends(current_user), svc=Depends(credential_service)): return svc.delete(cid, user["id"])
+def delete_cred(cid: str, user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(credential_service)): return svc.delete(cid, user["id"])

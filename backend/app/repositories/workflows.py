@@ -15,6 +15,15 @@ class WorkflowRepository:
         with self.db.session() as s:
             return s.get(Workflow, wid)
 
+    def by_ids(self, ids) -> list[Workflow]:
+        if not ids: return []
+        with self.db.session() as s:
+            return list(s.scalars(select(Workflow).where(Workflow.id.in_(list(ids))).order_by(Workflow.updated.desc())))
+
+    def list_all(self) -> list[Workflow]:
+        with self.db.session() as s:
+            return list(s.scalars(select(Workflow).order_by(Workflow.updated.desc())))
+
     def get_owned(self, wid: str, owner: str) -> Optional[Workflow]:
         w = self.get(wid)
         return w if w is not None and w.owner == owner else None

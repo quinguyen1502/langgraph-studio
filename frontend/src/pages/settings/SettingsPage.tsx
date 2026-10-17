@@ -3,7 +3,7 @@
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Database, MessageSquareShare, Plug, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Database, Users, MessageSquareShare, Plug, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/lib/theme'
@@ -14,18 +14,22 @@ import { AccountsSection } from './AccountsSection'
 import { AuditSection } from './AuditSection'
 import { KnowledgeSection } from './KnowledgeSection'
 import { McpSection } from './McpSection'
+import { UsersSection } from './UsersSection'
+import { can, useMe } from '@/lib/rbac'
 
-type Section = { id: string; icon: LucideIcon; Component: ComponentType }
+type Section = { id: string; icon: LucideIcon; Component: ComponentType; permission?: string }
 export const SECTIONS: Section[] = [
   { id: 'channels', icon: MessageSquareShare, Component: ChannelsSection },
   { id: 'accounts', icon: UserCheck, Component: AccountsSection },
   { id: 'audit', icon: ScrollText, Component: AuditSection },
   { id: 'knowledge', icon: Database, Component: KnowledgeSection },
   { id: 'mcp', icon: Plug, Component: McpSection },
+  { id: 'users', icon: Users, Component: UsersSection, permission: 'users.manage' },
 ]
 
 export function SettingsPage() {
-  const { t } = useTranslation(); const { section } = useParams()
+  const { t } = useTranslation(); const { section } = useParams(); const me = useMe()
+  const visible = SECTIONS.filter(s => !s.permission || can(me, s.permission))
   const current = SECTIONS.find(s => s.id === section)
   if (!current) return <Navigate to={`/settings/${SECTIONS[0].id}`} replace />
   const { Component } = current
@@ -39,7 +43,7 @@ export function SettingsPage() {
         <Button variant="ghost" size="sm" asChild className="mb-3 -ml-2"><Link to="/workflows" id="settings-back"><ArrowLeft />{t('settings.back')}</Link></Button>
         <h1 className="mb-3 text-2xl font-semibold tracking-tight">{t('settings.title')}</h1>
         <nav className="flex gap-1 md:flex-col" aria-label={t('settings.title')}>
-          {SECTIONS.map(s => <Button key={s.id} variant="ghost" asChild className={cn('justify-start', s.id === current.id && 'bg-accent text-accent-foreground')}>
+          {visible.map(s => <Button key={s.id} variant="ghost" asChild className={cn('justify-start', s.id === current.id && 'bg-accent text-accent-foreground')}>
             <Link to={`/settings/${s.id}`} id={`settings-nav-${s.id}`} aria-current={s.id === current.id ? 'page' : undefined}><s.icon />{t(`settings.nav.${s.id}`)}</Link>
           </Button>)}
         </nav>

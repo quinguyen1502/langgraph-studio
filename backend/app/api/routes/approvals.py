@@ -6,9 +6,14 @@ shared POST /api/approvals/callback/slack routed by team_id.
 """
 import asyncio
 from typing import Optional
+from urllib.parse import urlencode
 from fastapi import APIRouter, Body, Depends, Request
+from fastapi.responses import RedirectResponse
+from ...core import config
+from ...core.errors import AppError
 from ...core.client_ip import client_ip
-from ..deps import approval_service, channel_service, current_user, identity_service
+from ...core import permissions as P
+from ..deps import approval_service, channel_service, current_user, identity_service, need, slack_oauth_service
 
 router = APIRouter(prefix="/api/approvals", tags=["approvals"])
 
@@ -17,19 +22,38 @@ router = APIRouter(prefix="/api/approvals", tags=["approvals"])
 def list_channels(user=Depends(current_user), svc=Depends(channel_service)): return svc.list(user["id"])
 
 @router.post("/channels")
-def create_channel(body=Body(None), user=Depends(current_user), svc=Depends(channel_service)): return svc.create(user["id"], body)
+def create_channel(body=Body(None), user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(channel_service)): return svc.create(user["id"], body)
 
 @router.put("/channels/{cid}")
-def update_channel(cid: str, body=Body(None), user=Depends(current_user), svc=Depends(channel_service)): return svc.update(user["id"], cid, body)
+def update_channel(cid: str, body=Body(None), user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(channel_service)): return svc.update(user["id"], cid, body)
 
 @router.delete("/channels/{cid}")
-def delete_channel(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.delete(user["id"], cid)
+def delete_channel(cid: str, user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(channel_service)): return svc.delete(user["id"], cid)
 
 @router.post("/channels/{cid}/test")
-def test_channel(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.test(user["id"], cid)
+def test_channel(cid: str, user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(channel_service)): return svc.test(user["id"], cid)
 
 @router.post("/channels/{cid}/register-webhook")
-def register_webhook(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.register_webhook(user["id"], cid)
+def register_webhook(cid: str, user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(channel_service)): return svc.register_webhook(user["id"], cid)
+
+# ---- Add to Slack (TASK-0014) ----
+@router.get("/slack/oauth")
+def slack_oauth_info(user=Depends(current_user), svc=Depends(slack_oauth_service)): return svc.info()
+
+@router.post("/slack/oauth/start")
+def slack_oauth_start(body=Body(None), user=Depends(need(P.RESOURCES_MANAGE)), svc=Depends(slack_oauth_service)):
+    return svc.start(user["id"], (body or {}).get("scope") or "user")
+
+@router.get("/slack/oauth/callback")
+def slack_oauth_callback(code: str = "", state: str = "", error: str = "", svc=Depends(slack_oauth_service)):
+    """Slack redirects the browser here (no JWT; the signed state names the user). Back to Settings → Channels with
+    ?slack=installed or ?slack_error=CODE (translated by the UI)."""
+    try:
+        if error: raise AppError("SLACK_OAUTH_FAILED", reason=error[:60])
+        svc.finish(code, state); q = {"slack": "installed"}
+    except AppError as e: q = {"slack_error": e.code}
+    return RedirectResponse(f"{config.public_url()}/settings/channels?{urlencode(q)}", status_code=303)
+
 
 @router.get("/identities")
 def get_identities(user=Depends(current_user), svc=Depends(identity_service)): return svc.get(user["id"])

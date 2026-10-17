@@ -2,8 +2,7 @@
 import asyncio
 from fastapi import APIRouter, Body, Depends, WebSocket, WebSocketDisconnect
 from ...core.errors import AppError
-from ...services.auth_service import AuthService
-from ..deps import current_user, get_notification_hub, notification_service
+from ..deps import current_user, get_notification_hub, notification_service, ws_user
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 ws_router = APIRouter()
@@ -30,7 +29,7 @@ def read_one(nid: str, user=Depends(current_user), svc=Depends(notification_serv
 async def ws_notifications(ws: WebSocket):
     """Connect with ?token=JWT. Server pushes {"type": "notification", notification, unread} for each new in-app
     notification of this user (and {"type": "ready"} once subscribed). Clients keep polling when the socket is down."""
-    try: uid = AuthService.user_from_token(ws.query_params.get("token") or "")["id"]
+    try: uid = ws_user(ws.query_params.get("token") or "")["id"]
     except AppError: await ws.close(code=4401); return
     await ws.accept()
     async with get_notification_hub().subscribe(uid) as feed:

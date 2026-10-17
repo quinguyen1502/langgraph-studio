@@ -6,6 +6,7 @@ import asyncio, json, threading, time, uuid
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Iterator, Optional
 from ..core import config
+from ..core import permissions as P
 from ..core.errors import CATALOG, AppError
 from ..engine import repo_import
 from ..engine import subgraphs
@@ -92,7 +93,7 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -105,6 +106,7 @@ class RunService:
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
         self.knowledge = knowledge  # KnowledgeService (optional): Retriever nodes (TASK-0012)
         self.mcp = mcp  # McpService (optional): MCP tool nodes (TASK-0013)
+        self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -120,19 +122,31 @@ class RunService:
         if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
         if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"))
         wid = req.get("workflow_id"); row = None
-        if wid:
-            row = self.workflows.get_owned(wid, uid)
-            if row is None: raise AppError("WORKFLOW_NOT_FOUND")
+        if wid: row = self._workflow(wid, uid, P.RUN)
+        elif self.access is not None: self.access.require(uid, P.WORKFLOWS_CREATE)  # ad-hoc graphs: viewers only run saved workflows
         inp = req.get("input", {})
         if not isinstance(inp, dict): raise AppError("RUN_INPUT_INVALID")
         if size(inp) > config.input_max(): raise AppError("RUN_INPUT_TOO_LARGE", max_kb=config.input_max() // 1024)
         stored = json.loads(row.data or "{}") if row else {}
-        wf = stored if stored.get("source") else (req.get("workflow") or stored)
+        edits = row is None or self.access is None or self.access.may(wid, uid, P.EDIT)
+        wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
         version = self._version_of(wid, wf)
-        wf, invalid = self._expand(uid, wid, wf)
-        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=version, invalid=invalid,
-                       ports=self.ports(uid))
+        res = row.owner if row is not None and row.owner else uid  # a saved workflow uses its owner's resources (DEC-0023)
+        wf, invalid = self._expand(res, wid, wf)
+        return RunPlan(wid, wf, inp, self.credentials.resolver(res) if self.credentials else None, version=version, invalid=invalid,
+                       ports=self.ports(res))
+
+    def _workflow(self, wid: str, uid: str, action: str = P.VIEW):
+        if self.access is not None: return self.access.workflow(wid, uid, action)
+        row = self.workflows.get_owned(wid, uid)
+        if row is None: raise AppError("WORKFLOW_NOT_FOUND")
+        return row
+
+    def resources_of(self, wid: Optional[str], uid: str) -> str:
+        """Whose credentials, knowledge bases and MCP servers a run uses: the saved workflow's owner, else the caller."""
+        row = self.workflows.get(wid) if wid and wid != "adhoc" else None
+        return row.owner if row is not None and row.owner else uid
 
     def ports(self, uid: str) -> Ports:
         """Services nodes may call during a run, bound to the run's owner."""
@@ -147,7 +161,8 @@ class RunService:
 
     def workflow_loader(self, uid: str):
         def load(ref: str) -> Optional[dict]:
-            row = self.workflows.get_owned(ref, uid)
+            if self.access is not None: row = self.workflows.get(ref) if self.access.may(ref, uid) else None
+            else: row = self.workflows.get_owned(ref, uid)
             return json.loads(row.data or "{}") if row else None
         return load
 
@@ -194,10 +209,11 @@ class RunService:
         if self.approvals is not None and not via_channel:  # answered in the studio: the channel buttons stop working (TASK-0022)
             if self.approvals.decided_elsewhere(rid): raise AppError("RUN_NOT_WAITING")
             self.approvals.close_run(rid, "answered")
+        res = self.resources_of(r.workflow_id, uid)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
-                       self.credentials.resolver(uid) if self.credentials else None,
+                       self.credentials.resolver(res) if self.credentials else None,
                        run_id=rid, previous=r, resume={**{k: cp[k] for k in RESUME_KEYS if k in cp}, "value": response}, source=r.source or "ui",
-                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(uid))
+                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(res))
 
     def plan_recover(self, r: Run, fence: Optional[int] = None, attempt: int = 2) -> RunPlan:
         """A recovered queue job (its worker died or lost its lease mid-run). With a progress checkpoint it continues
@@ -215,9 +231,9 @@ class RunService:
             for k, v in common.items(): setattr(plan, k, v)
             return plan
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
-                       self.credentials.resolver(r.owner) if self.credentials else None, previous=r,
+                       self.credentials.resolver(self.resources_of(r.workflow_id, r.owner or "")) if self.credentials else None, previous=r,
                        resume={k: cp[k] for k in RESUME_KEYS if k in cp}, version=r.workflow_version, recovered=True,
-                       ports=self.ports(r.owner or ""), **common)
+                       ports=self.ports(self.resources_of(r.workflow_id, r.owner or "")), **common)
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""
@@ -235,13 +251,14 @@ class RunService:
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
-        if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
+        row = self._workflow(wid, uid)
+        everyone = self.access is None or self.access.access_of(row, uid) == "owner"  # owner and admins see every run
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
                  "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui", "version": r.workflow_version,
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
                  "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
-                for r in self.runs.list_for_workflow(wid)]
+                for r in self.runs.list_for_workflow(wid) if everyone or r.owner == uid]
 
     def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui",
                version: Optional[int] = None, span=None, trace_parent: Optional[dict] = None, trace_events: Optional[list] = None,

@@ -26,3 +26,5 @@ backend/imports/
 *.egg-info/
 frontend/test-results/
 frontend/playwright-report/
+backend/.venv
+.coverage

@@ -307,7 +307,8 @@
     "rotate": "Rotate signing secret",
     "rotateAria": "Rotate the signing secret of {{name}}",
     "rotated": "New signing secret. The previous one keeps signing callbacks until {{when}}, so receivers can switch over.",
-    "tokensTab": "Tokens"
+    "tokensTab": "Tokens",
+    "showRevoked": "Show revoked ({{count}})"
   },
   "versions": {
     "button": "Versions",

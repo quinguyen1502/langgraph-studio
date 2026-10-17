@@ -307,7 +307,8 @@
     "rotate": "Đổi khoá ký",
     "rotateAria": "Đổi khoá ký của {{name}}",
     "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",
-    "tokensTab": "Token"
+    "tokensTab": "Token",
+    "showRevoked": "Hiện token đã thu hồi ({{count}})"
   },
   "versions": {
     "button": "Phiên bản",

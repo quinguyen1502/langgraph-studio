@@ -21,24 +21,28 @@ async function login(page: Page) {
   return page.evaluate(() => localStorage.getItem('token'))
 }
 
-test('approval channels: connect, link account, configure the Human node, audit', async ({ page }) => {
+test('approval channels: org connection, verified account, Human node, request, audit', async ({ page }) => {
   const token = await login(page); const auth = { Authorization: `Bearer ${token}` }
   const wid = (await (await page.request.post('/api/workflows', { headers: auth, data: WF })).json()).data.id
   await page.goto(`/workflows/${wid}`)
-  // node settings: Studio only by default; Slack is "not connected" yet
+  // node settings: Studio only by default; nothing connected yet
   await page.locator('.react-flow__node[data-id="ask"]').click()
   await expect(page.locator('#approval-channel')).toContainText('Chỉ trong Studio')
-  await page.locator('#approval-channel').click(); await page.getByRole('option', { name: /Slack · chưa kết nối/ }).click()
-  await expect(page.locator('#approval-not-connected')).toBeVisible()
-  // connect Slack in the dialog (user menu)
+  await expect(page.locator('#approval-no-channels')).toBeVisible()
+  // connect Slack for the whole organization (the demo user is an admin)
   await page.locator('#user-menu').click(); await page.locator('#approval-channels-item').click()
   const dlg = page.locator('#approvals-dialog'); await expect(dlg).toBeVisible()
-  const save = dlg.locator('#ch-slack-save'); await expect(save).toBeDisabled()
-  await dlg.locator('#ch-slack-bot_token').fill('nope'); await dlg.locator('#ch-slack-signing_secret').fill('0123456789abcdef0123456789abcdef'); await save.click()
+  await expect(dlg.locator('#channels-empty')).toBeVisible()
+  const save = dlg.locator('#add-save'); await expect(save).toBeDisabled()
+  await dlg.locator('#add-scope').click(); await page.getByRole('option', { name: 'Toàn tổ chức' }).click()
+  await dlg.locator('#add-name').fill('Acme')
+  await dlg.locator('#add-slack-bot_token').fill('nope'); await dlg.locator('#add-slack-signing_secret').fill('0123456789abcdef0123456789abcdef'); await save.click()
   await expect(dlg.getByRole('alert')).toContainText('bot_token')  // CHANNEL_CONFIG_INVALID, translated
-  await dlg.locator('#ch-slack-bot_token').fill('xoxb-1111-2222-e2etoken'); await save.click()
-  await expect(dlg.locator('[data-testid=channel-slack]')).toContainText('••••oken')
-  await expect(dlg.locator('#ch-slack-url')).toHaveValue(/\/api\/approvals\/callback\/slack\/[0-9a-f]{12}$/)
+  await dlg.locator('#add-slack-bot_token').fill('xoxb-1111-2222-e2etoken'); await save.click()
+  const card = dlg.locator('[data-testid=channel-slack-org]')
+  await expect(card).toContainText('••••oken'); await expect(card).toContainText('Toàn tổ chức'); await expect(card).toContainText('Acme')
+  await expect(card.locator('input[readonly]')).toHaveValue(/\/api\/approvals\/callback\/slack\/[0-9a-f]{12}$/)
+  const cid = await card.getAttribute('data-channel-id')
   // my accounts: link -> the bot DMs a code -> wrong code refused -> right code verifies
   await dlg.locator('#approvals-tab-accounts').click()
   await dlg.locator('#id-slack').fill('lower-case'); await dlg.locator('#id-slack-link').click()
@@ -53,13 +57,13 @@ test('approval channels: connect, link account, configure the Human node, audit'
   await page.keyboard.press('Escape')
   // reopen the editor (channels reload) and configure the node
   await page.reload(); await page.locator('.react-flow__node[data-id="ask"]').click()
-  await page.locator('#approval-channel').click(); await page.getByRole('option', { name: 'Slack', exact: true }).click()
+  await page.locator('#approval-channel').click(); await page.getByRole('option', { name: 'Slack · Acme · Toàn tổ chức' }).click()
   await expect(page.locator('#approval-not-connected')).toHaveCount(0)
   await page.locator('#approval-target').fill('C0E2E'); await page.locator('#approval-approvers').fill('lead@example.com, ops@example.com')
   await expect(page.locator('#approval-approvers')).toHaveValue('lead@example.com, ops@example.com')
   await page.getByRole('button', { name: 'Lưu', exact: true }).click()
   await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}`, { headers: auth })).json()).data.nodes.find((n: any) => n.id === 'ask').data.approval)
-    .toEqual({ channel: 'slack', target: 'C0E2E', approvers: ['lead@example.com', 'ops@example.com'] })
+    .toEqual({ channel_id: cid, channel: 'slack', target: 'C0E2E', approvers: ['lead@example.com', 'ops@example.com'] })
   // a run that pauses there posts the request (to the fake Slack API) and audits it
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })

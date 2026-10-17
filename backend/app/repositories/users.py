@@ -26,3 +26,8 @@ class UserRepository:
             if u is None: return None
             for k, v in prefs.items(): setattr(u, k, bool(v))
             s.commit(); s.refresh(u); return u
+
+    def set_admin(self, uid: str, admin: bool = True) -> None:
+        with self.db.session() as s:
+            u = s.get(User, uid)
+            if u is not None: u.is_admin = admin; s.commit()

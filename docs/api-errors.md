@@ -93,6 +93,7 @@
 | `CHANNEL_KIND_UNSUPPORTED` | 400 | Unsupported approval channel: {kind} |
 | `CHANNEL_CONFIG_INVALID` | 400 | Channel setting {field} is missing or invalid |
 | `CHANNEL_NOT_FOUND` | 404 | Approval channel not configured |
+| `CHANNEL_ADMIN_REQUIRED` | 403 | Only an admin can manage org-wide approval channels |
 | `CHANNEL_PUBLIC_URL_REQUIRED` | 400 | Set STUDIO_PUBLIC_URL to the public https URL of the studio first |
 | `CHANNEL_SIGNATURE_INVALID` | 401 | Invalid channel request signature |
 | `CHANNEL_API_FAILED` | 502 | The {kind} API call failed: {reason} |

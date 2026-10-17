@@ -38,6 +38,9 @@ def api(monkeypatch):
     import app.services.approval_service as mod
     monkeypatch.setattr(mod, "BACKGROUND", False)  # send/edit inline: each test sees only its own platform calls
     for a in ADAPTERS.values(): monkeypatch.setattr(a, "transport", httpx.MockTransport(fake), raising=False)
+    from sqlalchemy import delete
+    from app.models import ApprovalChannel
+    with approval_service().repo.db.session() as s: s.execute(delete(ApprovalChannel).where(ApprovalChannel.scope == "org")); s.commit()  # org channels are global
     return fake
 
 def H(t): return {"Authorization": f"Bearer {t}"}
@@ -73,6 +76,15 @@ def press(token, uid, action="approve"):
     return {"type": "block_actions", "user": {"id": uid}, "response_url": "https://hooks.slack.com/actions/T1/1/x",
             "actions": [{"action_id": action, "value": token}]}
 
+def connect(c, u, kind, scope="user", **extra):
+    body = {"kind": kind, "scope": scope, **(SLACK if kind == "slack" else TG), **extra}
+    r = c.post("/api/approvals/channels", json=body, headers=H(u["token"])); assert r.status_code == 200, r.json(); return r.json()["data"]
+
+def admin(c, monkeypatch):
+    email = f"adm{uuid.uuid4().hex[:6]}@example.com"; monkeypatch.setenv("STUDIO_ADMIN_EMAILS", f"other@example.com, {email.upper()}")
+    d = c.post("/api/auth/register", json={"email": email, "password": "secret12"}).json()["data"]
+    return {"token": d["token"], **d["user"]}
+
 def code_for(api, external_id):
     """The last verification code the bot DMed to this chat account."""
     msgs = [b.get("text", "") for _, b in api.calls if str(b.get("channel") or b.get("chat_id") or "") == external_id and "code" in b.get("text", "")]
@@ -80,7 +92,7 @@ def code_for(api, external_id):
 
 def link(c, api, u, kind, external_id, own_channel=True):
     """Link + verify a chat account the way a user does: (own channel to receive the DM) -> link -> code -> verify."""
-    if own_channel: c.put(f"/api/approvals/channels/{kind}", json=SLACK if kind == "slack" else TG, headers=H(u["token"]))
+    if own_channel: connect(c, u, kind)
     assert c.put("/api/approvals/identities", json={kind: external_id}, headers=H(u["token"])).status_code == 200
     assert c.post(f"/api/approvals/identities/{kind}/send-code", headers=H(u["token"])).status_code == 200
     r = c.post(f"/api/approvals/identities/{kind}/verify", json={"code": code_for(api, external_id)}, headers=H(u["token"]))
@@ -91,21 +103,54 @@ def run_row(c, owner, wid, rid): return next(r for r in c.get(f"/api/workflows/{
 
 def test_channel_settings_are_validated_encrypted_and_masked(c):
     o = user(c)
-    r = c.put("/api/approvals/channels/slack", json={"bot_token": "nope"}, headers=H(o["token"]))
+    r = c.post("/api/approvals/channels", json={"kind": "slack", "bot_token": "nope"}, headers=H(o["token"]))
     assert r.status_code == 400 and r.json()["error"] == {"code": "CHANNEL_CONFIG_INVALID", "message": "Channel setting bot_token is missing or invalid", "details": {"field": "bot_token"}}
-    assert c.put("/api/approvals/channels/whatsapp", json={}, headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_KIND_UNSUPPORTED"
-    ch = c.put("/api/approvals/channels/slack", json=SLACK, headers=H(o["token"])).json()["data"]
-    assert ch["hint"] == "••••efgh" and ch["callback_path"] == f"/api/approvals/callback/slack/{ch['id']}" and "bot_token" not in json.dumps(ch)
-    tg = c.put("/api/approvals/channels/telegram", json={"bot_token": TG["bot_token"]}, headers=H(o["token"])).json()["data"]
+    assert c.post("/api/approvals/channels", json={"kind": "whatsapp"}, headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_KIND_UNSUPPORTED"
+    ch = connect(c, o, "slack")
+    assert ch["hint"] == "••••efgh" and ch["scope"] == "user" and ch["editable"] and ch["callback_path"] == f"/api/approvals/callback/slack/{ch['id']}" and "bot_token" not in json.dumps(ch)
+    assert connect(c, o, "slack")["id"] == ch["id"]  # saving again replaces the secrets, same callback URL
+    tg = c.post("/api/approvals/channels", json={"kind": "telegram", "bot_token": TG["bot_token"]}, headers=H(o["token"])).json()["data"]
     assert tg["kind"] == "telegram"  # webhook secret generated when left empty
     from app.repositories import ApprovalRepository
     from app.api.deps import get_db
     row = ApprovalRepository(get_db()).channel(ch["id"]); assert SLACK["bot_token"] not in row.secrets  # Fernet at rest
     listed = c.get("/api/approvals/channels", headers=H(o["token"])).json()["data"]
-    assert {k["kind"]: bool(k["channel"]) for k in listed["kinds"]} == {"slack": True, "telegram": True}
-    assert c.delete("/api/approvals/channels/telegram", headers=H(o["token"])).json()["data"] == {"ok": True}
-    assert c.delete("/api/approvals/channels/telegram", headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
-    assert c.post("/api/approvals/channels/slack/register-webhook", headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_PUBLIC_URL_REQUIRED"
+    assert [k["kind"] for k in listed["kinds"]] == ["slack", "telegram"] and listed["is_admin"] is False
+    assert {x["id"] for x in listed["channels"] if x["scope"] == "user"} == {ch["id"], tg["id"]}
+    assert c.put(f"/api/approvals/channels/{ch['id']}", json={"name": "Ops"}, headers=H(o["token"])).json()["data"]["name"] == "Ops"
+    other = user(c)
+    assert c.delete(f"/api/approvals/channels/{tg['id']}", headers=H(other["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"  # not theirs
+    assert c.delete(f"/api/approvals/channels/{tg['id']}", headers=H(o["token"])).json()["data"] == {"ok": True}
+    assert c.delete(f"/api/approvals/channels/{tg['id']}", headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    assert c.post(f"/api/approvals/channels/{ch['id']}/register-webhook", headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_PUBLIC_URL_REQUIRED"
+
+
+def test_org_channels_are_admin_managed_and_usable_by_everyone(c, api, monkeypatch):
+    adm, u = admin(c, monkeypatch), user(c)
+    r = c.post("/api/approvals/channels", json={"kind": "slack", "scope": "org", **SLACK}, headers=H(u["token"]))
+    assert r.status_code == 403 and r.json()["error"]["code"] == "CHANNEL_ADMIN_REQUIRED"
+    org = connect(c, adm, "slack", "org", name="Acme Slack"); assert org["scope"] == "org" and org["editable"] and org["name"] == "Acme Slack"
+    mine = connect(c, adm, "slack"); assert mine["id"] != org["id"]  # an admin may also keep a personal connection
+    seen = c.get("/api/approvals/channels", headers=H(u["token"])).json()["data"]
+    assert [(x["id"], x["editable"]) for x in seen["channels"]] == [(org["id"], False)]  # org yes, the admin's personal no
+    assert c.put(f"/api/approvals/channels/{org['id']}", json={"name": "x"}, headers=H(u["token"])).json()["error"]["code"] == "CHANNEL_ADMIN_REQUIRED"
+    assert c.delete(f"/api/approvals/channels/{org['id']}", headers=H(u["token"])).status_code == 403
+    assert c.delete(f"/api/approvals/channels/{mine['id']}", headers=H(u["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    # a user without a connection of their own: verifies through the org bot and uses the org channel on a node
+    ua = f"U{uuid.uuid4().hex[:8].upper()}"; link(c, api, u, "slack", ua, own_channel=False)
+    wid = workflow(c, u, {"channel_id": org["id"], "channel": "slack", "target": "C0ORG"}); rid = start_waiting(c, u, wid)
+    post = until(lambda: [p for p in api.requests() if p["channel"] == "C0ORG"])[-1]
+    approve = post["blocks"][1]["elements"][0]["value"]
+    assert slack_post(c, org["id"], press(approve, ua)).json()["data"] == {"outcome": "approved"}
+    assert until(lambda: run_row(c, u, wid, rid)["status"] == "ok")
+    # someone else's personal channel id on a node is not usable: audited as not configured, nothing sent
+    n = len(api.requests()); wid2 = workflow(c, u, {"channel_id": mine["id"], "channel": "slack", "target": "C0NO"}); start_waiting(c, u, wid2)
+    assert until(lambda: any(e["action"] == "not_configured" for e in c.get("/api/approvals/audit", headers=H(u["token"])).json()["data"])) and len(api.requests()) == n
+    # demoted admins cannot touch it anymore
+    from app.repositories import UserRepository
+    from app.api.deps import get_db
+    UserRepository(get_db()).set_admin(adm["id"], False)
+    assert c.delete(f"/api/approvals/channels/{org['id']}", headers=H(adm["token"])).json()["error"]["code"] == "CHANNEL_ADMIN_REQUIRED"
 
 
 def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
@@ -116,7 +161,7 @@ def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
     assert got == {"slack": {"external_id": uid, "verified": False, "code_pending": False, "code_expires": None}, "telegram": None}
     # no channel that could DM the account yet
     assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
-    c.put("/api/approvals/channels/slack", json=SLACK, headers=H(a["token"]))
+    connect(c, a, "slack")
     sent = c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["data"]["slack"]
     assert sent["code_pending"] and not sent["verified"] and api.named("chat.postMessage")[-1]["channel"] == uid 
     code = code_for(api, uid); assert code not in json.dumps(sent)
@@ -139,7 +184,7 @@ def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
     c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])); code = code_for(api, uid)
     assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).json()["data"]["slack"]["verified"] is True
     # b claims the same account: may link (unverified) but cannot verify it while a holds it
-    c.put("/api/approvals/channels/slack", json=SLACK, headers=H(b["token"]))
+    connect(c, b, "slack")
     c.put("/api/approvals/identities", json={"slack": uid}, headers=H(b["token"])); c.post("/api/approvals/identities/slack/send-code", headers=H(b["token"]))
     r = c.post("/api/approvals/identities/slack/verify", json={"code": code_for(api, uid)}, headers=H(b["token"]))
     assert r.status_code == 409 and r.json()["error"]["code"] == "IDENTITY_TAKEN"
@@ -149,7 +194,7 @@ def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
 
 def test_slack_approval_end_to_end(c, api):
     owner, approver, stranger = user(c), user(c), user(c)
-    ch = c.put("/api/approvals/channels/slack", json=SLACK, headers=H(owner["token"])).json()["data"]
+    ch = connect(c, owner, "slack")
     ua, us = f"U{uuid.uuid4().hex[:8].upper()}", f"U{uuid.uuid4().hex[:8].upper()}"
     link(c, api, approver, "slack", ua); link(c, api, stranger, "slack", us)
     wid = workflow(c, owner, {"channel": "slack", "target": "C0APPROVALS", "approvers": [approver["email"].upper()]})
@@ -190,9 +235,9 @@ def test_slack_approval_end_to_end(c, api):
 def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypatch):
     monkeypatch.setenv("STUDIO_PUBLIC_URL", "https://studio.example.com")
     owner = user(c); tid = str(int(time.time() * 1000) % 10**12)
-    ch = c.put("/api/approvals/channels/telegram", json=TG, headers=H(owner["token"])).json()["data"]
+    ch = connect(c, owner, "telegram")
     assert ch["callback_url"] == f"https://studio.example.com/api/approvals/callback/telegram/{ch['id']}"
-    reg = c.post("/api/approvals/channels/telegram/register-webhook", headers=H(owner["token"])).json()["data"]
+    reg = c.post(f"/api/approvals/channels/{ch['id']}/register-webhook", headers=H(owner["token"])).json()["data"]
     assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query"]}
     link(c, api, owner, "telegram", tid, own_channel=False)
     wid = workflow(c, owner, {"channel": "telegram", "target": "-100200300"}); rid = start_waiting(c, owner, wid)
@@ -212,7 +257,7 @@ def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypa
 
 def test_expired_button_and_answer_in_studio_supersede(c, api):
     owner = user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
-    ch = c.put("/api/approvals/channels/slack", json=SLACK, headers=H(owner["token"])).json()["data"]
+    ch = connect(c, owner, "slack")
     link(c, api, owner, "slack", ua, own_channel=False)
     wid = workflow(c, owner, {"channel": "slack", "target": "C1"})
     # (1) expired token
@@ -251,7 +296,7 @@ def test_no_op_without_a_configured_channel(c, api):
 
 
 def test_send_failure_is_audited_and_the_run_keeps_waiting(c, api):
-    owner = user(c); c.put("/api/approvals/channels/slack", json=SLACK, headers=H(owner["token"]))
+    owner = user(c); connect(c, owner, "slack")
     wid = workflow(c, owner, {"channel": "slack", "target": "C0FAIL"})
     orig = api.__call__
     rid = None

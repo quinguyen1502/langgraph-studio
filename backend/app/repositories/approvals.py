@@ -1,6 +1,6 @@
 import json, time, uuid
 from typing import Optional
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from ..models import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
 from ..models.database import Database
 
@@ -10,27 +10,34 @@ class ApprovalRepository:
     def __init__(self, db: Database): self.db = db
 
     # ---- channels ----
-    def channels(self, owner: str) -> list[ApprovalChannel]:
-        with self.db.session() as s: return list(s.scalars(select(ApprovalChannel).where(ApprovalChannel.owner == owner).order_by(ApprovalChannel.kind)))
+    def channels_visible(self, uid: str) -> list[ApprovalChannel]:
+        """The user's own channels plus every org-wide channel."""
+        with self.db.session() as s:
+            q = select(ApprovalChannel).where(or_(ApprovalChannel.owner == uid, ApprovalChannel.scope == "org"))
+            return list(s.scalars(q.order_by(ApprovalChannel.scope.desc(), ApprovalChannel.kind, ApprovalChannel.created)))
 
     def channel(self, cid: str) -> Optional[ApprovalChannel]:
         with self.db.session() as s: return s.get(ApprovalChannel, cid)
 
-    def channel_for(self, owner: str, kind: str) -> Optional[ApprovalChannel]:
+    def find_channel(self, owner: str, kind: str, scope: str) -> Optional[ApprovalChannel]:
         with self.db.session() as s:
-            return s.scalars(select(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind)).first()
+            return s.scalars(select(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind, ApprovalChannel.scope == scope)
+                             .order_by(ApprovalChannel.created)).first()
 
-    def save_channel(self, owner: str, kind: str, secrets: str, hint: str) -> ApprovalChannel:
-        """Insert or replace the owner's channel of this kind (the id, and so the callback URL, stays the same)."""
+    def org_channel(self, kind: str) -> Optional[ApprovalChannel]:
         with self.db.session() as s:
-            row = s.scalars(select(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind)).first()
-            if row is None: row = ApprovalChannel(id=uuid.uuid4().hex[:12], owner=owner, kind=kind, created=time.time()); s.add(row)
-            row.secrets, row.hint = secrets, hint
-            s.commit(); s.refresh(row); return row
+            return s.scalars(select(ApprovalChannel).where(ApprovalChannel.kind == kind, ApprovalChannel.scope == "org").order_by(ApprovalChannel.created)).first()
 
-    def delete_channel(self, owner: str, kind: str) -> int:
+    def save_channel(self, row: ApprovalChannel) -> ApprovalChannel:
+        """Insert, or update the row with this id (the id, and so the callback URL, stays the same)."""
+        with self.db.session() as s: row = s.merge(row); s.commit(); s.refresh(row); return row
+
+    def delete_channel(self, cid: str) -> int:
         with self.db.session() as s:
-            n = s.execute(delete(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind)).rowcount; s.commit(); return n or 0
+            n = s.execute(delete(ApprovalChannel).where(ApprovalChannel.id == cid)).rowcount; s.commit(); return n or 0
+
+    @staticmethod
+    def new_id() -> str: return uuid.uuid4().hex[:12]
 
     # ---- identities ----
     def identities(self, uid: str) -> dict[str, ChannelIdentity]:

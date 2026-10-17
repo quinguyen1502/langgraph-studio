@@ -9,6 +9,8 @@ from ..models.database import Database
 from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository
 from ..services.approval_service import ApprovalService
 from ..services.identity_service import IdentityService
+from ..services.channel_service import ChannelService
+from ..services.approval_channels import ADAPTERS
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -80,8 +82,11 @@ def auth_service() -> AuthService:
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service())
 
+def channel_service() -> ChannelService:
+    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
+
 def approval_service() -> ApprovalService:
-    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), get_job_queue().enqueue)
+    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue)
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))
@@ -102,4 +107,4 @@ async def limit_body(request: Request):
 
 
 def identity_service() -> IdentityService:
-    svc = approval_service(); return IdentityService(svc.repo, svc.adapters, svc.dm_channel)
+    ch = channel_service(); return IdentityService(ch.repo, ch.adapters, ch.dm_channel)

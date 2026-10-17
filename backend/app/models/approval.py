@@ -1,17 +1,19 @@
 """Human-in-the-loop approval through external channels (TASK-0022, DEC-0019)."""
 from typing import Optional
-from sqlalchemy import Float, Index, Integer, Text, UniqueConstraint
+from sqlalchemy import Float, Index, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
 
 class ApprovalChannel(Base):
-    """A connected channel (Slack app / Telegram bot) of one studio user; secrets are one Fernet-encrypted JSON."""
+    """A connected channel (Slack app / Telegram bot); secrets are one Fernet-encrypted JSON.
+    scope "user": usable by its owner only. scope "org": created by an admin (owner), usable by every user."""
     __tablename__ = "approval_channels"
-    __table_args__ = (UniqueConstraint("owner", "kind", name="uq_approval_channels_owner_kind"),)
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     owner: Mapped[str] = mapped_column(Text, index=True)
     kind: Mapped[str] = mapped_column(Text)              # slack | telegram (registry in services/approval_channels)
+    scope: Mapped[str] = mapped_column(Text, default="user", server_default="user", index=True)  # user | org
+    name: Mapped[Optional[str]] = mapped_column(Text)    # display name (workspace / bot)
     secrets: Mapped[str] = mapped_column(Text)           # Fernet token of {field: value}; never returned by the API
     hint: Mapped[Optional[str]] = mapped_column(Text)    # masked last 4 chars of the main token
     created: Mapped[float] = mapped_column(Float)

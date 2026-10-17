@@ -78,3 +78,5 @@ def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else 
 def identity_code_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_IDENTITY_CODE_TTL", 600)))  # a code is valid (s)
 def identity_code_attempts() -> int: return max(1, _int("STUDIO_IDENTITY_CODE_ATTEMPTS", 5))  # wrong codes before a new one is needed
 def identity_code_resend() -> int: return max(0, _int("STUDIO_IDENTITY_CODE_RESEND", 30))     # min seconds between two codes
+# --- TASK-0022 follow-up: org-wide approval channels ---
+def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.get("STUDIO_ADMIN_EMAILS") or "").split(",") if e.strip()}

@@ -249,6 +249,7 @@
     "CHANNEL_KIND_UNSUPPORTED": "Unsupported approval channel: {{kind}}.",
     "CHANNEL_CONFIG_INVALID": "Channel setting {{field}} is missing or invalid.",
     "CHANNEL_NOT_FOUND": "This approval channel is not configured.",
+    "CHANNEL_ADMIN_REQUIRED": "Only an admin can manage org-wide approval channels.",
     "CHANNEL_PUBLIC_URL_REQUIRED": "Set STUDIO_PUBLIC_URL to the public https URL of the studio first.",
     "CHANNEL_SIGNATURE_INVALID": "Invalid channel request signature.",
     "CHANNEL_API_FAILED": "The {{kind}} API call failed: {{reason}}.",
@@ -459,7 +460,7 @@
       "title": "Approval channel",
       "channel": "Send the approval request to",
       "studioOnly": "Studio only",
-      "connectFirst": "This channel is not connected yet. Open Approval channels in the user menu.",
+      "connectFirst": "No usable connection. Add one under Approval channels in the user menu (or ask an admin for an organization one).",
       "target": {
         "slack": "Slack channel ID",
         "telegram": "Telegram chat ID"
@@ -480,6 +481,20 @@
     "verify": "Verify",
     "resend": "Send code",
     "telegramStart": "Telegram bots can only message you after you press Start in the bot chat.",
-    "save": "Save"
+    "save": "Save",
+    "scope": {
+      "user": "Personal",
+      "org": "Organization"
+    },
+    "scopeLabel": "Available to",
+    "add": "Add a connection",
+    "platform": "Platform",
+    "name": "Name",
+    "namePh": "e.g. Acme workspace",
+    "noChannels": "No connections yet. Add your own Slack app or Telegram bot below.",
+    "scopeHelp": "Personal connections are only usable on your own workflows; organization ones are set up by an admin.",
+    "scopeHelpAdmin": "As an admin you can add organization connections that every user can pick on a Human node.",
+    "orgReadOnly": "Managed by an admin. You can pick it on your Human nodes.",
+    "replaceSecrets": "Replace secrets"
   }
 }

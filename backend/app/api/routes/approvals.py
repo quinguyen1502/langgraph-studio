@@ -1,26 +1,29 @@
 """Approval through external channels (TASK-0022, DEC-0019).
 
-Owner (JWT): channel connections, own channel identities (link, one-time code, verify), audit log.
+User (JWT): channel connections (personal; org-wide ones need an admin), own channel identities (link, one-time code, verify), audit log.
 Platforms (no JWT; verified by signature / secret header): POST /api/approvals/callback/{kind}/{channel_id}.
 """
 import asyncio
 from fastapi import APIRouter, Body, Depends, Request
-from ..deps import approval_service, current_user, identity_service
+from ..deps import approval_service, channel_service, current_user, identity_service
 
 router = APIRouter(prefix="/api/approvals", tags=["approvals"])
 
 
 @router.get("/channels")
-def list_channels(user=Depends(current_user), svc=Depends(approval_service)): return svc.list_channels(user["id"])
+def list_channels(user=Depends(current_user), svc=Depends(channel_service)): return svc.list(user["id"])
 
-@router.put("/channels/{kind}")
-def save_channel(kind: str, body=Body(None), user=Depends(current_user), svc=Depends(approval_service)): return svc.save_channel(user["id"], kind, body)
+@router.post("/channels")
+def create_channel(body=Body(None), user=Depends(current_user), svc=Depends(channel_service)): return svc.create(user["id"], body)
 
-@router.delete("/channels/{kind}")
-def delete_channel(kind: str, user=Depends(current_user), svc=Depends(approval_service)): return svc.delete_channel(user["id"], kind)
+@router.put("/channels/{cid}")
+def update_channel(cid: str, body=Body(None), user=Depends(current_user), svc=Depends(channel_service)): return svc.update(user["id"], cid, body)
 
-@router.post("/channels/{kind}/register-webhook")
-def register_webhook(kind: str, user=Depends(current_user), svc=Depends(approval_service)): return svc.register_webhook(user["id"], kind)
+@router.delete("/channels/{cid}")
+def delete_channel(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.delete(user["id"], cid)
+
+@router.post("/channels/{cid}/register-webhook")
+def register_webhook(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.register_webhook(user["id"], cid)
 
 @router.get("/identities")
 def get_identities(user=Depends(current_user), svc=Depends(identity_service)): return svc.get(user["id"])

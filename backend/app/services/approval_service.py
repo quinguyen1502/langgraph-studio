@@ -13,26 +13,23 @@ from ..core.errors import CATALOG, AppError
 from ..core.logging import get_logger
 from ..models import ApprovalAudit, ApprovalRequest
 from ..repositories import ApprovalRepository, RunRepository, UserRepository, WorkflowRepository
-from .approval_channels import ADAPTERS, ApprovalChannel, ApprovalMessage
+from .approval_channels import ApprovalChannel, ApprovalMessage
+from .channel_service import ChannelService
 
 log = get_logger("approvals")
 DECISIONS = {"a": "approved", "r": "rejected"}
 BACKGROUND = True  # send/edit messages off the request thread; tests switch it off for determinism
 
 
-def callback_path(kind: str, cid: str) -> str: return f"/api/approvals/callback/{kind}/{cid}"
-
-
 class ApprovalService:
-    def __init__(self, repo: ApprovalRepository, users: UserRepository, workflows: WorkflowRepository, runs: RunRepository,
-                 enqueue: Optional[Callable[[dict], None]] = None, adapters: Optional[dict[str, ApprovalChannel]] = None, background: Optional[bool] = None):
-        self.repo, self.users, self.workflows, self.runs, self.enqueue = repo, users, workflows, runs, enqueue
-        self.adapters = adapters if adapters is not None else ADAPTERS
+    def __init__(self, repo: ApprovalRepository, users: UserRepository, workflows: WorkflowRepository, runs: RunRepository, channels: ChannelService,
+                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None):
+        self.repo, self.users, self.workflows, self.runs, self.channels, self.enqueue = repo, users, workflows, runs, channels, enqueue
+        self.adapters = channels.adapters
         self.background = BACKGROUND if background is None else background
 
-    def adapter(self, kind: str) -> ApprovalChannel:
-        if kind not in self.adapters: raise AppError("CHANNEL_KIND_UNSUPPORTED", kind=kind)
-        return self.adapters[kind]
+    def adapter(self, kind: str) -> ApprovalChannel: return self.channels.adapter(kind)
+    def _secrets(self, c) -> dict: return self.channels.secrets(c)
 
     # ---- tokens: "<a|r>.<request id>.<hmac>" (fits Telegram's 64-byte callback_data) ----
     @staticmethod
@@ -48,43 +45,6 @@ class ApprovalService:
         r = self.repo.request(parts[1])
         if r is None or not hmac.compare_digest(self._sig(r, parts[0]), parts[2]): return None, None
         return r, DECISIONS[parts[0]]
-
-    # ---- owner: channel connections ----
-    def public_channel(self, c) -> dict:
-        base = config.public_url()
-        return {"id": c.id, "kind": c.kind, "hint": c.hint, "created": c.created,
-                "callback_url": (base + callback_path(c.kind, c.id)) if base else None, "callback_path": callback_path(c.kind, c.id)}
-
-    def list_channels(self, uid: str) -> dict:
-        have = {c.kind: self.public_channel(c) for c in self.repo.channels(uid)}
-        return {"kinds": [{"kind": k, "fields": list(a.fields), "optional": list(a.optional), "channel": have.get(k)} for k, a in self.adapters.items()],
-                "public_url": config.public_url() or None}
-
-    def save_channel(self, uid: str, kind: str, body) -> dict:
-        a = self.adapter(kind); vals = a.prepare(body if isinstance(body, dict) else {})
-        c = self.repo.save_channel(uid, kind, crypto.encrypt(json.dumps(vals)), crypto.mask(vals[a.hint_field]))
-        return self.public_channel(c)
-
-    def delete_channel(self, uid: str, kind: str) -> dict:
-        self.adapter(kind)
-        if not self.repo.delete_channel(uid, kind): raise AppError("CHANNEL_NOT_FOUND")
-        return {"ok": True}
-
-    def register_webhook(self, uid: str, kind: str) -> dict:
-        a = self.adapter(kind); c = self.repo.channel_for(uid, kind)
-        if c is None: raise AppError("CHANNEL_NOT_FOUND")
-        base = config.public_url()
-        if not base.startswith("https://"): raise AppError("CHANNEL_PUBLIC_URL_REQUIRED")
-        url = base + callback_path(kind, c.id)
-        return {"callback_url": url, **a.register(self._secrets(c), url)}
-
-    @staticmethod
-    def _secrets(c) -> dict: return json.loads(crypto.decrypt(c.secrets))
-
-    def dm_channel(self, uid: str, kind: str):
-        """(adapter, secrets) of a channel that can DM this user's chat account (identity codes), or None."""
-        c = self.repo.channel_for(uid, kind)
-        return (self.adapter(kind), self._secrets(c)) if c is not None and kind in self.adapters else None
 
     # ---- audit ----
     def _audit(self, owner, kind, action, r: Optional[ApprovalRequest] = None, code=None, actor=None, external=None, run_id=None, wid=None):
@@ -108,15 +68,17 @@ class ApprovalService:
     def on_waiting(self, rid: str, owner: str, wid: Optional[str], workflow: dict, ev: dict) -> None:
         node = next((n for n in workflow.get("nodes") or [] if n.get("id") == ev.get("node")), None)
         cfg = ((node or {}).get("data") or {}).get("approval") or {}
-        kind, target = cfg.get("channel"), str(cfg.get("target") or "").strip()
-        if not kind or not target or kind not in self.adapters: return  # this node does not use an external channel
-        job = lambda: self._request(rid, owner, wid, node, cfg, kind, target, ev)  # noqa: E731
+        target = str(cfg.get("target") or "").strip()
+        if not (cfg.get("channel_id") or cfg.get("channel")) or not target: return  # this node does not use an external channel
+        job = lambda: self._request(rid, owner, wid, node, cfg, target, ev)  # noqa: E731
         threading.Thread(target=job, daemon=True).start() if self.background else job()
 
-    def _request(self, rid, owner, wid, node, cfg, kind, target, ev) -> Optional[ApprovalRequest]:
-        c = self.repo.channel_for(owner, kind)
+    def _request(self, rid, owner, wid, node, cfg, target, ev) -> Optional[ApprovalRequest]:
+        c = self.channels.for_node(owner, cfg)
         if c is None:
+            kind = cfg.get("channel") or (ch.kind if (ch := self.repo.channel(str(cfg.get("channel_id")))) else "channel")
             self._audit(owner, kind, "not_configured", code="CHANNEL_NOT_FOUND", run_id=rid, wid=wid); return None
+        kind = c.kind
         approvers = [u.id for e in cfg.get("approvers") or [] if isinstance(e, str) and (u := self.users.get_by_email(e.strip().lower()))]
         r = self.repo.add_request(ApprovalRequest(id=uuid.uuid4().hex[:12], run_id=rid, node_id=node["id"], owner=owner, workflow_id=wid, channel_id=c.id,
                                                   kind=kind, target=target, approvers=json.dumps(approvers), nonce=pysecrets.token_hex(8),

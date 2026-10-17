@@ -12,6 +12,8 @@ from .node_result import NodeResult
 from .knowledge import KnowledgeBase, KbDocument, KbChunk
 from .mcp_server import McpServer
 from .workflow_share import WorkflowShare
+from .team import Team, TeamMember, WorkflowTeamShare
+from .audit_event import AuditEvent, StudioSetting
 from .approval import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare", "Team", "TeamMember", "WorkflowTeamShare", "AuditEvent", "StudioSetting"]

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
-import { AlertCircle, History, Info, RotateCcw } from 'lucide-react'
+import { AlertCircle, History, Info, RotateCcw, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,10 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { api } from '@/lib/api'
+import { fmtDate } from '@/lib/i18n'
 import i18n from '@/lib/i18n'
 
 type Version = { version: number; name: string; created: number; author_email: string | null; note: string | null; node_count: number; current: boolean }
-type Page = { items: Version[]; total: number; limit: number; offset: number }
+type Child = { id: string; name: string; version: number; at: number }
+type Page = { items: Version[]; total: number; limit: number; offset: number; children_changed?: Child[] }
 const PAGE = 20
 type Section = { added: any[]; removed: any[]; changed: { id: string; fields: string[]; before: any; after: any }[]; moved?: string[] }
 type Diff = { a: number; b: number; identical: boolean; name: { before: string; after: string } | null; nodes: Section; edges: Section; state: Section }
@@ -46,10 +48,10 @@ export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onR
   const [items, setItems] = useState<Version[]>([]); const [err, setErr] = useState('')
   const [a, setA] = useState<string>(''); const [b, setB] = useState<string>(''); const [diff, setDiff] = useState<Diff | null>(null)
   const [confirm, setConfirm] = useState<number | null>(null); const [total, setTotal] = useState(0)
-  const [notice, setNotice] = useState(''); const [dirty, setDirty] = useState(false)
+  const [notice, setNotice] = useState(''); const [dirty, setDirty] = useState(false); const [children, setChildren] = useState<Child[]>([])
   const page = (offset: number) => api<Page>(`/api/workflows/${wid}/versions?limit=${PAGE}&offset=${offset}`)
   const load = () => wid && page(0).then(p => {
-    setItems(p.items); setTotal(p.total); setB(String(p.items[0]?.version ?? '')); setA(String(p.items[1]?.version ?? p.items[0]?.version ?? ''))
+    setItems(p.items); setTotal(p.total); setChildren(p.children_changed || []); setB(String(p.items[0]?.version ?? '')); setA(String(p.items[1]?.version ?? p.items[0]?.version ?? ''))
   }).catch(e => setErr(e.message))
   const more = () => page(items.length).then(p => { setItems(xs => [...xs, ...p.items]); setTotal(p.total) }).catch(e => setErr(e.message))
   useEffect(() => { if (open) { setErr(''); setNotice(''); setConfirm(null); setDiff(null); setDirty(!!isDirty?.()); load() } }, [open])
@@ -75,6 +77,8 @@ export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onR
     <DialogContent className="sm:max-w-4xl">
       <DialogHeader><DialogTitle>{t('versions.title')}</DialogTitle><DialogDescription>{t('versions.desc')}</DialogDescription></DialogHeader>
       {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+      {!!children.length && <Alert variant="warning" id="versions-children"><TriangleAlert /><AlertDescription>{t('versions.childrenChanged', { count: children.length })}
+        <ul className="mt-1 list-disc pl-4">{children.map(c => <li key={c.id}>{c.name} · v{c.version} · {fmtDate(c.at)}</li>)}</ul></AlertDescription></Alert>}
       {notice && <Alert id="versions-notice"><Info /><AlertDescription>{notice}</AlertDescription></Alert>}
       <div className="grid grid-cols-[18rem_1fr] gap-4 min-h-0">
         <ScrollArea className="h-96 rounded-md border">

@@ -116,6 +116,17 @@
 | `SLACK_OAUTH_NOT_CONFIGURED` | 503 | Add to Slack is not configured (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET) |
 | `SLACK_OAUTH_STATE_INVALID` | 400 | The Slack sign-in link is invalid or expired, please try again |
 | `SLACK_OAUTH_FAILED` | 502 | Slack did not complete the installation: {reason} |
+| `TEAM_NOT_FOUND` | 404 | Team not found |
+| `TEAM_NAME_REQUIRED` | 400 | Team name is required |
+| `TEAM_NAME_TAKEN` | 409 | A team with this name already exists |
+| `TEAM_MEMBER_NOT_FOUND` | 404 | This user is not a member of the team |
+| `TRANSFER_SAME_OWNER` | 400 | This user already owns the workflow |
+| `TRANSFER_TARGET_ROLE` | 400 | The new owner must be an editor or an admin |
+| `TRANSFER_REBIND_INVALID` | 400 | Node {node}: choose a resource the new owner can use |
+| `USER_HAS_WORKFLOWS` | 409 | This user owns {count} workflow(s): choose who takes them over first |
+| `USER_DELETE_MODE_INVALID` | 400 | Mode must be anonymize or delete |
+| `WORKFLOW_IN_USE` | 409 | {count} workflow(s) use this workflow as a subgraph |
+| `ORG_RESOURCE_NOT_ALLOWED` | 403 | Your role may not use organization-wide resources at run time ({kind}) |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |

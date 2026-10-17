@@ -20,8 +20,9 @@ SECRET_NAME = re.compile(r"^[A-Za-z_][A-Za-z0-9_-]{0,63}$")
 
 
 class McpService:
-    def __init__(self, repo: McpServerRepository, is_admin: Callable[[str], bool] = lambda uid: False):
-        self.repo, self.is_admin = repo, is_admin
+    def __init__(self, repo: McpServerRepository, is_admin: Callable[[str], bool] = lambda uid: False,
+                 org_allowed: Callable[[str], bool] = lambda uid: True):
+        self.repo, self.is_admin, self.org_allowed = repo, is_admin, org_allowed
 
     # ---- views ----
     @staticmethod
@@ -34,7 +35,7 @@ class McpService:
     def list(self, uid: str) -> dict:
         admin = self.is_admin(uid)
         return {"servers": [self.public(r, uid, admin) for r in self.repo.visible(uid)], "is_admin": admin,
-                "stdio_enabled": config.mcp_stdio_enabled()}
+                "stdio_enabled": config.mcp_stdio_enabled(), "org_usable": self.org_allowed(uid)}
 
     def _visible(self, sid: str, uid: str) -> McpServer:
         r = self.repo.get(sid)
@@ -148,8 +149,9 @@ class McpService:
             out[k] = v
         return out
 
-    def call(self, uid: str, sid: str, tool: str, args: dict) -> Any:
+    def call(self, uid: str, sid: str, tool: str, args: dict, org_allowed: bool = True) -> Any:
         r = self._visible(sid, uid)
+        if r.scope == "org" and not org_allowed: raise AppError("ORG_RESOURCE_NOT_ALLOWED", kind="MCP server")  # policy, TASK-0029
         tools = {t["name"]: t for t in json.loads(r.tools or "[]")}
         if tool not in tools:
             tools = {t["name"]: t for t in self.discover(sid, uid)["tools"]}
@@ -158,6 +160,6 @@ class McpService:
         except mcp_client.McpError as e:
             raise AppError("MCP_TOOL_FAILED" if e.code == "MCP_TOOL_FAILED" else "MCP_CONNECT_FAILED", reason=str(e)) from None
 
-    def caller(self, uid: str) -> Callable[[str, str, dict], Any]:
-        """Port for MCP tool nodes, bound to the run's user (engine.ports.Ports.mcp_call)."""
-        return lambda sid, tool, args: self.call(uid, sid, tool, args)
+    def caller(self, uid: str, org_allowed: bool = True) -> Callable[[str, str, dict], Any]:
+        """Port for MCP tool nodes, bound to the resource owner; org servers only if the person running may use them."""
+        return lambda sid, tool, args: self.call(uid, sid, tool, args, org_allowed)

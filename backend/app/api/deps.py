@@ -6,7 +6,11 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, CredentialRepository as _Creds
+from ..services.audit_service import AuditService
+from ..services.policy_service import PolicyService
+from ..services.team_service import TeamService
+from ..services.ownership_service import OwnershipService
 from ..core import permissions as P
 from ..services.access import AccessService
 from ..services.share_service import ShareService
@@ -84,26 +88,43 @@ def get_telemetry() -> Telemetry:
 
 def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
-                                          access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db))
+                                          access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db),
+                                          teams=TeamRepository(db), audit=audit_service())
 
 def access_service() -> AccessService:
-    db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db))
+    db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db), TeamRepository(db))
+
+def audit_service() -> AuditService:
+    db = get_db(); return AuditService(AuditRepository(db), UserRepository(db), access_service())
+
+def policy_service() -> PolicyService:
+    return PolicyService(SettingsRepository(get_db()), access_service(), audit_service())
+
+def team_service() -> TeamService:
+    db = get_db(); return TeamService(TeamRepository(db), UserRepository(db), access_service(), audit_service())
+
+def ownership_service() -> OwnershipService:
+    db = get_db()
+    return OwnershipService(WorkflowRepository(db), UserRepository(db), access_service(), WorkflowShareRepository(db), _Creds(db),
+                            KnowledgeRepository(db), McpServerRepository(db), audit_service(), workflow_service())
 
 def user_service() -> UserService:
-    return UserService(UserRepository(get_db()), access_service())
+    db = get_db()
+    return UserService(UserRepository(db), access_service(), audit_service(), UserDataRepository(db), ownership_service(), WorkflowRepository(db))
 
 def share_service() -> ShareService:
-    db = get_db(); return ShareService(WorkflowShareRepository(db), UserRepository(db), access_service())
+    db = get_db(); return ShareService(WorkflowShareRepository(db), UserRepository(db), access_service(), TeamRepository(db), audit_service())
 
 def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
-                      knowledge=knowledge_service(), mcp=mcp_service(), access=access_service())
+                      knowledge=knowledge_service(), mcp=mcp_service(), access=access_service(),
+                      policy=policy_service())
 
 def channel_service() -> ChannelService:
-    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
+    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed)
 
 def approval_service() -> ApprovalService:
     db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
@@ -120,7 +141,8 @@ def knowledge_service() -> KnowledgeService:
 
 def mcp_service() -> McpService:
     db = get_db(); users = UserRepository(db)
-    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.active and P.can(u.role, P.ORG_MANAGE)))
+    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.active and P.can(u.role, P.ORG_MANAGE)),
+                      policy_service().org_allowed)
 
 def import_service() -> ImportService:
     return ImportService(workflow_service())

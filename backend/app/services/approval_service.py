@@ -77,6 +77,8 @@ class ApprovalService:
         threading.Thread(target=job, daemon=True).start() if self.background else job()
 
     def _request(self, rid, owner, wid, node, cfg, target, ev) -> Optional[ApprovalRequest]:
+        if self.channels.org_denied(owner, cfg):  # admin policy (TASK-0029)
+            self._audit(owner, cfg.get("channel") or "channel", "not_configured", code="ORG_RESOURCE_NOT_ALLOWED", run_id=rid, wid=wid); return None
         c = self.channels.for_node(owner, cfg)
         if c is None:
             kind = cfg.get("channel") or (ch.kind if (ch := self.repo.channel(str(cfg.get("channel_id")))) else "channel")

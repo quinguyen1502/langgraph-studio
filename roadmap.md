@@ -44,6 +44,7 @@ Status for all Phase 2–4 tasks: backlog.
 - TASK-0012 RAG node (REQ-0007): **in review** (draft PR into `develop`, stacked on TASK-0011)
 - TASK-0013 MCP tools (REQ-0011): **in review** (draft PR into `develop`, stacked on TASK-0012)
 - TASK-0014 RBAC and sharing (REQ-0012): **in review** (draft PR into `develop`, stacked on TASK-0013)
+- TASK-0029 Phase 3 hardening (teams, ownership transfer, audit log, user deletion, org-resource policy, subgraph leftovers; DEC-0024): **in review** (draft PR into `develop`, stacked on TASK-0014). Slack Enterprise Grid stays out of scope.
 
 ## Phase 4 — Last
 

@@ -1,0 +1,36 @@
+"""Personal data of one user, for account deletion / anonymisation (TASK-0029). Org-scope resources are kept."""
+from sqlalchemy import delete, select, update
+from ..models import (ApprovalChannel, ChannelIdentity, Credential, KbChunk, KbDocument, KnowledgeBase, McpServer, Notification, Run,
+                      TeamMember, User, WorkflowShare, WorkflowToken)
+from ..models.database import Database
+
+
+class UserDataRepository:
+    def __init__(self, db: Database): self.db = db
+
+    def purge(self, uid: str, *, runs: bool) -> None:
+        """Remove personal resources (secrets included), memberships and shares; with `runs`, also the runs they started."""
+        with self.db.session() as s:
+            kbs = list(s.scalars(select(KnowledgeBase.id).where(KnowledgeBase.owner == uid)))
+            if kbs:
+                s.execute(delete(KbChunk).where(KbChunk.kb_id.in_(kbs))); s.execute(delete(KbDocument).where(KbDocument.kb_id.in_(kbs)))
+                s.execute(delete(KnowledgeBase).where(KnowledgeBase.id.in_(kbs)))
+            s.execute(delete(Credential).where(Credential.owner == uid))
+            s.execute(delete(McpServer).where(McpServer.owner == uid, McpServer.scope == "user"))
+            s.execute(delete(ApprovalChannel).where(ApprovalChannel.owner == uid, ApprovalChannel.scope == "user"))
+            s.execute(delete(ChannelIdentity).where(ChannelIdentity.user_id == uid))
+            s.execute(delete(WorkflowToken).where(WorkflowToken.owner == uid))
+            s.execute(delete(Notification).where(Notification.user_id == uid))
+            s.execute(delete(WorkflowShare).where(WorkflowShare.user_id == uid))
+            s.execute(delete(TeamMember).where(TeamMember.user_id == uid))
+            if runs: s.execute(delete(Run).where(Run.owner == uid))
+            s.commit()
+
+    def anonymise(self, uid: str) -> None:
+        with self.db.session() as s:
+            s.execute(update(User).where(User.id == uid).values(email=f"deleted-{uid}@deleted.invalid", password=None, active=False,
+                                                                role="viewer", lang=None))
+            s.commit()
+
+    def delete_user(self, uid: str) -> None:
+        with self.db.session() as s: s.execute(delete(User).where(User.id == uid)); s.commit()

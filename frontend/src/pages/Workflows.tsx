@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { PendingRuns } from '@/components/pending-runs'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { api } from '@/lib/api'
 import { fmtDate as fmt } from '@/lib/i18n'
@@ -24,6 +25,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { can, canEdit, useMe, type Access } from '@/lib/rbac'
 
+type Dep = { id: string | null; name: string | null }
 type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null; access: Access; mine: boolean; owner_email: string | null }
 
 export function WorkflowsPage() {
@@ -32,7 +34,7 @@ export function WorkflowsPage() {
   const [loading, setLoading] = useState(true); const [loadErr, setLoadErr] = useState('')
   const [notice, setNotice] = useState('')
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
-  const [del, setDel] = useState<W | null>(null); const [delErr, setDelErr] = useState(''); const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(false)
   const me = useMe(); const [all, setAll] = useState(false)
   const creates = can(me, 'workflows.create')
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
@@ -55,11 +57,16 @@ export function WorkflowsPage() {
     try { await api(`/api/workflows/${rename.id}`, { method: 'PATCH', json: { name: trimmed } }); setRename(null); load() }
     catch (e: any) { setRenameErr(e.message) } finally { setBusy(false) }
   }
-  const doDelete = async () => {
-    if (!del) return
-    setBusy(true); setDelErr('')
-    try { await api(`/api/workflows/${del.id}`, { method: 'DELETE' }); setDel(null); load() }
-    catch (e: any) { setDelErr(e.message) } finally { setBusy(false) }
+  const confirmDel = useConfirmDelete()
+  const askDelete = async (w: W) => {  // dependents are listed up front; deleting then needs force
+    const deps = await api<{ dependents: Dep[] }>(`/api/workflows/${w.id}/dependents`).then(r => r.dependents).catch(() => [] as Dep[])
+    confirmDel.ask({ title: t('list.deleteTitle'), name: w.name, description: t('list.deleteBody', { name: w.name }),
+      confirmLabel: deps.length ? t('list.deleteAnyway') : undefined,
+      children: deps.length ? <Alert variant="destructive" id="delete-dependents"><AlertCircle /><AlertDescription><div>{t('list.inUse', { count: deps.length })}</div>
+        <ul className="mt-1 list-disc pl-4">{deps.map((d, i) => <li key={d.id ?? i}>{d.name ?? t('list.hiddenWorkflow')}{d.id && <span className="ml-1 font-mono text-xs">{d.id}</span>}</li>)}</ul></AlertDescription></Alert> : null,
+      onConfirm: async () => {
+        await api(`/api/workflows/${w.id}${deps.length ? '?force=true' : ''}`, { method: 'DELETE' }); load()
+      } })
   }
   const shown = useMemo(() => { const k = q.trim().toLowerCase(); return k ? items.filter(w => w.name.toLowerCase().includes(k) || w.id.includes(k)) : items }, [items, q])
   const empty = (icon: React.ReactNode, title: string, body: React.ReactNode, id: string) =>
@@ -106,7 +113,7 @@ export function WorkflowsPage() {
                     <DropdownMenuItem disabled={!canEdit(w.access)} onClick={() => { setRename(w); setNewName(w.name); setRenameErr('') }}><Pencil />{t('list.rename')}</DropdownMenuItem>
                     <DropdownMenuItem disabled={!creates} onClick={() => dup(w)}><Copy />{t('list.duplicate')}</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" disabled={w.access !== 'owner'} onClick={() => { setDel(w); setDelErr('') }}><Trash2 />{t('common.delete')}</DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" disabled={w.access !== 'owner'} onClick={() => askDelete(w)}><Trash2 />{t('common.delete')}</DropdownMenuItem>
                   </DropdownMenuContent></DropdownMenu>
               </TableCell>
             </TableRow>)}
@@ -125,10 +132,6 @@ export function WorkflowsPage() {
         </div>
         <DialogFooter><Button variant="outline" onClick={() => setRename(null)}>{t('common.cancel')}</Button><Button id="rename-save" onClick={doRename} disabled={!trimmed || busy}>{busy && <Loader2 className="animate-spin" />}{t('common.save')}</Button></DialogFooter></DialogContent>
     </Dialog>
-    <Dialog open={!!del} onOpenChange={o => !o && setDel(null)}>
-      <DialogContent><DialogHeader><DialogTitle>{t('list.deleteTitle')}</DialogTitle><DialogDescription className="break-all">{t('list.deleteBody', { name: del?.name })}</DialogDescription></DialogHeader>
-        {delErr && <p role="alert" className="text-sm text-destructive">{delErr}</p>}
-        <DialogFooter><Button variant="outline" onClick={() => setDel(null)}>{t('common.cancel')}</Button><Button id="delete-confirm" variant="destructive" onClick={doDelete} disabled={busy}>{busy && <Loader2 className="animate-spin" />}{t('common.delete')}</Button></DialogFooter></DialogContent>
-    </Dialog>
+    {confirmDel.dialog}
   </div>
 }

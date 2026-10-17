@@ -60,8 +60,18 @@ def validate_with(wf: Dict[str, Any], load: Loader, self_id: Optional[str] = Non
     if not has_subgraphs(wf): return validate(wf)
     errs = check(wf, load, self_id)
     if errs: return validate(wf) + errs
-    try: return validate(expand(wf, load, self_id))
+    try: x = expand(wf, load, self_id)
     except ValidationError as e: return e.errors
+    return readable(validate(x), x)
+
+
+def readable(errors: List[str], expanded: Dict[str, Any]) -> List[str]:
+    """Name nodes that came from a subgraph by their labels (`"Sub › Inner"`) instead of internal ids (`sub/inner`)."""
+    import re
+    names = {n["id"]: (n.get("data") or {}).get("label") or n["id"] for n in expanded.get("nodes", []) if SEP in str(n.get("id"))}
+    if not names: return errors
+    pat = re.compile(r"(?<![\w/])(" + "|".join(re.escape(i) for i in sorted(names, key=len, reverse=True)) + r")(?: \([^)]*\))?(?![\w/])")
+    return [pat.sub(lambda m: f'"{names[m.group(1)]}"', e) for e in errors]
 
 
 def expand(wf: Dict[str, Any], load: Loader, self_id: Optional[str] = None) -> Dict[str, Any]:

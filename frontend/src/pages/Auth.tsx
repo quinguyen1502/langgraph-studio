@@ -50,7 +50,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       </CardHeader>
       <form onSubmit={submit} noValidate aria-busy={busy}>
         <CardContent className="space-y-4">
-          {expired && !error && <div id="expired-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><Clock className="size-4 shrink-0" />{t('auth.expired')}</div>}
+          {expired && !error && <div id="expired-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><Clock className="size-4 shrink-0 text-warning" />{t('auth.expired')}</div>}
           {error && <Alert variant="destructive" id="auth-error"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
           <div className="space-y-1.5"><Label htmlFor="email">{t('auth.email')}</Label><Input id="email" className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
           <div className="space-y-1.5"><Label htmlFor="password">{t('auth.password')}</Label>

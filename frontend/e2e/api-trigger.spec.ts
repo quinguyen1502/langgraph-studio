@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { confirmDelete } from './confirm'
 // TASK-0007: create a workflow token in the UI, trigger a sync run over REST, see it in history as API.
 test('api trigger: token, sync run, history source', async ({ page }) => {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
@@ -21,6 +22,7 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   // revoked tokens are rejected
   await page.locator('#api-btn').click()
   await page.locator('[data-testid=api-token-row]', { hasText: 'e2e' }).first().getByRole('button', { name: /Thu hồi/ }).click()
+  await confirmDelete(page, 'e2e')
   const r2 = await page.request.post('/api/hooks/workflows/example/runs', { headers: { Authorization: `Bearer ${token}` }, data: {} })
   expect(r2.status()).toBe(401); expect((await r2.json()).error.code).toBe('TRIGGER_TOKEN_INVALID')
   // revoked tokens are hidden until "Show revoked" is switched on; the dialog fits the viewport with its tabs visible

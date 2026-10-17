@@ -1,4 +1,5 @@
 """Workflow CRUD with ownership, naming rules and validation."""
+from __future__ import annotations
 import json, time, uuid
 from sqlalchemy.exc import IntegrityError
 from ..core import config
@@ -23,9 +24,10 @@ def new_id() -> str: return uuid.uuid4().hex[:8]
 
 class WorkflowService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, versions: WorkflowVersionRepository | None = None,
-                 access=None, shares=None, users=None):
+                 access=None, shares=None, users=None, teams=None, audit=None):
         self.repo, self.runs, self.versions = workflows, runs, versions
-        self.access, self.shares, self.users = access, shares, users  # AccessService etc. (TASK-0014); None = owner-only
+        self.access, self.shares, self.users = access, shares, users
+        self.teams, self.audit = teams, audit  # TeamRepository, AuditService (TASK-0029)  # AccessService etc. (TASK-0014); None = owner-only
 
     # -- persistence: every write goes through here so versions stay in sync (TASK-0008) --
     def _write(self, wid: str, name: str, wf: dict, uid: str, *, new: bool = True, note: str | None = None) -> None:
@@ -44,6 +46,10 @@ class WorkflowService:
                 if attempt + 1 == VERSION_RETRIES: raise
         if (keep := config.version_keep()): self.versions.prune(wid, keep)  # retention (runs keep their versions)
 
+    def write_as(self, wid: str, name: str, wf: dict, uid: str, note: str | None = None) -> None:
+        """A versioned in-place write by another service (ownership transfer); the owner column is untouched."""
+        self._write(wid, name, wf, uid, new=False, note=note)
+
     def _versions(self) -> WorkflowVersionRepository:
         if self.versions is None: raise RuntimeError("versioning not configured")
         return self.versions
@@ -61,7 +67,19 @@ class WorkflowService:
         latest = latest.version if latest else None
         items = [{"version": v.version, "name": v.name, "created": v.created, "author_email": e, "note": v.note,
                  "node_count": len(json.loads(v.data or "{}").get("nodes", [])), "current": v.version == latest} for v, e in rows]
-        return {"items": items, "total": repo.count(wid), "limit": limit, "offset": offset}
+        return {"items": items, "total": repo.count(wid), "limit": limit, "offset": offset, "children_changed": self.children_changed(wid, uid)}
+
+    def children_changed(self, wid: str, uid: str) -> list[dict]:
+        """Subgraph children saved after this workflow's latest version (their changes apply to its next runs)."""
+        if self.versions is None: return []
+        w = self.repo.get(wid); mine = self.versions.latest(wid)
+        if w is None or mine is None: return []
+        out = []
+        for _, ref in subgraphs.refs(json.loads(w.data or "{}")):
+            c = self.versions.latest(ref) if ref else None
+            if c is not None and c.created > mine.created and (self.access is None or self.access.may(ref, uid)):
+                out.append({"id": ref, "name": c.name, "version": c.version, "at": c.created})
+        return out
 
     def get_version(self, wid: str, n: int, uid: str) -> dict:
         self.owned(wid, uid); v = self._version(wid, n)
@@ -163,8 +181,23 @@ class WorkflowService:
         nid = new_id(); self._write(nid, d["name"], d, uid)
         return {"id": nid, "name": d["name"]}
 
-    def delete(self, wid: str, uid: str) -> dict:
-        self.owned(wid, uid, P.DELETE); self.repo.delete(wid); self.runs.delete_for_workflow(wid)
+    def dependents(self, wid: str, uid: str) -> list[dict]:
+        """Workflows that embed `wid` as a subgraph. Names are shown only where the caller has access (TASK-0029)."""
+        out = []
+        for w in self.repo.referencing(wid):
+            if any(ref == wid for _, ref in subgraphs.refs(json.loads(w.data or "{}"))):
+                vis = self.access is None or self.access.may(w.id, uid)
+                out.append({"id": w.id if vis else None, "name": w.name if vis else None})
+        return out
+
+    def delete(self, wid: str, uid: str, force: bool = False) -> dict:
+        """Refuses (WORKFLOW_IN_USE with the dependents) while other workflows embed this one, unless `force`."""
+        w = self.owned(wid, uid, P.DELETE)
+        deps = self.dependents(wid, uid)
+        if deps and not force: raise AppError("WORKFLOW_IN_USE", details={"count": len(deps), "dependents": deps}, count=len(deps))
+        self.repo.delete(wid); self.runs.delete_for_workflow(wid)
+        if self.teams is not None: self.teams.delete_shares_for_workflow(wid)
+        if self.audit is not None and (deps or w.owner != uid): self.audit.record(uid, "workflow.delete", "workflow", wid, w.name, dependents=len(deps))
         if self.shares is not None: self.shares.delete_for_workflow(wid)
         if self.versions is not None: self.versions.delete_for_workflow(wid)
         return {"ok": True}

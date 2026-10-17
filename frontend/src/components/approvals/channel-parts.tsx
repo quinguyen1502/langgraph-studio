@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Channel, ChannelKind } from '@/lib/approvals'
+import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
 
 export function ErrorAlert({ children }: { children: ReactNode }) {
@@ -52,7 +53,7 @@ function CopyField({ id, label, value }: { id: string; label: string; value: str
 export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: ChannelKind; publicUrl: string | null; onChange: () => void }) {
   const { t } = useTranslation(); const [vals, setVals] = useState<Vals>({}); const [edit, setEdit] = useState(false)
   const { run, alerts, busy } = useAction(() => { setVals({}); onChange() })
-  const test = useAction()
+  const test = useAction(); const confirmDel = useConfirmDelete(); const label = c.name || t(`approvals.kind.${c.kind}`)
   const url = c.callback_url || location.origin + c.callback_path
   const shared = c.shared_callback_path ? (c.shared_callback_url || location.origin + c.shared_callback_path) : null
   const idp = `ch-${c.id}`
@@ -80,9 +81,10 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
         {edit ? <Button size="sm" id={`${idp}-save`} disabled={busy || !filled(k, vals)}
           onClick={async () => { if (await run(() => api(`/api/approvals/channels/${c.id}`, { method: 'PUT', json: vals }), t('approvals.saved'))) setEdit(false) }}><Save />{t('approvals.save')}</Button>
           : <Button variant="outline" size="sm" id={`${idp}-edit`} onClick={() => setEdit(true)}><KeyRound />{t('approvals.replaceSecrets')}</Button>}
-        <Button variant="ghost" size="sm" disabled={busy} onClick={() => run(() => api(`/api/approvals/channels/${c.id}`, { method: 'DELETE' }), t('approvals.removed'))}><Trash2 />{t('approvals.remove')}</Button>
+        <Button variant="ghost" size="sm" disabled={busy} onClick={() => confirmDel.ask({ title: t('approvals.removeTitle', { name: label }), name: label, description: t('approvals.removeBody'), confirmLabel: t('confirmDelete.remove'), onConfirm: () => run(() => api(`/api/approvals/channels/${c.id}`, { method: 'DELETE' }), t('approvals.removed')) })}><Trash2 />{t('approvals.remove')}</Button>
       </>}
     </div>
+    {confirmDel.dialog}
   </div>
 }
 

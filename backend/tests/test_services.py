@@ -12,6 +12,7 @@ class FakeWorkflows:
     def __init__(self): self.rows = {}
     def list_for_owner(self, o): return sorted([r for r in self.rows.values() if r.owner == o], key=lambda r: -r.updated)
     def get(self, wid): return self.rows.get(wid)
+    def referencing(self, wid): return [r for r in self.rows.values() if r.id != wid and f'"{wid}"' in (r.data or "")]
     def get_owned(self, wid, o): r = self.rows.get(wid); return r if r and r.owner == o else None
     def names_for_owner(self, o, exclude=None): return {r.name for r in self.rows.values() if r.owner == o and r.id != exclude}
     def save(self, wid, name, data, updated, owner): self.rows[wid] = NS(id=wid, name=name, data=data, updated=updated, owner=owner)

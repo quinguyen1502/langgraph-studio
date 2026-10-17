@@ -84,6 +84,7 @@ export function ChannelsSection() {
   const all = (label: string) => ({ value: 'all', label })
   return <div className="space-y-4">
     <SlackOAuthNotice />
+    {data?.org_usable === false && <ErrorAlert>{t('policy.blockedChannels')}</ErrorAlert>}
     <FilterBar id="channel-filters" q={q} onQ={setQ} placeholder={t('settings.searchChannels')} filters={[
       { id: 'status', label: t('settings.filter.status'), value: status, onChange: setStatus,
         options: [all(t('settings.filter.anyStatus')), { value: 'connected', label: t('settings.status.connected') }, { value: 'not_set_up', label: t('settings.status.notSetUp') }] },

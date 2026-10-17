@@ -42,6 +42,14 @@ class WorkflowRepository:
         with self.db.session() as s:
             s.execute(update(Workflow).where(Workflow.id == wid).values(name=name, data=data, updated=updated)); s.commit()
 
+    def set_owner(self, wid: str, owner: str, name: str) -> None:
+        with self.db.session() as s: s.execute(update(Workflow).where(Workflow.id == wid).values(owner=owner, name=name)); s.commit()
+
+    def referencing(self, wid: str) -> list[Workflow]:
+        """Workflows whose JSON mentions this id (callers confirm it is a subgraph reference)."""
+        with self.db.session() as s:
+            return list(s.scalars(select(Workflow).where(Workflow.id != wid, Workflow.data.contains(f'"{wid}"'))))
+
     def delete(self, wid: str) -> None:
         with self.db.session() as s:
             s.execute(delete(Workflow).where(Workflow.id == wid)); s.commit()

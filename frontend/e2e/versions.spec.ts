@@ -37,5 +37,7 @@ test('versions: save, diff, restore, run tagged with version', async ({ page }) 
     await page.locator('[data-testid=restore-confirm]').click()
     await expect(page.locator('#versions-notice')).toContainText('giống hệt')
     await expect(page.locator('[data-testid=version-row]')).toHaveCount(4)
-  } finally { await page.request.delete(`/api/workflows/${wid}`, { headers: H }) }
+  } finally {
+    await page.request.delete(`/api/workflows/${wid}`, { headers: H })
+  }
 })

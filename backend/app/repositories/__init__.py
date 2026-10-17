@@ -12,5 +12,8 @@ from .approvals import ApprovalRepository
 from .knowledge import KnowledgeRepository
 from .mcp_servers import McpServerRepository
 from .workflow_shares import WorkflowShareRepository
+from .teams import TeamRepository
+from .audit import AuditRepository, SettingsRepository
+from .user_data import UserDataRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository"]

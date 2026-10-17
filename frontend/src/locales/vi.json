@@ -77,7 +77,11 @@
     "title": "Workflows",
     "showAll": "Mọi workflow",
     "sharedBy": "Được chia sẻ bởi {{email}}",
-    "emptyViewer": "Chưa có workflow nào được chia sẻ với bạn. Hãy nhờ chủ sở hữu chia sẻ."
+    "emptyViewer": "Chưa có workflow nào được chia sẻ với bạn. Hãy nhờ chủ sở hữu chia sẻ.",
+    "inUse_one": "{{count}} workflow đang dùng workflow này làm subgraph:",
+    "inUse_other": "{{count}} workflow đang dùng workflow này làm subgraph:",
+    "hiddenWorkflow": "Một workflow bạn không xem được",
+    "deleteAnyway": "Vẫn xoá"
   },
   "editor": {
     "notFoundTitle": "Không tìm thấy workflow",
@@ -225,7 +229,9 @@
     "key": "API key",
     "baseUrl": "Base URL (tuỳ chọn, cho endpoint OpenAI-compatible)",
     "add": "Thêm credential",
-    "deleteAria": "Xoá {{name}}"
+    "deleteAria": "Xoá {{name}}",
+    "deleteTitle": "Xoá thông tin xác thực {{name}}?",
+    "deleteBody": "Workflow và kho tri thức dùng khoá này sẽ lỗi cho tới khi chọn khoá khác. Không thể hoàn tác."
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -334,7 +340,18 @@
     "SHARE_NOT_FOUND": "Workflow này chưa được chia sẻ với người dùng đó",
     "SLACK_OAUTH_NOT_CONFIGURED": "Chưa cấu hình Thêm vào Slack (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET)",
     "SLACK_OAUTH_STATE_INVALID": "Liên kết đăng nhập Slack không hợp lệ hoặc đã hết hạn, vui lòng thử lại",
-    "SLACK_OAUTH_FAILED": "Slack chưa hoàn tất cài đặt: {{reason}}"
+    "SLACK_OAUTH_FAILED": "Slack chưa hoàn tất cài đặt: {{reason}}",
+    "TEAM_NOT_FOUND": "Không tìm thấy nhóm",
+    "TEAM_NAME_REQUIRED": "Cần nhập tên nhóm",
+    "TEAM_NAME_TAKEN": "Đã có nhóm trùng tên",
+    "TEAM_MEMBER_NOT_FOUND": "Người dùng này không thuộc nhóm",
+    "TRANSFER_SAME_OWNER": "Người dùng này đã là chủ sở hữu workflow",
+    "TRANSFER_TARGET_ROLE": "Chủ sở hữu mới phải là người chỉnh sửa hoặc quản trị viên",
+    "TRANSFER_REBIND_INVALID": "Node {{node}}: hãy chọn tài nguyên mà chủ sở hữu mới dùng được",
+    "USER_HAS_WORKFLOWS": "Người dùng này sở hữu {{count}} workflow: hãy chọn người nhận trước",
+    "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
+    "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
+    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})"
   },
   "lang": {
     "en": "English",
@@ -398,7 +415,9 @@
     "rotateAria": "Đổi khoá ký của {{name}}",
     "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",
     "tokensTab": "Token",
-    "showRevoked": "Hiện token đã thu hồi ({{count}})"
+    "showRevoked": "Hiện token đã thu hồi ({{count}})",
+    "revokeTitle": "Thu hồi token {{name}}?",
+    "revokeBody": "Client dùng token này bị từ chối ngay. Không thể hoàn tác."
   },
   "versions": {
     "button": "Phiên bản",
@@ -428,7 +447,9 @@
     "unchanged": "v{{n}} giống hệt phiên bản hiện tại nên không có gì được khôi phục.",
     "unsavedWarning": "Bạn có thay đổi chưa lưu trong editor. Khôi phục sẽ thay thế chúng.",
     "loadMore": "Tải thêm",
-    "shown": "{{shown}} / {{total}}"
+    "shown": "{{shown}} / {{total}}",
+    "childrenChanged_one": "{{count}} subgraph đã thay đổi sau phiên bản mới nhất của workflow này (lần chạy tới dùng bản mới):",
+    "childrenChanged_other": "{{count}} subgraph đã thay đổi sau phiên bản mới nhất của workflow này (lần chạy tới dùng bản mới):"
   },
   "deliveries": {
     "tab": "Lần gửi",
@@ -558,7 +579,11 @@
     "replaceSecrets": "Thay khoá bí mật",
     "sharedUrl": "Request URL (mọi workspace)",
     "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app.",
-    "noConnection": "Chưa có kết nối"
+    "noConnection": "Chưa có kết nối",
+    "removeTitle": "Gỡ kết nối {{name}}?",
+    "removeBody": "Node Human dùng kết nối này sẽ ngừng gửi yêu cầu phê duyệt tới đây. Không thể hoàn tác.",
+    "unlinkTitle": "Huỷ liên kết {{name}}?",
+    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại."
   },
   "settings": {
     "title": "Cài đặt",
@@ -572,7 +597,9 @@
       "audit": "Nhật ký",
       "knowledge": "Kho tri thức",
       "mcp": "Máy chủ MCP",
-      "users": "Người dùng"
+      "users": "Người dùng",
+      "teams": "Nhóm",
+      "activity": "Hoạt động"
     },
     "intro": {
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
@@ -580,7 +607,9 @@
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
       "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình.",
       "mcp": "Công cụ từ máy chủ Model Context Protocol, dùng trong node MCP. Secret được mã hoá và không hiển thị lại.",
-      "users": "Ai có thể đăng nhập và vai trò của họ cho phép gì. Workflow được chia sẻ từ trình chỉnh sửa."
+      "users": "Ai có thể đăng nhập và vai trò của họ cho phép gì. Workflow được chia sẻ từ trình chỉnh sửa.",
+      "teams": "Nhóm người để chia sẻ workflow. Thành viên nhận quyền đã cấp cho nhóm.",
+      "activity": "Thay đổi về vai trò, chia sẻ, nhóm, quyền sở hữu, tài khoản và chính sách, mới nhất trước."
     },
     "status": {
       "connected": "Đã kết nối",
@@ -644,10 +673,13 @@
     "reindex": "Lập chỉ mục lại",
     "reindexed": "Đã lập chỉ mục lại {{count}} đoạn",
     "delete": "Xoá kho tri thức",
-    "confirmDelete": "Xoá kho tri thức \"{{name}}\" và toàn bộ tài liệu?",
     "none": "Chưa có kho tri thức nào.",
     "documents_one": "{{count}} tài liệu",
-    "chunks_one": "{{count}} đoạn"
+    "chunks_one": "{{count}} đoạn",
+    "deleteTitle": "Xoá kho tri thức {{name}}?",
+    "deleteBody": "Tài liệu và chỉ mục bị xoá; node Retriever dùng kho này sẽ lỗi. Không thể hoàn tác.",
+    "deleteFileTitle": "Xoá tài liệu {{name}}?",
+    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác."
   },
   "mcp": {
     "new": "Thêm máy chủ MCP",
@@ -679,10 +711,11 @@
     "edit": "Sửa",
     "saved": "Đã lưu (hãy tìm lại công cụ)",
     "delete": "Xoá máy chủ",
-    "confirmDelete": "Xoá máy chủ MCP \"{{name}}\"? Các node đang dùng sẽ lỗi.",
     "none": "Chưa có máy chủ MCP nào.",
     "stdioOn": "Máy chủ stdio đang bật: admin có thể đăng ký lệnh cục bộ. Lệnh chạy trên máy studio với môi trường sạch, thư mục home tạm rỗng và giới hạn thời gian, nhưng không cô lập thêm: chỉ thêm lệnh bạn tin cậy, hoặc chạy studio trong container.",
-    "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1."
+    "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1.",
+    "deleteTitle": "Xoá máy chủ MCP {{name}}?",
+    "deleteBody": "Node MCP tool dùng máy chủ này sẽ lỗi. Không thể hoàn tác."
   },
   "users": {
     "adminOnly": "Chỉ quản trị viên mới quản lý được người dùng.",
@@ -714,7 +747,24 @@
     "yes": "Được phép",
     "no": "Không được phép",
     "accessTitle": "Quyền với một workflow",
-    "accessNote": "Vai trò người xem giới hạn mọi chia sẻ ở mức người xem. Lần chạy workflow được chia sẻ dùng thông tin xác thực, kho tri thức và máy chủ MCP của chủ sở hữu."
+    "accessNote": "Vai trò người xem giới hạn mọi chia sẻ ở mức người xem. Lần chạy workflow được chia sẻ dùng thông tin xác thực, kho tri thức và máy chủ MCP của chủ sở hữu.",
+    "deleteFor": "Xoá {{email}}",
+    "deleteTitle": "Xoá {{email}}",
+    "deleteIntro": "Thông tin xác thực, kho tri thức, máy chủ MCP, kênh và API token riêng sẽ bị xoá. Không thể hoàn tác.",
+    "deleteMode": "Chế độ",
+    "modes": {
+      "anonymize": "Ẩn danh hoá",
+      "delete": "Xoá"
+    },
+    "modeHelp": {
+      "anonymize": "Giữ một tài khoản vô danh đã vô hiệu hoá để lịch sử chạy vẫn ghi “người dùng đã xoá”.",
+      "delete": "Xoá luôn tài khoản và các lần chạy người này đã khởi chạy."
+    },
+    "reassign_one": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
+    "reassign_other": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
+    "reassignHelp": "Người chỉnh sửa hoặc quản trị viên. Tham chiếu họ không dùng được sẽ được đánh dấu trong từng workflow.",
+    "deleted_one": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
+    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu)."
   },
   "share": {
     "button": "Chia sẻ",
@@ -741,13 +791,135 @@
       "run": "Chạy",
       "edit": "Sửa",
       "delete": "Xoá",
-      "share": "Chia sẻ"
-    }
+      "share": "Chia sẻ",
+      "transfer": "Chuyển"
+    },
+    "with": "Chia sẻ với",
+    "kindUser": "Người",
+    "kindTeam": "Nhóm",
+    "team": "Nhóm",
+    "pickTeam": "Chọn nhóm",
+    "noTeams": "Chưa có nhóm (quản trị viên tạo)",
+    "removeTitle": "Gỡ quyền truy cập của {{name}}?",
+    "removeTeamTitle": "Ngừng chia sẻ với nhóm {{name}}?",
+    "removeBody": "Họ không mở được workflow này nữa, trừ khi được chia sẻ theo cách khác."
   },
   "slackOauth": {
     "title": "Thêm vào Slack",
     "help": "Cài ứng dụng Slack của studio vào một workspace chỉ với một cú nhấp, không cần dán token.",
     "button": "Thêm vào Slack",
     "installed": "Đã kết nối workspace Slack."
+  },
+  "teams": {
+    "members_one": "{{count}} thành viên",
+    "members_other": "{{count}} thành viên",
+    "delete": "Xoá nhóm {{name}}",
+    "removeMember": "Gỡ {{email}}",
+    "noMembers": "Chưa có thành viên.",
+    "memberEmail": "Email thành viên",
+    "addMember": "Thêm",
+    "namePlaceholder": "Tên nhóm mới",
+    "name": "Tên nhóm",
+    "create": "Tạo nhóm",
+    "empty": "Chưa có nhóm. Tạo nhóm, thêm thành viên rồi chia sẻ workflow với nhóm từ trình chỉnh sửa.",
+    "deleteTitle": "Xoá nhóm {{name}}?",
+    "deleteBody": "Thành viên mất quyền đã chia sẻ cho nhóm này. Không thể hoàn tác.",
+    "removeTitle": "Gỡ {{email}} khỏi {{team}}?",
+    "removeBody": "Họ mất quyền đã chia sẻ cho nhóm này."
+  },
+  "activity": {
+    "search": "Tìm người thực hiện, đối tượng hoặc thao tác…",
+    "category": "Loại",
+    "anyCategory": "Mọi loại",
+    "since": "Thời gian",
+    "cat": {
+      "user": "Người dùng",
+      "share": "Chia sẻ",
+      "team": "Nhóm",
+      "workflow": "Workflow",
+      "policy": "Chính sách"
+    },
+    "when": {
+      "all": "Mọi lúc",
+      "24h": "24 giờ qua",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "col": "Thời điểm"
+    },
+    "actor": "Bởi",
+    "action": "Thao tác",
+    "target": "Đối tượng",
+    "details": "Chi tiết",
+    "empty": "Không có hoạt động phù hợp.",
+    "range": "{{from}}–{{to}} / {{total}}",
+    "prev": "Trang trước",
+    "next": "Trang sau",
+    "actions": {
+      "user_role": "Đổi vai trò",
+      "user_activate": "Kích hoạt tài khoản",
+      "user_deactivate": "Vô hiệu hoá tài khoản",
+      "user_anonymize": "Ẩn danh hoá tài khoản",
+      "user_delete": "Xoá tài khoản",
+      "share_add": "Chia sẻ với người dùng",
+      "share_role": "Đổi quyền chia sẻ",
+      "share_remove": "Gỡ chia sẻ",
+      "share_team": "Chia sẻ với nhóm",
+      "share_team_remove": "Gỡ chia sẻ nhóm",
+      "team_create": "Tạo nhóm",
+      "team_rename": "Đổi tên nhóm",
+      "team_delete": "Xoá nhóm",
+      "team_member_add": "Thêm thành viên",
+      "team_member_remove": "Gỡ thành viên",
+      "workflow_transfer": "Chuyển quyền sở hữu",
+      "workflow_delete": "Xoá workflow",
+      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức"
+    },
+    "types": {
+      "user": "Người dùng",
+      "workflow": "Workflow",
+      "team": "Nhóm",
+      "policy": "Chính sách"
+    }
+  },
+  "transfer": {
+    "button": "Chuyển quyền sở hữu",
+    "title": "Chuyển quyền sở hữu",
+    "intro": "Chủ sở hữu mới phải là người chỉnh sửa hoặc quản trị viên. Sau đó lần chạy dùng thông tin xác thực, kho tri thức và máy chủ MCP riêng của chủ sở hữu mới.",
+    "newOwner": "Email chủ sở hữu mới",
+    "check": "Kiểm tra",
+    "issues_one": "{{count}} tham chiếu chủ sở hữu mới không dùng được. Gán lại sang tài nguyên của họ hoặc giữ và đánh dấu.",
+    "issues_other": "{{count}} tham chiếu chủ sở hữu mới không dùng được. Gán lại sang tài nguyên của họ hoặc giữ và đánh dấu.",
+    "clean": "{{email}} dùng được mọi tham chiếu.",
+    "rebindFor": "Gán lại {{node}}",
+    "keepFlagged": "Giữ (đánh dấu)",
+    "flagged": "Đã đánh dấu",
+    "keepAccess": "Giữ quyền chỉnh sửa cho chủ sở hữu hiện tại",
+    "submit": "Chuyển",
+    "hint": "Giao workflow này cho người chỉnh sửa hoặc quản trị viên khác.",
+    "done": "Đã chuyển quyền sở hữu cho {{email}}.",
+    "flaggedLine": "Cần sửa {{node}}: {{kind}} {{name}} không khả dụng với chủ sở hữu mới",
+    "kinds": {
+      "credential": "Thông tin xác thực",
+      "knowledge_base": "Kho tri thức",
+      "mcp_server": "Máy chủ MCP",
+      "subgraph": "Subgraph"
+    }
+  },
+  "policy": {
+    "title": "Tài nguyên tổ chức khi chạy",
+    "intro": "Vai trò được dùng kênh phê duyệt và máy chủ MCP toàn tổ chức khi chạy. Mặc định: người chỉnh sửa và quản trị viên.",
+    "adminAlways": "luôn được phép",
+    "blockedMcp": "Vai trò của bạn không được dùng máy chủ MCP của tổ chức khi chạy (chính sách quản trị).",
+    "blockedChannels": "Vai trò của bạn không được dùng kênh phê duyệt của tổ chức khi chạy (chính sách quản trị)."
+  },
+  "confirmDelete": {
+    "typeToConfirm": "Nhập <b>{{name}}</b> để xác nhận",
+    "placeholder": "Nhập chính xác tên",
+    "irreversible": "Không thể hoàn tác.",
+    "delete": "Xoá",
+    "cancel": "Huỷ",
+    "remove": "Gỡ",
+    "revoke": "Thu hồi",
+    "unlink": "Huỷ liên kết"
   }
 }

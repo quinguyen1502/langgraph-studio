@@ -212,6 +212,7 @@
     "RUN_INPUT_TOO_LARGE": "Input quá lớn (tối đa {{max_kb}} KB)",
     "RUN_FAILED": "Run thất bại",
     "RUN_TIMEOUT": "Run vượt quá thời gian cho phép ({{seconds}}s)",
+    "RUN_NOT_FOUND": "Không tìm thấy run, run đã kết thúc hoặc không thuộc về bạn",
     "NODE_FAILED": "Node bị lỗi",
     "CREDENTIAL_NOT_FOUND": "Credential không tồn tại hoặc không thuộc về bạn",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Provider không hỗ trợ: {{provider}}",

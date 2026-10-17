@@ -141,5 +141,21 @@ Auth đơn giản (không refresh token, không reset mật khẩu, không phân
 Backend chia lớp `core / models / schemas / repositories / services / api / engine` — sơ đồ và quy tắc import ở `docs/backend-architecture.md` (DEC-0009).
 
 - ORM: SQLAlchemy 2.0; migration: Alembic (`backend/app/migrations`). Server tự chạy `alembic upgrade head` khi khởi động; DB SQLite cũ được nhận nguyên dữ liệu.
-- `DATABASE_URL` (tuỳ chọn) ghi đè `STUDIO_DB`, ví dụ `postgresql+psycopg://user:pw@localhost/studio` (cần cài driver). Mặc định vẫn là SQLite `backend/studio.db`.
+- `DATABASE_URL` (tuỳ chọn) ghi đè `STUDIO_DB`, ví dụ `postgresql://user:pw@localhost/studio` (driver `psycopg` đã có sẵn trong dependencies). Mặc định vẫn là SQLite `backend/studio.db`.
+- `REDIS_URL` (tuỳ chọn), ví dụ `redis://localhost:6379/0`: trạng thái run, tín hiệu huỷ và pub/sub sự kiện (`run:{id}:events`) qua Redis, nên có thể huỷ run từ API worker khác bằng `POST /api/runs/{id}/cancel`. Bỏ trống = bộ nhớ trong tiến trình (DEC-0011).
 - Tạo migration mới: `cd backend && .venv/bin/alembic revision --autogenerate -m "mô tả"`, rồi `.venv/bin/alembic upgrade head`.
+
+## Triển khai với Docker Compose (TASK-0009)
+Stack gồm `postgres` (17), `redis` (7), `api` (FastAPI, tự chạy `alembic upgrade head` + seed khi khởi động) và `web` (nginx phục vụ bản build Vite, proxy `/api` và `/ws`). Cả bốn service đều có healthcheck; dữ liệu nằm trong các volume `pgdata`, `redisdata`, `apidata`.
+
+```bash
+cp .env.example .env      # đặt JWT_SECRET và POSTGRES_PASSWORD (bắt buộc); không commit .env
+docker compose up --build # UI: http://localhost:8080 (đổi bằng WEB_PORT)
+python scripts/compose_smoke.py http://localhost:8080   # kiểm tra: health, đăng nhập demo, chạy ví dụ qua /ws/run
+```
+
+- Đăng nhập demo: `admin@example.com` / `admin123`.
+- `GET /api/health` cho biết `database` (`postgresql`/`sqlite`) và `run_bus` (`redis`/`memory`).
+- `STUDIO_SECRET_KEY` (khoá Fernet cho credential) để trống thì được sinh một lần vào volume `apidata` (`/data/secret.key`); muốn chạy production hãy đặt cố định và `STUDIO_ENV=production`.
+- Mỗi stack chạy một container `api` (migration lúc khởi động không khoá chống chạy song song).
+- Test backend trên Postgres + Redis tại máy: `DATABASE_URL=postgresql://… TEST_DATABASE_URL=postgresql://… REDIS_URL=redis://localhost:6379/0 .venv/bin/python -m pytest -q` (role cần quyền `CREATEDB` cho `tests/test_db_postgres.py`).

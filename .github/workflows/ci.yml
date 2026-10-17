@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -33,6 +33,50 @@ jobs:
         run: python -m pip install -e ".[dev]"
       - name: Run tests
         run: python -m pytest -q
+
+  backend-postgres:
+    name: Backend (pytest on Postgres 17 + Redis 7)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env: { POSTGRES_USER: studio, POSTGRES_PASSWORD: studio, POSTGRES_DB: studio }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U studio" --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd "redis-cli ping" --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://studio:studio@localhost:5432/studio
+      TEST_DATABASE_URL: postgresql://studio:studio@localhost:5432/studio
+      REDIS_URL: redis://localhost:6379/0
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/pyproject.toml
+      - uses: astral-sh/setup-uv@v6
+      - run: python -m pip install -e ".[dev]"
+      - run: python -m pytest -q
+
+  compose:
+    name: docker compose build + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: printf 'JWT_SECRET=ci-%s\nPOSTGRES_PASSWORD=ci-pass\n' "$GITHUB_RUN_ID" > .env
+      - run: docker compose up -d --build --wait
+      - run: pip install httpx websockets && python scripts/compose_smoke.py http://localhost:8080
+      - if: failure()
+        run: docker compose logs
+      - if: always()
+        run: docker compose down -v
 
   frontend:
     name: Frontend (npm build, Node ${{ matrix.node }})

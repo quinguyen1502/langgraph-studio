@@ -1,8 +1,9 @@
-import copy, json, sqlite3, uuid
+import copy, json, uuid
 import httpx, pytest
 from fastapi.testclient import TestClient
 from app.core import crypto as creds
-from app.core.config import STUDIO_DB as DB
+from sqlalchemy import text
+from app.api.deps import get_db
 from app.engine import llm as compiler
 from app.engine.compiler import compile_workflow
 from app.engine.examples import EXAMPLE
@@ -51,7 +52,8 @@ def test_encrypted_at_rest_and_never_returned():
     r = c.post("/api/credentials", json={"name": "oai", "provider": "openai", "api_key": SECRET_OAI}, headers=H(t))
     assert r.status_code == 200 and SECRET_OAI not in r.text and r.json()["data"]["hint"].endswith("cdef")
     assert SECRET_OAI not in c.get("/api/credentials", headers=H(t)).text
-    raw = sqlite3.connect(DB).execute("SELECT secret FROM credentials WHERE id=?", (r.json()["data"]["id"],)).fetchone()[0]
+    with get_db().engine.connect() as conn:  # backend-agnostic (SQLite or Postgres)
+        raw = conn.execute(text("SELECT secret FROM credentials WHERE id=:i"), {"i": r.json()["data"]["id"]}).scalar_one()
     assert SECRET_OAI not in raw and creds.decrypt(raw) == SECRET_OAI
 
 def test_validation_errors():

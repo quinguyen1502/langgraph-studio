@@ -13,6 +13,7 @@ from ..engine.limits import cap_event, cap_run, safe_error, size
 from ..engine.runtime import run_stream
 from ..models import Run
 from ..repositories import RunRepository, WorkflowRepository
+from .run_bus import InMemoryRunBus, RunBus
 
 
 @dataclass
@@ -47,13 +48,23 @@ def _normalise(ev: dict) -> dict:
     return ev
 
 
+CANCEL_API = object()  # worker -> loop marker: the bus reported a cancel request
+
+
 def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 
 class RunService:
-    def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None):
-        """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly)."""
+    def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None):
+        """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
+        bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
+        self.bus = bus or InMemoryRunBus()
+
+    # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
+    def cancel(self, rid: str, uid: str) -> None:
+        if self.bus.owner(rid) != uid: raise AppError("RUN_NOT_FOUND")  # unknown, finished or not yours
+        self.bus.request_cancel(rid)
 
     # ---- planning / validation of the client request ----
     def plan(self, uid: str, req) -> RunPlan:
@@ -85,12 +96,17 @@ class RunService:
 
     # ---- execution ----
     async def execute(self, plan: RunPlan, send: Callable[[dict], Awaitable[bool]],
-                      listen: Callable[[], Awaitable[str]]) -> str:
+                      listen: Callable[[], Awaitable[str]], uid: str = "") -> str:
         """Stream events through `send` (returns False once the client is gone). `listen` resolves to
-        "cancelled" or "disconnected". Returns the final status: ok | error | cancelled | timeout."""
-        rid = uuid.uuid4().hex[:10]; t0 = time.time(); events: list = []; final = None; status = "ok"
+        "cancelled" or "disconnected"; a cancel can also arrive through the RunBus (reason "api").
+        Returns the final status: ok | error | cancelled | timeout."""
+        rid = uuid.uuid4().hex[:10]; self.bus.start(rid, uid)  # registered so REST/other workers can cancel it
+        try: return await self._execute(rid, plan, send, listen)
+        finally: self.bus.finish(rid)
+
+    async def _execute(self, rid, plan, send, listen) -> str:
+        t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus
         q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop(); cancel = threading.Event()
-        connected = True
 
         def put(x):
             try: loop.call_soon_threadsafe(q.put_nowait, x)
@@ -102,6 +118,7 @@ class RunService:
                 g = plan.events()
                 for ev in g:
                     if cancel.is_set(): break  # cooperative cancel between steps
+                    if bus.is_cancelled(rid): put(CANCEL_API); break  # cancel requested via REST / another worker
                     put(ev)
             except ValidationError as e:
                 put(error_event(AppError("WORKFLOW_INVALID", details=e.errors).to_dict()))
@@ -118,6 +135,8 @@ class RunService:
         async def emit(ev):
             nonlocal connected
             events.append(ev)
+            try: bus.publish(rid, ev)
+            except Exception: pass  # fan-out is best effort; the socket and history stay authoritative
             if connected: connected = await send(cap_event(ev))
 
         await emit({"type": "run_started", "run_id": rid, "ts": t0})
@@ -129,6 +148,7 @@ class RunService:
             if get in done:
                 ev = get.result()
                 if ev is None: break
+                if ev is CANCEL_API: ended = "api"; cancel.set(); break
                 ev = _normalise(ev); ev["ts"] = time.time()
                 if ev["type"] == "run_finished": final = ev.get("state")
                 if ev["type"] == "error": status = "error"
@@ -140,9 +160,10 @@ class RunService:
                 ended = "timeout"
             cancel.set(); break
         if not listener.done(): listener.cancel()
-        if ended in ("cancelled", "disconnected"):
+        if ended in ("cancelled", "disconnected", "api"):
             status = "cancelled"
-            await emit({"type": "run_cancelled", "ts": time.time(), "reason": "client" if ended == "cancelled" else "disconnect"})
+            reason = {"cancelled": "client", "disconnected": "disconnect"}.get(ended, "api")
+            await emit({"type": "run_cancelled", "ts": time.time(), "reason": reason})
         elif ended == "timeout":
             status = "timeout"
             await emit(error_event(AppError("RUN_TIMEOUT", seconds=f"{config.run_timeout():g}").to_dict(), status="timeout", ts=time.time()))

@@ -17,6 +17,9 @@ dependencies = [
   "sqlalchemy>=2.0",
   "alembic>=1.13",
   "cryptography",
+  "psycopg[binary]>=3.2",  # Postgres driver (DATABASE_URL=postgresql://...), TASK-0009
+  "redis>=5",              # optional run bus (REDIS_URL), TASK-0009
+  "fakeredis>=2.20",       # Redis contract tests without a server
   "pytest-cov",
   "pytest",  # test runner kept in base deps so `factory deps apply` (pip install -e .) can run verification
 ]

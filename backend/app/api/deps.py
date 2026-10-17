@@ -9,6 +9,7 @@ from ..repositories import CredentialRepository, RunRepository, UserRepository, 
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
+from ..services.run_bus import RunBus, make_run_bus
 from ..services.run_service import RunService
 from ..services.workflow_service import WorkflowService
 
@@ -18,6 +19,11 @@ def get_db() -> Database:
     return Database()
 
 
+@lru_cache
+def get_run_bus() -> RunBus:
+    return make_run_bus(config.REDIS_URL)  # Redis when REDIS_URL is set, else in-memory
+
+
 def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db))
 
@@ -25,7 +31,7 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service())
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus())
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

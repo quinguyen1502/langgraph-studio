@@ -31,7 +31,7 @@ Status for all Phase 2–4 tasks: backlog.
 - TASK-0006 Human-in-the-loop (REQ-0003)
 - TASK-0007 API / webhook trigger (REQ-0004)
 - TASK-0008 Workflow versioning (REQ-0005)
-- TASK-0009 Postgres + Redis + Docker Compose (REQ-0008)
+- TASK-0009 Postgres + Redis + Docker Compose (REQ-0008): **in review** (draft PR into `develop`)
 - TASK-0010 Observability (REQ-0010)
 
 ## Phase 3 — Advanced

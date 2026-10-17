@@ -1009,7 +1009,7 @@
   "layout": {
     "group": "Layout",
     "button": "Tidy up",
-    "tip": "Arrange nodes automatically (Shift+L)",
+    "tip": "Tidy up the layout (Shift+L)",
     "direction": "Layout direction",
     "lr": "Left to right",
     "tb": "Top to bottom"

@@ -78,3 +78,15 @@ def test_api_import_finalize_ws():
             evs.append(ws.receive_json())
             if evs[-1]["type"] in ("run_finished", "error"): break
     assert evs[-1]["type"] == "run_finished" and evs[-1]["state"]["text"] == "answer to: why?"
+
+def test_run_checkpoints_and_resumes_in_a_fresh_subprocess(job):
+    """TASK-0021: the runner attaches a LangGraph saver, streams serialized superstep checkpoints, and a new
+    subprocess continues from one of them (what a recovered queue job does)."""
+    wf = importer.to_workflow(job, "router")
+    evs = list(importer.run_imported(wf, {"text": "hi"}, checkpointing=True))
+    cps = [e for e in evs if e["type"] == "_checkpoint"]
+    assert evs[-1]["type"] == "run_finished" and cps and all(c["blob"]["data"] for c in cps)
+    mid = next(c for c in cps if c["nodes"] == ["echo"])  # after classify, before the first echo
+    again = list(importer.run_imported(wf, {"text": "ignored"}, resume={"blob": mid["blob"]}, checkpointing=True))
+    fin = [e["node"] for e in again if e["type"] == "node_finished"]
+    assert "classify" not in fin and fin[:2] == ["echo", "echo"] and again[-1]["state"]["text"] == "hi!!"

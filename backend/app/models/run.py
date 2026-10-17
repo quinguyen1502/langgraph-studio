@@ -26,3 +26,4 @@ class Run(Base):
     checkpoint: Mapped[Optional[str]] = mapped_column(Text)  # JSON {node, state, workflow}; cleared when the run ends
     source: Mapped[Optional[str]] = mapped_column(Text)  # ui | api (TASK-0007); NULL = ui (older runs)
     workflow_version: Mapped[Optional[int]] = mapped_column(Integer)  # version that ran; NULL = unsaved edits / older runs (TASK-0008)
+    lease_gen: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # fencing token of the worker that owns it (TASK-0021)

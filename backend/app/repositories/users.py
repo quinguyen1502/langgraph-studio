@@ -18,3 +18,11 @@ class UserRepository:
     def add(self, uid: str, email: str, password_hash: str, created: float) -> User:
         with self.db.session() as s:
             u = User(id=uid, email=email, password=password_hash, created=created); s.add(u); s.commit(); return u
+
+    def set_prefs(self, uid: str, **prefs: bool) -> Optional[User]:
+        """Notification preferences (TASK-0021): notify_in_app / notify_email."""
+        with self.db.session() as s:
+            u = s.get(User, uid)
+            if u is None: return None
+            for k, v in prefs.items(): setattr(u, k, bool(v))
+            s.commit(); s.refresh(u); return u

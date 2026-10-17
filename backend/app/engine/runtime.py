@@ -1,8 +1,10 @@
 """Runtime: stream a compiled workflow as trace events (node_started / node_finished / error / run_finished)."""
 from __future__ import annotations
 import json, time
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from langgraph.checkpoint.memory import InMemorySaver
 from .compiler import compile_workflow
+from .effects import Effects
 from .errors import Interrupt, ValidationError
 from .limits import safe_error
 from .usage import merge as merge_usage
@@ -36,20 +38,27 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
     return errs
 
 
-def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None):
+def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None,
+               effects: Optional[Effects] = None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator.
-    A Human node without a response yields `run_waiting` {node, prompt, checkpoint{node, state}} and stops.
-    resume = {"node", "value", "state"} continues a paused run at that node with the saved state (TASK-0006).
-    Without "value" it continues from a progress checkpoint (`_checkpoint` {node, state}, yielded whenever exactly one
-    node runs next; recovery of queue jobs, TASK-0020). Callers must not forward `_checkpoint` to clients."""
+    A Human node without a response yields `run_waiting` {node, prompt, checkpoint} and stops.
+    resume = {"node" | "nodes", "state", "counts"?, "value"?} continues at that node (or those parallel nodes) with the
+    saved state: with "value" a paused Human node gets its response (TASK-0006); without it the run continues from a
+    progress checkpoint (recovery of queue jobs, TASK-0020).
+    Progress checkpoints come from LangGraph itself (TASK-0021): the graph is compiled with an in-memory saver and its
+    superstep checkpoints are observed (`stream_mode="checkpoints"`), so a step with several parallel nodes (fan-out)
+    is resumable too. Each yields `_checkpoint` {node, nodes, state, counts}; callers must not forward it to clients.
+    effects: idempotency keys + node-result ledger + fencing guard for side-effect nodes (TASK-0021)."""
     if resume is None and (bad := check_input(wf, inputs)): raise ValidationError(bad)
     usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
-    held = ({"node": resume["node"], "value": resume["value"]} if "value" in resume else None) if resume else None
+    held = {"node": resume["node"], "value": resume["value"]} if resume and "value" in resume else None
+    counts: Dict[str, int] = {k: int(v) for k, v in ((resume or {}).get("counts") or {}).items()}
+    if effects is not None: effects.counts = counts  # node iterations feed the idempotency keys
     app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)),
-                           entry=resume["node"] if resume else None, resume=held)
+                           entry=resume_nodes(resume) if resume else None, resume=held, effects=effects, checkpointer=InMemorySaver())
     nodes = {n["id"]: n for n in wf["nodes"]}
     if resume: inputs = dict(resume.get("state") or {})
-    state = dict(inputs); counts: Dict[str, int] = {}
+    state = dict(inputs); cp_state, cp_counts = dict(state), dict(counts); first = True
 
     def meta(nid):
         return {"node": nid, "label": nodes[nid]["data"].get("label"), "node_type": nodes[nid]["type"]}
@@ -58,33 +67,37 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         counts[nid] = counts.get(nid, 0) + 1
         return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
 
-    start_id = resume["node"] if resume else next(n["id"] for n in wf["nodes"] if n["type"] == "start")
-    yield started(start_id)
-    t0 = time.perf_counter(); pending = [start_id]
+    t0 = time.perf_counter(); pending: List[str] = []
+    cfg = {"recursion_limit": recursion_limit(), "configurable": {"thread_id": "run"}}
     try:
-        for chunk in app.stream(inputs, {"recursion_limit": recursion_limit()}, stream_mode="updates"):
+        for mode, chunk in app.stream(inputs, cfg, stream_mode=["updates", "checkpoints"]):
+            if mode == "checkpoints":  # superstep boundary: the nodes that run next, all inputs settled
+                nxt = [n for n in (chunk.get("next") or []) if n in nodes]
+                if not nxt: continue
+                cp_state, cp_counts = dict(state), dict(counts)
+                if not first and any(nodes[n]["type"] not in ("start", "end") for n in nxt):
+                    yield {"type": "_checkpoint", "node": nxt[0], "nodes": nxt, "state": dict(state), "counts": dict(counts)}
+                first = False; pending = nxt; t0 = time.perf_counter()
+                for n2 in nxt: yield started(n2)
+                continue
             before = dict(state)
             for nid, delta in chunk.items():
+                if nid not in nodes: continue
                 delta = delta or {}
                 state.update(delta)
+                reused = effects is not None and nid in effects.reused
+                if reused: effects.reused.discard(nid)
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
                        "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
                        "input": cap_payload(before), "delta": cap_payload(delta),
-                       **({"usage": usage.pop(nid)} if nid in usage else {})}
-            # predict next node(s) to mark as started; keep a Condition as "current" so routing errors name it
-            last = list(chunk)[-1]
-            nxt = _next_nodes(wf, last, state)
-            pending = nxt or ([last] if nodes[last]["type"] == "condition" else [])
-            t0 = time.perf_counter()
-            if len(nxt) == 1 and nodes[nxt[0]]["type"] != "end":  # a single next node: resumable from here
-                yield {"type": "_checkpoint", "node": nxt[0], "state": dict(state)}
-            for n2 in nxt:
-                yield started(n2)
+                       **({"usage": usage.pop(nid)} if nid in usage else {}), **({"reused": True} if reused else {})}
     except Interrupt as i:  # a Human node is waiting: hand back a checkpoint instead of an error
+        # parallel siblings of the Human node resume with it (their results come from the ledger when recorded)
         yield {"type": "run_waiting", **meta(i.node), "prompt": i.prompt, "state": cap_payload(dict(state)),
-               "checkpoint": {"node": i.node, "state": dict(state)}}
+               "checkpoint": {"node": i.node, "nodes": pending or [i.node], "state": cp_state, "counts": cp_counts}}
         return
     except Exception as e:  # attribute runtime failures to the node that was running
+        if getattr(e, "fenced", False): raise  # this worker lost the run: the service layer stops without writing
         nid = pending[-1] if pending else None
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
                "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
@@ -93,14 +106,6 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     yield {"type": "run_finished", "state": state}
 
 
-def _next_nodes(wf, nid, state):
-    n = next(x for x in wf["nodes"] if x["id"] == nid)
-    out = [e for e in wf["edges"] if e["source"] == nid]
-    if n["type"] == "end": return []
-    if n["type"] == "condition":
-        v = str(state.get(n["data"]["field"], "")).strip().lower()
-        for e in out:
-            if e["label"].lower() == v or e["label"].lower() in v: return [e["target"]]
-        d = [e for e in out if e["label"] == (n["data"].get("default") or "default")]
-        return [d[0]["target"]] if d else []
-    return [e["target"] for e in out]
+def resume_nodes(resume: Dict[str, Any]) -> List[str]:
+    """Entry nodes of a resume/recovery checkpoint (older checkpoints only have "node")."""
+    return list(resume.get("nodes") or [resume["node"]])

@@ -8,5 +8,6 @@ from .workflow_token import WorkflowToken
 from .workflow_version import WorkflowVersion
 from .notification import Notification
 from .webhook_delivery import WebhookDelivery
+from .node_result import NodeResult
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult"]

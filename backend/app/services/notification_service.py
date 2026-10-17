@@ -6,8 +6,10 @@ Optional channels, each a no-op unless configured:
 - A generic notify webhook (STUDIO_NOTIFY_WEBHOOK_URL, signed with STUDIO_NOTIFY_WEBHOOK_SECRET when set; same
   SSRF guard, DNS pinning and signature format as result webhooks).
 External channels run in a background thread so recording a run never waits on SMTP/HTTP.
+TASK-0021: new in-app notifications are pushed live (NotificationHub -> WebSocket /ws/notifications); e-mail is
+multipart (plain text + HTML template); per-user preferences switch the in-app and e-mail channels off/on.
 """
-import json, smtplib, ssl, threading, time, uuid
+import html, json, smtplib, ssl, threading, time, uuid
 from email.message import EmailMessage
 from typing import Optional
 from ..core import config
@@ -23,8 +25,8 @@ KINDS = {"run_waiting": "A run is waiting for your response", "run_expired": "A 
 
 class NotificationService:
     def __init__(self, repo: NotificationRepository, users: Optional[UserRepository] = None,
-                 workflows: Optional[WorkflowRepository] = None, background: bool = True):
-        self.repo, self.users, self.workflows, self.background = repo, users, workflows, background
+                 workflows: Optional[WorkflowRepository] = None, background: bool = True, hub=None):
+        self.repo, self.users, self.workflows, self.background, self.hub = repo, users, workflows, background, hub
 
     @staticmethod
     def public(n: Notification) -> dict:
@@ -37,17 +39,23 @@ class NotificationService:
         ev = node_event or {}
         params = {"workflow_name": w.name if w else None, "label": ev.get("label"), "prompt": ev.get("prompt")}
         link = f"/workflows/{workflow_id}?run={run_id}" if workflow_id and workflow_id != "adhoc" else None
-        n = self.repo.add(Notification(id=uuid.uuid4().hex[:12], user_id=uid, kind=kind, run_id=run_id, workflow_id=workflow_id,
-                                       title=KINDS[kind], params=json.dumps(params, ensure_ascii=False), link=link, created=time.time()))
-        if config.smtp() or config.notify_webhook():
-            job = lambda: self.dispatch(n)  # noqa: E731
+        prefs = self.preferences(uid)
+        n = Notification(id=uuid.uuid4().hex[:12], user_id=uid, kind=kind, run_id=run_id, workflow_id=workflow_id,
+                         title=KINDS[kind], params=json.dumps(params, ensure_ascii=False), link=link, created=time.time())
+        if prefs["in_app"]:
+            n = self.repo.add(n)
+            if self.hub is not None:
+                try: self.hub.publish(uid, {"type": "notification", "notification": self.public(n), "unread": self.repo.unread_count(uid)})
+                except Exception: log.warning("live push of notification %s failed (the bell polls as a fallback)", n.id)
+        if (config.smtp() and prefs["email"]) or config.notify_webhook():
+            job = lambda: self.dispatch(n, email=prefs["email"])  # noqa: E731
             threading.Thread(target=job, daemon=True).start() if self.background else job()
         return n
 
-    def dispatch(self, n: Notification) -> dict:
+    def dispatch(self, n: Notification, email: bool = True) -> dict:
         """Send to the configured external channels. Never raises. Returns {channel: ok} (for tests/logs)."""
         out = {}
-        if (smtp := config.smtp()):
+        if email and (smtp := config.smtp()):
             u = self.users.get_by_id(n.user_id) if self.users else None
             if u: out["email"] = self._email(smtp, u.email, n)
         if (hook := config.notify_webhook()):
@@ -61,9 +69,7 @@ class NotificationService:
         p = json.loads(n.params or "{}")
         msg = EmailMessage(); msg["From"] = smtp["sender"]; msg["To"] = to
         msg["Subject"] = f"[LangGraph Studio] {n.title}" + (f": {p['workflow_name']}" if p.get("workflow_name") else "")
-        lines = [n.title + "."] + [f"{k}: {p[k]}" for k in ("workflow_name", "label", "prompt") if p.get(k)]
-        if n.link: lines.append(f"Open: {config.public_url()}{n.link}")
-        msg.set_content("\n".join(lines))
+        msg.set_content(email_text(n, p)); msg.add_alternative(email_html(n, p), subtype="html")
         try:
             cls = smtplib.SMTP_SSL if smtp["ssl"] else smtplib.SMTP
             with cls(smtp["host"], smtp["port"], timeout=10) as s:
@@ -87,3 +93,39 @@ class NotificationService:
 
     def mark_all_read(self, uid: str) -> dict:
         self.repo.mark_read(uid); return {"ok": True, "unread": 0}
+
+    # ---- preferences (TASK-0021) ----
+    def preferences(self, uid: str) -> dict:
+        u = self.users.get_by_id(uid) if self.users else None
+        return {"in_app": True if u is None or u.notify_in_app is None else bool(u.notify_in_app),
+                "email": True if u is None or u.notify_email is None else bool(u.notify_email),
+                "email_configured": bool(config.smtp())}
+
+    def set_preferences(self, uid: str, body) -> dict:
+        if not isinstance(body, dict) or not body or any(k not in ("in_app", "email") or not isinstance(v, bool) for k, v in body.items()):
+            raise AppError("NOTIFICATION_PREFS_INVALID")
+        self.users.set_prefs(uid, **{f"notify_{k}": v for k, v in body.items()})
+        return self.preferences(uid)
+
+
+LABELS = {"workflow_name": "Workflow", "label": "Step", "prompt": "Question"}
+
+
+def email_text(n: Notification, p: dict) -> str:
+    lines = [n.title + "."] + [f"{LABELS[k]}: {p[k]}" for k in LABELS if p.get(k)]
+    if n.link: lines.append(f"Open: {config.public_url()}{n.link}")
+    return "\n".join(lines)
+
+
+def email_html(n: Notification, p: dict) -> str:
+    """Small inline-styled HTML e-mail (no external assets); every value is HTML-escaped."""
+    e = html.escape
+    rows = "".join(f'<tr><td style="padding:4px 12px 4px 0;color:#71717a">{LABELS[k]}</td><td style="padding:4px 0">{e(str(p[k]))}</td></tr>'
+                   for k in LABELS if p.get(k))
+    button = (f'<p style="margin:24px 0 0"><a href="{e(config.public_url() + n.link, quote=True)}" '
+              'style="background:#18181b;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open the run</a></p>') if n.link else ""
+    return ('<!doctype html><html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#18181b">'
+            '<table role="presentation" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;width:100%">'
+            f'<tr><td><p style="margin:0 0 4px;font-size:12px;color:#71717a">LangGraph Studio</p><h1 style="margin:0 0 16px;font-size:18px">{e(n.title)}</h1>'
+            f'<table role="presentation" style="font-size:14px;border-collapse:collapse">{rows}</table>{button}'
+            '<p style="margin:24px 0 0;font-size:12px;color:#a1a1aa">You can turn these e-mails off in Notification settings.</p></td></tr></table></body></html>')

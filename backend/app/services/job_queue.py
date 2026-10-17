@@ -110,7 +110,7 @@ class RedisJobQueue:
                 if self.r.exists(LEASE_PREFIX + _lease_id(raw)): continue
                 if (key, raw) not in self._suspects: seen.add((key, raw)); continue
                 if self.r.lrem(key, 1, raw):  # only the reaper that removed it requeues it
-                    job = json.loads(raw); job["recovered"] = True
+                    job = json.loads(raw); job["recovered"] = True; job["attempt"] = int(job.get("attempt") or 1) + 1  # unique payload -> own lease key
                     self.r.rpush(QUEUE_KEY, _dump(job)); n += 1  # RPUSH: served next (BLMOVE takes from the right)
         self._suspects = seen
         return n

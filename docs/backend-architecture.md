@@ -157,3 +157,14 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `RunService`: `plan_recover` resumes `recovered` jobs from the last progress checkpoint (`runs.save_progress`, engine `_checkpoint` events); `_close_waiting` shared by cancel and expire.
 - `Telemetry`: `start_run` / `node` / `end_run` export spans live (`RunSpan`); segments parented through the checkpoint's `trace`; optional `MeterProvider` metrics.
 - Migration `0008_notifications_deliveries`: `notifications`, `webhook_deliveries`, `workflow_tokens.signing_secret_prev` / `secret_rotated`.
+
+## Effectively-once execution (TASK-0021, DEC-0018)
+
+- `engine/effects.py`: `Effects(run_id, attempt, ledger, guard)` wraps LLM/Tool nodes: ledger hit -> reuse; else guard (fencing) -> run -> record. `idempotency_key(run, node, iteration)`; HTTP Tool nodes send `Idempotency-Key`, `X-Studio-Run-Id`, `X-Studio-Attempt`; `call_tool` passes `idempotency_key` to tools that declare it.
+- `engine/runtime.run_stream`: compiled with an in-memory LangGraph saver; `stream_mode=["updates", "checkpoints"]` gives superstep boundaries -> `node_started` events and `_checkpoint {node, nodes, state, counts}`. `compile_workflow(entry=[...])` resumes at several nodes.
+- `engine/sandbox/runner.py`: `attach_saver` / `dump_checkpoint` / `load_checkpoint` (LangGraph serde, base64) for imported graphs; `repo_import.run_imported(checkpointing=, resume={"blob"})`.
+- `NodeResultRepository` (`node_results`), `RunRepository.claim` (CAS + `lease_gen`), fenced `add` / `save_progress` raising `StaleLease`.
+- `RunService`: `plan.fence/attempt/effects`; `_guard`, `_fenced` (stop without writing); `plan_recover` exports the lost root (`Telemetry.close_lost`) and resumes or restarts; a progress save at the start of every queue segment stores `span.ref`.
+- `Telemetry`: `_IdGenerator` (forced ids for `close_lost`), `RunSpan.ref`, `start_run(links=)`.
+- `NotificationHub` (`services/notification_hub.py`) + WebSocket `/ws/notifications`; `NotificationService.preferences/set_preferences`, `email_text/email_html`.
+- Migration `0009_effectively_once`: `node_results`, `runs.lease_gen`, `users.notify_in_app/notify_email`.

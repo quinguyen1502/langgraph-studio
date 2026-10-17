@@ -17,7 +17,7 @@
 - E-mail via `smtplib` when `SMTP_HOST` is set (STARTTLS/SSL/auth optional); unset = no-op. Generic notify webhook `STUDIO_NOTIFY_WEBHOOK_URL`, signed with `STUDIO_NOTIFY_WEBHOOK_SECRET` (same `X-Studio-Signature` scheme). Both run off the request path in a background thread; failures are logged and never fail the run.
 
 ### 2. Webhook deliveries
-- `webhook_deliveries` table: run, workflow, token, url, event, payload, status (`pending|succeeded|failed`), attempts, last response code, latency_ms, error, next_attempt_at.
+- `webhook_deliveries` table: run, workflow, token, url, event, payload, status (`pending|retrying|ok|failed`), attempts, last response code, latency_ms, error, next_attempt_at.
 - Each result callback creates a delivery and enqueues a `delivery` job. `DeliveryService.attempt` posts (DNS-pinned, signed); retryable failures (network errors and any non-2xx response; an address refused by the SSRF guard is not retryable) are re-enqueued with `min(BASE**n, MAX)` seconds delay via the queue's delayed set; non-retryable or `STUDIO_WEBHOOK_MAX_ATTEMPTS` reached = `failed`.
 - `GET /api/workflows/{wid}/deliveries`, `POST /api/workflows/{wid}/deliveries/{id}/redeliver` (resets attempts). UI: "Deliveries" tab in the API dialog.
 - Secret rotation `POST /api/workflows/{wid}/tokens/{tid}/rotate-secret`: the new secret is shown once; the previous one is kept in `signing_secret_prev` for `STUDIO_SECRET_GRACE` seconds and callbacks carry both `v1=` values, so receivers can switch without downtime.
@@ -39,6 +39,8 @@
 - Webhook deliveries are at-least-once; receivers should de-duplicate on `run_id` + event.
 
 ## Not done
+
+> Mostly resolved in TASK-0021 (DEC-0018): idempotency keys + node ledger, fan-out and imported-graph checkpoints, fencing tokens, lost root spans, live push, HTML e-mail, preferences. What is left is listed in DEC-0018, Remaining limits.
 - Exactly-once execution (needs transactional outbox + idempotent tools; out of scope).
 - The root span of a crashed segment is never exported (its node spans are).
 - Plain-text e-mail, no per-user notification preferences, no push/websocket for the bell (polling).

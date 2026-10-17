@@ -307,3 +307,24 @@ def verify(secret: str, header: str, body: bytes, tolerance=300) -> bool:
 ### Telemetry
 - Span được xuất **ngay khi từng node xong**, không đợi hết run. Không cấu hình thì vẫn là no-op.
 - `STUDIO_OTEL_METRICS=1` cùng `OTEL_EXPORTER_OTLP_ENDPOINT`: xuất metrics `studio.runs`, `studio.run.duration`, `studio.tokens`, `studio.cost`, `studio.errors`.
+
+## Effectively-once & thông báo trực tiếp (TASK-0021)
+
+### Side effect "effectively-once"
+- Mỗi lần chạy node LLM/Tool có một **idempotency key** cố định theo (run, node, lần lặp). Node Tool HTTP gửi header `Idempotency-Key` (kèm `X-Studio-Run-Id`, `X-Studio-Attempt`). Tool Python nhận key nếu khai báo tham số `idempotency_key`. Khi job được khôi phục và chạy lại đúng node đó, key **giữ nguyên**, nên bên nhận hỗ trợ idempotency chỉ áp dụng một lần.
+- **Sổ kết quả node (ledger)**: kết quả của node có side effect được lưu lại. Khi khôi phục, node đã xong được dùng lại kết quả (`reused` trong trace) thay vì chạy lại. Ledger được xoá khi run kết thúc.
+- **Fencing token**: mỗi lần worker nhận một run, `runs.lease_gen` tăng lên. Mọi lần ghi (checkpoint, ledger, kết quả) phải mang đúng số này. Worker cũ (mất lease) bị từ chối ghi và tự dừng run của nó.
+
+### Checkpoint
+- Checkpoint lấy trực tiếp từ LangGraph theo từng superstep, nên bước **song song (fan-out)** cũng khôi phục được.
+- Workflow **import** (chạy trong subprocess): nếu graph không có checkpointer riêng, runner gắn một saver trong bộ nhớ và gửi checkpoint đã serialize về server; khi khôi phục, subprocess mới tiếp tục từ đó. Giới hạn: không có ledger/idempotency key bên trong code của repo; state không serialize được hoặc lớn hơn 2 MB thì chạy lại từ đầu.
+
+### Trace
+- Khi khôi phục, root span của đoạn bị mất được xuất với **đúng span id cũ** (các node span đã xuất có cha), trạng thái lỗi "worker lost"; đoạn khôi phục là con và có link tới nó.
+
+### Thông báo
+- Chuông nhận thông báo **trực tiếp** qua WebSocket `/ws/notifications` (Redis pub/sub giữa các tiến trình, hoặc trong bộ nhớ). Mất kết nối thì quay về poll 30 giây.
+- E-mail có cả bản text và **HTML**.
+- **Cài đặt thông báo** (trong menu chuông): bật/tắt chuông trong ứng dụng và e-mail cho riêng bạn. API: `GET/PUT /api/notifications/preferences`.
+
+Chi tiết và các giới hạn còn lại: DEC-0018.

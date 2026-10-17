@@ -4,13 +4,37 @@ from ..models import Run
 from ..models.database import Database
 
 
+class StaleLease(Exception):
+    """A write carried an outdated fencing token: another worker claimed the run since (TASK-0021)."""
+    fenced = True  # the engine re-raises it instead of reporting a node error
+
+
 class RunRepository:
     def __init__(self, db: Database): self.db = db
 
-    def add(self, run: Run) -> None:
-        """Insert or update (a resumed run keeps its id)."""
+    def add(self, run: Run, fence: Optional[int] = None) -> None:
+        """Insert or update (a resumed run keeps its id). With `fence` (a queue job's lease generation) the row is
+        only updated while it still carries that generation; otherwise StaleLease is raised."""
         with self.db.session() as s:
-            s.merge(run); s.commit()
+            if fence is None: s.merge(run); s.commit(); return
+            vals = {c.key: getattr(run, c.key) for c in Run.__mapper__.column_attrs if c.key not in ("id", "lease_gen")}
+            if s.execute(update(Run).where(Run.id == run.id, Run.lease_gen == fence).values(**vals)).rowcount != 1:
+                s.rollback(); raise StaleLease(run.id)
+            s.commit()
+
+    def claim(self, rid: str, statuses: tuple[str, ...]) -> Optional[int]:
+        """Atomically mark the run `running` and bump its fencing token (compare-and-set). Returns the new
+        generation, or None when the run is not in one of `statuses` or another worker claimed it first."""
+        with self.db.session() as s:
+            row = s.execute(select(Run.status, Run.lease_gen).where(Run.id == rid)).first()
+            if row is None or row.status not in statuses: return None
+            gen = (row.lease_gen or 0) + 1
+            q = update(Run).where(Run.id == rid, Run.status == row.status, Run.lease_gen == row.lease_gen).values(status="running", lease_gen=gen)
+            if s.execute(q).rowcount != 1: s.rollback(); return None
+            s.commit(); return gen
+
+    def lease_gen(self, rid: str) -> Optional[int]:
+        with self.db.session() as s: return s.scalar(select(Run.lease_gen).where(Run.id == rid))
 
     def get(self, rid: str) -> Optional[Run]:
         with self.db.session() as s:
@@ -20,10 +44,17 @@ class RunRepository:
         with self.db.session() as s:
             s.execute(update(Run).where(Run.id == rid).values(status=status)); s.commit()
 
-    def save_progress(self, rid: str, events: str, checkpoint: str) -> None:
-        """Progress checkpoint of a running queue job (TASK-0020); only while it is still running."""
+    def save_progress(self, rid: str, events: str, checkpoint: str, fence: Optional[int] = None) -> None:
+        """Progress checkpoint of a running queue job (TASK-0020); only while it is still running.
+        Fenced (TASK-0021): raises StaleLease when another worker holds a newer generation."""
         with self.db.session() as s:
-            s.execute(update(Run).where(Run.id == rid, Run.status == "running").values(events=events, checkpoint=checkpoint)); s.commit()
+            q = update(Run).where(Run.id == rid, Run.status == "running")
+            if fence is not None: q = q.where(Run.lease_gen == fence)
+            if s.execute(q.values(events=events, checkpoint=checkpoint)).rowcount != 1 and fence is not None:
+                s.rollback()
+                if s.scalar(select(Run.lease_gen).where(Run.id == rid)) != fence: raise StaleLease(rid)
+                return
+            s.commit()
 
     def list_waiting(self, owner: str, limit: int = 100) -> list[Run]:
         with self.db.session() as s:

@@ -9,7 +9,7 @@
   With none configured (or OTEL_SDK_DISABLED=true) tracing is a no-op and the SDK is never imported.
 """
 from __future__ import annotations
-import os
+import os, threading
 from typing import Any, Optional
 
 TRUE = ("1", "true", "yes", "on")
@@ -87,13 +87,41 @@ def _ns(seconds: float) -> int: return int(seconds * 1e9)
 
 class RunSpan:
     """Live root span of one run segment (TASK-0020): node spans are exported as each node finishes."""
-    def __init__(self, span, ctx, run: dict):
-        self.span, self.ctx, self.run = span, ctx, run
+    def __init__(self, span, ctx, run: dict, name: str = "run", parent: Optional[dict] = None):
+        self.span, self.ctx, self.run, self.name, self.parent = span, ctx, run, name, parent
 
     @property
     def ids(self) -> dict:
         c = self.span.get_span_context()
         return {"trace_id": format(c.trace_id, "032x"), "span_id": format(c.span_id, "016x")}
+
+    @property
+    def ref(self) -> dict:
+        """What a checkpoint stores about this segment: enough to parent the next one AND to export this root span
+        later if the worker dies before ending it (TASK-0021)."""
+        p = {k: self.parent[k] for k in ("trace_id", "span_id")} if self.parent and self.parent.get("span_id") else None
+        return {**self.ids, "name": self.name, "started": self.run["started"], "parent": p}
+
+
+class _IdGenerator:
+    """Random ids, except when `forced` (per thread) asks for given ones: used to export the root span of a segment
+    whose worker died, with the very span id its already-exported node spans point to (TASK-0021)."""
+    def __init__(self):
+        from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
+        self._rand = RandomIdGenerator(); self._forced = threading.local()
+
+    def force(self, trace_id: Optional[int], span_id: Optional[int]) -> None: self._forced.ids = (trace_id, span_id)
+
+    def generate_trace_id(self) -> int:
+        f = getattr(self._forced, "ids", None)
+        return f[0] if f and f[0] else self._rand.generate_trace_id()
+
+    def is_trace_id_random(self) -> bool: return True
+
+    def generate_span_id(self) -> int:
+        f = getattr(self._forced, "ids", None)
+        if f and f[1]: self._forced.ids = None; return f[1]
+        return self._rand.generate_span_id()
 
 
 class Telemetry:
@@ -116,7 +144,8 @@ class Telemetry:
         if exporters:
             from opentelemetry.sdk.trace import TracerProvider
             from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
-            self._provider = TracerProvider(resource=res)  # own provider: never touches the global one
+            self._ids = _IdGenerator()
+            self._provider = TracerProvider(resource=res, id_generator=self._ids)  # own provider: never touches the global one
             for ex in exporters: self._provider.add_span_processor(SimpleSpanProcessor(ex) if sync else BatchSpanProcessor(ex))
             self._tracer = self._provider.get_tracer("langgraph-studio")
             self.exporters = [type(e).__name__ for e in exporters]
@@ -159,19 +188,42 @@ class Telemetry:
         if self._meter_provider: self._meter_provider.force_flush()
 
     # ---- live spans ----
-    def start_run(self, run: dict, parent: Optional[dict] = None) -> Optional[RunSpan]:
-        """Open the root span of a run segment. parent = {trace_id, span_id} of the previous segment (resume/recovery)."""
+    @staticmethod
+    def _sc(ref: Optional[dict]):
+        if not (ref and ref.get("trace_id") and ref.get("span_id")): return None
+        from opentelemetry.trace import SpanContext, TraceFlags
+        return SpanContext(int(ref["trace_id"], 16), int(ref["span_id"], 16), is_remote=True, trace_flags=TraceFlags(TraceFlags.SAMPLED))
+
+    def _ctx(self, ref: Optional[dict]):
+        from opentelemetry import trace
+        from opentelemetry.trace import NonRecordingSpan
+        sc = self._sc(ref)
+        return trace.set_span_in_context(NonRecordingSpan(sc)) if sc else None
+
+    def start_run(self, run: dict, parent: Optional[dict] = None, links: Optional[list] = None) -> Optional[RunSpan]:
+        """Open the root span of a run segment. parent = {trace_id, span_id} of the previous segment (resume/recovery);
+        links: span refs to link to (a recovered segment links the lost one, TASK-0021)."""
         if not self.enabled: return None
         from opentelemetry import trace
-        from opentelemetry.trace import NonRecordingSpan, SpanContext, TraceFlags
-        pctx = None
-        if parent and parent.get("trace_id") and parent.get("span_id"):
-            sc = SpanContext(int(parent["trace_id"], 16), int(parent["span_id"], 16), is_remote=True, trace_flags=TraceFlags(TraceFlags.SAMPLED))
-            pctx = trace.set_span_in_context(NonRecordingSpan(sc))
+        from opentelemetry.trace import Link
+        pctx = self._ctx(parent)
         name = "run" if pctx is None else f"run ({run.get('segment') or 'resumed'})"
-        root = self._tracer.start_span(name, context=pctx, start_time=_ns(run["started"]), attributes={
+        lk = [Link(sc, {"studio.link": "previous_segment"}) for sc in (self._sc(r) for r in links or []) if sc]
+        root = self._tracer.start_span(name, context=pctx, start_time=_ns(run["started"]), links=lk, attributes={
             "studio.run.id": run["id"], "studio.workflow.id": run.get("workflow_id") or "adhoc", "studio.user.id": run.get("owner") or ""})
-        return RunSpan(root, trace.set_span_in_context(root), run)
+        return RunSpan(root, trace.set_span_in_context(root), run, name, parent if pctx else None)
+
+    def close_lost(self, ref: dict, ended: float) -> None:
+        """Export the root span of a segment whose worker died before ending it (TASK-0021): same trace and span id as
+        stored in its checkpoint, so its node spans (exported live) get their parent; status ERROR "worker lost"."""
+        if not self.enabled or not (ref and ref.get("span_id") and ref.get("started")): return
+        from opentelemetry.trace import Status, StatusCode
+        self._ids.force(int(ref["trace_id"], 16), int(ref["span_id"], 16))
+        try: span = self._tracer.start_span(ref.get("name") or "run", context=self._ctx(ref.get("parent")), start_time=_ns(ref["started"]),
+                                            attributes={"studio.run.lost": True, "studio.run.status": "lost"})
+        finally: self._ids.force(None, None)
+        span.set_status(Status(StatusCode.ERROR, "worker lost the run; continued in a recovered segment"))
+        span.end(end_time=_ns(max(ended, ref["started"])))
 
     def node(self, rs: Optional[RunSpan], ev: dict) -> None:
         """Export one node span now (node_finished or a node error)."""
@@ -195,9 +247,9 @@ class Telemetry:
             span.set_status(Status(StatusCode.OK))
         span.end(end_time=_ns(end))
 
-    def end_run(self, rs: Optional[RunSpan], run: dict, metrics: dict) -> Optional[str]:
+    def end_run(self, rs: Optional[RunSpan], run: dict, metrics: dict, observe: bool = True) -> Optional[str]:
         """Close the root span with the run totals; record metrics for finished runs. Returns the trace id."""
-        self.observe(run, metrics)
+        if observe: self.observe(run, metrics)
         if rs is None: return None
         from opentelemetry.trace import Status, StatusCode
         root = rs.span

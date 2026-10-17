@@ -244,7 +244,8 @@
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
     "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s.",
     "NOTIFICATION_NOT_FOUND": "Notification not found.",
-    "DELIVERY_NOT_FOUND": "Webhook delivery not found."
+    "DELIVERY_NOT_FOUND": "Webhook delivery not found.",
+    "NOTIFICATION_PREFS_INVALID": "Invalid notification settings."
   },
   "lang": {
     "en": "English",
@@ -362,5 +363,15 @@
     "run_waiting": "{{workflow}} is waiting for you: {{label}}",
     "run_expired": "A waiting run of {{workflow}} expired",
     "unknownWorkflow": "A workflow"
+  },
+  "notifyPrefs": {
+    "open": "Notification settings",
+    "title": "Notification settings",
+    "description": "Choose how you hear about runs that wait for you or expire.",
+    "in_app": "In-app bell",
+    "in_appHelp": "Show notifications in the bell, live as they happen.",
+    "email": "E-mail",
+    "emailHelp": "Send an e-mail to your account address.",
+    "emailNotConfigured": "E-mail is not set up on this server (SMTP_HOST), so no e-mails are sent yet."
   }
 }

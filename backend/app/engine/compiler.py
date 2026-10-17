@@ -9,8 +9,11 @@ from .validator import validate
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
 
 
-def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry: Optional[str] = None, resume=None):
-    """entry: start the graph at this node instead of Start (resuming a paused run, TASK-0006)."""
+def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, resume=None, effects=None, checkpointer=None):
+    """entry: start the graph at this node (or these nodes, run in parallel) instead of Start (resuming a paused or
+    recovered run, TASK-0006/0021). effects: idempotency keys + node-result ledger (TASK-0021).
+    checkpointer: LangGraph saver, used by the runtime to observe superstep checkpoints."""
+    entries = set([entry] if isinstance(entry, str) else (entry or []))
     errs = validate(wf)
     if errs: raise ValidationError(errs)
     ann = {f["name"]: Optional[TYPE_MAP.get(f.get("type", "string"), str)] for f in wf.get("state", [])}
@@ -18,10 +21,11 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry: Option
     g = StateGraph(State)
     nodes = {n["id"]: n for n in wf["nodes"]}
     for nid, n in nodes.items():
-        g.add_node(nid, node_fn(n, resolve, usage, resume))
+        fn = node_fn(n, resolve, usage, resume, effects)
+        g.add_node(nid, effects.wrap(n, fn) if effects else fn)
     for nid, n in nodes.items():
         out = [e for e in wf["edges"] if e["source"] == nid]
-        if (entry or "") == nid or (entry is None and n["type"] == "start"):
+        if nid in entries or (not entries and n["type"] == "start"):
             g.add_edge(START, nid)
         if n["type"] == "end":
             g.add_edge(nid, END)
@@ -42,4 +46,4 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry: Option
         else:
             for e in out:
                 g.add_edge(nid, e["target"])
-    return g.compile()
+    return g.compile(checkpointer=checkpointer)

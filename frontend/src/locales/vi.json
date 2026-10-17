@@ -244,7 +244,8 @@
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
     "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây.",
     "NOTIFICATION_NOT_FOUND": "Không tìm thấy thông báo.",
-    "DELIVERY_NOT_FOUND": "Không tìm thấy lần gửi webhook."
+    "DELIVERY_NOT_FOUND": "Không tìm thấy lần gửi webhook.",
+    "NOTIFICATION_PREFS_INVALID": "Cài đặt thông báo không hợp lệ."
   },
   "lang": {
     "en": "English",
@@ -362,5 +363,15 @@
     "run_waiting": "{{workflow}} đang chờ bạn: {{label}}",
     "run_expired": "Một run đang chờ của {{workflow}} đã hết hạn",
     "unknownWorkflow": "Một workflow"
+  },
+  "notifyPrefs": {
+    "open": "Cài đặt thông báo",
+    "title": "Cài đặt thông báo",
+    "description": "Chọn cách bạn nhận thông báo khi run chờ bạn phản hồi hoặc hết hạn.",
+    "in_app": "Chuông trong ứng dụng",
+    "in_appHelp": "Hiện thông báo ở chuông, cập nhật ngay khi có.",
+    "email": "E-mail",
+    "emailHelp": "Gửi e-mail tới địa chỉ tài khoản của bạn.",
+    "emailNotConfigured": "Máy chủ chưa cấu hình e-mail (SMTP_HOST), nên hiện chưa gửi e-mail nào."
   }
 }

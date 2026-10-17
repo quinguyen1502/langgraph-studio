@@ -41,7 +41,7 @@ export function TransferDialog({ workflowId, onDone }: { workflowId: string; onD
         <Input id="transfer-email" type="email" placeholder="name@example.com" value={email} onChange={e => { setEmail(e.target.value); setP(null) }} onKeyDown={e => e.key === 'Enter' && email.trim() && preview()} /></div>
         <Button variant="outline" id="transfer-check" onClick={preview} disabled={!email.trim() || busy}>{busy && !p ? <Loader2 className="animate-spin" /> : null}{t('transfer.check')}</Button></div>
       {p && (p.issues.length ? <div className="space-y-2" id="transfer-issues">
-        <Alert><AlertTriangle /><AlertDescription>{t('transfer.issues', { count: p.issues.length })}</AlertDescription></Alert>
+        <Alert variant="warning" id="transfer-warning"><AlertTriangle /><AlertDescription>{t('transfer.issues', { count: p.issues.length })}</AlertDescription></Alert>
         {p.issues.map(i => <div key={i.node_id + i.field} className="flex flex-wrap items-center gap-2 rounded-md border px-3 py-2 text-sm transfer-issue">
           <div className="min-w-0 flex-1"><div className="truncate font-medium">{i.node}</div>
             <div className="text-xs text-muted-foreground">{t(`transfer.kinds.${i.kind}`)}: {i.name ?? i.id}</div></div>

@@ -20,7 +20,7 @@ const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; cla
   s === 'running' ? <Loader2 className={cn('size-4 animate-spin text-warning', className)} />
   : s === 'error' ? <XCircle className={cn('size-4 text-destructive', className)} />
   : s === 'cancelled' ? <Ban className={cn('size-4 text-muted-foreground', className)} />
-  : s === 'expired' ? <TimerOff className={cn('size-4 text-muted-foreground', className)} />
+  : s === 'expired' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'timeout' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'waiting' ? <Hand className={cn('size-4 text-node-human', className)} />
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />
@@ -121,8 +121,8 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('break-all', e.type === 'error' && 'text-destructive')}><span className="text-muted-foreground">{i}</span> {JSON.stringify(e)}</div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
-          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'default' : 'destructive'} id="trace-run-error" className={cn('mx-3 my-1 w-auto py-2', trace.status === 'timeout' && 'border-warning/40 bg-warning/10 text-warning')}>{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
-          {trace.status === 'cancelled' && <Alert className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
+          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'warning' : 'destructive'} id="trace-run-error" className="mx-3 my-1 w-auto py-2">{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
+          {trace.status === 'cancelled' && <Alert variant="warning" className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
           {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">{t('trace.done', { count: Object.keys(trace.final || {}).length })}</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}

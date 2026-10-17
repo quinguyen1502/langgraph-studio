@@ -3,7 +3,7 @@
  * high-risk deletes can pass it on as `confirm_name`. Errors thrown by `onConfirm` are shown inside the dialog. */
 import { useState, type ReactNode } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import { Loader2, Trash2 } from 'lucide-react'
+import { Loader2, Trash2, TriangleAlert } from 'lucide-react'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,7 +31,7 @@ export function ConfirmDeleteDialog({ open, onOpenChange, title, name, descripti
   const match = typed === name
   return <AlertDialog open={open} onOpenChange={change}>
     <AlertDialogContent id="confirm-delete">
-      <AlertDialogHeader><AlertDialogTitle className="break-all">{title}</AlertDialogTitle>
+      <AlertDialogHeader><AlertDialogTitle className="flex items-start gap-2 break-all"><TriangleAlert className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden />{title}</AlertDialogTitle>
         <AlertDialogDescription>{description ?? t('confirmDelete.irreversible')}</AlertDialogDescription></AlertDialogHeader>
       {children}
       <div className="space-y-1.5">

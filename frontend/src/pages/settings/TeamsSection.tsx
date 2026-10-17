@@ -47,7 +47,7 @@ export function TeamsSection() {
   const [data, setData] = useState<Teams | null>(null); const [name, setName] = useState(''); const [err, setErr] = useState('')
   const confirmDel = useConfirmDelete()
   useEffect(() => { api<Teams>('/api/teams').then(setData).catch(e => setErr(e.message)) }, [])
-  if (me && !can(me, 'users.manage')) return <Alert><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
+  if (me && !can(me, 'users.manage')) return <Alert variant="warning"><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
   const create = async () => {
     setErr('')
     try { const tm = await api<Team>('/api/teams', { method: 'POST', json: { name } }); setData(d => d && { ...d, teams: [...d.teams, tm].sort((a, b) => a.name.localeCompare(b.name)) }); setName('') }

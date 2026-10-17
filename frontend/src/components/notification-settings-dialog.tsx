@@ -1,3 +1,4 @@
+import { TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -29,7 +30,7 @@ export function NotificationSettingsDialog({ open, onOpenChange }: { open: boole
       <div className="space-y-3">
         {row('in_app')}
         {row('email')}
-        {prefs && !prefs.email_configured && <Alert id="notify-email-off"><AlertDescription>{t('notifyPrefs.emailNotConfigured')}</AlertDescription></Alert>}
+        {prefs && !prefs.email_configured && <Alert variant="warning" id="notify-email-off"><TriangleAlert /><AlertDescription>{t('notifyPrefs.emailNotConfigured')}</AlertDescription></Alert>}
         {err && <Alert variant="destructive"><AlertDescription>{err}</AlertDescription></Alert>}
       </div>
     </DialogContent>

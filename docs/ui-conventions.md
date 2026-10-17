@@ -32,10 +32,17 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
    - The destructive button stays disabled until the typed text matches `name` exactly. Consequences such as dependents, reassignment or mode go in the `children` slot. Strings live in en + vi.
    - High-risk deletes (workflow, user, team) also send the typed text as `confirm_name`. The server refuses a mismatch with `CONFIRM_NAME_MISMATCH` (`core.errors.require_confirm_name`).
 
+8. **Attention icons use a semantic colour** (TASK-0029). Every warning or alert icon shows how serious it is:
+   - **Danger or irreversible** (errors, failed runs, validation errors, delete confirmations): `text-destructive`. Use `<Alert variant="destructive">`, or put `TriangleAlert className="text-destructive"` in the `ConfirmDeleteDialog` title.
+   - **Non-destructive caution** (timeouts, cancelled runs, missing connections, admin-only notices, policy blocks, transfer issues, changed subgraphs, session-expired notice, expired approvals): the `--warning` token. Use `<Alert variant="warning">`, whose icon becomes `text-warning` with a `border-warning/50` border while the text stays neutral, or put `text-warning` on a standalone icon.
+   - Informational or success notices keep the default variant.
+   - `--warning` / `--warning-foreground` are shadcn-style CSS variables (light and dark in `index.css`), registered as `--color-warning*` in `@theme`. Never use raw palette colours.
+
 ## Review checklist
 
 - [ ] No custom widget where shadcn has a component.
 - [ ] This command finds no hard-coded colours:
   `rg -n "(text|bg|border|ring)-(red|emerald|green|amber|yellow|orange|sky|blue|violet|purple|teal|zinc|gray|slate)-[0-9]|text-white|bg-white" frontend/src --glob '!components/ui/**'`
 - [ ] Every new delete/remove/revoke/unlink goes through `ConfirmDeleteDialog` (type the name; `confirm_name` on high-risk endpoints).
+- [ ] Warning/alert icons: destructive for danger, `variant="warning"` / `text-warning` for cautions; none left in the neutral default colour.
 - [ ] Screenshots are taken in both light and dark mode for UI changes.

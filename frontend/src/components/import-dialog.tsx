@@ -51,7 +51,7 @@ export function ImportDialog() {
     <DialogContent className="sm:max-w-2xl">
       <DialogHeader><DialogTitle>{t('import.title')}</DialogTitle>
         <DialogDescription>{t('import.desc')}</DialogDescription></DialogHeader>
-      <Alert className="border-warning/40 bg-warning/10 text-warning"><ShieldAlert /><AlertDescription className="text-xs text-warning">{t('import.warning')}</AlertDescription></Alert>
+      <Alert variant="warning"><ShieldAlert /><AlertDescription className="text-xs">{t('import.warning')}</AlertDescription></Alert>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList><TabsTrigger value="url"><GitFork />{t('import.url')}</TabsTrigger><TabsTrigger value="zip"><Upload />{t('import.zip')}</TabsTrigger></TabsList>
         <TabsContent value="url" className="space-y-3 pt-2">

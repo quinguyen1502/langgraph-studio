@@ -117,8 +117,8 @@ export function McpSection() {
   useEffect(() => { load() }, [])
   return <div className="space-y-4">
     {err && <ErrorAlert>{err}</ErrorAlert>}
-    {data?.org_usable === false && <Alert id="mcp-org-blocked"><ShieldAlert /><AlertDescription>{t('policy.blockedMcp')}</AlertDescription></Alert>}
-    {data && <Alert id="mcp-sandbox-note"><ShieldAlert /><AlertDescription>{t(data.stdio_enabled ? 'mcp.stdioOn' : 'mcp.stdioOff')}</AlertDescription></Alert>}
+    {data?.org_usable === false && <Alert variant="warning" id="mcp-org-blocked"><ShieldAlert /><AlertDescription>{t('policy.blockedMcp')}</AlertDescription></Alert>}
+    {data && <Alert variant="warning" id="mcp-sandbox-note"><ShieldAlert /><AlertDescription>{t(data.stdio_enabled ? 'mcp.stdioOn' : 'mcp.stdioOff')}</AlertDescription></Alert>}
     {data && (adding ? <Card className="gap-4" id="mcp-new"><CardHeader><CardTitle>{t('mcp.new')}</CardTitle><CardDescription>{t('mcp.newHelp')}</CardDescription></CardHeader>
       <CardContent className="space-y-3">{create.alerts}
         <ServerFields form={form} set={setForm} idp="mcp-new" fixed={false} data={data} />

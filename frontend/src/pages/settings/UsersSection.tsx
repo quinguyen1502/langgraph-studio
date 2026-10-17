@@ -71,7 +71,7 @@ export function UsersSection() {
     try { const n = await api<AdminUser>(`/api/admin/users/${u.id}`, { method: 'PATCH', json }); setData(d => d && { ...d, users: d.users.map(x => x.id === n.id ? { ...x, ...n } : x) }) }
     catch (e: any) { setErr(e.message) } finally { setBusy(null) }
   }
-  if (me && !can(me, 'users.manage')) return <Alert id="users-forbidden"><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
+  if (me && !can(me, 'users.manage')) return <Alert variant="warning" id="users-forbidden"><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
   if (!data) return err ? <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>
     : <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t('common.loading')}</div>
   return <div className="space-y-4">

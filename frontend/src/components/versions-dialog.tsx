@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
-import { AlertCircle, History, Info, RotateCcw } from 'lucide-react'
+import { AlertCircle, History, Info, RotateCcw, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -77,7 +77,7 @@ export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onR
     <DialogContent className="sm:max-w-4xl">
       <DialogHeader><DialogTitle>{t('versions.title')}</DialogTitle><DialogDescription>{t('versions.desc')}</DialogDescription></DialogHeader>
       {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
-      {!!children.length && <Alert id="versions-children"><Info /><AlertDescription>{t('versions.childrenChanged', { count: children.length })}
+      {!!children.length && <Alert variant="warning" id="versions-children"><TriangleAlert /><AlertDescription>{t('versions.childrenChanged', { count: children.length })}
         <ul className="mt-1 list-disc pl-4">{children.map(c => <li key={c.id}>{c.name} · v{c.version} · {fmtDate(c.at)}</li>)}</ul></AlertDescription></Alert>}
       {notice && <Alert id="versions-notice"><Info /><AlertDescription>{notice}</AlertDescription></Alert>}
       <div className="grid grid-cols-[18rem_1fr] gap-4 min-h-0">

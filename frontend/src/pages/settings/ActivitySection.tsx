@@ -32,7 +32,7 @@ export function ActivitySection() {
     const id = setTimeout(() => api<AuditPage>(`/api/admin/audit?${p}`).then(d => { setData(d); setErr('') }).catch(e => setErr(e.message)), 200)
     return () => clearTimeout(id)
   }, [me, q, cat, since, offset])
-  if (me && !can(me, 'users.manage')) return <Alert><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
+  if (me && !can(me, 'users.manage')) return <Alert variant="warning"><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
   return <div className="space-y-4">
     <FilterBar id="activity-filters" q={q} onQ={setQ} placeholder={t('activity.search')} filters={[
       { id: 'category', label: t('activity.category'), value: cat, onChange: setCat, options: [{ value: 'all', label: t('activity.anyCategory') }, ...CATS.map(c => ({ value: c, label: t(`activity.cat.${c}`) }))] },

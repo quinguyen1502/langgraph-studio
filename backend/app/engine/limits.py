@@ -24,7 +24,7 @@ def cap_event(ev: dict, limit: int | None = None) -> dict:
     limit = limit or event_max()
     if size(ev) <= limit: return ev
     out = dict(ev)
-    for k in sorted((k for k in out if k not in ("type", "node", "label", "node_type", "iteration", "ts", "run_id")),
+    for k in sorted((k for k in out if k not in ("type", "node", "label", "node_type", "iteration", "ts", "run_id", "duration_ms", "usage")),
                     key=lambda k: -size(out[k])):
         out[k] = marker(out[k]); out["_truncated"] = True
         if size(out) <= limit: break

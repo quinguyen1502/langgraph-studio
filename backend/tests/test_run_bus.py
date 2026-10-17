@@ -67,7 +67,8 @@ def test_cancel_through_bus_stops_run(bus):
     async def listen(): await asyncio.sleep(30); return "disconnected"
 
     status = asyncio.run(svc.execute(_slow_plan(), send, listen, "u1"))
-    assert status == "cancelled" and seen[-1]["type"] == "run_cancelled" and seen[-1]["reason"] == "api"
+    assert status == "cancelled" and seen[-2]["type"] == "run_cancelled" and seen[-2]["reason"] == "api"
+    assert seen[-1]["type"] == "run_summary"
     assert runs.rows[0].status == "cancelled"
     assert bus.owner(seen[0]["run_id"]) is None  # unregistered when done
 

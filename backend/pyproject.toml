@@ -20,6 +20,8 @@ dependencies = [
   "psycopg[binary]>=3.2",  # Postgres driver (DATABASE_URL=postgresql://...), TASK-0009
   "redis>=5",              # optional run bus (REDIS_URL), TASK-0009
   "fakeredis>=2.20",       # Redis contract tests without a server
+  "opentelemetry-sdk>=1.27",                      # run traces (TASK-0010); no-op without an exporter
+  "opentelemetry-exporter-otlp-proto-http>=1.27", # OTLP/HTTP exporter (also used for LangSmith)
   "pytest-cov",
   "pytest",  # test runner kept in base deps so `factory deps apply` (pip install -e .) can run verification
 ]

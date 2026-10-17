@@ -11,6 +11,7 @@ from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
 from ..services.run_bus import RunBus, make_run_bus
 from ..services.run_service import RunService
+from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 
 
@@ -24,6 +25,11 @@ def get_run_bus() -> RunBus:
     return make_run_bus(config.REDIS_URL)  # Redis when REDIS_URL is set, else in-memory
 
 
+@lru_cache
+def get_telemetry() -> Telemetry:
+    return Telemetry()  # exporters from OTEL_* / LANGSMITH_* env; no-op when none
+
+
 def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db))
 
@@ -31,7 +37,7 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus())
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry())
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

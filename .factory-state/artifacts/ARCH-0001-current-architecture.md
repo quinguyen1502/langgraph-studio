@@ -51,6 +51,7 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 
 - REST: `/api/auth/*`, `/api/me`, `/api/workflows*`, `/api/import*`, `/api/tools`, `/api/health`
 - WebSocket: `/ws/run?token=`
+- Telemetry (`services/telemetry.py`, DEC-0012): one OTel trace per run (root `run` + one span per node), exported over OTLP (`OTEL_*`) and/or to LangSmith (`LANGSMITH_API_KEY` + `LANGSMITH_TRACING`); no-op otherwise. Final WS event `run_summary` {metrics, trace_id, trace_url}.
 - Run control: `POST /api/runs/{id}/cancel` (TASK-0009, works across API workers when Redis is configured)
 - RunBus (`services/run_bus.py`): `InMemoryRunBus` (default) or `RedisRunBus` (`REDIS_URL`): run registry, cancel flags, event fan-out on `run:{id}:events` (DEC-0011)
 - Subprocess contract: `runner.py inspect|run <repo> <file:var>` emitting JSON lines
@@ -59,6 +60,7 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 
 - Import jobs are in-memory (lost on restart); import directories persist on disk.
 - Database: SQLite file by default; Postgres via `DATABASE_URL` (psycopg 3), tested in CI (TASK-0009, DEC-0011).
+- `runs` has per-run summary metrics (`duration_ms`, `tokens_in`, `tokens_out`, `cost_usd`, `error_count`, `trace_id`; migration `0003_run_metrics`, TASK-0010).
 - Schema managed by Alembic (`backend/app/migrations`, `0001_initial` = MVP schema, adopts pre-Alembic files); `alembic upgrade head` runs at startup.
 
 ## Quality Attributes

@@ -11,3 +11,5 @@ cryptography
 psycopg[binary]>=3.2
 redis>=5
 fakeredis>=2.20
+opentelemetry-sdk>=1.27
+opentelemetry-exporter-otlp-proto-http>=1.27

@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, type LucideIcon } from 'lucide-react'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -30,7 +30,7 @@ import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 import type { Credential } from '@/components/credentials-dialog'
 import { RunTrace } from '@/components/run-trace'
-import { buildTrace } from '@/lib/trace'
+import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 
 type Field = { name: string; type: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -339,13 +339,19 @@ function Studio() {
         <TabsContent value="history" className="flex-1 min-h-0">
           <ScrollArea className="h-full"><div className="p-3 space-y-1">
             {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
-            {history.map(h => <button key={h.id} onClick={() => { setLog(h.events); setReplay(h.id); setTraceSel(null); setTab('logs') }}
+            {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => { setLog(withSummary(h)); setReplay(h.id); setTraceSel(null); setTab('logs') }}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
               <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               <span className="truncate">{JSON.stringify(h.input)}</span>
-              <span className="ml-auto text-muted-foreground">{Math.round((h.ended - h.started) * 1000)} ms</span>
+              <span className="ml-auto flex shrink-0 items-center gap-2 text-muted-foreground tabular-nums">
+                {h.metrics && <span data-testid="history-tokens">{t('trace.tokens', { count: h.metrics.tokens })}</span>}
+                {h.metrics && <span data-testid="history-cost">{fmtCost(h.metrics.cost_usd)}</span>}
+                {h.metrics?.error_count > 0 && <Badge variant="destructive">{t('trace.errorCount', { count: h.metrics.error_count })}</Badge>}
+                <span>{fmtMs(h.metrics?.duration_ms ?? (h.ended - h.started) * 1000)}</span>
+                {h.trace_url && <ExternalLink className="size-3.5" aria-label={t('trace.openTrace')} />}{/* link itself is in the replayed timeline (no <a> inside a button) */}
+              </span>
             </button>)}
           </div></ScrollArea>
         </TabsContent>

@@ -10,7 +10,8 @@ def test_fresh_database(tmp_path):
     db = Database(f"sqlite:///{tmp_path / 'fresh.db'}"); bootstrap(db)
     insp = inspect(db.engine)
     assert {"users", "workflows", "runs", "credentials", "alembic_version"} <= set(insp.get_table_names())
-    assert [c["name"] for c in insp.get_columns("runs")] == ["id", "workflow_id", "input", "events", "final_state", "status", "started", "ended"]
+    assert [c["name"] for c in insp.get_columns("runs")] == ["id", "workflow_id", "input", "events", "final_state", "status", "started", "ended",
+                                                          "duration_ms", "tokens_in", "tokens_out", "cost_usd", "error_count", "trace_id"]
     assert WorkflowRepository(db).exists("example")
     bootstrap(db)  # idempotent
 

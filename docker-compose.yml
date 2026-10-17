@@ -39,6 +39,16 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
       STUDIO_RUN_TIMEOUT: ${STUDIO_RUN_TIMEOUT:-120}
+      # tracing (TASK-0010): empty = no-op. With `--profile tracing` set
+      # OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 and STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-langgraph-studio}
+      STUDIO_TRACE_URL: ${STUDIO_TRACE_URL:-}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
     volumes: [apidata:/data]  # import venvs + generated secret.key when STUDIO_SECRET_KEY is empty
     depends_on:
       postgres: { condition: service_healthy }
@@ -50,6 +60,20 @@ services:
     ports: ["${WEB_PORT:-8080}:80"]
     depends_on:
       api: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Optional trace viewer: `docker compose --profile tracing up`. Jaeger receives OTLP directly (4317 gRPC / 4318 HTTP).
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: [tracing]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["${JAEGER_UI_PORT:-16686}:16686"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:14269/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
     restart: unless-stopped
 
 volumes:

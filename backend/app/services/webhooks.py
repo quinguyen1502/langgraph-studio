@@ -30,16 +30,21 @@ def _blocked(ip: ipaddress._BaseAddress) -> bool:
     return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified
 
 
-def resolve(url: Optional[str]) -> tuple[str, str]:
-    """Validate `url` and resolve its host once. Returns (url, pinned_ip). Raises CALLBACK_URL_INVALID."""
+def public_address(url: Optional[str], allow_private: bool, code: str = "CALLBACK_URL_INVALID") -> tuple[str, str]:
+    """Validate an outbound http(s) `url` and resolve its host once. Returns (url, pinned_ip); raises AppError(code).
+    Private, loopback, link-local and reserved addresses are refused unless `allow_private` (SSRF guard)."""
     u = urlparse(url or "")
-    if u.scheme not in ("http", "https") or not u.hostname: raise AppError("CALLBACK_URL_INVALID")
+    if u.scheme not in ("http", "https") or not u.hostname: raise AppError(code)
     try: addrs = [ai[4][0].split("%")[0] for ai in socket.getaddrinfo(u.hostname, u.port or (443 if u.scheme == "https" else 80), proto=socket.IPPROTO_TCP)]
-    except (OSError, UnicodeError): raise AppError("CALLBACK_URL_INVALID") from None
-    if not addrs: raise AppError("CALLBACK_URL_INVALID")
-    if not config.allow_private_callbacks() and any(_blocked(ipaddress.ip_address(a)) for a in addrs):
-        raise AppError("CALLBACK_URL_INVALID")
-    return url, addrs[0]
+    except (OSError, UnicodeError): raise AppError(code) from None
+    if not addrs: raise AppError(code)
+    if not allow_private and any(_blocked(ipaddress.ip_address(a)) for a in addrs): raise AppError(code)
+    return url or "", addrs[0]
+
+
+def resolve(url: Optional[str]) -> tuple[str, str]:
+    """Validate a callback `url` and resolve its host once. Returns (url, pinned_ip). Raises CALLBACK_URL_INVALID."""
+    return public_address(url, config.allow_private_callbacks())
 
 
 def check_callback_url(url: Optional[str]) -> Optional[str]:

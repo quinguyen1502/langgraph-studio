@@ -10,5 +10,6 @@ from .webhook_deliveries import WebhookDeliveryRepository
 from .node_results import NodeResultRepository
 from .approvals import ApprovalRepository
 from .knowledge import KnowledgeRepository
+from .mcp_servers import McpServerRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository"]

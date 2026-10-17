@@ -10,6 +10,7 @@ from .notification import Notification
 from .webhook_delivery import WebhookDelivery
 from .node_result import NodeResult
 from .knowledge import KnowledgeBase, KbDocument, KbChunk
+from .mcp_server import McpServer
 from .approval import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "KnowledgeBase", "KbDocument", "KbChunk"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer"]

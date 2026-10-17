@@ -1,6 +1,6 @@
 /** Editor keyboard shortcuts (TASK-0023, DEC-0026): one registry used by the key handler, the cheat sheet and the
  * command palette. Combos are written platform-neutral: `mod` = ⌘ on macOS, Ctrl elsewhere. */
-export type ShortcutGroup = 'general' | 'canvas' | 'run'
+export type ShortcutGroup = 'general' | 'canvas' | 'history' | 'run'
 export type Shortcut = { id: string; keys: string[]; group: ShortcutGroup; allowInInputs?: boolean }
 
 export const SHORTCUTS: Shortcut[] = [
@@ -9,13 +9,15 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'escape', keys: ['escape'], group: 'general' },
   { id: 'run', keys: ['mod+enter'], group: 'run', allowInInputs: true },
   { id: 'stop', keys: ['mod+.'], group: 'run', allowInInputs: true },
+  { id: 'undo', keys: ['mod+z'], group: 'history' },  // text fields keep their native undo
+  { id: 'redo', keys: ['mod+shift+z', 'mod+y'], group: 'history' },
   { id: 'delete', keys: ['delete', 'backspace'], group: 'canvas' },
   { id: 'selectAll', keys: ['mod+a'], group: 'canvas' },
   { id: 'fitView', keys: ['shift+1'], group: 'canvas' },
   { id: 'zoomIn', keys: ['mod+='], group: 'canvas' },
   { id: 'zoomOut', keys: ['mod+-'], group: 'canvas' },
 ]
-export const GROUPS: ShortcutGroup[] = ['general', 'canvas', 'run']
+export const GROUPS: ShortcutGroup[] = ['general', 'canvas', 'history', 'run']
 
 export const isMac = () => typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
 

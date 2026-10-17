@@ -945,7 +945,17 @@
       "selectAll": "Chọn tất cả",
       "fitView": "Vừa khung nhìn",
       "zoomIn": "Phóng to",
-      "zoomOut": "Thu nhỏ"
+      "zoomOut": "Thu nhỏ",
+      "undo": "Hoàn tác",
+      "redo": "Làm lại"
     }
+  },
+  "history": {
+    "group": "Lịch sử",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "undoTip": "Hoàn tác (Ctrl/⌘+Z)",
+    "redoTip": "Làm lại (Ctrl/⌘+Shift+Z)",
+    "unsaved": "Chưa lưu"
   }
 }

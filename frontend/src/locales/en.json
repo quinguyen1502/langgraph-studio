@@ -945,7 +945,17 @@
       "selectAll": "Select all",
       "fitView": "Fit to view",
       "zoomIn": "Zoom in",
-      "zoomOut": "Zoom out"
+      "zoomOut": "Zoom out",
+      "undo": "Undo",
+      "redo": "Redo"
     }
+  },
+  "history": {
+    "group": "History",
+    "undo": "Undo",
+    "redo": "Redo",
+    "undoTip": "Undo (Ctrl/⌘+Z)",
+    "redoTip": "Redo (Ctrl/⌘+Shift+Z)",
+    "unsaved": "Unsaved changes"
   }
 }

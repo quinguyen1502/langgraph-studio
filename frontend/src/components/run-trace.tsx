@@ -20,6 +20,7 @@ const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; cla
   s === 'running' ? <Loader2 className={cn('size-4 animate-spin text-warning', className)} />
   : s === 'error' ? <XCircle className={cn('size-4 text-destructive', className)} />
   : s === 'cancelled' ? <Ban className={cn('size-4 text-muted-foreground', className)} />
+  : s === 'expired' ? <TimerOff className={cn('size-4 text-muted-foreground', className)} />
   : s === 'timeout' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'waiting' ? <Hand className={cn('size-4 text-node-human', className)} />
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />

@@ -6,7 +6,8 @@ External callers (workflow token, `Authorization: Bearer wft_…` or `X-Workflow
   GET  /api/hooks/workflows/{wid}/runs/{run_id}
 """
 from typing import Optional
-from fastapi import APIRouter, Depends, Header
+import asyncio
+from fastapi import APIRouter, Depends, Header, Request
 from ...core import config
 from ...schemas.envelope import EnvelopeResponse
 from ...schemas.trigger import TokenIn, TriggerIn
@@ -32,13 +33,21 @@ def revoke_token(wid: str, tid: str, user=Depends(current_user), svc=Depends(tri
 
 
 @router.post("/hooks/workflows/{wid}/runs")
-async def trigger_run(wid: str, body: TriggerIn, token: Optional[str] = Depends(workflow_token), svc=Depends(trigger_service)):
-    tok = svc.authenticate(wid, token)
-    rid = svc.start(tok, body.input, body.callback_url)
+async def trigger_run(wid: str, body: TriggerIn, request: Request, token: Optional[str] = Depends(workflow_token), svc=Depends(trigger_service)):
+    tok = await asyncio.to_thread(svc.authenticate, wid, token)
+    await svc.check_rate(tok)  # 429 RATE_LIMITED + Retry-After
+    rid = await asyncio.to_thread(svc.start, tok, body.input, body.callback_url)
+    poll = poll_url(request, wid, rid)
     if body.mode == "async":
-        return EnvelopeResponse({"run_id": rid, "status": "queued"}, status_code=202)
-    res = await svc.wait(tok, rid, config.run_timeout() + 5)
-    return res if res["status"] not in ("queued", "running") else EnvelopeResponse(res, status_code=202)  # still running: poll the GET endpoint
+        return EnvelopeResponse({"run_id": rid, "status": "queued", "poll_url": poll}, status_code=202)
+    res = await svc.wait(tok, rid, min(config.sync_wait_max(), config.run_timeout() + 5))
+    if res["status"] in ("queued", "running"):  # still going after STUDIO_SYNC_WAIT_MAX: poll instead of holding the connection
+        return EnvelopeResponse({**res, "poll_url": poll}, status_code=202, headers={"Location": poll})
+    return res
+
+
+def poll_url(request: Request, wid: str, rid: str) -> str:
+    return str(request.url_for("run_status", wid=wid, run_id=rid))
 
 @router.get("/hooks/workflows/{wid}/runs/{run_id}")
 def run_status(wid: str, run_id: str, token: Optional[str] = Depends(workflow_token), svc=Depends(trigger_service)):

@@ -28,6 +28,8 @@ test('human node: wait, pending list, approve, complete', async ({ page }) => {
   await expect(page.locator('#human-question')).toHaveText('Approve refund for order A100?')
   // pending list on the workflows page links back to the run
   await page.goto('/workflows')
+  await expect(page.locator('[data-testid=pending-count]')).toBeVisible()  // header badge (TASK-0019)
+  expect(Number(await page.locator('[data-testid=pending-count]').textContent())).toBeGreaterThan(0)
   const row = page.locator('[data-testid=pending-row]', { hasText: APPROVAL.name }); await expect(row).toBeVisible()
   await row.getByRole('button').click()
   await expect(page).toHaveURL(new RegExp(`/workflows/${wid}\\?run=`))

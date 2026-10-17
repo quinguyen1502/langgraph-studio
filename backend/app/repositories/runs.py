@@ -24,6 +24,11 @@ class RunRepository:
         with self.db.session() as s:
             return list(s.scalars(select(Run).where(Run.owner == owner, Run.status == "waiting").order_by(Run.started.desc()).limit(limit)))
 
+    def list_waiting_before(self, cutoff: float, limit: int = 500) -> list[Run]:
+        """Waiting runs (any owner) paused before `cutoff` (Run.ended = time it started waiting)."""
+        with self.db.session() as s:
+            return list(s.scalars(select(Run).where(Run.status == "waiting", Run.ended < cutoff).limit(limit)))
+
     def last_for_workflow(self, wid: str) -> Optional[Run]:
         with self.db.session() as s:
             return s.scalars(select(Run).where(Run.workflow_id == wid).order_by(Run.started.desc()).limit(1)).first()

@@ -19,14 +19,26 @@ LANGSMITH_DEFAULT = "https://api.smith.langchain.com"
 def summarize(events: list[dict], started: float, ended: float) -> dict:
     """Per-run summary metrics from the run's events (the same numbers the UI and the trace show)."""
     tin = tout = errors = 0; cost: Optional[float] = 0.0; llm = False
+    waited = waited_s(events, ended)
     for ev in events:
         if ev.get("type") == "error": errors += 1
         u = ev.get("usage")
         if ev.get("type") == "node_finished" and u:
             llm = True; tin += u.get("tokens_in", 0); tout += u.get("tokens_out", 0)
             cost = None if cost is None or u.get("cost_usd") is None else cost + u["cost_usd"]
-    return {"duration_ms": round((ended - started) * 1000, 2), "tokens_in": tin, "tokens_out": tout,
+    return {"duration_ms": round(max(0.0, ended - started - waited) * 1000, 2), "tokens_in": tin, "tokens_out": tout,
             "cost_usd": (round(cost, 8) if cost is not None else None) if llm else 0.0, "error_count": errors}
+
+
+def waited_s(events: list[dict], ended: float) -> float:
+    """Seconds spent paused at Human nodes: from each `run_waiting` to the next event (resume/cancel/expiry).
+    A run that is still waiting has no wait counted yet (its duration is the active time so far)."""
+    total = 0.0; since = None
+    for ev in events:
+        if since is not None and ev.get("ts"):
+            total += max(0.0, ev["ts"] - since); since = None
+        if ev.get("type") == "run_waiting" and ev.get("ts"): since = ev["ts"]
+    return total + (max(0.0, ended - since) if since is not None else 0.0)
 
 
 def _env(name: str) -> str: return (os.environ.get(name) or "").strip()
@@ -44,6 +56,21 @@ def exporter_configs() -> list[dict]:
         if _env("LANGSMITH_PROJECT"): headers["Langsmith-Project"] = _env("LANGSMITH_PROJECT")
         out.append({"name": "langsmith", "endpoint": f"{base}/otel/v1/traces", "headers": headers})
     return out
+
+
+def disable_langchain_tracer() -> None:
+    """We export to LangSmith ourselves (OTLP). LANGSMITH_TRACING=true would ALSO switch on LangChain's own
+    LangSmith tracer inside nodes, so every LLM call would show up twice. Turn that one off:
+    LANGSMITH_TRACING_V2 takes precedence over LANGSMITH_TRACING (and is inherited by import sandboxes),
+    and langsmith.configure(enabled=False) covers already-loaded code."""
+    os.environ["LANGSMITH_TRACING_V2"] = "false"; os.environ["LANGCHAIN_TRACING_V2"] = "false"
+    try:
+        import langsmith
+        from langsmith import utils as ls_utils
+        ls_utils.get_env_var.cache_clear()
+        langsmith.configure(enabled=False)
+    except Exception:  # langsmith not installed / older API: the env vars are enough
+        pass
 
 
 def trace_url(trace_id: Optional[str]) -> Optional[str]:
@@ -75,6 +102,7 @@ class Telemetry:
     def _from_env() -> list:
         cfgs = exporter_configs()
         if not cfgs: return []
+        if any(c["name"] == "langsmith" for c in cfgs): disable_langchain_tracer()
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         return [OTLPSpanExporter() if c["name"] == "otlp" else OTLPSpanExporter(endpoint=c["endpoint"], headers=c["headers"])
                 for c in cfgs]

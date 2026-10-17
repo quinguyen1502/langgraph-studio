@@ -109,7 +109,26 @@ class RunService:
         r = self.runs.get(rid)
         if r is None or r.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only (DEC-0013)
         if r.status != "waiting" or not r.checkpoint: raise AppError("RUN_NOT_WAITING")
+        if self._is_stale(r): self._expire(r); raise AppError("RUN_EXPIRED")
         return r
+
+    @staticmethod
+    def _is_stale(r: Run, now: float | None = None) -> bool:
+        ttl = config.wait_ttl()
+        return bool(ttl) and (r.ended or r.started or 0) < (now or time.time()) - ttl
+
+    def _expire(self, r: Run) -> None:
+        events = json.loads(r.events or "[]") + [{"type": "run_expired", "ts": time.time(), "ttl_s": config.wait_ttl()}]
+        self.record(r.id, r.workflow_id, json.loads(r.input or "{}"), events, None, "expired", r.started, r.owner or "",
+                    source=r.source or "ui", version=r.workflow_version)
+
+    def expire_waiting(self) -> int:
+        """Expire runs that waited longer than STUDIO_WAIT_TTL (periodic sweep + lazily on access). Returns the count."""
+        ttl = config.wait_ttl()
+        if not ttl: return 0
+        stale = self.runs.list_waiting_before(time.time() - ttl)
+        for r in stale: self._expire(r)
+        return len(stale)
 
     def plan_resume(self, uid: str, rid: str, response) -> RunPlan:
         if isinstance(response, bool): response = "approved" if response else "rejected"
@@ -121,7 +140,7 @@ class RunService:
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""
-        out = []
+        out = []; self.expire_waiting()
         for r in self.runs.list_waiting(uid):
             ev = next((e for e in reversed(json.loads(r.events or "[]")) if e.get("type") == "run_waiting"), {})
             w = self.workflows.get(r.workflow_id) if r.workflow_id and r.workflow_id != "adhoc" else None
@@ -165,9 +184,9 @@ class RunService:
         """Stream events through `send` (returns False once the client is gone). `listen` resolves to
         "cancelled" or "disconnected"; a cancel can also arrive through the RunBus (reason "api").
         Returns the final status: ok | error | cancelled | timeout."""
-        rid = plan.run_id or uuid.uuid4().hex[:10]; self.bus.start(rid, uid)  # registered so REST/other workers can cancel it
+        rid = plan.run_id or uuid.uuid4().hex[:10]; await self.bus.astart(rid, uid)  # registered so REST/other workers can cancel it
         try: return await self._execute(rid, plan, send, listen, uid)
-        finally: self.bus.finish(rid)
+        finally: await asyncio.shield(self.bus.afinish(rid))
 
     async def _execute(self, rid, plan, send, listen, uid) -> str:
         t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus; checkpoint = None
@@ -202,7 +221,7 @@ class RunService:
         async def emit(ev):
             nonlocal connected
             events.append(ev)
-            try: bus.publish(rid, ev)
+            try: await bus.apublish(rid, ev)
             except Exception: pass  # fan-out is best effort; the socket and history stay authoritative
             if connected: connected = await send(cap_event(ev))
 

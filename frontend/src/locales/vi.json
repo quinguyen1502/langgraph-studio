@@ -26,7 +26,8 @@
     "cancelled": "đã huỷ",
     "running": "đang chạy",
     "done": "xong",
-    "waiting": "đang chờ"
+    "waiting": "đang chờ",
+    "expired": "hết hạn"
   },
   "auth": {
     "loginTitle": "Đăng nhập LangGraph Studio",
@@ -239,7 +240,9 @@
     "TRIGGER_TOKEN_INVALID": "Token workflow bị thiếu, không hợp lệ hoặc đã thu hồi",
     "TOKEN_NOT_FOUND": "Không tìm thấy token",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
-    "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại."
+    "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
+    "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
+    "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây."
   },
   "lang": {
     "en": "English",
@@ -277,7 +280,9 @@
     "pendingDesc": "Các run đang dừng ở node Human",
     "respond": "Phản hồi",
     "cancelRun": "Huỷ run",
-    "resumeFailed": "Không tiếp tục được: {{error}}"
+    "resumeFailed": "Không tiếp tục được: {{error}}",
+    "pendingCount_one": "{{count}} run đang chờ bạn phản hồi",
+    "pendingCount_other": "{{count}} run đang chờ bạn phản hồi"
   },
   "api": {
     "button": "API",
@@ -293,7 +298,9 @@
     "name": "Tên token",
     "create": "Tạo token",
     "example": "Ví dụ",
-    "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả."
+    "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả.",
+    "signingSecret": "Khoá ký webhook",
+    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem README)."
   },
   "versions": {
     "button": "Phiên bản",
@@ -319,6 +326,10 @@
     "restored": "Đã khôi phục v{{n}} thành phiên bản mới.",
     "unsaved": "chưa lưu",
     "runVersion": "Chạy phiên bản v{{n}}",
-    "runUnsaved": "Chạy với thay đổi chưa lưu"
+    "runUnsaved": "Chạy với thay đổi chưa lưu",
+    "unchanged": "v{{n}} giống hệt phiên bản hiện tại nên không có gì được khôi phục.",
+    "unsavedWarning": "Bạn có thay đổi chưa lưu trong editor. Khôi phục sẽ thay thế chúng.",
+    "loadMore": "Tải thêm",
+    "shown": "{{shown}} / {{total}}"
   }
 }

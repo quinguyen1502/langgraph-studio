@@ -55,6 +55,7 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 - Human-in-the-loop (TASK-0006, DEC-0013): node type `human` pauses a run (status `waiting`, checkpoint in `runs.checkpoint`). Resume over WS `{resume_run_id, response}` (owner only); `GET /api/runs/pending`.
 - API triggers (TASK-0007, DEC-0014): per-workflow tokens (`workflow_tokens`), `POST /api/hooks/workflows/{wid}/runs` (async/sync, `callback_url`), `JobQueue` (memory or Redis list) + `RunWorker` (in the API process and/or `python -m app.worker`); `runs.source` ui|api.
 - Workflow versions (TASK-0008, DEC-0015): `workflow_versions` (immutable snapshot per changing save, author + timestamp); restore = new latest version; `runs.workflow_version` records the version that ran (NULL = unsaved edits).
+- Hardening (TASK-0019, DEC-0016): HITL active time + expiry; signed, rate-limited, DNS-pinned webhooks; reliable Redis queue (processing lists, ack, heartbeat recovery); version pagination/retention; locked startup migrations; price overrides; async Redis on the event loop.
 - Run control: `POST /api/runs/{id}/cancel` (TASK-0009, works across API workers when Redis is configured)
 - RunBus (`services/run_bus.py`): `InMemoryRunBus` (default) or `RedisRunBus` (`REDIS_URL`): run registry, cancel flags, event fan-out on `run:{id}:events` (DEC-0011)
 - Subprocess contract: `runner.py inspect|run <repo> <file:var>` emitting JSON lines

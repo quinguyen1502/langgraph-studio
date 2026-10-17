@@ -33,6 +33,7 @@ Status for all Phase 2–4 tasks: backlog.
 - TASK-0008 Workflow versioning (REQ-0005): **in review** (draft PR into `develop`, stacked on TASK-0007)
 - TASK-0009 Postgres + Redis + Docker Compose (REQ-0008): **in review** (draft PR into `develop`)
 - TASK-0010 Observability (REQ-0010): **in review** (draft PR into `develop`, stacked on TASK-0009)
+- TASK-0019 Phase-2 hardening (open issues of TASK-0006/7/8/9/10): **in review** (draft PR into `develop`, stacked on TASK-0008)
 
 ## Phase 3 — Advanced
 

@@ -8,6 +8,7 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   await page.locator('#api-token-name').fill('e2e'); await page.locator('#api-create').click()
   const token = await page.locator('#api-token-value').inputValue()
   expect(token).toMatch(/^wft_/)
+  await expect(page.locator('#api-signing-secret')).toHaveValue(/^whsec_/)  // TASK-0019: shown once with the token
   await expect(page.locator('#api-curl')).toContainText(token)
   await expect(page.locator('[data-testid=api-token-row]', { hasText: 'e2e' }).first()).toBeVisible()
   const r = await page.request.post('/api/hooks/workflows/example/runs', { headers: { Authorization: `Bearer ${token}` }, data: { input: { message: 'where is my order A100' }, mode: 'sync' } })

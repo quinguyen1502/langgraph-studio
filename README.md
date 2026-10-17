@@ -231,3 +231,58 @@ curl -X POST http://localhost:8080/api/hooks/workflows/<wid>/runs \
   - `POST …/versions/{n}/restore`
   - Lỗi `404 VERSION_NOT_FOUND`.
 - Xem DEC-0015.
+
+## Hardening phase 2 (TASK-0019)
+
+### Human-in-the-loop
+- **Thời lượng run** chỉ tính thời gian chạy thực tế. Khoảng thời gian chờ người phản hồi không được tính.
+- **Hết hạn**: run chờ lâu hơn `STUDIO_WAIT_TTL` giây (mặc định 7 ngày, `0` = không bao giờ) sẽ chuyển sang trạng thái `expired`, kèm sự kiện `run_expired`.
+  - Server quét mỗi 60 giây và kiểm tra thêm khi có người truy cập run.
+  - Resume một run đã hết hạn trả về `410 RUN_EXPIRED`.
+- **Badge trên thanh tiêu đề**: hiện số run đang chờ bạn phản hồi. Bấm vào để tới danh sách chờ.
+
+### Webhook & API trigger
+- **Chữ ký**: khi tạo token sẽ nhận thêm **signing secret** `whsec_…`, chỉ hiện một lần.
+  - Mỗi callback có header `X-Studio-Signature: t=<unix ts>,v1=<hex>`, trong đó `v1 = HMAC-SHA256(secret, "<t>.<raw body>")`.
+  - Bên nhận cần kiểm tra chữ ký và từ chối nếu `t` lệch quá 5 phút:
+```python
+import hashlib, hmac, time
+def verify(secret: str, header: str, body: bytes, tolerance=300) -> bool:
+    parts = dict(p.split("=", 1) for p in header.split(","))
+    if abs(time.time() - int(parts["t"])) > tolerance: return False
+    mac = hmac.new(secret.encode(), f'{parts["t"]}.'.encode() + body, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(mac, parts["v1"])
+```
+  - Token tạo trước TASK-0019 không có secret nên callback của chúng không được ký. Tạo token mới để có chữ ký.
+- **Giới hạn tần suất**: mỗi token được `STUDIO_TRIGGER_RATE_LIMIT` lần chạy mỗi `STUDIO_TRIGGER_RATE_WINDOW` giây (mặc định 60/60).
+  - Vượt giới hạn trả về `429 RATE_LIMITED`, kèm header `Retry-After`.
+  - Bộ đếm dùng chung qua Redis; không có Redis thì mỗi tiến trình tự đếm.
+  - Việc poll kết quả không bị giới hạn.
+- **Chế độ sync** chờ tối đa `STUDIO_SYNC_WAIT_MAX` giây (mặc định 30). Hết thời gian chờ thì trả về `202` kèm `poll_url` và header `Location`. Chế độ async cũng trả `poll_url`.
+- **Hàng đợi tin cậy (Redis)**:
+  - Worker chuyển job sang danh sách "processing" của riêng nó (`BLMOVE`), và chỉ xoá job (ack) sau khi run đã được ghi lại.
+  - Mỗi worker ghi heartbeat (TTL 30 giây).
+  - Khi khởi động, worker đưa trở lại hàng đợi các job của worker đã chết, và chạy lại các job đó từ đầu.
+  - **Hàng đợi in-memory chỉ dùng cho dev**, vì job bị mất khi tiến trình khởi động lại.
+- **SSRF / DNS rebinding**: tên miền chỉ được phân giải **một lần** lúc gửi.
+  - Mọi địa chỉ phân giải ra đều được kiểm tra, rồi kết nối thẳng tới IP đó. Header `Host` và chứng chỉ TLS (SNI) vẫn theo tên miền gốc.
+  - Webhook không đi theo redirect.
+
+### Phiên bản
+- **Phân trang**: `GET …/versions?limit=50&offset=0` trả về `{items, total, limit, offset}`. Hộp thoại Phiên bản có nút "Tải thêm".
+- **Giới hạn số phiên bản**: `STUDIO_VERSION_KEEP=N` chỉ giữ N phiên bản mới nhất. Phiên bản mà một run đã chạy thì không bao giờ bị xoá.
+- **Khôi phục**:
+  - Khôi phục phiên bản có nội dung giống hệt hiện tại thì không làm gì (`unchanged: true`), và giao diện có thông báo.
+  - Hộp xác nhận khôi phục cảnh báo nếu editor đang có thay đổi chưa lưu.
+- **Lưu đồng thời**: hai lần lưu cùng lúc trùng số phiên bản thì tự thử lại.
+
+### Migration & Redis
+- **Migration khi khởi động** được khoá để nhiều API/worker khởi động cùng lúc không đụng nhau:
+  - Postgres dùng `pg_advisory_xact_lock`.
+  - SQLite dùng file `<db>.migrate.lock` (`fcntl`).
+- **Redis trên event loop** (run bus `start/finish/publish`, rate limit) dùng client `redis.asyncio`. Các lệnh chặn (lấy job, kiểm tra huỷ trong luồng chạy run) chạy trong thread.
+
+### Tracing
+- **Bảng giá**: `STUDIO_PRICES='{"my-model": [1.0, 2.0]}'` hoặc `STUDIO_PRICES_FILE=/path/prices.json` (đơn vị USD / 1 triệu token), ghi đè hoặc bổ sung bảng có sẵn. Tiền tố dài nhất được ưu tiên.
+- **Span được tạo khi run kết thúc**, dựng lại từ timestamp của các sự kiện; run đang chạy chưa có trace. Run đang chờ (HITL) chỉ có trace khi đã kết thúc.
+- **Tránh trace trùng trên LangSmith**: khi bật exporter LangSmith của Studio (`LANGSMITH_API_KEY` + `LANGSMITH_TRACING=true`), tracer LangSmith riêng của LangChain bị tắt (`LANGSMITH_TRACING_V2=false` + `langsmith.configure(enabled=False)`). Nhờ vậy mỗi lần gọi LLM chỉ xuất hiện một lần.

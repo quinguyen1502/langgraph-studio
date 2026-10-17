@@ -26,18 +26,18 @@ def run_ws(c, tok, msg):
 
 def test_seeded_workflow_has_v1(c):
     tok = user(c); wid = example(c, tok)
-    vs = get(c, tok, f"/api/workflows/{wid}/versions")
+    vs = get(c, tok, f"/api/workflows/{wid}/versions")["items"]
     assert [v["version"] for v in vs] == [1] and vs[0]["current"] and vs[0]["author_email"].endswith("@example.com")
 
 
 def test_save_creates_versions_only_on_change(c):
     tok = user(c); wid = example(c, tok); wf = get(c, tok, f"/api/workflows/{wid}")
     c.post("/api/workflows", json=wf, headers=H(tok))  # unchanged → no new version
-    assert len(get(c, tok, f"/api/workflows/{wid}/versions")) == 1
+    assert len(get(c, tok, f"/api/workflows/{wid}/versions")["items"]) == 1
     wf["nodes"].append({"id": "extra", "type": "end", "position": {"x": 1, "y": 1}, "data": {}})
     c.post("/api/workflows", json=wf, headers=H(tok))
     c.patch(f"/api/workflows/{wid}", json={"name": f"Renamed {uuid.uuid4().hex[:4]}"}, headers=H(tok))
-    vs = get(c, tok, f"/api/workflows/{wid}/versions")
+    vs = get(c, tok, f"/api/workflows/{wid}/versions")["items"]
     assert [v["version"] for v in vs] == [3, 2, 1] and [v["current"] for v in vs] == [True, False, False]
     v2 = get(c, tok, f"/api/workflows/{wid}/versions/2")["workflow"]
     assert any(n["id"] == "extra" for n in v2["nodes"])
@@ -53,7 +53,7 @@ def test_diff_and_restore(c):
     assert not d["identical"]
     r = c.post(f"/api/workflows/{wid}/versions/1/restore", headers=H(tok)).json()["data"]
     assert r["version"] == 3 and any(n["id"] == first for n in r["workflow"]["nodes"])
-    vs = get(c, tok, f"/api/workflows/{wid}/versions")
+    vs = get(c, tok, f"/api/workflows/{wid}/versions")["items"]
     assert vs[0]["note"] == "Restored from v1" and len(vs) == 3  # history kept, restore is a new version
     assert get(c, tok, f"/api/workflows/{wid}/versions/diff?a=1&b=3")["identical"]
     assert get(c, tok, f"/api/workflows/{wid}")["nodes"] == get(c, tok, f"/api/workflows/{wid}/versions/1")["workflow"]["nodes"]

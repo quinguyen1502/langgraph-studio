@@ -14,6 +14,7 @@ type Pending = { id: string; workflow_id: string; workflow_name?: string; label?
 export function PendingRuns() {
   const { t } = useTranslation(); const nav = useNavigate(); const [items, setItems] = useState<Pending[]>([])
   useEffect(() => { api<Pending[]>('/api/runs/pending').then(setItems).catch(() => {}) }, [])
+  useEffect(() => { if (items.length && location.hash === '#pending-runs') document.getElementById('pending-runs')?.scrollIntoView() }, [items])
   if (!items.length) return null
   return <Card id="pending-runs" className="gap-2 py-4">
     <CardHeader className="px-4"><CardTitle className="flex items-center gap-2 text-base"><UserCheck className="size-4 text-node-human" />{t('human.pendingTitle')}<Badge variant="secondary">{items.length}</Badge></CardTitle>

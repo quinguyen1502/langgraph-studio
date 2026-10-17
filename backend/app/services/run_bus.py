@@ -5,7 +5,7 @@ One small interface, two implementations (KISS):
 - RedisRunBus: REDIS_URL set; lets any API worker cancel a run started on another worker
   and publishes every run event on the `run:{id}:events` channel for observers.
 """
-import json, threading
+import asyncio, json, threading
 from typing import Callable, Optional, Protocol
 
 KEY_TTL = 24 * 3600  # registry/cancel keys expire even if a worker dies mid-run
@@ -20,6 +20,10 @@ class RunBus(Protocol):
     def is_cancelled(self, rid: str) -> bool: ...
     def publish(self, rid: str, event: dict) -> None: ...
     def ping(self) -> bool: ...
+    # event-loop variants (TASK-0019): never block the loop on Redis I/O
+    async def astart(self, rid: str, owner: str) -> None: ...
+    async def afinish(self, rid: str) -> None: ...
+    async def apublish(self, rid: str, event: dict) -> None: ...
 
 
 def channel(rid: str) -> str: return f"run:{rid}:events"
@@ -43,12 +47,16 @@ class InMemoryRunBus:
     def publish(self, rid, event):
         for fn in list(self.listeners): fn(rid, event)
     def ping(self): return True
+    async def astart(self, rid, owner): self.start(rid, owner)
+    async def afinish(self, rid): self.finish(rid)
+    async def apublish(self, rid, event): self.publish(rid, event)
 
 
 class RedisRunBus:
     kind = "redis"
 
     def __init__(self, url: str, client=None):
+        self.url = url if client is None else None  # injected (test) clients have no async twin: use a thread
         if client is None:
             import redis
             client = redis.Redis.from_url(url, decode_responses=True, socket_connect_timeout=2, socket_timeout=2)
@@ -64,6 +72,21 @@ class RedisRunBus:
     def ping(self):
         try: return bool(self.r.ping())
         except Exception: return False
+
+    def _a(self):
+        from .redis_async import async_redis
+        return async_redis(self.url)
+
+    async def astart(self, rid, owner):
+        if not self.url: return await asyncio.to_thread(self.start, rid, owner)
+        async with self._a().pipeline(transaction=True) as p:
+            await p.set(f"run:{rid}:owner", owner, ex=KEY_TTL).delete(f"run:{rid}:cancel").execute()
+    async def afinish(self, rid):
+        if not self.url: return await asyncio.to_thread(self.finish, rid)
+        await self._a().delete(f"run:{rid}:owner", f"run:{rid}:cancel")
+    async def apublish(self, rid, event):
+        if not self.url: return await asyncio.to_thread(self.publish, rid, event)
+        await self._a().publish(channel(rid), json.dumps(event, ensure_ascii=False, default=str))
 
 
 def make_run_bus(url: Optional[str]) -> RunBus:

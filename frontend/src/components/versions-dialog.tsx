@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
-import { AlertCircle, History, RotateCcw } from 'lucide-react'
+import { AlertCircle, History, Info, RotateCcw } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -11,6 +11,8 @@ import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 
 type Version = { version: number; name: string; created: number; author_email: string | null; note: string | null; node_count: number; current: boolean }
+type Page = { items: Version[]; total: number; limit: number; offset: number }
+const PAGE = 20
 type Section = { added: any[]; removed: any[]; changed: { id: string; fields: string[]; before: any; after: any }[]; moved?: string[] }
 type Diff = { a: number; b: number; identical: boolean; name: { before: string; after: string } | null; nodes: Section; edges: Section; state: Section }
 
@@ -39,22 +41,29 @@ function SectionView({ title, s, kind }: { title: string; s: Section; kind: 'nod
 }
 
 /** Workflow version history: list, diff any two versions, restore (TASK-0008). */
-export function VersionsDialog({ wid, onRestored }: { wid?: string; onRestored: (wf: any) => void }) {
+export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onRestored: (wf: any) => void; isDirty?: () => boolean }) {
   const { t } = useTranslation(); const [open, setOpen] = useState(false)
   const [items, setItems] = useState<Version[]>([]); const [err, setErr] = useState('')
   const [a, setA] = useState<string>(''); const [b, setB] = useState<string>(''); const [diff, setDiff] = useState<Diff | null>(null)
-  const [confirm, setConfirm] = useState<number | null>(null)
-  const load = () => wid && api<Version[]>(`/api/workflows/${wid}/versions`).then(vs => {
-    setItems(vs); setB(String(vs[0]?.version ?? '')); setA(String(vs[1]?.version ?? vs[0]?.version ?? ''))
+  const [confirm, setConfirm] = useState<number | null>(null); const [total, setTotal] = useState(0)
+  const [notice, setNotice] = useState(''); const [dirty, setDirty] = useState(false)
+  const page = (offset: number) => api<Page>(`/api/workflows/${wid}/versions?limit=${PAGE}&offset=${offset}`)
+  const load = () => wid && page(0).then(p => {
+    setItems(p.items); setTotal(p.total); setB(String(p.items[0]?.version ?? '')); setA(String(p.items[1]?.version ?? p.items[0]?.version ?? ''))
   }).catch(e => setErr(e.message))
-  useEffect(() => { if (open) { setErr(''); setConfirm(null); setDiff(null); load() } }, [open])
+  const more = () => page(items.length).then(p => { setItems(xs => [...xs, ...p.items]); setTotal(p.total) }).catch(e => setErr(e.message))
+  useEffect(() => { if (open) { setErr(''); setNotice(''); setConfirm(null); setDiff(null); setDirty(!!isDirty?.()); load() } }, [open])
   useEffect(() => {
     if (!open || !a || !b) return
     api<Diff>(`/api/workflows/${wid}/versions/diff?a=${a}&b=${b}`).then(setDiff).catch(e => setErr(e.message))
   }, [a, b, open])
   const restore = async (n: number) => {
     setErr('')
-    try { const r = await api<any>(`/api/workflows/${wid}/versions/${n}/restore`, { method: 'POST' }); onRestored(r.workflow); setConfirm(null); load() }
+    try {
+      const r = await api<any>(`/api/workflows/${wid}/versions/${n}/restore`, { method: 'POST' }); setConfirm(null)
+      if (r.unchanged) { setNotice(t('versions.unchanged', { n })); if (dirty) { onRestored(r.workflow); setDirty(false) }; return }
+      setNotice(t('versions.restored', { n })); onRestored(r.workflow); setDirty(false); load()
+    }
     catch (e: any) { setErr(e.message) }
   }
   const pick = (v: string, set: (s: string) => void) => <Select value={v} onValueChange={set}>
@@ -66,6 +75,7 @@ export function VersionsDialog({ wid, onRestored }: { wid?: string; onRestored: 
     <DialogContent className="sm:max-w-4xl">
       <DialogHeader><DialogTitle>{t('versions.title')}</DialogTitle><DialogDescription>{t('versions.desc')}</DialogDescription></DialogHeader>
       {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+      {notice && <Alert id="versions-notice"><Info /><AlertDescription>{notice}</AlertDescription></Alert>}
       <div className="grid grid-cols-[18rem_1fr] gap-4 min-h-0">
         <ScrollArea className="h-96 rounded-md border">
           <div className="p-1">{items.map(v => <div key={v.version} data-testid="version-row" className="rounded-md px-2 py-1.5 text-xs hover:bg-accent space-y-1">
@@ -77,10 +87,11 @@ export function VersionsDialog({ wid, onRestored }: { wid?: string; onRestored: 
             <div className="text-muted-foreground truncate">{v.author_email ?? '—'} · {t('versions.nodes', { count: v.node_count })}</div>
             {v.note && <div className="text-muted-foreground italic truncate">{v.note.startsWith('Restored from v') ? t('versions.restoredFrom', { n: v.note.slice(15) }) : v.note === 'Initial version' ? t('versions.initial') : v.note}</div>}
             {!v.current && (confirm === v.version
-              ? <div className="flex gap-1"><Button size="sm" variant="destructive" className="h-6" data-testid="restore-confirm" onClick={() => restore(v.version)}>{t('versions.confirm', { n: v.version })}</Button>
-                  <Button size="sm" variant="ghost" className="h-6" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button></div>
+              ? <div className="space-y-1">{dirty && <p className="text-warning" data-testid="restore-unsaved-warning">{t('versions.unsavedWarning')}</p>}<div className="flex gap-1"><Button size="sm" variant="destructive" className="h-6" data-testid="restore-confirm" onClick={() => restore(v.version)}>{t('versions.confirm', { n: v.version })}</Button>
+                  <Button size="sm" variant="ghost" className="h-6" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button></div></div>
               : <Button size="sm" variant="ghost" className="h-6" data-testid="restore-btn" onClick={() => setConfirm(v.version)}><RotateCcw />{t('versions.restore')}</Button>)}
-          </div>)}</div>
+          </div>)}
+          {items.length < total && <Button variant="ghost" size="sm" className="w-full" id="versions-more" onClick={more}>{t('versions.loadMore')} ({t('versions.shown', { shown: items.length, total })})</Button>}</div>
         </ScrollArea>
         <div className="space-y-3 min-w-0">
           <div className="flex items-center gap-2 text-xs"><span>{t('versions.compare')}</span>{pick(a, setA)}<span>→</span>{pick(b, setB)}</div>

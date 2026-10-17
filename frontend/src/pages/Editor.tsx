@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, addEdge,
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
-import dagre from '@dagrejs/dagre'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -17,13 +17,21 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { HumanPanel } from '@/components/human-panel'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
+import { SaveTemplateDialog } from '@/components/save-template-dialog'
+import { freeSpot, menuSections, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
+import { useDeleteWorkflow } from '@/components/delete-workflow'
+import { isMac, keyCaps } from '@/lib/shortcuts'
+const isMacPlatform = isMac()
+import { SHORTCUTS } from '@/lib/shortcuts'
+import { layoutGraph, type Direction } from '@/lib/layout'
+import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -45,6 +53,10 @@ import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
+import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
+import { useShortcuts } from '@/lib/use-shortcuts'
+import { useGraphHistory } from '@/lib/use-graph-history'
+import { PROTECTED, removeElements, selectionIds } from '@/lib/graph-ops'
 
 type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -69,12 +81,6 @@ const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
 const canvasId = (nid: string) => nid.split('/')[0]
 
-function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
-  const g = new dagre.graphlib.Graph(); g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 110 }); g.setDefaultEdgeLabel(() => ({}))
-  nodes.forEach(n => g.setNode(n.id, { width: 200, height: 70 })); edges.forEach(e => g.setEdge(e.source, e.target))
-  dagre.layout(g)
-  return nodes.map(n => { const p = g.node(n.id); return { ...n, position: { x: p.x - 100, y: p.y - 35 } } })
-}
 const styleEdges = (es: any[]): Edge[] => es.map(e => e.conditional ? { ...e, animated: true, style: { strokeDasharray: '6 4' }, labelBgPadding: [6, 3], labelBgBorderRadius: 4 } : e)
 function defaultInput(state: Field[]) {
   return JSON.stringify(Object.fromEntries(state.map(f => [f.name, f.type === 'list' ? [{ role: 'user', content: i18n.t('samples.greeting') }] : f.type === 'number' || f.type === 'integer' ? 0 : f.type === 'boolean' ? false : f.type === 'object' ? {} : 'hello'])), null, 2)
@@ -120,6 +126,10 @@ function StudioNode({ data, type, selected }: NodeProps) {
     {type !== 'end' && <Handle type="source" position={Position.Right} />}
   </div>
 }
+/** Where registry actions appear in the editor's ⋯ menu (others stay keyboard/palette only), with stable ids for tests. */
+const MENU_OF: Record<string, 'arrange' | 'help' | undefined> = { layout: 'arrange', fitView: 'arrange', cheatsheet: 'help' }
+const MENU_IDS: Record<string, string> = { layout: 'layout-btn', fitView: 'fit-btn', cheatsheet: 'shortcuts-btn' }
+const ACTION_ICONS: Record<string, LucideIcon> = { layout: Network, fitView: Maximize, cheatsheet: Keyboard, save: Save, run: Play, stop: Square, undo: Undo2, redo: Redo2, delete: Trash2, copy: Copy, cut: Scissors, paste: ClipboardPaste, duplicate: CopyPlus, selectAll: BoxSelect, zoomIn: ZoomIn, zoomOut: ZoomOut }
 const nodeTypes = Object.fromEntries([...TYPES, 'code'].map(t => [t, StudioNode]))
 
 function Tip({ tip, children }: { tip: string; children: React.ReactElement }) {
@@ -167,13 +177,15 @@ function Studio() {
   // unsaved-changes tracking (TASK-0019): snapshot of the saved graph, taken after load/save
   const savedSnap = useRef<string | null>(null); const takeBaseline = useRef(false)
   const snap = () => { const { id: _id, ...rest } = toJSON(); return JSON.stringify(rest) }
-  useEffect(() => { if (takeBaseline.current) { takeBaseline.current = false; savedSnap.current = snap() } }, [nodes, edges, name, state])
+  // undo/redo (TASK-0024): snapshots of nodes, edges and the state schema; reset whenever a workflow is (re)loaded
+  const hist = useGraphHistory(nodes, edges, state, h => { setNodes(h.nodes.map(n => ({ ...n }))); setEdges(styleEdges(h.edges)); setState(h.state) })
+  useEffect(() => { if (takeBaseline.current) { takeBaseline.current = false; savedSnap.current = snap(); hist.reset(nodes, edges, state) } }, [nodes, edges, name, state])
   const load = (wf: any) => {
     takeBaseline.current = true
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
     setSource(wf.source || null)
     if (wf.access) { setAccess(wf.access); setOwnerEmail(wf.mine ? null : wf.owner_email ?? null) }
-    setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
+    setNodes(wf.needs_layout ? layoutGraph(wf.nodes, wf.edges, 'LR', false) : wf.nodes); setEdges(styleEdges(wf.edges))
     if (wf.source) setInput(defaultInput(wf.state || []))
   }
   const loadHistory = (id?: string) => id ? api<any[]>(`/api/workflows/${id}/runs`).then(hs => { setHistory(hs); return hs }) : undefined
@@ -227,6 +239,99 @@ function Studio() {
     stream({ workflow_id: wid, workflow: toJSON(), input: inp })
   }
   const respond = (runId: string, response: string) => stream({ resume_run_id: runId, response }, true)
+  const cancelRun = () => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))
+  const removeIds = (nodeIds: string[], edgeIds: string[] = []) => {
+    const r = removeElements(nodes, edges, nodeIds, edgeIds); if (!r.removed) return
+    setNodes(r.nodes); setEdges(r.edges); if (sel && (nodeIds.includes(sel.id) || edgeIds.includes(sel.id))) setSel(null)
+  }
+  // clipboard (TASK-0026, DEC-0029): pure copy/paste in lib/clipboard.ts; one paste = one render = one undo step
+  const clipMem = useRef<Clip | null>(null); const pasteN = useRef(0)
+  const [clipNote, setClipNote] = useState(''); const noteTimer = useRef<number>(0)
+  const note = (m: string) => { setClipNote(m); window.clearTimeout(noteTimer.current); noteTimer.current = window.setTimeout(() => setClipNote(''), 2500) }
+  const selClip = () => { const s = selectionIds(nodes, edges, sel); return copySelection(nodes, edges, s.nodeIds) }
+  const insert = (clip: Clip, n: number) => {
+    const sameCanvas = clip.nodes.some(c => nodes.some(x => x.id === c.id))
+    const view = rf.screenToFlowPosition({ x: window.innerWidth / 2 - 120, y: window.innerHeight / 2 - 60 })
+    const r = pasteClip(clip, { existing: nodes.map(x => x.id), usableCredentials: new Set(creds.map(c => c.id)), offset: 40 * n, at: sameCanvas ? undefined : view })
+    setNodes(ns => [...ns.map(x => x.selected ? { ...x, selected: false } : x), ...r.nodes]); setEdges(es => [...es.map(x => x.selected ? { ...x, selected: false } : x), ...styleEdges(r.edges)])
+    setSel(r.nodes.length === 1 ? { kind: 'node', id: r.nodes[0].id } : null)
+    note(r.clearedCredentials ? t('clipboard.pastedCleared', { count: r.nodes.length, creds: r.clearedCredentials }) : t('clipboard.pasted', { count: r.nodes.length }))
+  }
+  const copy = (cut = false) => {
+    const c = selClip(); if (!c) return false
+    clipMem.current = c; pasteN.current = 0; clipStore.write(c)
+    if (cut) { removeIds(c.nodes.map(n => n.id)); note(t('clipboard.cut', { count: c.nodes.length })) } else note(t('clipboard.copied', { count: c.nodes.length }))
+  }
+  const editable = edit && !source
+  // auto-layout (TASK-0027, DEC-0030): one setNodes = one undo step; direction remembered per browser
+  const [layoutDir, setLayoutDir] = useState<Direction>(() => (localStorage.getItem('lgs.layoutDir') as Direction) === 'TB' ? 'TB' : 'LR')
+  const tidy = (dir: Direction = layoutDir) => {
+    if (!editable) return false
+    if (dir !== layoutDir) { setLayoutDir(dir); localStorage.setItem('lgs.layoutDir', dir) }
+    setNodes(ns => layoutGraph(ns, edges, dir)); window.setTimeout(() => rf.fitView({ duration: 250 }), 30)
+  }
+    // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
+  const [cheat, setCheat] = useState(false)
+  const handlers: Record<string, () => void | boolean> = {
+    save: () => { if (edit) save() },
+    run: () => { if (!running) run() },
+    stop: () => { if (running) cancelRun() },
+    delete: () => { if (!edit || source) return false; const s = selectionIds(nodes, edges, sel); removeIds(s.nodeIds, s.edgeIds) },
+    selectAll: () => { setNodes(ns => ns.map(n => ({ ...n, selected: true }))); setEdges(es => es.map(e => ({ ...e, selected: true }))) },
+    fitView: () => { rf.fitView({ duration: 200 }) },
+    zoomIn: () => { rf.zoomIn({ duration: 150 }) },
+    zoomOut: () => { rf.zoomOut({ duration: 150 }) },
+    escape: () => { setSel(null); setNodes(ns => ns.map(n => n.selected ? { ...n, selected: false } : n)); setEdges(es => es.map(e => e.selected ? { ...e, selected: false } : e)); return false },
+    cheatsheet: () => setCheat(true),
+    layout: () => tidy(),
+    copy: () => copy(),
+    cut: () => editable ? copy(true) : false,
+    paste: () => { if (!editable) return false; const c = clipStore.read() ?? clipMem.current; if (!c) return false; insert(c, ++pasteN.current) },
+    duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
+    undo: () => { if (edit) hist.undo() },
+    redo: () => { if (edit) hist.redo() },
+  }
+  useShortcuts(handlers)
+  // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
+  const addNode = (type: string, pos: { x: number; y: number }, select = false) => {
+    const id = `${type}_${Date.now().toString(36)}${idc.current++}`
+    setNodes(ns => [...(select ? ns.map(n => n.selected ? { ...n, selected: false } : n) : ns), { id, type, position: pos, selected: select,
+      data: { ...DEFAULTS[type], ...(type === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    if (select) setSel({ kind: 'node', id })
+  }
+  const off: Record<string, boolean> = { save: !edit, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
+    ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
+  const paletteRef = useRef<Record<string, () => void>>({})
+  // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
+  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
+  const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
+  const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
+  const menuExtras: PaletteCommand[] = [
+    ...(['LR', 'TB'] as Direction[]).map(d => ({ id: `action:layout${d}`, group: 'actions' as const, label: `${t('layout.button')}: ${t(d === 'LR' ? 'layout.lr' : 'layout.tb')}`, icon: d === 'LR' ? ArrowRight : ArrowDown,
+      menu: 'arrange' as const, elementId: `layout-${d.toLowerCase()}`, disabled: !editable, hint: layoutDir === d ? '✓' : undefined, run: () => { tidy(d) } })),
+    { id: 'action:versions', group: 'actions', label: t('versions.button'), icon: History, menu: 'workflow', elementId: 'versions-btn', disabled: !wid, run: () => setDlg('versions') },
+    { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !edit || !wid, run: () => setDlg('template') },
+    { id: 'action:share', group: 'actions', label: t('share.button'), icon: Share2, menu: 'workflow', elementId: 'share-btn', disabled: !wid, run: () => setDlg('share') },
+    { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
+    { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
+    { id: 'action:openPalette', group: 'actions', label: t('palette.title'), icon: Search, shortcut: 'palette', menu: 'help', elementId: 'palette-btn', run: openPalette },
+    { id: 'action:deleteWorkflow', group: 'actions', label: t('editor.deleteWorkflow'), icon: Trash2, menu: 'danger', destructive: true, elementId: 'delete-wf-btn',
+      disabled: !wid || access !== 'owner', run: () => { if (wid) delWf.ask({ id: wid, name }) } },
+  ]
+  const paletteCmds: PaletteCommand[] = [
+    ...SHORTCUTS.filter(x => handlers[x.id] && x.id !== 'escape').map(x => ({ id: `action:${x.id}`, group: 'actions' as const, label: t(`shortcuts.actions.${x.id}`), shortcut: x.id, disabled: off[x.id],
+      icon: ACTION_ICONS[x.id], menu: MENU_OF[x.id], elementId: MENU_IDS[x.id], run: () => { handlers[x.id]() } })),
+    ...menuExtras,
+    ...(editable ? TYPES.filter(x => x !== 'start' && x !== 'end').map(x => ({ id: `add:${x}`, group: 'add' as const, label: t('palette.addNode', { type: META[x].label }), hint: t(`nodes.${x}`), icon: META[x].icon, keywords: [x],
+      run: () => { const c = rf.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }); addNode(x, freeSpot(c, nodes.map(n => n.position)), true) } })) : []),
+    ...nodes.map(n => ({ id: `node:${n.id}`, group: 'nodes' as const, label: String((n.data as any)?.label || n.id), hint: `${META[n.type!]?.label ?? n.type} · ${n.id}`, icon: META[n.type!]?.icon, keywords: [n.id, n.type!],
+      run: () => { setNodes(ns => ns.map(x => ({ ...x, selected: x.id === n.id }))); setSel({ kind: 'node', id: n.id }); rf.fitView({ nodes: [{ id: n.id }], duration: 300, maxZoom: 1.2 }) } })),
+  ]
+  paletteCmds.forEach(c => { paletteRef.current[c.id] = c.run })
+  const paletteSig = paletteCmds.map(c => `${c.id}|${c.label}|${c.hint ?? ''}|${c.disabled ? 1 : 0}`).join('\n')
+  // re-register only when the visible content changes (runs read the latest closures through paletteRef)
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => registerCommands('editor', paletteCmds.map(c => ({ ...c, run: () => paletteRef.current[c.id]?.() }))), [paletteSig])
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
@@ -244,8 +349,7 @@ function Studio() {
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
-    const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
-    setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t], ...(t === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
+    addNode(t, rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY }))
   }
   const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
   const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined
@@ -268,21 +372,39 @@ function Studio() {
       <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 h-8" aria-label={t('editor.nameLabel')} />
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-44 h-8" aria-label={t('editor.nameLabel')} />
+      {edit && savedSnap.current !== null && snap() !== savedSnap.current && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
-      {wid && <ShareDialog workflowId={wid} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
-      <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
-      {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
-      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
-      <Dialog>
-        <Tip tip={t('editor.jsonTip')}><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
+      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
+      {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
+        <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
+        <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
+      <DropdownMenu>
+        <Tip tip={t('editor.moreTip')}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="more-btn" aria-label={t('editor.more')}><MoreHorizontal /></Button></DropdownMenuTrigger></Tip>
+        <DropdownMenuContent align="start" className="min-w-64" id="more-menu">
+          {menuSections(paletteCmds).map(([sec, items], k) => <Fragment key={sec}>{k > 0 && <DropdownMenuSeparator />}
+            {items.map(c => { const I = c.icon; const combo = c.shortcut ? SHORTCUTS.find(x => x.id === c.shortcut)?.keys[0] : undefined
+              return <DropdownMenuItem key={c.id} id={c.elementId} data-testid="more-item" disabled={c.disabled} variant={c.destructive ? 'destructive' : 'default'} onSelect={() => c.run()}>
+                {I && <I className={c.id === 'action:layout' && layoutDir === 'TB' ? 'rotate-90' : undefined} />}<span>{c.label}</span>
+                {c.hint === '✓' && <Check className="ml-auto" />}
+                {combo && <DropdownMenuShortcut>{keyCaps(combo).join(isMacPlatform ? '' : '+')}</DropdownMenuShortcut>}
+              </DropdownMenuItem> })}</Fragment>)}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
+      {wid && <ShareDialog workflowId={wid} open={dlg === 'share'} onOpenChange={v => setDlg(v ? 'share' : null)} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
+      {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={isDirty} open={dlg === 'template'} onOpenChange={v => setDlg(v ? 'template' : null)} />}
+      <VersionsDialog wid={wid} isDirty={isDirty} open={dlg === 'versions'} onOpenChange={v => setDlg(v ? 'versions' : null)} onRestored={wf => { load(wf); setErrors([]) }} />
+      {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
+      <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
         <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
           <ScrollArea className="h-96 rounded-md border bg-muted/40"><pre className="p-3 text-xs">{JSON.stringify(toJSON(), null, 2)}</pre></ScrollArea>
         </DialogContent>
       </Dialog>
+      {delWf.dialog}
       <div className="ml-auto flex items-center gap-2">
         {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
         <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
@@ -325,9 +447,10 @@ function Studio() {
 
     {/* Canvas */}
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
+      {clipNote && <div role="status" id="clip-notice" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-1.5 text-sm">{clipNote}</div>}
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={edit ? onConnect : undefined} nodesConnectable={edit} nodesDraggable={edit} edgesReconnectable={edit} onNodeClick={(_, n) => onNodeClick(n.id)}
-        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={edit ? ['Delete', 'Backspace'] : null} fitView>
+        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
         <Background /><Controls /><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
     </main>
@@ -340,7 +463,7 @@ function Studio() {
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
           <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
-          <Button variant="destructive" size="sm" onClick={() => { setEdges(es => es.filter(x => x.id !== selEdge.id)); setSel(null) }}><Trash2 />{t('editor.deleteEdge')}</Button>
+          <Button variant="destructive" size="sm" id="delete-edge" onClick={() => removeIds([], [selEdge.id])}><Trash2 />{t('editor.deleteEdge')}</Button>
         </div>}
         {selNode && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
@@ -392,7 +515,9 @@ function Studio() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />{t('editor.deleteNode')}</Button>}
+          {!source && !PROTECTED.has(selNode.type!) && <div className="flex gap-2">
+            <Button variant="outline" size="sm" id="duplicate-node" onClick={() => { const c = copySelection(nodes, edges, [selNode.id]); if (c) insert(c, 1) }}><CopyPlus />{t('clipboard.duplicate')}</Button>
+            <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button></div>}
         </div>}
       </div></fieldset></ScrollArea>
     </aside>

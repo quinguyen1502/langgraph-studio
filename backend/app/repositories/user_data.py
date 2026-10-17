@@ -1,6 +1,6 @@
 """Personal data of one user, for account deletion / anonymisation (TASK-0029). Org-scope resources are kept."""
 from sqlalchemy import delete, select, update
-from ..models import (ApprovalChannel, ChannelIdentity, Credential, KbChunk, KbDocument, KnowledgeBase, McpServer, Notification, Run,
+from ..models import (ApprovalChannel, ChannelIdentity, Credential, KbChunk, KbDocument, KnowledgeBase, McpServer, Notification, Run, WorkflowTemplate,
                       TeamMember, User, WorkflowShare, WorkflowToken)
 from ..models.database import Database
 
@@ -23,6 +23,7 @@ class UserDataRepository:
             s.execute(delete(Notification).where(Notification.user_id == uid))
             s.execute(delete(WorkflowShare).where(WorkflowShare.user_id == uid))
             s.execute(delete(TeamMember).where(TeamMember.user_id == uid))
+            s.execute(delete(WorkflowTemplate).where(WorkflowTemplate.owner == uid, WorkflowTemplate.scope == "user"))
             if runs: s.execute(delete(Run).where(Run.owner == uid))
             s.commit()
 

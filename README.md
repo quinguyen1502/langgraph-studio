@@ -107,6 +107,42 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **Phải**: cấu hình node/edge đang chọn + lịch sử chạy (bấm để xem lại log).
 - **Dưới**: input JSON + log từng node (started/finished, thời gian, state delta). Node đang chạy sáng vàng, xong chuyển xanh.
 
+## Editor UX (Phase 5)
+
+### Phím tắt (TASK-0023)
+Bấm `?` (hoặc `Ctrl/⌘ + /`, nút **Phím tắt**) để xem bảng phím tắt. `Ctrl/⌘+S` lưu, `Ctrl/⌘+Enter` chạy, `Ctrl/⌘+.` dừng,
+`Delete/⌫` xoá node/cạnh đang chọn (Start/End không xoá được), `Ctrl/⌘+A` chọn tất cả, `Shift+1` vừa màn hình, `Ctrl/⌘ + =/-` phóng to/thu nhỏ.
+Khi đang gõ trong ô nhập chỉ lưu/chạy/dừng hoạt động; khi có hộp thoại mở, phím tắt của editor tạm tắt. Danh sách nằm ở `frontend/src/lib/shortcuts.ts`.
+
+### Hoàn tác / làm lại (TASK-0024)
+`Ctrl/⌘+Z` hoàn tác, `Ctrl/⌘+Shift+Z` hoặc `Ctrl/⌘+Y` làm lại (hoặc nút trên thanh công cụ), tối đa 100 bước. Một lần kéo là một bước;
+gõ liên tục trong cùng một node gộp thành một bước. Ô nhập văn bản giữ hoàn tác gốc của trình duyệt. Huy hiệu **Chưa lưu** (màu cảnh báo)
+biến mất khi hoàn tác về đúng bản đã lưu.
+
+### Thư viện mẫu (TASK-0025)
+**Workflow mới** mở thư viện: workflow trống, 4 mẫu có sẵn (Chatbot, RAG Q&A, Approval flow, Router) và mẫu của bạn / toàn tổ chức,
+mỗi mẫu có hình xem trước. Trong editor, **Lưu thành mẫu** sao chép bản đã lưu; *Toàn tổ chức* chỉ dành cho admin (`org.manage`).
+Mẫu có thể **Xuất** / **Nhập** dưới dạng `*.template.json` (`{"format": "langgraph-studio/template", "version": 1, ...}`).
+Mẫu không bao giờ chứa credential, knowledge base, MCP server, kênh phê duyệt, liên kết subgraph, header hay API key — các trường này
+được làm trống, người dùng tự chọn lại. Xoá mẫu cần gõ tên mẫu. API: `GET/POST /api/templates`, `POST /api/templates/import`,
+`GET /api/templates/{id}/export`, `POST /api/templates/{id}/use`, `DELETE /api/templates/{id}` (mã lỗi `TEMPLATE_*`, xem docs/api-errors.md).
+
+### Sao chép / dán / nhân bản (TASK-0026)
+`Ctrl/⌘+C`, `Ctrl/⌘+X`, `Ctrl/⌘+V`, `Ctrl/⌘+D` (hoặc nút **Nhân bản** trong panel node). Start/End không bao giờ được sao chép; chỉ cạnh nối giữa
+các node được chọn đi kèm; node dán ra có id mới và được chọn sẵn; mỗi lần dán là một bước hoàn tác. Có thể dán sang workflow khác trong cùng
+trình duyệt (vùng nhớ `localStorage`, định dạng `langgraph-studio/nodes` v1). Credential không thuộc quyền dùng của bạn sẽ bị bỏ trống khi dán.
+
+### Tự sắp xếp bố cục (TASK-0027)
+Nút **Sắp xếp** (hoặc `Shift+L`) xếp lại toàn bộ node theo lớp bằng dagre, dùng kích thước thật của từng node, không chồng lấn; mũi tên bên cạnh
+chọn *Trái sang phải* / *Trên xuống dưới* (trình duyệt ghi nhớ). Góc trên-trái của đồ thị giữ nguyên; một lần sắp xếp là một bước hoàn tác.
+
+### Bảng lệnh (TASK-0028)
+`Ctrl/⌘+K` ở mọi trang (kể cả khi đang gõ): tìm gần đúng các thao tác của editor (kèm phím tắt), **Thêm node** (đặt giữa màn hình và được chọn),
+**Đến node**, **Mở workflow**, **Workflow mới** (mở thư viện mẫu) và các trang **Cài đặt**. Từ khoá tiếng Anh (vd. `retriever`, `mcp`) cũng tìm được.
+
+Thanh tiêu đề editor chỉ giữ tên, **Lưu**, **Chạy**/**Dừng** và **Hoàn tác/Làm lại**; các thao tác khác (Sắp xếp + hướng, Vừa màn hình, Phiên bản,
+Lưu thành mẫu, Chia sẻ, API, JSON, Bảng lệnh, Phím tắt, Xoá workflow) nằm trong menu **⋯**, dùng chung định nghĩa với bảng lệnh.
+
 ## Định dạng workflow
 ```json
 {"name": "...", "state": [{"name":"message","type":"string"}],

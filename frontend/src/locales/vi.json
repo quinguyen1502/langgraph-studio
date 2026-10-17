@@ -153,7 +153,10 @@
     "mcpArgsHint": "Văn bản, hoặc {{field}} để truyền giá trị state giữ nguyên kiểu.",
     "mcpManage": "Quản lý máy chủ MCP",
     "viewOnly": "Chỉ xem",
-    "nameLabel": "Tên workflow"
+    "nameLabel": "Tên workflow",
+    "more": "Thao tác khác",
+    "moreTip": "Thao tác khác (bố cục, phiên bản, chia sẻ, API…)",
+    "deleteWorkflow": "Xoá workflow"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -381,7 +384,12 @@
     "MODEL_NOT_FOUND": "{{provider}} không có model tên {{model}}",
     "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} không nhận header {{header}}",
     "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} không hỗ trợ embedding; hãy chọn credential khác cho kho tri thức này",
-    "KB_EMBEDDING_DIMENSION_MISMATCH": "Model embedding trả về vector {{got}} chiều nhưng kho tri thức đang lưu vector {{expected}} chiều; hãy index lại kho tri thức"
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "Model embedding trả về vector {{got}} chiều nhưng kho tri thức đang lưu vector {{expected}} chiều; hãy index lại kho tri thức",
+    "TEMPLATE_NOT_FOUND": "Không tìm thấy mẫu",
+    "TEMPLATE_READ_ONLY": "Không thể xoá mẫu này",
+    "TEMPLATE_INVALID": "Tệp mẫu không hợp lệ",
+    "TEMPLATE_NAME_REQUIRED": "Cần nhập tên mẫu",
+    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức"
   },
   "lang": {
     "en": "English",
@@ -961,5 +969,108 @@
     "choose": "Chọn trong {{count}} model",
     "none": "Provider không trả về model nào; hãy gõ tên.",
     "failed": "Không tải được danh sách model ({{error}}). Hãy gõ tên model."
+  },
+  "shortcuts": {
+    "title": "Phím tắt",
+    "intro": "Phím tắt dùng trên canvas. Ô nhập liệu giữ phím bình thường, trừ lưu, chạy và dừng.",
+    "button": "Phím tắt (?)",
+    "or": "hoặc",
+    "groups": {
+      "general": "Chung",
+      "canvas": "Canvas",
+      "run": "Chạy",
+      "history": "Lịch sử",
+      "clipboard": "Bộ nhớ tạm",
+      "navigation": "Điều hướng"
+    },
+    "actions": {
+      "save": "Lưu workflow",
+      "cheatsheet": "Hiện bảng phím tắt",
+      "escape": "Bỏ chọn / đóng bảng",
+      "run": "Chạy workflow",
+      "stop": "Dừng lần chạy",
+      "delete": "Xoá phần đang chọn (trừ Start/End)",
+      "selectAll": "Chọn tất cả",
+      "fitView": "Vừa khung nhìn",
+      "zoomIn": "Phóng to",
+      "zoomOut": "Thu nhỏ",
+      "undo": "Hoàn tác",
+      "redo": "Làm lại",
+      "copy": "Sao chép node đang chọn",
+      "cut": "Cắt node đang chọn",
+      "paste": "Dán node",
+      "duplicate": "Nhân bản node đang chọn",
+      "layout": "Tự sắp xếp bố cục",
+      "palette": "Mở bảng lệnh"
+    }
+  },
+  "history": {
+    "group": "Lịch sử",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "undoTip": "Hoàn tác (Ctrl/⌘+Z)",
+    "redoTip": "Làm lại (Ctrl/⌘+Shift+Z)",
+    "unsaved": "Chưa lưu"
+  },
+  "templates": {
+    "title": "Workflow mới",
+    "subtitle": "Bắt đầu từ trang trống hoặc từ một mẫu. Mẫu không bao giờ chứa thông tin xác thực hay cơ sở tri thức — hãy tự chọn sau khi tạo.",
+    "blank": "Workflow trống",
+    "blankHint": "Chỉ có Bắt đầu và Kết thúc",
+    "import": "Nhập mẫu",
+    "export": "Xuất",
+    "useNamed": "Tạo workflow từ {{name}}",
+    "noDescription": "Không có mô tả",
+    "invalidJson": "Tệp không phải JSON hợp lệ",
+    "deleteTitle": "Xoá mẫu",
+    "deleteBody": "Mẫu \"{{name}}\" sẽ bị xoá. Các workflow đã tạo từ mẫu không bị ảnh hưởng.",
+    "scope": {
+      "builtin": "Có sẵn",
+      "user": "Chỉ mình tôi",
+      "org": "Toàn tổ chức"
+    },
+    "saveAs": "Lưu thành mẫu",
+    "saveAsTitle": "Lưu thành mẫu",
+    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kênh phê duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
+    "saveAsConfirm": "Lưu mẫu",
+    "unsavedNote": "Bạn có thay đổi chưa lưu. Mẫu dùng phiên bản đã lưu gần nhất — hãy lưu workflow trước để bao gồm các thay đổi.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "visibility": "Ai thấy được",
+    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới."
+  },
+  "clipboard": {
+    "duplicate": "Nhân bản",
+    "copied_one": "Đã sao chép {{count}} node",
+    "copied_other": "Đã sao chép {{count}} node",
+    "cut_one": "Đã cắt {{count}} node",
+    "cut_other": "Đã cắt {{count}} node",
+    "pasted_one": "Đã dán {{count}} node",
+    "pasted_other": "Đã dán {{count}} node",
+    "pastedCleared_one": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây",
+    "pastedCleared_other": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây"
+  },
+  "layout": {
+    "group": "Bố cục",
+    "button": "Sắp xếp",
+    "tip": "Tự sắp xếp bố cục (Shift+L)",
+    "direction": "Hướng bố cục",
+    "lr": "Trái sang phải",
+    "tb": "Trên xuống dưới"
+  },
+  "palette": {
+    "title": "Bảng lệnh",
+    "description": "Tìm thao tác, node, workflow và trang",
+    "placeholder": "Gõ lệnh hoặc tìm kiếm…",
+    "empty": "Không có kết quả",
+    "addNode": "Thêm node {{type}}",
+    "goWorkflows": "Đến danh sách workflow",
+    "groups": {
+      "actions": "Thao tác",
+      "add": "Thêm node",
+      "nodes": "Đến node",
+      "workflows": "Mở workflow",
+      "navigation": "Đi tới"
+    }
   }
 }

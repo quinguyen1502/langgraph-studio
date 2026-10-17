@@ -153,7 +153,10 @@
     "mcpArgsHint": "Text, or {{field}} to pass a state value with its type.",
     "mcpManage": "Manage MCP servers",
     "viewOnly": "View only",
-    "nameLabel": "Workflow name"
+    "nameLabel": "Workflow name",
+    "more": "More actions",
+    "moreTip": "More actions (layout, versions, share, API…)",
+    "deleteWorkflow": "Delete workflow"
   },
   "nodes": {
     "start": "Start point",
@@ -381,7 +384,12 @@
     "MODEL_NOT_FOUND": "{{provider}} has no model named {{model}}",
     "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} does not accept the header {{header}}",
     "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} does not provide embeddings; choose another credential for this knowledge base",
-    "KB_EMBEDDING_DIMENSION_MISMATCH": "The embedding model returns {{got}}-dimensional vectors but this knowledge base stores {{expected}}-dimensional ones; re-index the knowledge base"
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "The embedding model returns {{got}}-dimensional vectors but this knowledge base stores {{expected}}-dimensional ones; re-index the knowledge base",
+    "TEMPLATE_NOT_FOUND": "Template not found",
+    "TEMPLATE_READ_ONLY": "This template cannot be deleted",
+    "TEMPLATE_INVALID": "Not a valid template file",
+    "TEMPLATE_NAME_REQUIRED": "Template name is required",
+    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation"
   },
   "lang": {
     "en": "English",
@@ -961,5 +969,108 @@
     "choose": "Choose from {{count}} models",
     "none": "The provider returned no models; type the name.",
     "failed": "Could not load models ({{error}}). Type the model name manually."
+  },
+  "shortcuts": {
+    "title": "Keyboard shortcuts",
+    "intro": "Shortcuts work on the canvas. Text fields keep their normal keys, except save, run and stop.",
+    "button": "Keyboard shortcuts (?)",
+    "or": "or",
+    "groups": {
+      "general": "General",
+      "canvas": "Canvas",
+      "run": "Run",
+      "history": "History",
+      "clipboard": "Clipboard",
+      "navigation": "Navigation"
+    },
+    "actions": {
+      "save": "Save workflow",
+      "cheatsheet": "Show this cheat sheet",
+      "escape": "Clear selection / close panel",
+      "run": "Run workflow",
+      "stop": "Stop the run",
+      "delete": "Delete selection (not Start/End)",
+      "selectAll": "Select all",
+      "fitView": "Fit to view",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "undo": "Undo",
+      "redo": "Redo",
+      "copy": "Copy selected nodes",
+      "cut": "Cut selected nodes",
+      "paste": "Paste nodes",
+      "duplicate": "Duplicate selected nodes",
+      "layout": "Tidy up the layout",
+      "palette": "Open the command palette"
+    }
+  },
+  "history": {
+    "group": "History",
+    "undo": "Undo",
+    "redo": "Redo",
+    "undoTip": "Undo (Ctrl/⌘+Z)",
+    "redoTip": "Redo (Ctrl/⌘+Shift+Z)",
+    "unsaved": "Unsaved changes"
+  },
+  "templates": {
+    "title": "New workflow",
+    "subtitle": "Start from a blank canvas or a template. Credentials and knowledge bases are never included — pick your own after creating.",
+    "blank": "Blank workflow",
+    "blankHint": "Start and End only",
+    "import": "Import template",
+    "export": "Export",
+    "useNamed": "Create a workflow from {{name}}",
+    "noDescription": "No description",
+    "invalidJson": "The file is not valid JSON",
+    "deleteTitle": "Delete template",
+    "deleteBody": "The template \"{{name}}\" will be removed. Workflows created from it are not affected.",
+    "scope": {
+      "builtin": "Built-in",
+      "user": "Only me",
+      "org": "Organisation"
+    },
+    "saveAs": "Save as template",
+    "saveAsTitle": "Save as template",
+    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channels, subgraph links, headers and API keys are removed.",
+    "saveAsConfirm": "Save template",
+    "unsavedNote": "You have unsaved changes. The template uses the last saved version — save the workflow first to include them.",
+    "name": "Name",
+    "description": "Description",
+    "visibility": "Visible to",
+    "saved": "Template \"{{name}}\" saved. Find it under New workflow."
+  },
+  "clipboard": {
+    "duplicate": "Duplicate",
+    "copied_one": "Copied {{count}} node",
+    "copied_other": "Copied {{count}} nodes",
+    "cut_one": "Cut {{count}} node",
+    "cut_other": "Cut {{count}} nodes",
+    "pasted_one": "Pasted {{count}} node",
+    "pasted_other": "Pasted {{count}} nodes",
+    "pastedCleared_one": "Pasted {{count}} node — {{creds}} credential not available here was cleared",
+    "pastedCleared_other": "Pasted {{count}} nodes — {{creds}} credential(s) not available here were cleared"
+  },
+  "layout": {
+    "group": "Layout",
+    "button": "Tidy up",
+    "tip": "Tidy up the layout (Shift+L)",
+    "direction": "Layout direction",
+    "lr": "Left to right",
+    "tb": "Top to bottom"
+  },
+  "palette": {
+    "title": "Command palette",
+    "description": "Search actions, nodes, workflows and pages",
+    "placeholder": "Type a command or search…",
+    "empty": "No results",
+    "addNode": "Add {{type}} node",
+    "goWorkflows": "Go to workflows",
+    "groups": {
+      "actions": "Actions",
+      "add": "Add node",
+      "nodes": "Jump to node",
+      "workflows": "Open workflow",
+      "navigation": "Go to"
+    }
   }
 }

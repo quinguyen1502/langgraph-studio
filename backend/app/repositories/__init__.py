@@ -15,5 +15,6 @@ from .workflow_shares import WorkflowShareRepository
 from .teams import TeamRepository
 from .audit import AuditRepository, SettingsRepository
 from .user_data import UserDataRepository
+from .templates import TemplateRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository", "TemplateRepository"]

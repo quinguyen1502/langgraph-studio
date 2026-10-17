@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import i18n from '@/lib/i18n'
@@ -43,8 +44,9 @@ function SectionView({ title, s, kind }: { title: string; s: Section; kind: 'nod
 }
 
 /** Workflow version history: list, diff any two versions, restore (TASK-0008). */
-export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onRestored: (wf: any) => void; isDirty?: () => boolean }) {
-  const { t } = useTranslation(); const [open, setOpen] = useState(false)
+export function VersionsDialog(props: { wid?: string; onRestored: (wf: any) => void; isDirty?: () => boolean; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const { wid, onRestored, isDirty } = props
+  const { t } = useTranslation(); const [open, setOpen, controlled] = useOpenState(props.open, props.onOpenChange)
   const [items, setItems] = useState<Version[]>([]); const [err, setErr] = useState('')
   const [a, setA] = useState<string>(''); const [b, setB] = useState<string>(''); const [diff, setDiff] = useState<Diff | null>(null)
   const [confirm, setConfirm] = useState<number | null>(null); const [total, setTotal] = useState(0)
@@ -73,7 +75,7 @@ export function VersionsDialog({ wid, onRestored, isDirty }: { wid?: string; onR
     <SelectContent>{items.map(i => <SelectItem key={i.version} value={String(i.version)}>v{i.version}</SelectItem>)}</SelectContent>
   </Select>
   return <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button size="sm" variant="outline" id="versions-btn" disabled={!wid}><History />{t('versions.button')}</Button></DialogTrigger>
+    {!controlled && <DialogTrigger asChild><Button size="sm" variant="outline" id="versions-btn" disabled={!wid}><History />{t('versions.button')}</Button></DialogTrigger>}
     <DialogContent className="sm:max-w-4xl">
       <DialogHeader><DialogTitle>{t('versions.title')}</DialogTitle><DialogDescription>{t('versions.desc')}</DialogDescription></DialogHeader>
       {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}

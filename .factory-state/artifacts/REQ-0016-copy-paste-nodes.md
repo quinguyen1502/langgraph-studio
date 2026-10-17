@@ -4,11 +4,11 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0016
-- Status: Proposed (suggestion)
+- Status: Proposed
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
 - Updated: 2026-10-17
-- Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent
+- Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent, approved by the owner 2026-10-17
 
 ## Summary
 
@@ -58,4 +58,4 @@ Copy/cut/paste and duplicate selected nodes (with the edges between them), also 
 
 ## Open Questions
 
-- Approve this suggestion for Phase 5?
+- None yet

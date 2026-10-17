@@ -4,11 +4,11 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0017
-- Status: Proposed (suggestion)
+- Status: Proposed
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
 - Updated: 2026-10-17
-- Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent
+- Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent, approved by the owner 2026-10-17
 
 ## Summary
 
@@ -58,4 +58,4 @@ One-click automatic layout of the graph (left-to-right or top-to-bottom).
 
 ## Open Questions
 
-- Approve this suggestion for Phase 5?
+- None yet

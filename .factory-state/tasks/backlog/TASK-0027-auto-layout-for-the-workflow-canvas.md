@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0027
 - Status: backlog
-- Phase: 5 — Editor UX (suggestion)
+- Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -15,7 +15,7 @@
 
 ## Objective
 
-Implement REQ-0017: Auto-layout for the workflow canvas. Suggested follow-on; needs owner approval before it moves to todo.
+Implement REQ-0017: Auto-layout for the workflow canvas.
 
 ## Scope
 
@@ -68,11 +68,12 @@ Implement REQ-0017: Auto-layout for the workflow canvas. Suggested follow-on; ne
 
 ## Open Questions
 
-- Suggestion, not yet approved by the owner.
+- None yet
 
 ## Activity Log
 
-- 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`; marked as a suggestion.
+- 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
+- 2026-10-17: Approved by the owner (no longer a suggestion).
 
 ## Handoff Notes
 

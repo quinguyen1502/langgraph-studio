@@ -131,7 +131,12 @@
     "subgraphWorkflow": "Workflow to run",
     "subgraphOpen": "Open workflow",
     "subgraphMissing": "This workflow no longer exists or is not yours.",
-    "subgraphHint": "Its nodes run inside this run and show up in the trace as \"Subgraph › node\". State is shared by field name; its extra fields are added to this run."
+    "subgraphHint": "Its nodes run inside this run and show up in the trace as \"Subgraph › node\". State is shared by field name; its extra fields are added to this run.",
+    "retrieverKb": "Knowledge base",
+    "retrieverMissing": "This knowledge base no longer exists or is not yours.",
+    "retrieverNone": "No knowledge base yet: create one in Settings.",
+    "retrieverTopK": "Chunks to return (1-20)",
+    "retrieverManage": "Manage knowledge bases"
   },
   "nodes": {
     "start": "Start point",
@@ -142,7 +147,8 @@
     "code": "Python node from an imported repo",
     "human": "Pause for approval or input",
     "join": "Wait for all parallel branches",
-    "subgraph": "Run another saved workflow"
+    "subgraph": "Run another saved workflow",
+    "retriever": "Search a knowledge base"
   },
   "trace": {
     "idle": "Not run",
@@ -277,7 +283,19 @@
     "APPROVAL_TOKEN_EXPIRED": "This approval request has expired.",
     "APPROVAL_ALREADY_DECIDED": "This request was already answered.",
     "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {{kind}} account in LangGraph Studio (Settings → My accounts) to approve.",
-    "APPROVAL_FORBIDDEN": "You are not allowed to approve this run."
+    "APPROVAL_FORBIDDEN": "You are not allowed to approve this run.",
+    "KB_NOT_FOUND": "Knowledge base not found or not yours",
+    "KB_NAME_REQUIRED": "Knowledge base name is required",
+    "KB_NAME_TOO_LONG": "Knowledge base name must be at most {{max}} characters",
+    "KB_DOCUMENT_NOT_FOUND": "Document not found",
+    "KB_FILE_REQUIRED": "Choose a file to upload",
+    "KB_FILE_TYPE_UNSUPPORTED": "Unsupported file type (allowed: {{allowed}})",
+    "KB_FILE_TOO_LARGE": "File is too large (max {{max_mb}} MB)",
+    "KB_FILE_UNREADABLE": "Could not read the file: {{reason}}",
+    "KB_FILE_EMPTY": "The file contains no text",
+    "KB_QUERY_REQUIRED": "Enter a search query",
+    "KB_EMBEDDING_FAILED": "Embedding failed: {{reason}}",
+    "KB_EMBEDDER_CHANGED": "The embedding model or key changed since the documents were indexed; re-index the knowledge base"
   },
   "lang": {
     "en": "English",
@@ -296,7 +314,8 @@
     "reference": "Reference (module:function)",
     "source": "Source",
     "url": "URL",
-    "humanPrompt": "Question for the human ({{field}})"
+    "humanPrompt": "Question for the human ({{field}})",
+    "queryTemplate": "Search query ({{field}})"
   },
   "samples": {
     "input": "{\n  \"message\": \"Where is my order A100?\"\n}",
@@ -511,12 +530,14 @@
     "nav": {
       "channels": "Channels",
       "accounts": "My accounts",
-      "audit": "Audit log"
+      "audit": "Audit log",
+      "knowledge": "Knowledge bases"
     },
     "intro": {
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
       "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
-      "audit": "Every approval request and decision made through a chat channel."
+      "audit": "Every approval request and decision made through a chat channel.",
+      "knowledge": "Documents that Retriever nodes search. Text is split into chunks and embedded; only you can use your knowledge bases."
     },
     "status": {
       "connected": "Connected",
@@ -548,5 +569,41 @@
     },
     "noMatch": "Nothing matches these filters.",
     "auditCount": "{{shown}} of {{total}} entries"
+  },
+  "kb": {
+    "new": "New knowledge base",
+    "newHelp": "Give it a name, then upload documents.",
+    "create": "Create",
+    "name": "Name",
+    "description": "Description",
+    "model": "Embedding model",
+    "credential": "Embedding key",
+    "credentialDefault": "Server default (OPENAI_API_KEY, else offline mock)",
+    "documents_one": "{{count}} document",
+    "documents_other": "{{count}} documents",
+    "chunks_one": "{{count}} chunk",
+    "chunks_other": "{{count}} chunks",
+    "noDescription": "No description",
+    "upload": "Upload document",
+    "uploadHelp": ".txt, .md or .pdf, up to 10 MB",
+    "uploaded": "{{name}}: {{chunks}} chunks indexed",
+    "file": "File",
+    "size": "Size",
+    "chunkCol": "Chunks",
+    "deleteFile": "Delete document",
+    "fileDeleted": "Document deleted",
+    "noFiles": "No documents yet.",
+    "testSearch": "Test a search",
+    "queryPlaceholder": "Ask something your documents answer…",
+    "search": "Search",
+    "noHits": "No matching chunks.",
+    "settings": "Settings",
+    "embedHelp": "Without a key the server's OPENAI_API_KEY is used, or a deterministic offline embedding. Changing the model or key re-indexes the documents.",
+    "saved": "Saved",
+    "reindex": "Re-index",
+    "reindexed": "{{count}} chunks re-indexed",
+    "delete": "Delete knowledge base",
+    "confirmDelete": "Delete the knowledge base \"{{name}}\" and all its documents?",
+    "none": "No knowledge bases yet."
   }
 }

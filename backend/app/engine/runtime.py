@@ -40,7 +40,7 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
 
 
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None,
-               effects: Optional[Effects] = None):
+               effects: Optional[Effects] = None, ports=None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator.
     A Human node without a response yields `run_waiting` {node, prompt, checkpoint} and stops.
     resume = {"node" | "nodes", "state", "counts"?, "value"?} continues at that node (or those parallel nodes) with the
@@ -49,14 +49,15 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     Progress checkpoints come from LangGraph itself (TASK-0021): the graph is compiled with an in-memory saver and its
     superstep checkpoints are observed (`stream_mode="checkpoints"`), so a step with several parallel nodes (fan-out)
     is resumable too. Each yields `_checkpoint` {node, nodes, state, counts}; callers must not forward it to clients.
-    effects: idempotency keys + node-result ledger + fencing guard for side-effect nodes (TASK-0021)."""
+    effects: idempotency keys + node-result ledger + fencing guard for side-effect nodes (TASK-0021).
+    ports: user-bound services for Retriever / MCP nodes (engine.ports.Ports)."""
     if resume is None and (bad := check_input(wf, inputs)): raise ValidationError(bad)
     usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
     held = {"node": resume["node"], "value": resume["value"]} if resume and "value" in resume else None
     counts: Dict[str, int] = {k: int(v) for k, v in ((resume or {}).get("counts") or {}).items()}
     if effects is not None: effects.counts = counts  # node iterations feed the idempotency keys
     app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)),
-                           entry=resume_nodes(resume) if resume else None, resume=held, effects=effects, checkpointer=InMemorySaver())
+                           entry=resume_nodes(resume) if resume else None, resume=held, effects=effects, checkpointer=InMemorySaver(), ports=ports)
     nodes = {n["id"]: n for n in wf["nodes"]}
     if resume: inputs = dict(resume.get("state") or {})
     state = dict(inputs); cp_state, cp_counts = dict(state), dict(counts); first = True

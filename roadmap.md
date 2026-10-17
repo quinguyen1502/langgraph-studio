@@ -43,7 +43,7 @@ Status for all Phase 2–4 tasks: backlog.
 - TASK-0011 Subgraphs and parallel branches (REQ-0006): **in review** (draft PR into `develop`)
 - TASK-0012 RAG node (REQ-0007): **in review** (draft PR into `develop`, stacked on TASK-0011)
 - TASK-0013 MCP tools (REQ-0011): **in review** (draft PR into `develop`, stacked on TASK-0012)
-- TASK-0014 RBAC and sharing (REQ-0012)
+- TASK-0014 RBAC and sharing (REQ-0012): **in review** (draft PR into `develop`, stacked on TASK-0013)
 
 ## Phase 4 — Last
 

@@ -66,7 +66,7 @@ Introduce roles (admin, editor, viewer) and sharing of workflows with users or g
 
 ## Open Questions
 
-- Is SSO (Google/Microsoft) required with RBAC?
+- Resolved 2026-10-17 (owner): no SSO. Roles and permissions, an admin UI for users and roles (STUDIO_ADMIN_EMAILS stays as a bootstrap), workflow sharing, and the Slack OAuth distribution leftover of DEC-0019. See DEC-0023.
 
 ## Related Artifacts
 

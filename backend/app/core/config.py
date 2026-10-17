@@ -77,7 +77,7 @@ def slack_client_id() -> str: return (os.environ.get("SLACK_CLIENT_ID") or "").s
 def slack_client_secret() -> str: return (os.environ.get("SLACK_CLIENT_SECRET") or "").strip()
 def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET") or "").strip()
 def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
-SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write,users:read"
+SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write"  # same as the manual setup (README)
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
 # --- TASK-0022 follow-up: identity verification codes sent by the bot ---

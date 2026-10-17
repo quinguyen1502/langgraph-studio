@@ -36,6 +36,18 @@ Approve or reject waiting runs from external channels, starting with Slack and T
 - README setup guides, DEC-0019, REV-0016, QA-0016.
 - Screenshots in 4 variants.
 
+## Follow-up (same PR #19, follow-up commits)
+
+1. Identity verification: the bot DMs a one-time code; codes expire, attempts are limited, resends are throttled. Only verified links authorize.
+2. Org-wide connections managed by admins (`users.is_admin`, `STUDIO_ADMIN_EMAILS`); personal ones stay; the Human node picks either by `channel_id`.
+3. Chat messages and buttons in en/vi from the owner's / presser's language (`users.lang`, saved by the language switcher).
+4. API runs resumed from a channel send their `callback_url` webhook through the delivery pipeline.
+5. Several Slack workspaces per owner (`team_id`, shared Request URL routed by team).
+6. Public callbacks rate-limited per IP and per connection (`RATE_LIMITED`).
+
+Acceptance: migrations `0011`–`0015` (SQLite and Postgres); codes in the catalog, docs and en+vi; pytest on SQLite and Postgres + Redis; e2e;
+DEC-0019 updated, REV/QA follow-up sections, README, roadmap; screenshots 22–25 in 4 variants and the contact sheet.
+
 ## Links
 
 - DEC-0019, REV-0016, QA-0016; branch `factory/task-0022-approval-channels`.

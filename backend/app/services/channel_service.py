@@ -56,11 +56,21 @@ class ChannelService:
         if kind not in self.adapters: return None
         return self.repo.find_channel(owner, kind, "user") or self.repo.org_channel(kind)
 
-    def dm_channel(self, uid: str, kind: str) -> Optional[tuple[ApprovalChannel, dict]]:
-        """(adapter, secrets) able to DM this user's chat account: their personal connection, else the org one."""
+    def dm_channel(self, uid: str, kind: str, team: str = "") -> Optional[tuple[ApprovalChannel, dict]]:
+        """(adapter, secrets) able to DM this user's chat account: their personal connection, else the org one; for
+        platforms with workspaces (Slack) one of that workspace."""
         if kind not in self.adapters: return None
-        c = self.repo.find_channel(uid, kind, "user") or self.repo.org_channel(kind)
+        if self.adapters[kind].per_team:
+            c = next((c for c in self.workspaces(uid, kind) if c.team_id == team), None)
+        else: c = self.repo.find_channel(uid, kind, "user") or self.repo.org_channel(kind)
         return (self.adapters[kind], self.secrets(c)) if c is not None else None
+
+    def workspaces(self, uid: str, kind: str) -> list[ChannelRow]:
+        """The connections of this kind the user may use, one per workspace (personal before org, oldest first)."""
+        seen, out = set(), []
+        for c in sorted(self.repo.channels_visible(uid), key=lambda c: (c.scope != "user", c.created)):
+            if c.kind == kind and c.team_id and c.team_id not in seen: seen.add(c.team_id); out.append(c)
+        return out
 
     # ---- API ----
     def public(self, c: ChannelRow, uid: str, admin: bool) -> dict:

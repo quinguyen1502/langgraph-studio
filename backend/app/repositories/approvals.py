@@ -45,38 +45,41 @@ class ApprovalRepository:
     @staticmethod
     def new_id() -> str: return uuid.uuid4().hex[:12]
 
-    # ---- identities ----
-    def identities(self, uid: str) -> dict[str, ChannelIdentity]:
-        with self.db.session() as s: return {i.kind: i for i in s.scalars(select(ChannelIdentity).where(ChannelIdentity.user_id == uid))}
-
-    def identity(self, uid: str, kind: str) -> Optional[ChannelIdentity]:
-        with self.db.session() as s: return s.get(ChannelIdentity, (uid, kind))
-
-    def user_for(self, kind: str, external_id: str) -> Optional[str]:
-        """The studio user with a *verified* link to this account (None when nobody proved it)."""
+    # ---- identities (key: user, kind, team_id; team_id "" for platforms without workspaces) ----
+    def identities(self, uid: str) -> list[ChannelIdentity]:
         with self.db.session() as s:
-            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.external_id == external_id,
-                                                                  ChannelIdentity.verified_at.is_not(None)))
+            return list(s.scalars(select(ChannelIdentity).where(ChannelIdentity.user_id == uid).order_by(ChannelIdentity.kind, ChannelIdentity.team_id)))
 
-    def put_identity(self, uid: str, kind: str, external_id: Optional[str]) -> None:
+    def identity(self, uid: str, kind: str, team: str = "") -> Optional[ChannelIdentity]:
+        with self.db.session() as s: return s.get(ChannelIdentity, (uid, kind, team))
+
+    def user_for(self, kind: str, external_id: str, team: str = "") -> Optional[str]:
+        """The studio user with a *verified* link to this account in this workspace (None when nobody proved it)."""
+        with self.db.session() as s:
+            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.team_id == team,
+                                                                  ChannelIdentity.external_id == external_id, ChannelIdentity.verified_at.is_not(None)))
+
+    def put_identity(self, uid: str, kind: str, team: str, external_id: Optional[str]) -> None:
         """Link (unverified, no code yet) or unlink with None. Relinking the same account keeps its state."""
         with self.db.session() as s:
-            row = s.get(ChannelIdentity, (uid, kind))
+            row = s.get(ChannelIdentity, (uid, kind, team))
             if row is not None and row.external_id == external_id: return
             if row is not None: s.delete(row); s.flush()
-            if external_id: s.add(ChannelIdentity(user_id=uid, kind=kind, external_id=external_id, created=time.time(), code_attempts=0))
+            if external_id: s.add(ChannelIdentity(user_id=uid, kind=kind, team_id=team, external_id=external_id, created=time.time(), code_attempts=0))
             s.commit()
 
-    def set_identity(self, uid: str, kind: str, **vals) -> None:
-        with self.db.session() as s:
-            s.execute(update(ChannelIdentity).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind).values(**vals)); s.commit()
+    @staticmethod
+    def _key(uid: str, kind: str, team: str):
+        return (ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind, ChannelIdentity.team_id == team)
 
-    def count_attempt(self, uid: str, kind: str) -> int:
+    def set_identity(self, uid: str, kind: str, team: str = "", **vals) -> None:
+        with self.db.session() as s: s.execute(update(ChannelIdentity).where(*self._key(uid, kind, team)).values(**vals)); s.commit()
+
+    def count_attempt(self, uid: str, kind: str, team: str = "") -> int:
         """Atomically count a wrong code; returns the new count."""
         with self.db.session() as s:
-            s.execute(update(ChannelIdentity).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind)
-                      .values(code_attempts=ChannelIdentity.code_attempts + 1)); s.commit()
-            return s.scalar(select(ChannelIdentity.code_attempts).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind)) or 0
+            s.execute(update(ChannelIdentity).where(*self._key(uid, kind, team)).values(code_attempts=ChannelIdentity.code_attempts + 1)); s.commit()
+            return s.scalar(select(ChannelIdentity.code_attempts).where(*self._key(uid, kind, team))) or 0
 
     # ---- requests ----
     def add_request(self, r: ApprovalRequest) -> ApprovalRequest:

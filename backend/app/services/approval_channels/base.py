@@ -42,6 +42,7 @@ class ApprovalChannel:
     patterns: dict[str, str] = {}           # field -> regex it must match
     identity_pattern: str = r".+"           # shape of a platform user id
     hint_field: str = ""                    # which secret the masked hint shows
+    per_team: bool = False                  # identities are per workspace (Slack user ids belong to one workspace)
     shared_callback: bool = False           # one callback URL for every connection, routed by route_key() (Slack)
     transport: Optional[httpx.BaseTransport] = None  # tests plug in httpx.MockTransport
 

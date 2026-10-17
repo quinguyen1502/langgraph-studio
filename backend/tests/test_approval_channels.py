@@ -95,13 +95,21 @@ def code_for(api, external_id):
     msgs = [b.get("text", "") for _, b in api.calls if str(b.get("channel") or b.get("chat_id") or "") == external_id and "blocks" not in b and "reply_markup" not in b]
     return re.search(r"\b(\d{6})\b", msgs[-1]).group(1)
 
-def link(c, api, u, kind, external_id, own_channel=True):
+def slot(data, kind, team=None):
+    """The identity slot of a platform (and Slack workspace) in GET/PUT /identities."""
+    return next(x for x in data["slots"] if x["kind"] == kind and (team is None or x["team_id"] == team))
+
+def ident(c, u, kind, external_id, team=None):
+    return c.put("/api/approvals/identities", json={"kind": kind, "external_id": external_id, **({"team_id": team} if team else {})}, headers=H(u["token"]))
+
+def link(c, api, u, kind, external_id, own_channel=True, team=None):
     """Link + verify a chat account the way a user does: (own channel to receive the DM) -> link -> code -> verify."""
     if own_channel: connect(c, u, kind)
-    assert c.put("/api/approvals/identities", json={kind: external_id}, headers=H(u["token"])).status_code == 200
-    assert c.post(f"/api/approvals/identities/{kind}/send-code", headers=H(u["token"])).status_code == 200
-    r = c.post(f"/api/approvals/identities/{kind}/verify", json={"code": code_for(api, external_id)}, headers=H(u["token"]))
-    assert r.json()["data"][kind]["verified"] is True, r.json()
+    t = {"team_id": team} if team else {}
+    assert ident(c, u, kind, external_id, team).status_code == 200
+    assert c.post(f"/api/approvals/identities/{kind}/send-code", json=t, headers=H(u["token"])).status_code == 200
+    r = c.post(f"/api/approvals/identities/{kind}/verify", json={"code": code_for(api, external_id), **t}, headers=H(u["token"]))
+    assert slot(r.json()["data"], kind, team)["verified"] is True, r.json()
 
 def run_row(c, owner, wid, rid): return next(r for r in c.get(f"/api/workflows/{wid}/runs", headers=H(owner["token"])).json()["data"] if r["id"] == rid)
 
@@ -168,12 +176,19 @@ def test_several_slack_workspaces_per_owner_routed_by_team_id(c, api):
     again = connect(c, o, "slack", bot_token=f"xoxb-1111-{tb}-zzzzzzzz", signing_secret=sec_b)
     assert again["id"] == b["id"] and again["hint"] == "••••zzzz"  # same workspace: replaced, not duplicated
     assert len([x for x in c.get("/api/approvals/channels", headers=H(o["token"])).json()["data"]["channels"] if x["kind"] == "slack"]) == 2
-    link(c, api, o, "slack", ua, own_channel=False)
+    assert ident(c, o, "slack", ua).json()["error"]["code"] == "CHANNEL_CONFIG_INVALID"  # two workspaces: say which one
+    link(c, api, o, "slack", ua, own_channel=False, team=ta)  # verified in A only
     wid = workflow(c, o, {"channel_id": b["id"], "channel": "slack", "target": "C0B"}); rid = start_waiting(c, o, wid)
     approve = until(lambda: [p for p in api.requests() if p["channel"] == "C0B"])[-1]["blocks"][1]["elements"][0]["value"]
     assert slack_post(c, None, press(approve, ua, team="T0NOPE"), secret=sec_b).status_code == 401  # unknown workspace
     assert slack_post(c, None, press(approve, ua, team=tb), secret=SIGNING).status_code == 401      # A's secret for B's team
     assert slack_post(c, None, press(approve, ua, team=ta)).json()["data"]["code"] == "APPROVAL_TOKEN_INVALID"  # sent via B, not A
+    r = slack_post(c, None, press(approve, ua, team=tb), secret=sec_b).json()["data"]
+    assert r["code"] == "APPROVAL_IDENTITY_UNKNOWN"  # the same member id in workspace B is another account until verified there
+    other = user(c); connect(c, other, "slack", bot_token=f"xoxb-1111-{tb}-abcdefgh", signing_secret=sec_b)
+    link(c, api, other, "slack", ua, own_channel=False)  # nobody holds ua in B yet: another studio user may verify it there
+    ident(c, other, "slack", ""); link(c, api, o, "slack", ua, own_channel=False, team=tb)
+    assert len([x for x in c.get("/api/approvals/identities", headers=H(o["token"])).json()["data"]["slots"] if x["kind"] == "slack" and x["verified"]]) == 2
     assert slack_post(c, None, press(approve, ua, team=tb), secret=sec_b).json()["data"] == {"outcome": "approved"}
     assert until(lambda: run_row(c, o, wid, rid)["status"] == "ok")
     upd = api.named("chat.update")[-1]; assert upd["channel"] == "C0B"
@@ -206,14 +221,16 @@ def test_chat_texts_follow_the_owner_and_presser_language(c, api):
 
 def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
     a, b = user(c), user(c); uid = f"U{uuid.uuid4().hex[:8].upper()}"
-    assert c.put("/api/approvals/identities", json={"slack": "lower"}, headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_INVALID"
-    assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_NOT_LINKED"
-    got = c.put("/api/approvals/identities", json={"slack": uid}, headers=H(a["token"])).json()["data"]
-    assert got == {"slack": {"external_id": uid, "verified": False, "code_pending": False, "code_expires": None}, "telegram": None}
-    # no channel that could DM the account yet
-    assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    # no Slack workspace the user could use yet: nothing to link to
+    assert ident(c, a, "slack", uid).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    assert c.get("/api/approvals/identities", headers=H(a["token"])).json()["data"] == {"slots": [
+        {"kind": "telegram", "team_id": None, "team_name": None, "available": False, "external_id": None, "verified": False, "code_pending": False, "code_expires": None}]}
     connect(c, a, "slack")
-    sent = c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["data"]["slack"]
+    assert ident(c, a, "slack", "lower").json()["error"]["code"] == "IDENTITY_INVALID"
+    assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_NOT_LINKED"
+    got = slot(ident(c, a, "slack", uid).json()["data"], "slack")
+    assert got == {"kind": "slack", "team_id": "2222", "team_name": "Team 2222", "available": True, "external_id": uid, "verified": False, "code_pending": False, "code_expires": None}
+    sent = slot(c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["data"], "slack")
     assert sent["code_pending"] and not sent["verified"] and api.named("chat.postMessage")[-1]["channel"] == uid 
     code = code_for(api, uid); assert code not in json.dumps(sent)
     r = c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"]))  # resend throttle
@@ -233,13 +250,13 @@ def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
         mp.setattr(mod, "time", SimpleNamespace(time=lambda: time.time() + 3600))
         assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).status_code == 410  # IDENTITY_CODE_EXPIRED
     c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])); code = code_for(api, uid)
-    assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).json()["data"]["slack"]["verified"] is True
+    assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).json()["data"]["slots"][0]["verified"] is True
     # b claims the same account: may link (unverified) but cannot verify it while a holds it
     connect(c, b, "slack")
-    c.put("/api/approvals/identities", json={"slack": uid}, headers=H(b["token"])); c.post("/api/approvals/identities/slack/send-code", headers=H(b["token"]))
+    ident(c, b, "slack", uid); c.post("/api/approvals/identities/slack/send-code", headers=H(b["token"]))
     r = c.post("/api/approvals/identities/slack/verify", json={"code": code_for(api, uid)}, headers=H(b["token"]))
     assert r.status_code == 409 and r.json()["error"]["code"] == "IDENTITY_TAKEN"
-    assert c.put("/api/approvals/identities", json={"slack": ""}, headers=H(a["token"])).json()["data"]["slack"] is None  # unlink
+    assert slot(ident(c, a, "slack", "").json()["data"], "slack")["external_id"] is None  # unlink
     link(c, api, b, "slack", uid, own_channel=False)
 
 
@@ -259,7 +276,7 @@ def test_slack_approval_end_to_end(c, api):
     assert slack_post(c, ch["id"], press(approve[:-2] + "xx", ua)).json()["data"] == {"outcome": "refused", "code": "APPROVAL_TOKEN_INVALID"}
     assert slack_post(c, ch["id"], press(approve.replace("a.", "r.", 1), ua)).json()["data"]["code"] == "APPROVAL_TOKEN_INVALID"  # decision is signed
     # not mapped / not allowed: refused, told privately, run still waiting
-    unverified = user(c); c.put("/api/approvals/identities", json={"slack": "U0NOBODY"}, headers=H(unverified["token"]))  # linked, never verified
+    unverified = user(c); connect(c, unverified, "slack"); ident(c, unverified, "slack", "U0NOBODY")  # linked, never verified
     assert slack_post(c, ch["id"], press(approve, "U0NOBODY")).json()["data"]["code"] == "APPROVAL_IDENTITY_UNKNOWN"
     assert slack_post(c, ch["id"], press(approve, us)).json()["data"]["code"] == "APPROVAL_FORBIDDEN"
     eph = [b for u, b in api.calls if u.startswith("https://hooks.slack.com/")]

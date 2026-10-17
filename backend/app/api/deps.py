@@ -108,4 +108,4 @@ async def limit_body(request: Request):
 
 
 def identity_service() -> IdentityService:
-    ch = channel_service(); return IdentityService(ch.repo, ch.users, ch.adapters, ch.dm_channel)
+    ch = channel_service(); return IdentityService(ch.repo, ch.users, ch)

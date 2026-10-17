@@ -47,15 +47,15 @@ test('approval channels: org connection, verified account, Human node, request, 
   const cid = await card.getAttribute('data-channel-id')
   // my accounts: link -> the bot DMs a code -> wrong code refused -> right code verifies
   await dlg.locator('#approvals-tab-accounts').click()
-  await dlg.locator('#id-slack').fill('lower-case'); await dlg.locator('#id-slack-link').click()
+  await dlg.locator('#id-slack-2222').fill('lower-case'); await dlg.locator('#id-slack-2222-link').click()
   await expect(dlg.getByRole('alert')).toContainText('Slack')  // IDENTITY_INVALID
-  await dlg.locator('#id-slack').fill('U0E2EADMIN'); await dlg.locator('#id-slack-link').click()
-  await expect(dlg.locator('[data-testid=identity-slack]')).toContainText('Nhập mã 6 số')
+  await dlg.locator('#id-slack-2222').fill('U0E2EADMIN'); await dlg.locator('#id-slack-2222-link').click()
+  await expect(dlg.locator('[data-testid=id-slack-2222]')).toContainText('Nhập mã 6 số')
   const code = (await sent(page, 'chat.postMessage', b => b.channel === 'U0E2EADMIN')).text.match(/\d{6}/)[0]
-  await dlg.locator('#id-slack-code').fill(code === '000000' ? '111111' : '000000'); await dlg.locator('#id-slack-verify').click()
+  await dlg.locator('#id-slack-2222-code').fill(code === '000000' ? '111111' : '000000'); await dlg.locator('#id-slack-2222-verify').click()
   await expect(dlg.getByRole('alert')).toContainText('còn 4 lần')  // IDENTITY_CODE_INVALID {left}
-  await dlg.locator('#id-slack-code').fill(code); await dlg.locator('#id-slack-verify').click()
-  await expect(dlg.locator('#id-slack-verified')).toBeVisible()
+  await dlg.locator('#id-slack-2222-code').fill(code); await dlg.locator('#id-slack-2222-verify').click()
+  await expect(dlg.locator('#id-slack-2222-verified')).toBeVisible()
   await page.keyboard.press('Escape')
   // reopen the editor (channels reload) and configure the node
   await page.reload(); await page.locator('.react-flow__node[data-id="ask"]').click()

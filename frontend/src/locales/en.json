@@ -426,7 +426,7 @@
     "removed": "Removed",
     "register": "Register webhook",
     "registered": "Webhook registered",
-    "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
+    "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. Slack accounts are linked per workspace. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
     "identity": {
       "slack": "Slack member ID",
       "telegram": "Telegram user ID"
@@ -497,6 +497,7 @@
     "orgReadOnly": "Managed by an admin. You can pick it on your Human nodes.",
     "replaceSecrets": "Replace secrets",
     "sharedUrl": "Request URL (all workspaces)",
-    "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret."
+    "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret.",
+    "noConnection": "No connection"
   }
 }

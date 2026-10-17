@@ -141,8 +141,9 @@ class ApprovalService:
         cb = a.handle_callback(body)  # parsing only; nothing is trusted before the signature check below
         c, sec = self._connection(a, cid, headers, body, cb)
         if cb is None: return {"outcome": "ignored"}
-        code, r, decision = self.decide(kind, c.id, cb.token, cb.external_user)
-        presser = self.repo.user_for(kind, cb.external_user) if cb.external_user else None
+        team = (c.team_id or "") if a.per_team else ""
+        code, r, decision = self.decide(kind, c.id, cb.token, cb.external_user, team)
+        presser = self.repo.user_for(kind, cb.external_user, team) if cb.external_user else None
         mine = self._lang(presser or (r.owner if r else None))  # private answers: the presser's language, else the owner's
         if code:
             a.acknowledge(sec, cb, text(mine, code, kind=a.label), accepted=False)
@@ -154,13 +155,13 @@ class ApprovalService:
         self._update(a, sec, r, text(lang, "at", text=text(lang, key, who=name), when=time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())))
         return {"outcome": decision}
 
-    def decide(self, kind, cid, token, external) -> tuple[Optional[str], Optional[ApprovalRequest], Optional[str]]:
+    def decide(self, kind, cid, token, external, team: str = "") -> tuple[Optional[str], Optional[ApprovalRequest], Optional[str]]:
         """Returns (refusal code, request, decision). Audits every attempt."""
         r, decision = self._parse(token)
         if r is None or r.channel_id != cid:
             log.warning("approval callback with an invalid token on channel %s", cid)
             return "APPROVAL_TOKEN_INVALID", None, None
-        uid = self.repo.user_for(kind, external) if external else None
+        uid = self.repo.user_for(kind, external, team) if external else None  # verified in the workspace of the connection
         def refuse(code):
             self._audit(r.owner, kind, "denied", r, code=code, actor=uid, external=external); return code, r, None
         if r.status != "pending": return refuse("APPROVAL_ALREADY_DECIDED")

@@ -22,12 +22,14 @@ class ApprovalChannel(Base):
 
 
 class ChannelIdentity(Base):
-    """Maps a channel account (Slack user id, Telegram user id) to a studio user. Only a *verified* link (the user typed
-    the one-time code the bot sent to that account) authorizes button presses; one verified link per account."""
+    """Maps a channel account (Slack user id in one workspace, Telegram user id) to a studio user. Only a *verified* link
+    (the user typed the one-time code the bot sent to that account) authorizes button presses; one verified link per
+    (kind, team_id, external_id)."""
     __tablename__ = "channel_identities"
     __table_args__ = (Index("ix_channel_identities_external", "kind", "external_id"),)
     user_id: Mapped[str] = mapped_column(Text, primary_key=True)
     kind: Mapped[str] = mapped_column(Text, primary_key=True)
+    team_id: Mapped[str] = mapped_column(Text, primary_key=True, default="", server_default="")  # Slack workspace; "" = no workspaces (Telegram)
     external_id: Mapped[str] = mapped_column(Text)
     created: Mapped[float] = mapped_column(Float)
     verified_at: Mapped[Optional[float]] = mapped_column(Float)

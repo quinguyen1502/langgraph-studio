@@ -103,38 +103,44 @@ function AddChannel({ data, onChange }: { data: Channels; onChange: () => void }
   </div>
 }
 
-type Identity = { external_id: string; verified: boolean; code_pending: boolean; code_expires: number | null } | null
+/** One identity slot: a platform, or one Slack workspace (team_id), and the account linked there. */
+export type Slot = { kind: string; team_id: string | null; team_name: string | null; available: boolean; external_id: string | null; verified: boolean; code_pending: boolean; code_expires: number | null }
+type Slots = { slots: Slot[] }
 
 /** One chat account: link -> the bot DMs a one-time code -> type it back -> verified (only then do button presses count). */
-function IdentityRow({ kind, value, onChange }: { kind: string; value: Identity; onChange: (ids: Record<string, Identity>) => void }) {
-  const { t } = useTranslation()
-  const [ext, setExt] = useState(value?.external_id || ''); const [code, setCode] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slots) => void }) {
+  const { t } = useTranslation(); const { kind } = slot; const team = slot.team_id ? { team_id: slot.team_id } : {}
+  const idp = `id-${kind}${slot.team_id ? `-${slot.team_id}` : ''}`
+  const [ext, setExt] = useState(slot.external_id || ''); const [code, setCode] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const call = async (path: string, init: Parameters<typeof api>[1]) => {
     setErr(''); setBusy(true)
-    try { onChange(await api<Record<string, Identity>>(path, init)); return true } catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
+    try { onChange(await api<Slots>(path, init)); return true } catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
   }
   const linkAndSend = async () => {
-    if (await call('/api/approvals/identities', { method: 'PUT', json: { [kind]: ext.trim() } }) && ext.trim()) await call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST' })
+    if (await call('/api/approvals/identities', { method: 'PUT', json: { kind, external_id: ext.trim(), ...team } }) && ext.trim())
+      await call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST', json: team })
   }
-  const changed = ext.trim() !== (value?.external_id || '')
-  return <div className="space-y-2 rounded-lg border p-4" data-testid={`identity-${kind}`}>
-    <div className="flex items-center gap-2">
-      <Label htmlFor={`id-${kind}`}>{t(`approvals.identity.${kind}`)}</Label>
-      {value && (value.verified ? <Badge id={`id-${kind}-verified`}><ShieldCheck />{t('approvals.verified')}</Badge> : <Badge variant="outline">{t('approvals.unverified')}</Badge>)}
+  const changed = ext.trim() !== (slot.external_id || '')
+  return <div className="space-y-2 rounded-lg border p-4" data-testid={idp}>
+    <div className="flex flex-wrap items-center gap-2">
+      <Label htmlFor={idp}>{t(`approvals.identity.${kind}`)}</Label>
+      {slot.team_id && <Badge variant="outline">{slot.team_name || slot.team_id}</Badge>}
+      {slot.external_id && (slot.verified ? <Badge id={`${idp}-verified`}><ShieldCheck />{t('approvals.verified')}</Badge> : <Badge variant="outline">{t('approvals.unverified')}</Badge>)}
+      {!slot.available && <Badge variant="secondary">{t('approvals.noConnection')}</Badge>}
     </div>
     <div className="flex gap-2">
-      <Input id={`id-${kind}`} className="font-mono" value={ext} placeholder={t(`approvals.identityPh.${kind}`)} onChange={e => setExt(e.target.value)} />
-      <Button size="sm" variant={changed || !value?.verified ? 'default' : 'outline'} id={`id-${kind}-link`} disabled={busy || (!changed && !!value?.verified) || (!changed && !ext.trim())}
+      <Input id={idp} className="font-mono" value={ext} placeholder={t(`approvals.identityPh.${kind}`)} onChange={e => setExt(e.target.value)} />
+      <Button size="sm" variant={changed ? 'default' : 'outline'} id={`${idp}-link`} disabled={busy || !changed && (slot.verified || !ext.trim())}
         onClick={linkAndSend}><Send />{ext.trim() ? t('approvals.linkSend') : t('approvals.unlink')}</Button>
     </div>
     <p className="text-xs text-muted-foreground">{t(`approvals.identityHow.${kind}`)}</p>
-    {value && !value.verified && !changed && <div className="space-y-1.5">
-      <Label htmlFor={`id-${kind}-code`} className="text-xs">{value.code_pending ? t('approvals.codeSent') : t('approvals.codeNeeded')}</Label>
+    {slot.external_id && !slot.verified && !changed && <div className="space-y-1.5">
+      <Label htmlFor={`${idp}-code`} className="text-xs">{slot.code_pending ? t('approvals.codeSent') : t('approvals.codeNeeded')}</Label>
       <div className="flex flex-wrap gap-2">
-        <Input id={`id-${kind}-code`} className="w-36 font-mono tracking-widest" inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
-        <Button size="sm" id={`id-${kind}-verify`} disabled={busy || code.length !== 6}
-          onClick={async () => { if (await call(`/api/approvals/identities/${kind}/verify`, { method: 'POST', json: { code } })) setCode('') }}><ShieldCheck />{t('approvals.verify')}</Button>
-        <Button size="sm" variant="ghost" id={`id-${kind}-resend`} disabled={busy} onClick={() => call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST' })}><RotateCw />{t('approvals.resend')}</Button>
+        <Input id={`${idp}-code`} className="w-36 font-mono tracking-widest" inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
+        <Button size="sm" id={`${idp}-verify`} disabled={busy || code.length !== 6}
+          onClick={async () => { if (await call(`/api/approvals/identities/${kind}/verify`, { method: 'POST', json: { code, ...team } })) setCode('') }}><ShieldCheck />{t('approvals.verify')}</Button>
+        <Button size="sm" variant="ghost" id={`${idp}-resend`} disabled={busy || !slot.available} onClick={() => call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST', json: team })}><RotateCw />{t('approvals.resend')}</Button>
       </div>
       {kind === 'telegram' && <p className="text-xs text-muted-foreground">{t('approvals.telegramStart')}</p>}
     </div>}
@@ -144,12 +150,12 @@ function IdentityRow({ kind, value, onChange }: { kind: string; value: Identity;
 
 function Identities() {
   const { t } = useTranslation()
-  const [ids, setIds] = useState<Record<string, Identity> | null>(null); const [err, setErr] = useState('')
-  useEffect(() => { api<Record<string, Identity>>('/api/approvals/identities').then(setIds).catch(e => setErr(e.message)) }, [])
+  const [data, setData] = useState<Slots | null>(null); const [err, setErr] = useState('')
+  useEffect(() => { api<Slots>('/api/approvals/identities').then(setData).catch(e => setErr(e.message)) }, [])
   return <div className="space-y-3">
     <p className="text-sm text-muted-foreground">{t('approvals.identitiesHelp')}</p>
     {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
-    {ids && Object.keys(ids).map(k => <IdentityRow key={k} kind={k} value={ids[k]} onChange={setIds} />)}
+    {data?.slots.map(s => <IdentityRow key={`${s.kind}:${s.team_id || ''}`} slot={s} onChange={setData} />)}
   </div>
 }
 

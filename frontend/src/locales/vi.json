@@ -426,7 +426,7 @@
     "removed": "Đã gỡ",
     "register": "Đăng ký webhook",
     "registered": "Đã đăng ký webhook",
-    "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Bot gửi mã một lần tới tài khoản đó; nhập mã ở đây để xác minh. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
+    "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Tài khoản Slack được liên kết theo từng workspace. Bot gửi mã một lần tới tài khoản đó; nhập mã ở đây để xác minh. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
     "identity": {
       "slack": "Slack member ID",
       "telegram": "Telegram user ID"
@@ -497,6 +497,7 @@
     "orgReadOnly": "Do admin quản lý. Bạn có thể chọn nó trên node Human của mình.",
     "replaceSecrets": "Thay khoá bí mật",
     "sharedUrl": "Request URL (mọi workspace)",
-    "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app."
+    "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app.",
+    "noConnection": "Chưa có kết nối"
   }
 }

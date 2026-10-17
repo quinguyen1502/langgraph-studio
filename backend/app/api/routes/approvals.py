@@ -35,7 +35,7 @@ def get_identities(user=Depends(current_user), svc=Depends(identity_service)): r
 def put_identities(body=Body(None), user=Depends(current_user), svc=Depends(identity_service)): return svc.link(user["id"], body)
 
 @router.post("/identities/{kind}/send-code")
-def send_code(kind: str, user=Depends(current_user), svc=Depends(identity_service)): return svc.send_code(user["id"], kind)
+def send_code(kind: str, body=Body(None), user=Depends(current_user), svc=Depends(identity_service)): return svc.send_code(user["id"], kind, body)
 
 @router.post("/identities/{kind}/verify")
 def verify_identity(kind: str, body=Body(None), user=Depends(current_user), svc=Depends(identity_service)): return svc.verify(user["id"], kind, body)

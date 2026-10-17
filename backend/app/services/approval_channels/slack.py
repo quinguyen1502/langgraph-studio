@@ -16,6 +16,7 @@ class SlackChannel(ApprovalChannel):
     patterns = {"bot_token": r"xoxb-[\w-]{8,}", "signing_secret": r"[0-9a-f]{16,128}"}
     identity_pattern = r"[UW][A-Z0-9]{2,20}"
     hint_field = "bot_token"
+    per_team = True         # a member id is only meaningful inside its workspace (team_id)
     shared_callback = True  # one Request URL for every workspace: /api/approvals/callback/slack, routed by team.id
 
     def _api(self, secrets: dict, method: str, payload: dict) -> dict:

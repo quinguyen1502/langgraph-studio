@@ -5,10 +5,10 @@
 - Project: langgraph-studio
 - Task ID: TASK-0015
 - Previous ID: TASK-0004 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
+- Status: doing
 - Owner:
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-17
 - Requirement IDs: REQ-0009
 - Design IDs:
 - Architecture IDs: ARCH-0001
@@ -68,16 +68,18 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 
 ## Assumptions
 
-- Integration branch is `main` (see DISC-0001).
+- Task branch is cut from `develop`. `factory.yaml` and DEC-0002 still name `main`, and `main` does not contain the merged product. PRs for this task target `develop`, matching Phase 2–5.
+- Sandbox runtime for this task is Docker (OCI `runc`), including Docker Desktop on macOS. gVisor and Firecracker are out of scope. The owner did not pick a runtime, so this is the working assumption and can be overridden before implementation.
 
 ## Open Questions
 
-- Container runtime available on the target host (Docker, gVisor, Firecracker)?
+- None for the runtime choice. Override the Docker assumption above if the host must be gVisor or Firecracker.
 
 ## Activity Log
 
 - 2026-10-16: Renumbered TASK-0004 -> TASK-0015 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
+- 2026-10-17: Owner said to start. Moved backlog -> todo -> doing on `factory/task-0015-run-repo-imports-inside-a-container-sandbox`. Runtime assumption: Docker.
 
 ## Handoff Notes
 

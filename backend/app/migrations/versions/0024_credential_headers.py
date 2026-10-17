@@ -2,8 +2,8 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0023_credential_headers"
-down_revision = "0022_teams_audit"
+revision = "0024_credential_headers"
+down_revision = "0023_templates"
 
 
 def upgrade():

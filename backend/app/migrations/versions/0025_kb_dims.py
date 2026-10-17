@@ -4,8 +4,8 @@ Existing knowledge bases keep NULL; the service reads the dimension from a store
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0024_kb_dims"
-down_revision = "0023_credential_headers"
+revision = "0025_kb_dims"
+down_revision = "0024_credential_headers"
 
 
 def upgrade():

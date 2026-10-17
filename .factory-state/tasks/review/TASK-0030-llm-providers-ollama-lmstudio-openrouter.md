@@ -21,14 +21,14 @@ Let LLM nodes use local models (Ollama, LM Studio, any OpenAI-compatible server 
 ### In Scope
 
 - Provider registry/strategy in `backend/app/engine/providers.py`; one small class per provider (defaults, key requirement, accepted extra headers, model listing, LangChain chat model).
-- Credentials: optional API key for local providers (required for OpenRouter/OpenAI/Anthropic), base URL defaults (`http://localhost:11434`, `http://localhost:1234/v1`, `http://localhost:8000/v1`, `https://openrouter.ai/api/v1`), OpenRouter `HTTP-Referer` / `X-Title` headers stored on the credential (migration 0023).
+- Credentials: optional API key for local providers (required for OpenRouter/OpenAI/Anthropic), base URL defaults (`http://localhost:11434`, `http://localhost:1234/v1`, `http://localhost:8000/v1`, `https://openrouter.ai/api/v1`), OpenRouter `HTTP-Referer` / `X-Title` headers stored on the credential (migration 0024_credential_headers).
 - `POST /api/providers/{id}/test` (unsaved settings) and `GET /api/credentials/{id}/models` (saved credential): model list from Ollama `/api/tags`, OpenAI-compatible `/v1/models`, OpenRouter `/api/v1/models`.
 - LangChain: `ChatOllama` (langchain-ollama), `ChatOpenAI(base_url=…)` (langchain-openai); streaming and `bind_tools` available via `engine.llm.chat_model()`.
 - Error codes `PROVIDER_UNREACHABLE`, `PROVIDER_AUTH_FAILED`, `PROVIDER_BAD_RESPONSE`, `MODEL_NOT_FOUND`, `CREDENTIAL_HEADER_UNSUPPORTED` (catalog, docs/api-errors.md, en/vi); run error events carry the same codes.
 - UI: provider list from the API, per-provider form (key optional label, default URL placeholder, Docker hint, header fields), "Test connection" on the form and on saved rows, LLM node model picker (fetched list + manual entry, warning on failure); deletes keep `ConfirmDeleteDialog`.
 - Docker Compose: `extra_hosts: host.docker.internal:host-gateway` on `api` and `worker`; README section.
 
-- Follow-up (owner request, same PR): live LLM output in the run trace (`node_token` events, not stored); registry embeddings for knowledge bases (Ollama, LM Studio, OpenAI-compatible, OpenRouter, OpenAI) with per-KB dimension (`dims`, migration 0024) and `KB_EMBEDDING_DIMENSION_MISMATCH` / `PROVIDER_EMBEDDINGS_UNSUPPORTED`; embedding test endpoint; edit a credential in place (`PUT /api/credentials/{id}`, secret kept unless re-entered).
+- Follow-up (owner request, same PR): live LLM output in the run trace (`node_token` events, not stored); registry embeddings for knowledge bases (Ollama, LM Studio, OpenAI-compatible, OpenRouter, OpenAI) with per-KB dimension (`dims`, migration 0025_kb_dims) and `KB_EMBEDDING_DIMENSION_MISMATCH` / `PROVIDER_EMBEDDINGS_UNSUPPORTED`; embedding test endpoint; edit a credential in place (`PUT /api/credentials/{id}`, secret kept unless re-entered).
 
 ### Out Of Scope
 

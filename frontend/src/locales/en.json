@@ -25,7 +25,8 @@
     "timeout": "timeout",
     "cancelled": "cancelled",
     "running": "running",
-    "done": "done"
+    "done": "done",
+    "waiting": "waiting"
   },
   "auth": {
     "loginTitle": "Sign in to LangGraph Studio",
@@ -125,7 +126,8 @@
     "tool": "HTTP or Python function",
     "condition": "Branch on a state field",
     "end": "Finish",
-    "code": "Python node from an imported repo"
+    "code": "Python node from an imported repo",
+    "human": "Pause for approval or input"
   },
   "trace": {
     "idle": "Not run",
@@ -153,7 +155,8 @@
     "errorCount_other": "{{count}} errors",
     "openTrace": "Open trace",
     "usageDetail": "{{model}}: {{tin}} in / {{tout}} out tokens · {{cost}}",
-    "estimated": "(estimated)"
+    "estimated": "(estimated)",
+    "waiting": "Waiting for a human"
   },
   "import": {
     "button": "Import repo",
@@ -230,7 +233,9 @@
     "IMPORT_ZIP_TOO_LARGE": "Zip file is too large (max 50 MB)",
     "IMPORT_INVALID": "Import failed: {{reason}}",
     "IMPORT_JOB_NOT_FOUND": "Import job not found",
-    "IMPORT_NOT_READY": "Import job is not ready or the graph is invalid"
+    "IMPORT_NOT_READY": "Import job is not ready or the graph is invalid",
+    "RUN_NOT_WAITING": "This run is not waiting for a response",
+    "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)"
   },
   "lang": {
     "en": "English",
@@ -248,11 +253,26 @@
     "promptTemplate": "Prompt template ({{field}})",
     "reference": "Reference (module:function)",
     "source": "Source",
-    "url": "URL"
+    "url": "URL",
+    "humanPrompt": "Question for the human ({{field}})"
   },
   "samples": {
     "input": "{\n  \"message\": \"Where is my order A100?\"\n}",
     "prompt": "Answer: {{var}}",
     "greeting": "Hello!"
+  },
+  "human": {
+    "title": "Waiting for your response",
+    "node": "Node: {{label}}",
+    "response": "Response",
+    "placeholder": "Type a response, or approve / reject",
+    "approve": "Approve",
+    "reject": "Reject",
+    "submit": "Send response",
+    "pendingTitle": "Waiting for you",
+    "pendingDesc": "Runs paused at a Human node",
+    "respond": "Respond",
+    "cancelRun": "Cancel run",
+    "resumeFailed": "Could not resume: {{error}}"
   }
 }

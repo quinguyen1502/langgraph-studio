@@ -40,3 +40,11 @@ class Database:
         with self.engine.begin() as conn:
             cfg.attributes["connection"] = conn
             command.upgrade(cfg, "head")
+
+
+def head_revision() -> str:
+    """Latest Alembic revision id (tests compare the database against it)."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    cfg = Config(); cfg.set_main_option("script_location", os.path.normpath(MIGRATIONS_DIR))
+    return ScriptDirectory.from_config(cfg).get_current_head()

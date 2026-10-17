@@ -8,8 +8,17 @@ class RunRepository:
     def __init__(self, db: Database): self.db = db
 
     def add(self, run: Run) -> None:
+        """Insert or update (a resumed run keeps its id)."""
         with self.db.session() as s:
-            s.add(run); s.commit()
+            s.merge(run); s.commit()
+
+    def get(self, rid: str) -> Optional[Run]:
+        with self.db.session() as s:
+            return s.get(Run, rid)
+
+    def list_waiting(self, owner: str, limit: int = 100) -> list[Run]:
+        with self.db.session() as s:
+            return list(s.scalars(select(Run).where(Run.owner == owner, Run.status == "waiting").order_by(Run.started.desc()).limit(limit)))
 
     def last_for_workflow(self, wid: str) -> Optional[Run]:
         with self.db.session() as s:

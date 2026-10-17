@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, type LucideIcon } from 'lucide-react'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -19,7 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
+import { HumanPanel } from '@/components/human-panel'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
@@ -41,9 +42,10 @@ const META: Record<string, { label: string; icon: LucideIcon; color: string; acc
   tool: { label: 'Tool/API', icon: Wrench, color: 'bg-node-tool-muted text-node-tool', accent: 'bg-node-tool' },
   condition: { label: 'Condition', icon: GitBranch, color: 'bg-node-condition-muted text-node-condition', accent: 'bg-node-condition' },
   end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end' },
+  human: { label: 'Human', icon: UserCheck, color: 'bg-node-human-muted text-node-human', accent: 'bg-node-human' },
 }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-const TYPES = ['start', 'llm', 'tool', 'condition', 'end']
+const TYPES = ['start', 'llm', 'tool', 'condition', 'human', 'end']
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
   const g = new dagre.graphlib.Graph(); g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 110 }); g.setDefaultEdgeLabel(() => ({}))
@@ -60,6 +62,7 @@ const DEFAULTS: Record<string, any> = {
   llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: '', output_field: '' }, // prompt comes from i18n `samples.prompt` on drop
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
+  human: { label: 'Approval', prompt: '', output_field: '' }, // response (text, or approved / rejected) goes to output_field
 }
 
 function StatusBadge({ s }: { s?: string }) {
@@ -67,6 +70,7 @@ function StatusBadge({ s }: { s?: string }) {
   if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />{t('status.running')}</Badge>
   if (s === 'done') return <Badge variant="success" className="gap-1"><CheckCircle2 className="size-3" />{t('status.done')}</Badge>
   if (s === 'error') return <Badge variant="destructive" className="gap-1"><XCircle className="size-3" />{t('status.error')}</Badge>
+  if (s === 'waiting') return <Badge variant="outline" className="gap-1 border-node-human text-node-human"><UserCheck className="size-3" />{t('status.waiting')}</Badge>
   if (s === 'cancelled') return <Badge variant="secondary" className="gap-1"><Square className="size-3" />{t('status.cancelled')}</Badge>
   return null
 }
@@ -75,7 +79,7 @@ function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
   return <div className={cn(type === 'code' && 'border-node-code/60 border-dashed', 'relative rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
     selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
-    d._status === 'done' && 'border-success', d._status === 'error' && 'border-destructive')}>
+    d._status === 'done' && 'border-success', d._status === 'waiting' && 'border-node-human ring-4 ring-node-human/30', d._status === 'error' && 'border-destructive')}>
     <span aria-hidden className={cn('absolute inset-y-0 left-0 w-1 rounded-l-xl', m.accent)} />
     {type !== 'start' && <Handle type="target" position={Position.Left} />}
     <div className="flex items-center gap-2">
@@ -109,7 +113,7 @@ const F = ({ label, children }: { label: string; children: React.ReactNode }) =>
 export function EditorPage() { return <ReactFlowProvider><Studio /></ReactFlowProvider> }
 
 function Studio() {
-  const { t } = useTranslation(); const { id } = useParams()
+  const { t } = useTranslation(); const { id } = useParams(); const [params] = useSearchParams()
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([])
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([])
   const [state, setState] = useState<Field[]>([])
@@ -137,9 +141,13 @@ function Studio() {
     setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
     if (wf.source) setInput(defaultInput(wf.state || []))
   }
-  const loadHistory = (id?: string) => id && api(`/api/workflows/${id}/runs`).then(setHistory)
+  const loadHistory = (id?: string) => id ? api<any[]>(`/api/workflows/${id}/runs`).then(hs => { setHistory(hs); return hs }) : undefined
+  const openRun = (h: any) => { setLog(withSummary(h)); setReplay(h.id); setTraceSel(null); setTab('logs') }
   useEffect(() => {
-    api(`/api/workflows/${id}`).then(wf => { setLoadErr(null); load(wf); loadHistory(wf.id) }).catch(e => setLoadErr({ status: e.status ?? 0, msg: e.message }))
+    api(`/api/workflows/${id}`).then(wf => { setLoadErr(null); load(wf)
+      // ?run=<id> (from the pending list) opens that run with its Human panel
+      loadHistory(wf.id)?.then((hs: any[]) => { const h = hs?.find(x => x.id === params.get('run')); if (h) openRun(h) }) })
+      .catch(e => setLoadErr({ status: e.status ?? 0, msg: e.message }))
     api('/api/tools').then(setTools).catch(() => {})
     api<Credential[]>('/api/credentials').then(setCreds).catch(() => {})
     api('/api/health').then(h => setMode(h.llm_mode)).catch(() => {})
@@ -157,16 +165,18 @@ function Studio() {
     } catch (e: any) { setErrors([t('editor.saveFailed', { error: e.message })]); setTab('input') }
   }
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
-  const run = () => {
-    let inp: any; try { inp = JSON.parse(input) } catch { setErrors([t('editor.badInput')]); setTab('input'); return }
+  /** One socket path for new runs and for resuming a waiting run (the resumed events append to the same log). */
+  const stream = (msg: any, resume = false) => {
     if (!tokenValid()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
-    setLog([]); setErrors([]); setTab('logs'); setRunning(true); setReplay(null); setTraceSel(null)
-    setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } })))
+    setErrors([]); setTab('logs'); setRunning(true); setTraceSel(null)
+    if (resume) setLog(l => l.filter(e => e.type !== 'run_summary'))
+    else { setLog([]); setReplay(null); setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } }))) }
     const ws = new WebSocket(wsUrl('/ws/run')); wsRef.current = ws
-    ws.onopen = () => ws.send(JSON.stringify({ workflow_id: wid, workflow: toJSON(), input: inp }))
+    ws.onopen = () => ws.send(JSON.stringify(msg))
     ws.onmessage = m => {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
       if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
+      if (ev.type === 'run_waiting') mark(ev.node!, { _status: 'waiting' })
       if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
       if (ev.type === 'error') { setErrors(eventErrors(ev)); if (ev.node) mark(ev.node, { _status: 'error' }) }
       if (ev.type === 'run_cancelled' || (ev.type === 'error' && (ev as any).status === 'timeout')) setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'cancelled' } } : n))
@@ -176,6 +186,11 @@ function Studio() {
       if (ev.code === 4401) { setErrors([t('editor.expiredDuringRun')]); setTimeout(sessionExpired, 1500) }
       setRunning(false); setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'error' } } : n)); loadHistory(wid) }
   }
+  const run = () => {
+    let inp: any; try { inp = JSON.parse(input) } catch { setErrors([t('editor.badInput')]); setTab('input'); return }
+    stream({ workflow_id: wid, workflow: toJSON(), input: inp })
+  }
+  const respond = (runId: string, response: string) => stream({ resume_run_id: runId, response }, true)
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
@@ -293,6 +308,10 @@ function Studio() {
             <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
+          {selNode.type === 'human' && <>
+            <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><Textarea rows={4} id="human-prompt" className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
           {selNode.type === 'tool' && <>
             <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem></SelectContent></Select></F>
@@ -333,15 +352,16 @@ function Studio() {
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>
         <TabsContent value="logs" className="flex-1 min-h-0">
+          {trace.waiting?.runId && !running && <HumanPanel waiting={trace.waiting} onRespond={r => respond(trace.waiting!.runId!, r)} />}
           <RunTrace trace={trace} events={log as any} meta={traceMeta} selected={traceSel} onSelect={sp => setTraceSel(sp?.key ?? null)}
             replay={replay ?? undefined} onExitReplay={() => { setReplay(null); setLog([]); setTraceSel(null) }} />
         </TabsContent>
         <TabsContent value="history" className="flex-1 min-h-0">
           <ScrollArea className="h-full"><div className="p-3 space-y-1">
             {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
-            {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => { setLog(withSummary(h)); setReplay(h.id); setTraceSel(null); setTab('logs') }}
+            {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => openRun(h)}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               <span className="truncate">{JSON.stringify(h.input)}</span>

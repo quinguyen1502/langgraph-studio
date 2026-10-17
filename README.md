@@ -182,3 +182,16 @@ STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
 docker compose --profile tracing up --build   # Jaeger UI: http://localhost:16686 (service "langgraph-studio")
 ```
 Chạy dev không dùng compose: `docker run -p 16686:16686 -p 4318:4318 jaegertracing/all-in-one`, rồi chạy backend với `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`.
+
+## Human-in-the-loop (TASK-0006)
+Node **Human** tạm dừng run để chờ người duyệt hoặc nhập liệu:
+
+- **Cấu hình**: `prompt` (template `{{state.field}}`) và `output_field`.
+- **Khi chạy tới node**: run chuyển sang trạng thái `waiting`. Tab Logs hiện khung trả lời với các nút **Duyệt** (`approved`), **Từ chối** (`rejected`) hoặc gửi văn bản tự do. Phản hồi được ghi vào `output_field`, nên có thể dùng Condition để rẽ nhánh theo `approved` / `rejected`.
+- **Danh sách chờ**: trang danh sách workflow có thẻ "Đang chờ bạn" liệt kê các run đang chờ; bấm **Phản hồi** để mở đúng run đó.
+- **Lưu trạng thái**: checkpoint lưu trong DB, nên vẫn tiếp tục được sau khi khởi động lại server.
+- **Quyền**: chỉ chủ của run mới được duyệt hoặc huỷ (DEC-0013).
+- **API**:
+  - `GET /api/runs/pending`: danh sách run đang chờ.
+  - WebSocket `/ws/run` gửi `{"resume_run_id": "...", "response": "approved"}` để tiếp tục.
+  - `POST /api/runs/{id}/cancel` để huỷ run đang chờ.

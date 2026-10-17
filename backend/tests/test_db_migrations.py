@@ -1,3 +1,4 @@
+from app.models import Run
 """Alembic: fresh DB gets the schema; a pre-Alembic (raw-SQL era) SQLite file is adopted without data loss."""
 import sqlite3
 from sqlalchemy import inspect
@@ -10,8 +11,9 @@ def test_fresh_database(tmp_path):
     db = Database(f"sqlite:///{tmp_path / 'fresh.db'}"); bootstrap(db)
     insp = inspect(db.engine)
     assert {"users", "workflows", "runs", "credentials", "alembic_version"} <= set(insp.get_table_names())
-    assert [c["name"] for c in insp.get_columns("runs")] == ["id", "workflow_id", "input", "events", "final_state", "status", "started", "ended",
-                                                          "duration_ms", "tokens_in", "tokens_out", "cost_usd", "error_count", "trace_id"]
+    cols = [c["name"] for c in insp.get_columns("runs")]
+    assert cols[:8] == ["id", "workflow_id", "input", "events", "final_state", "status", "started", "ended"]  # MVP order kept
+    assert set(cols) == set(Run.__table__.columns.keys())  # migrations match the ORM model
     assert WorkflowRepository(db).exists("example")
     bootstrap(db)  # idempotent
 

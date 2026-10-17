@@ -79,5 +79,7 @@
 | `IMPORT_INVALID` | 400 | Import failed: {reason} |
 | `IMPORT_JOB_NOT_FOUND` | 404 | Import job not found |
 | `IMPORT_NOT_READY` | 400 | Import job is not ready or the graph is invalid |
+| `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
+| `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

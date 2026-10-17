@@ -92,3 +92,14 @@ Secrets are encrypted in the service before they reach the repository; only `res
   - `trace_url()` fills `STUDIO_TRACE_URL`.
 - `RunService.record` computes the metrics, records the trace (errors swallowed), stores both, and the socket gets a final `run_summary` event (not stored in `events`). History items carry `metrics`, `trace_id` and `trace_url`.
 - Built once in `api/deps.get_telemetry`; tests inject `InMemorySpanExporter`.
+
+## Human-in-the-loop (TASK-0006, DEC-0013)
+
+- Engine:
+  - `engine/nodes.py` `human` node raises `engine.errors.Interrupt` when it has no response.
+  - `runtime.run_stream` turns that into `run_waiting` with a checkpoint {node, state}.
+  - `run_stream(..., resume={node, value, state})` compiles with `entry=node` and feeds `value` to that node once (a loop back to it pauses again).
+- Service:
+  - `RunService.plan` sees `resume_run_id`, then `plan_resume` checks owner and `waiting` status and builds a plan with the same run id and the earlier events.
+  - `record()` stores the checkpoint while waiting and clears it when the run ends; the trace is emitted only at the end.
+- `runs.owner` (backfilled from workflows) and `runs.checkpoint` come from migration `0004_hitl`.

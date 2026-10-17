@@ -3,7 +3,7 @@ from __future__ import annotations
 import json, time
 from typing import Any, Dict, List
 from .compiler import compile_workflow
-from .errors import ValidationError
+from .errors import Interrupt, ValidationError
 from .limits import safe_error
 from .usage import merge as merge_usage
 from ..core.config import recursion_limit
@@ -36,12 +36,17 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
     return errs
 
 
-def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
-    """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator."""
-    if (bad := check_input(wf, inputs)): raise ValidationError(bad)
+def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None):
+    """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator.
+    A Human node without a response yields `run_waiting` {node, prompt, checkpoint{node, state}} and stops.
+    resume = {"node", "value", "state"} continues a paused run at that node with the saved state (TASK-0006)."""
+    if resume is None and (bad := check_input(wf, inputs)): raise ValidationError(bad)
     usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
-    app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)))
+    held = {"node": resume["node"], "value": resume["value"]} if resume else None
+    app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)),
+                           entry=resume["node"] if resume else None, resume=held)
     nodes = {n["id"]: n for n in wf["nodes"]}
+    if resume: inputs = dict(resume.get("state") or {})
     state = dict(inputs); counts: Dict[str, int] = {}
 
     def meta(nid):
@@ -51,7 +56,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
         counts[nid] = counts.get(nid, 0) + 1
         return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
 
-    start_id = next(n["id"] for n in wf["nodes"] if n["type"] == "start")
+    start_id = resume["node"] if resume else next(n["id"] for n in wf["nodes"] if n["type"] == "start")
     yield started(start_id)
     t0 = time.perf_counter(); pending = [start_id]
     try:
@@ -71,6 +76,10 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None):
             t0 = time.perf_counter()
             for n2 in nxt:
                 yield started(n2)
+    except Interrupt as i:  # a Human node is waiting: hand back a checkpoint instead of an error
+        yield {"type": "run_waiting", **meta(i.node), "prompt": i.prompt, "state": cap_payload(dict(state)),
+               "checkpoint": {"node": i.node, "state": dict(state)}}
+        return
     except Exception as e:  # attribute runtime failures to the node that was running
         nid = pending[-1] if pending else None
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,

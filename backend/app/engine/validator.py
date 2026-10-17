@@ -35,7 +35,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     out = {i: [e for e in edges if e["source"] == i] for i in ids}
     for n in nodes:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
-        if t not in ("start", "llm", "tool", "condition", "end"):
+        if t not in ("start", "llm", "tool", "condition", "end", "human"):
             errs.append(f"Node {nid}: invalid type '{t}'")
         if t != "end" and not out.get(nid):
             errs.append(f"Node {nid} ({d.get('label', t)}) has no outgoing edge")
@@ -43,7 +43,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             errs.append(f"End node {nid} must not have outgoing edges")
         if t == "start" and any(e["target"] == nid for e in edges):
             errs.append("Start must not have incoming edges")
-        if t in ("llm", "tool"):
+        if t in ("llm", "tool", "human"):
             if len(out.get(nid, [])) > 1:
                 errs.append(f"Node {nid}: only one outgoing edge is allowed (use a Condition to branch)")
             of = d.get("output_field")

@@ -5,12 +5,12 @@
 - Project: langgraph-studio
 - Task ID: TASK-0006
 - Previous ID: TASK-0005 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
-- Owner:
+- Status: review
+- Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Requirement IDs: REQ-0003
-- Design IDs:
+- Design IDs: DEC-0013
 - Architecture IDs: ARCH-0001
 
 ## Objective
@@ -65,13 +65,22 @@ Implement REQ-0003: Add human-in-the-loop interrupt and resume.
 
 ## Assumptions
 
-- Integration branch is `main` (see DISC-0001).
+- Phase 2 integrates into `develop`; stacked on TASK-0010 (PR #12).
 
 ## Open Questions
 
-- Who may approve: owner only or any authenticated user?
+- Who may approve: owner only or any authenticated user? **Resolved (DEC-0013): owner only, until RBAC (TASK-0014).**
+
+## Delivered
+
+- Node type `human` (validator, engine `Interrupt`, resume entry point); WS events `run_waiting` / `run_resumed`; resume over `/ws/run`; `GET /api/runs/pending`; cancel of waiting runs.
+- Migration `0004_hitl` (`runs.owner` backfilled, `runs.checkpoint`); error codes `RUN_NOT_WAITING`, `RUN_RESPONSE_INVALID` (catalog, docs, en/vi).
+- UI: Human node (palette, inspector, `node-human` theme token), Human panel (approve / reject / text), waiting status in trace and history, "Waiting for you" card on the workflow list, `?run=` deep link.
+- Tests: `tests/test_hitl.py`, `e2e/hitl.spec.ts`. Docs: DEC-0013, ARCH-0001, backend-architecture, README, roadmap, REV-0010, QA-0010.
 
 ## Activity Log
+
+- 2026-10-16: Implemented on `factory/task-0006-add-human-in-the-loop-interrupt-and-resume` (stacked on TASK-0010); moved to review.
 
 - 2026-10-16: Renumbered TASK-0005 -> TASK-0006 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.

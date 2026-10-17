@@ -48,3 +48,15 @@ Status for all Phase 2–4 tasks: backlog.
 ## Phase 4 — Last
 
 - TASK-0015 Repo import hardening + container sandbox (REQ-0009). The existing import feature is **experimental**; TASK-0015 puts it behind `STUDIO_ENABLE_IMPORT` (default off in UI and API). Not changed yet.
+
+## Phase 5 — Editor UX
+
+Added to the backlog on 2026-10-17 at the owner's request. Status: backlog.
+
+- TASK-0023 Editor hotkeys and shortcut cheatsheet (REQ-0013)
+- TASK-0024 Editor undo and redo history (REQ-0014), after TASK-0023
+- TASK-0025 Workflow template library: starter templates, save as template, import/export (REQ-0015)
+- TASK-0026 Copy, paste and duplicate nodes (REQ-0016)
+- TASK-0027 Auto-layout for the workflow canvas (REQ-0017)
+- TASK-0028 Command palette (REQ-0018)
+

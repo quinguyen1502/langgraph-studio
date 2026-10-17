@@ -84,3 +84,7 @@ def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.g
 def callback_rate_limit_ip() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_IP", 60))        # per client IP and window (0 = off)
 def callback_rate_limit_channel() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", 300))  # per connection / Slack team
 def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WINDOW", 60))
+# --- TASK-0013: MCP servers ---
+def mcp_stdio_enabled() -> bool: return os.environ.get("STUDIO_MCP_STDIO") == "1"  # stdio servers run processes on the API host: off by default
+def mcp_allow_private() -> bool: return os.environ.get("STUDIO_MCP_ALLOW_PRIVATE") == "1"  # HTTP servers on private/loopback addresses
+def mcp_timeout() -> float: return max(1.0, float(os.environ.get("STUDIO_MCP_TIMEOUT", 30)))  # per MCP session (s)

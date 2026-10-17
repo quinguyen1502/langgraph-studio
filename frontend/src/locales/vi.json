@@ -136,7 +136,15 @@
     "retrieverMissing": "Kho tri thức này không còn tồn tại hoặc không thuộc về bạn.",
     "retrieverNone": "Chưa có kho tri thức: tạo trong Cài đặt.",
     "retrieverTopK": "Số đoạn trả về (1-20)",
-    "retrieverManage": "Quản lý kho tri thức"
+    "retrieverManage": "Quản lý kho tri thức",
+    "mcpServer": "Máy chủ MCP",
+    "mcpTool": "Công cụ",
+    "mcpNoTools": "Chưa có công cụ: làm mới",
+    "mcpMissing": "Máy chủ này không còn tồn tại hoặc bạn không được dùng.",
+    "mcpNone": "Chưa có máy chủ MCP: thêm trong Cài đặt.",
+    "mcpArgs": "Tham số",
+    "mcpArgsHint": "Văn bản, hoặc {{field}} để truyền giá trị state giữ nguyên kiểu.",
+    "mcpManage": "Quản lý máy chủ MCP"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -148,7 +156,8 @@
     "human": "Tạm dừng để duyệt hoặc nhập",
     "join": "Chờ mọi nhánh song song",
     "subgraph": "Chạy một workflow đã lưu",
-    "retriever": "Tìm trong kho tri thức"
+    "retriever": "Tìm trong kho tri thức",
+    "mcp": "Gọi công cụ trên máy chủ MCP"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -295,7 +304,19 @@
     "KB_FILE_EMPTY": "Tệp không có nội dung văn bản",
     "KB_QUERY_REQUIRED": "Hãy nhập câu truy vấn",
     "KB_EMBEDDING_FAILED": "Tạo embedding thất bại: {{reason}}",
-    "KB_EMBEDDER_CHANGED": "Model hoặc khoá embedding đã đổi kể từ khi lập chỉ mục; hãy lập chỉ mục lại kho tri thức"
+    "KB_EMBEDDER_CHANGED": "Model hoặc khoá embedding đã đổi kể từ khi lập chỉ mục; hãy lập chỉ mục lại kho tri thức",
+    "MCP_SERVER_NOT_FOUND": "Không tìm thấy máy chủ MCP",
+    "MCP_NAME_REQUIRED": "Cần nhập tên máy chủ MCP",
+    "MCP_NAME_TOO_LONG": "Tên máy chủ MCP tối đa {{max}} ký tự",
+    "MCP_TRANSPORT_UNSUPPORTED": "Giao thức MCP không được hỗ trợ: {{transport}}",
+    "MCP_CONFIG_INVALID": "Thiết lập {{field}} của máy chủ MCP bị thiếu hoặc không hợp lệ",
+    "MCP_URL_INVALID": "URL máy chủ MCP phải là URL http(s) công khai",
+    "MCP_STDIO_DISABLED": "Máy chủ MCP stdio đang tắt trên server này (STUDIO_MCP_STDIO)",
+    "MCP_ADMIN_REQUIRED": "Chỉ admin được quản lý máy chủ MCP stdio hoặc của tổ chức",
+    "MCP_CONNECT_FAILED": "Không giao tiếp được với máy chủ MCP: {{reason}}",
+    "MCP_TOOL_NOT_FOUND": "Máy chủ MCP không có công cụ {{tool}}",
+    "MCP_TOOL_FAILED": "Công cụ MCP thất bại: {{reason}}",
+    "MCP_ARGUMENT_INVALID": "Tham số {{name}} phải có kiểu {{type}}"
   },
   "lang": {
     "en": "English",
@@ -531,13 +552,15 @@
       "channels": "Kênh",
       "accounts": "Tài khoản của tôi",
       "audit": "Nhật ký",
-      "knowledge": "Kho tri thức"
+      "knowledge": "Kho tri thức",
+      "mcp": "Máy chủ MCP"
     },
     "intro": {
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
       "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
-      "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình."
+      "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình.",
+      "mcp": "Công cụ từ máy chủ Model Context Protocol, dùng trong node MCP. Secret được mã hoá và không hiển thị lại."
     },
     "status": {
       "connected": "Đã kết nối",
@@ -605,5 +628,40 @@
     "none": "Chưa có kho tri thức nào.",
     "documents_one": "{{count}} tài liệu",
     "chunks_one": "{{count}} đoạn"
+  },
+  "mcp": {
+    "new": "Thêm máy chủ MCP",
+    "newHelp": "Endpoint Streamable HTTP, hoặc lệnh cục bộ (stdio) nếu server cho phép.",
+    "create": "Thêm máy chủ",
+    "name": "Tên",
+    "transport": "Giao thức",
+    "http": "Streamable HTTP",
+    "stdio": "stdio (lệnh cục bộ)",
+    "scope": "Dùng cho",
+    "url": "URL máy chủ",
+    "command": "Lệnh",
+    "args": "Tham số",
+    "argsHint": "Mỗi dòng một tham số",
+    "headers": "HTTP header (bí mật)",
+    "env": "Biến môi trường (bí mật)",
+    "secretName": "Tên",
+    "secretValue": "Giá trị",
+    "keepSecret": "Đã lưu — để trống để giữ",
+    "removeSecret": "Xoá",
+    "addSecret": "Thêm secret",
+    "secretHelp": "Giá trị được mã hoá trên server và không hiển thị lại. Máy chủ stdio chỉ thấy các biến này, không thấy môi trường của studio.",
+    "tools_one": "{{count}} công cụ",
+    "tools_other": "{{count}} công cụ",
+    "discover": "Tìm công cụ",
+    "discovered": "Tìm thấy {{count}} công cụ",
+    "discoveredAt": "Lần tìm gần nhất {{at}}",
+    "notDiscovered": "Chưa tìm công cụ",
+    "edit": "Sửa",
+    "saved": "Đã lưu (hãy tìm lại công cụ)",
+    "delete": "Xoá máy chủ",
+    "confirmDelete": "Xoá máy chủ MCP \"{{name}}\"? Các node đang dùng sẽ lỗi.",
+    "none": "Chưa có máy chủ MCP nào.",
+    "stdioOn": "Máy chủ stdio đang bật: admin có thể đăng ký lệnh cục bộ. Lệnh chạy trên máy studio với môi trường sạch, thư mục home tạm rỗng và giới hạn thời gian, nhưng không cô lập thêm: chỉ thêm lệnh bạn tin cậy, hoặc chạy studio trong container.",
+    "stdioOff": "Máy chủ stdio đang tắt trên server này (STUDIO_MCP_STDIO=1 để bật cho admin). Máy chủ HTTP phải dùng địa chỉ công khai, trừ khi đặt STUDIO_MCP_ALLOW_PRIVATE=1."
   }
 }

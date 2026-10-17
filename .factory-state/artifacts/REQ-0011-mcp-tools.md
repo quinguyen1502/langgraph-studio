@@ -67,7 +67,7 @@ Tool nodes can call tools exposed by configured MCP servers.
 
 ## Open Questions
 
-- Which MCP servers are needed first?
+- Resolved 2026-10-17 (owner): none bundled; a generic stdio + HTTP registry, discovery and an MCP tool node, secrets encrypted, sandbox notes. See DEC-0022.
 
 ## Related Artifacts
 

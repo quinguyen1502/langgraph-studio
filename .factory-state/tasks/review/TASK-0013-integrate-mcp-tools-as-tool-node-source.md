@@ -5,10 +5,10 @@
 - Project: langgraph-studio
 - Task ID: TASK-0013
 - Previous ID: TASK-0012 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
+- Status: review
 - Owner:
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-17
 - Requirement IDs: REQ-0011
 - Design IDs:
 - Architecture IDs: ARCH-0001
@@ -73,6 +73,7 @@ Implement REQ-0011: Integrate MCP tools as Tool node source.
 
 ## Activity Log
 
+- 2026-10-17: Implemented (DEC-0022, REV-0019, QA-0019); moved to review. Open question resolved by the owner: no bundled servers, generic stdio + HTTP registry.
 - 2026-10-16: Renumbered TASK-0012 -> TASK-0013 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 

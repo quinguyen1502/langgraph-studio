@@ -6,7 +6,8 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository
+from ..services.mcp_service import McpService
 from ..services.knowledge_service import KnowledgeService
 from ..services.approval_service import ApprovalService
 from ..services.identity_service import IdentityService
@@ -82,7 +83,7 @@ def auth_service() -> AuthService:
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
-                      knowledge=knowledge_service())
+                      knowledge=knowledge_service(), mcp=mcp_service())
 
 def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
@@ -96,6 +97,10 @@ def credential_service() -> CredentialService:
 
 def knowledge_service() -> KnowledgeService:
     return KnowledgeService(KnowledgeRepository(get_db()), credential_service())
+
+def mcp_service() -> McpService:
+    db = get_db(); users = UserRepository(db)
+    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.is_admin))
 
 def import_service() -> ImportService:
     return ImportService(workflow_service())

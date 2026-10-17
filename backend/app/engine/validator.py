@@ -1,12 +1,13 @@
 """Static workflow validation: returns a list of human-readable errors (empty = valid)."""
 from __future__ import annotations
+import json
 from typing import Any, Dict, List
 from .templating import VAR_RE
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever")
-WRITERS = ("llm", "tool", "human", "retriever")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp")
+WRITERS = ("llm", "tool", "human", "retriever", "mcp")
 
 
 def validate(wf: Dict[str, Any]) -> List[str]:
@@ -68,6 +69,12 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             k = d.get("top_k", 4)
             if not isinstance(k, int) or isinstance(k, bool) or not 1 <= k <= 20: errs.append(f"Retriever node {nid}: top_k must be 1-20")
             for v in VAR_RE.findall(d.get("query", "")):
+                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
+        if t == "mcp":
+            if not d.get("server_id"): errs.append(f"MCP node {nid}: choose a server")
+            if not d.get("tool"): errs.append(f"MCP node {nid}: choose a tool")
+            if not isinstance(d.get("arguments", {}), dict): errs.append(f"MCP node {nid}: arguments must be an object")
+            for v in VAR_RE.findall(json.dumps(d.get("arguments") or {})):
                 if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")

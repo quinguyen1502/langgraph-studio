@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, type LucideIcon } from 'lucide-react'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,6 +40,7 @@ import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
+import { McpSettings } from '@/components/mcp-settings'
 
 type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -55,9 +56,10 @@ const META: Record<string, { label: string; icon: LucideIcon; color: string; acc
 META.join = { label: 'Join', icon: Merge, color: 'bg-node-join-muted text-node-join', accent: 'bg-node-join' }
 META.subgraph = { label: 'Subgraph', icon: Layers, color: 'bg-node-subgraph-muted text-node-subgraph', accent: 'bg-node-subgraph' }
 META.subgraph_exit = META.subgraph
+META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-mcp', accent: 'bg-node-mcp' }
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-const TYPES = ['start', 'llm', 'retriever', 'tool', 'condition', 'human', 'join', 'subgraph', 'end']
+const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'human', 'join', 'subgraph', 'end']
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
@@ -79,6 +81,7 @@ const DEFAULTS: Record<string, any> = {
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
   human: { label: 'Approval', prompt: '', output_field: '' },
+  mcp: { label: 'MCP tool', server_id: '', tool: '', arguments: {}, output_field: '' },
   retriever: { label: 'Retriever', knowledge_base_id: '', query: '{{state.message}}', top_k: 4, output_field: '' },
   join: { label: 'Join' }, subgraph: { label: 'Subgraph', workflow_id: '' }, // response (text, or approved / rejected) goes to output_field
 }
@@ -367,6 +370,10 @@ function Studio() {
             <F label={t('field.queryTemplate', { field: '{{state.field}}' })}><Textarea rows={3} id="retriever-query" className="font-mono text-xs" value={d.query} onChange={e => upd('query', e.target.value)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
+          {selNode.type === 'mcp' && <>
+            <McpSettings server={d.server_id} tool={d.tool} args={d.arguments} onChange={p => mark(selNode.id, p)} />
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
           {selNode.type === 'subgraph' && <SubgraphSettings wid={wid} value={d.workflow_id} onChange={v => upd('workflow_id', v)} />}
           {selNode.type === 'join' && <p className="text-[11px] text-muted-foreground" id="join-hint">{t('editor.joinHint')}</p>}
           {selNode.type === 'condition' && <>
@@ -388,7 +395,7 @@ function Studio() {
           {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
-          <Textarea className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
+          <Textarea id="run-input" className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
           {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>

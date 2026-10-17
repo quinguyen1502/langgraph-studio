@@ -92,7 +92,7 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -104,6 +104,7 @@ class RunService:
         self.deliveries = deliveries  # -> DeliveryService (optional): callback_url webhook when an API run settles
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
         self.knowledge = knowledge  # KnowledgeService (optional): Retriever nodes (TASK-0012)
+        self.mcp = mcp  # McpService (optional): MCP tool nodes (TASK-0013)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -135,7 +136,7 @@ class RunService:
 
     def ports(self, uid: str) -> Ports:
         """Services nodes may call during a run, bound to the run's owner."""
-        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None)
+        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid) if self.mcp else None)
 
     def _expand(self, uid: str, wid: Optional[str], wf: dict) -> tuple[dict, Optional[list]]:
         """Inline subgraph nodes (TASK-0011) with the workflows this user may read. The expanded graph is what runs and

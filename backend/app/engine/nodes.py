@@ -6,7 +6,7 @@ from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, call_llm
 from .ports import Ports
-from .templating import render
+from .templating import render, render_args
 from .tools import TOOLS
 from .usage import UsageSink
 
@@ -53,6 +53,10 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
             if ports.retrieve is None: raise RuntimeError("Retriever nodes need a knowledge base service")
             query = render(d.get("query", ""), state)
             return {d["output_field"]: ports.retrieve(d["knowledge_base_id"], query, int(d.get("top_k") or 4))}
+    elif t == "mcp":
+        def fn(state):
+            if ports.mcp_call is None: raise RuntimeError("MCP nodes need the MCP service")
+            return {d["output_field"]: ports.mcp_call(d["server_id"], d["tool"], render_args(d.get("arguments") or {}, state))}
     else:  # start, condition, end, join, subgraph entry/exit -> passthrough
         def fn(state):
             return {}

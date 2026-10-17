@@ -23,12 +23,17 @@ def _hash(token: str) -> str: return hashlib.sha256(token.encode()).hexdigest()
 
 class TriggerService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, tokens: WorkflowTokenRepository, jobs: JobQueue,
-                 limiter: Optional[RateLimiter] = None):
+                 limiter: Optional[RateLimiter] = None, access=None):
         self.workflows, self.runs, self.tokens, self.jobs, self.limiter = workflows, runs, tokens, jobs, limiter
+        self.access = access  # AccessService (TASK-0014): tokens need the "share" action (owner or admin)
 
     # ---- token management (owner, JWT) ----
     def _owned(self, wid: str, uid: str):
+        if self.access is not None: self.access.workflow(wid, uid, "share"); return
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
+
+    def _allowed(self, wid: str, uid: str) -> bool:
+        return self.access.may(wid, uid, "share") if self.access is not None else self.workflows.get_owned(wid, uid) is not None
 
     @staticmethod
     def _public(t: WorkflowToken) -> dict:
@@ -76,7 +81,7 @@ class TriggerService:
     def authenticate(self, wid: str, token: Optional[str]) -> WorkflowToken:
         """Valid, not revoked, for this workflow, and the workflow still belongs to the token's owner."""
         t = self.tokens.by_hash(_hash(token)) if token and token.startswith(TOKEN_PREFIX) else None
-        if t is None or t.revoked or t.workflow_id != wid or self.workflows.get_owned(wid, t.owner) is None:
+        if t is None or t.revoked or t.workflow_id != wid or not self._allowed(wid, t.owner):
             raise AppError("TRIGGER_TOKEN_INVALID")
         self.tokens.set_fields(t.id, last_used=time.time())
         return t

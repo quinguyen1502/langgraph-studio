@@ -43,6 +43,8 @@ export async function api<T = any>(path: string, opts: RequestInit & { json?: an
   try { r = await fetch(path, { ...opts, headers }) } catch { throw new ApiError({ code: 'NETWORK_ERROR' }, 0) }
   const body = await r.json().catch(() => null)
   if (r.status === 401 && !path.startsWith('/api/auth')) { sessionExpired(); throw new ApiError(body?.error ?? { code: 'AUTH_TOKEN_EXPIRED' }, 401) }
+  // deactivated by an admin (TASK-0014): drop the session; signing in again shows the reason
+  if (body?.error?.code === 'AUTH_ACCOUNT_DISABLED' && !path.startsWith('/api/auth')) { clearSession(); location.href = '/login' }
   if (!body?.success) throw new ApiError(body?.error ?? { code: r.status >= 500 ? 'INTERNAL_ERROR' : 'HTTP_ERROR', message: `HTTP ${r.status}` }, r.status)
   return body.data
 }

@@ -210,7 +210,9 @@ def test_restore_identical_is_noop(c):
 
 def test_version_number_conflict_is_retried():
     from app.api.deps import get_db, workflow_service
+    from app.repositories import UserRepository
     svc = workflow_service(); uid = "u-" + uuid.uuid4().hex[:6]
+    UserRepository(get_db()).add(uid, f"{uid}@example.com", "x", time.time())
     wid = svc.seed_example(uid)
     real = svc.versions.next_number; calls = []
     def stale(w): calls.append(1); return 1 if len(calls) == 1 else real(w)  # first pick collides with v1 (concurrent save)

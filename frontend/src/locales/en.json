@@ -74,7 +74,10 @@
     "nameRequired": "Name cannot be empty",
     "deleteTitle": "Delete workflow?",
     "deleteBody": "“{{name}}” and its entire run history will be permanently deleted.",
-    "title": "Workflows"
+    "title": "Workflows",
+    "showAll": "All workflows",
+    "sharedBy": "Shared by {{email}}",
+    "emptyViewer": "Nothing is shared with you yet. Ask a workflow owner to share one."
   },
   "editor": {
     "notFoundTitle": "Workflow not found",
@@ -144,7 +147,9 @@
     "mcpNone": "No MCP server yet: add one in Settings.",
     "mcpArgs": "Arguments",
     "mcpArgsHint": "Text, or {{field}} to pass a state value with its type.",
-    "mcpManage": "Manage MCP servers"
+    "mcpManage": "Manage MCP servers",
+    "viewOnly": "View only",
+    "nameLabel": "Workflow name"
   },
   "nodes": {
     "start": "Start point",
@@ -316,7 +321,20 @@
     "MCP_CONNECT_FAILED": "Could not talk to the MCP server: {{reason}}",
     "MCP_TOOL_NOT_FOUND": "The MCP server has no tool named {{tool}}",
     "MCP_TOOL_FAILED": "The MCP tool failed: {{reason}}",
-    "MCP_ARGUMENT_INVALID": "Argument {{name}} must be of type {{type}}"
+    "MCP_ARGUMENT_INVALID": "Argument {{name}} must be of type {{type}}",
+    "AUTH_ACCOUNT_DISABLED": "This account has been deactivated",
+    "PERMISSION_DENIED": "Your role does not allow this ({{permission}})",
+    "USER_NOT_FOUND": "User not found",
+    "USER_ROLE_INVALID": "Role must be one of: {{roles}}",
+    "USER_LAST_ADMIN": "The studio needs at least one active admin",
+    "USER_SELF_CHANGE": "You cannot change your own role or deactivate your own account",
+    "SHARE_USER_NOT_FOUND": "No active account with that email",
+    "SHARE_ROLE_INVALID": "Share role must be viewer or editor",
+    "SHARE_OWNER": "The owner already has full access",
+    "SHARE_NOT_FOUND": "This workflow is not shared with that user",
+    "SLACK_OAUTH_NOT_CONFIGURED": "Add to Slack is not configured (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET)",
+    "SLACK_OAUTH_STATE_INVALID": "The Slack sign-in link is invalid or expired, please try again",
+    "SLACK_OAUTH_FAILED": "Slack did not complete the installation: {{reason}}"
   },
   "lang": {
     "en": "English",
@@ -553,14 +571,16 @@
       "accounts": "My accounts",
       "audit": "Audit log",
       "knowledge": "Knowledge bases",
-      "mcp": "MCP servers"
+      "mcp": "MCP servers",
+      "users": "Users"
     },
     "intro": {
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
       "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
       "audit": "Every approval request and decision made through a chat channel.",
       "knowledge": "Documents that Retriever nodes search. Text is split into chunks and embedded; only you can use your knowledge bases.",
-      "mcp": "Tools from Model Context Protocol servers, used by MCP tool nodes. Secrets are encrypted and never shown again."
+      "mcp": "Tools from Model Context Protocol servers, used by MCP tool nodes. Secrets are encrypted and never shown again.",
+      "users": "Who can sign in and what their role allows. Workflows are shared from the editor."
     },
     "status": {
       "connected": "Connected",
@@ -663,5 +683,71 @@
     "none": "No MCP servers yet.",
     "stdioOn": "stdio servers are enabled: admins can register local commands. They run on the studio host with a clean environment, an empty temporary home directory and a time limit, but no further isolation: only add commands you trust, or run the studio in a container.",
     "stdioOff": "stdio servers are disabled on this server (STUDIO_MCP_STDIO=1 enables them for admins). HTTP servers must use public addresses unless STUDIO_MCP_ALLOW_PRIVATE=1."
+  },
+  "users": {
+    "adminOnly": "Only admins can manage users.",
+    "email": "Email",
+    "role": "Role",
+    "workflows": "Workflows",
+    "created": "Joined",
+    "active": "Active",
+    "you": "You",
+    "roleFor": "Role of {{email}}",
+    "activeFor": "{{email}} can sign in",
+    "statusActive": "Active",
+    "statusDisabled": "Deactivated",
+    "roles": {
+      "admin": "Admin",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "matrixTitle": "Roles",
+    "matrixIntro": "What each role can do in the whole studio.",
+    "permission": "Permission",
+    "perms": {
+      "users_manage": "Manage users and roles",
+      "org_manage": "Organization channels and MCP servers",
+      "workflows_all": "Full access to every workflow",
+      "workflows_create": "Create, import and duplicate workflows",
+      "resources_manage": "Own credentials, knowledge bases, MCP servers and channels"
+    },
+    "yes": "Allowed",
+    "no": "Not allowed",
+    "accessTitle": "Access to one workflow",
+    "accessNote": "A viewer role caps any share at viewer. Runs of a shared workflow use its owner's credentials, knowledge bases and MCP servers."
+  },
+  "share": {
+    "button": "Share",
+    "title": "Share workflow",
+    "intro": "Viewers can open and run it. Editors can also change it. Only the owner and admins can share or delete it.",
+    "email": "Email",
+    "role": "Access",
+    "add": "Add",
+    "owner": "Owner",
+    "empty": "Not shared with anyone yet.",
+    "roleFor": "Access of {{email}}",
+    "remove": "Stop sharing with {{email}}",
+    "roles": {
+      "viewer": "Viewer",
+      "editor": "Editor"
+    },
+    "access": {
+      "owner": "Owner",
+      "editor": "Can edit",
+      "viewer": "Can view"
+    },
+    "actions": {
+      "view": "Open",
+      "run": "Run",
+      "edit": "Edit",
+      "delete": "Delete",
+      "share": "Share"
+    }
+  },
+  "slackOauth": {
+    "title": "Add to Slack",
+    "help": "Install the studio's Slack app in a workspace with one click; no token to paste.",
+    "button": "Add to Slack",
+    "installed": "Slack workspace connected."
   }
 }

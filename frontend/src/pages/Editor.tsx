@@ -23,6 +23,8 @@ import { useParams, useSearchParams, Link } from 'react-router-dom'
 import { HumanPanel } from '@/components/human-panel'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
+import { ShareDialog } from '@/components/share-dialog'
+import { canEdit, type Access } from '@/lib/rbac'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
@@ -154,6 +156,8 @@ function Studio() {
   const [running, setRunning] = useState(false)
   const [traceSel, setTraceSel] = useState<string | null>(null); const [replay, setReplay] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
+  const [access, setAccess] = useState<Access>('owner'); const [ownerEmail, setOwnerEmail] = useState<string | null>(null)
+  const edit = canEdit(access)  // viewers (share or global role) get a read-only editor; they can still run (TASK-0014)
   const { dark } = useTheme()
   const rf = useReactFlow(); const idc = useRef(1); const wsRef = useRef<WebSocket | null>(null)
 
@@ -165,6 +169,7 @@ function Studio() {
     takeBaseline.current = true
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
     setSource(wf.source || null)
+    if (wf.access) { setAccess(wf.access); setOwnerEmail(wf.mine ? null : wf.owner_email ?? null) }
     setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
     if (wf.source) setInput(defaultInput(wf.state || []))
   }
@@ -235,7 +240,7 @@ function Studio() {
   }
   const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [])
   const onDrop = (ev: React.DragEvent) => {
-    ev.preventDefault(); const t = ev.dataTransfer.getData('nodetype'); if (!t) return
+    ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
     const pos = rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY })
     setNodes(ns => [...ns, { id: `${t}_${Date.now().toString(36)}${idc.current++}`, type: t, position: pos, data: { ...DEFAULTS[t], ...(t === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
   }
@@ -260,10 +265,13 @@ function Studio() {
       <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
-      <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
-      <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" onClick={save}><Save />{t('common.save')}</Button></Tip>
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 h-8" aria-label={t('editor.nameLabel')} />
+      {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
+      {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
+      <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
+      {wid && <ShareDialog workflowId={wid} />}
       <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
-      <ApiTriggerDialog wid={wid} />
+      {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
       <Dialog>
@@ -285,7 +293,7 @@ function Studio() {
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.palette')}</div>
           <div className="space-y-2">{TYPES.map(t_ => { const m = META[t_]; const I = m.icon
-            return <Card key={t_} draggable onDragStart={e => { e.dataTransfer.setData('nodetype', t_); e.dataTransfer.effectAllowed = 'move' }}
+            return <Card key={t_} draggable={edit} onDragStart={e => { e.dataTransfer.setData('nodetype', t_); e.dataTransfer.effectAllowed = 'move' }}
               className="flex-row items-center gap-3 p-2.5 cursor-grab hover:bg-accent transition-colors py-2.5">
               <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
               <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{t(`nodes.${t_}`)}</div></div>
@@ -315,15 +323,15 @@ function Studio() {
     {/* Canvas */}
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-        colorMode={dark ? 'dark' : 'light'} onConnect={onConnect} onNodeClick={(_, n) => onNodeClick(n.id)}
-        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={['Delete', 'Backspace']} fitView>
+        colorMode={dark ? 'dark' : 'light'} onConnect={edit ? onConnect : undefined} nodesConnectable={edit} nodesDraggable={edit} edgesReconnectable={edit} onNodeClick={(_, n) => onNodeClick(n.id)}
+        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={edit ? ['Delete', 'Backspace'] : null} fitView>
         <Background /><Controls /><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
     </main>
 
     {/* Right config */}
     <aside className="border-l bg-muted/30 min-h-0">
-      <ScrollArea className="h-full"><div className="p-4 space-y-4 w-[318px]">
+      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 w-[318px]">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selEdge && <div className="space-y-3">
@@ -383,7 +391,7 @@ function Studio() {
           </>}
           {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />{t('editor.deleteNode')}</Button>}
         </div>}
-      </div></ScrollArea>
+      </div></fieldset></ScrollArea>
     </aside>
 
     {/* Bottom run panel */}

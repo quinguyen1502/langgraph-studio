@@ -20,8 +20,11 @@ import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
 import { ImportDialog } from '@/components/import-dialog'
 import { CredentialsDialog } from '@/components/credentials-dialog'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { can, canEdit, useMe, type Access } from '@/lib/rbac'
 
-type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null }
+type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null; access: Access; mine: boolean; owner_email: string | null }
 
 export function WorkflowsPage() {
   const { t } = useTranslation(); const nav = useNavigate()
@@ -30,8 +33,10 @@ export function WorkflowsPage() {
   const [notice, setNotice] = useState('')
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
   const [del, setDel] = useState<W | null>(null); const [delErr, setDelErr] = useState(''); const [busy, setBusy] = useState(false)
-  const load = () => api<W[]>('/api/workflows').then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
-  useEffect(() => { load() }, [])
+  const me = useMe(); const [all, setAll] = useState(false)
+  const creates = can(me, 'workflows.create')
+  const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
+  useEffect(() => { load() }, [all])
   const flash = (m: string) => { setNotice(m); setTimeout(() => setNotice(''), 4000) }
   const create = async () => {
     setBusy(true)
@@ -72,9 +77,10 @@ export function WorkflowsPage() {
         <div className="flex gap-2">
           <div className="relative"><Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" /><Input id="wf-search" aria-label={t('list.searchLabel')} className="pl-8 pr-8 w-64" placeholder={t('list.search')} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
             {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-1 top-1 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
-          <CredentialsDialog />
-          <ImportDialog />
-          <Button onClick={create} id="new-wf" disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Plus />}{t('common.newWorkflow')}</Button>
+          {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
+          {can(me, 'resources.manage') && <CredentialsDialog />}
+          {creates && <ImportDialog />}
+          {creates && <Button onClick={create} id="new-wf" disabled={busy}>{busy ? <Loader2 className="animate-spin" /> : <Plus />}{t('common.newWorkflow')}</Button>}
         </div>
       </div>
       {notice && <div role="status" id="wf-notice" className="fixed bottom-4 right-4 z-50 max-w-sm rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-2 text-sm">{notice}</div>}
@@ -86,7 +92,9 @@ export function WorkflowsPage() {
           <TableHeader><TableRow><TableHead className="pl-4">{t('list.colName')}</TableHead><TableHead>{t('list.colNodes')}</TableHead><TableHead>{t('list.colUpdated')}</TableHead><TableHead>{t('list.colLastRun')}</TableHead><TableHead className="w-12" /></TableRow></TableHeader>
           <TableBody>
             {shown.map(w => <TableRow key={w.id} className="cursor-pointer" onClick={() => nav(`/workflows/${w.id}`)}>
-              <TableCell className="pl-4 font-medium max-w-0 w-1/2"><div className="truncate" title={w.name}>{w.name}</div><div className="text-xs text-muted-foreground font-mono">{w.id}</div></TableCell>
+              <TableCell className="pl-4 font-medium max-w-0 w-1/2"><div className="truncate" title={w.name}>{w.name}</div><div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"><span className="font-mono">{w.id}</span>
+                {!w.mine && <Badge variant="outline" className="wf-shared" title={w.owner_email ?? ''}>{t('list.sharedBy', { email: w.owner_email ?? '?' })}</Badge>}
+                {w.access !== 'owner' && <Badge variant="secondary" className="wf-access">{t(`share.access.${w.access}`)}</Badge>}</div></TableCell>
               <TableCell><Badge variant="secondary">{w.node_count}</Badge></TableCell>
               <TableCell className="text-muted-foreground">{fmt(w.updated)}</TableCell>
               <TableCell>{w.last_run_status ? <div className="flex items-center gap-2">
@@ -95,15 +103,15 @@ export function WorkflowsPage() {
               <TableCell onClick={e => e.stopPropagation()}>
                 <DropdownMenu><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" aria-label={t('list.actionsFor', { name: w.name })} className="wf-actions"><MoreHorizontal /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => { setRename(w); setNewName(w.name); setRenameErr('') }}><Pencil />{t('list.rename')}</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => dup(w)}><Copy />{t('list.duplicate')}</DropdownMenuItem>
+                    <DropdownMenuItem disabled={!canEdit(w.access)} onClick={() => { setRename(w); setNewName(w.name); setRenameErr('') }}><Pencil />{t('list.rename')}</DropdownMenuItem>
+                    <DropdownMenuItem disabled={!creates} onClick={() => dup(w)}><Copy />{t('list.duplicate')}</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" onClick={() => { setDel(w); setDelErr('') }}><Trash2 />{t('common.delete')}</DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" disabled={w.access !== 'owner'} onClick={() => { setDel(w); setDelErr('') }}><Trash2 />{t('common.delete')}</DropdownMenuItem>
                   </DropdownMenuContent></DropdownMenu>
               </TableCell>
             </TableRow>)}
             {loading && <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="py-14 text-center text-muted-foreground"><Loader2 className="inline animate-spin mr-2 size-4" />{t('list.loadingList')}</TableCell></TableRow>}
-            {!loading && !loadErr && !items.length && empty(<FolderOpen className="size-5" />, t('list.emptyTitle'), <>{t('list.emptyBody')} <Button size="sm" className="ml-2" onClick={create}><Plus />{t('common.newWorkflow')}</Button></>, 'wf-empty')}
+            {!loading && !loadErr && !items.length && empty(<FolderOpen className="size-5" />, t('list.emptyTitle'), <>{creates ? <>{t('list.emptyBody')} <Button size="sm" className="ml-2" onClick={create}><Plus />{t('common.newWorkflow')}</Button></> : t('list.emptyViewer')}</>, 'wf-empty')}
             {!loading && items.length > 0 && !shown.length && empty(<SearchX className="size-5" />, t('list.noResultsTitle'), <>{t('list.noResultsBody')} “<span className="font-medium text-foreground break-all">{q.trim()}</span>”. <Button size="sm" variant="outline" className="ml-2" onClick={() => setQ('')}>{t('list.clearSearch')}</Button></>, 'wf-no-results')}
           </TableBody>
         </Table>

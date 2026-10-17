@@ -5,7 +5,7 @@ from ..deps import current_user, limit_body, run_service, workflow_service
 router = APIRouter(prefix="/api", tags=["workflows"])
 
 @router.get("/workflows")
-def list_wf(user=Depends(current_user), svc=Depends(workflow_service)): return svc.list(user["id"])
+def list_wf(all: bool = Query(False), user=Depends(current_user), svc=Depends(workflow_service)): return svc.list(user["id"], all)
 
 @router.get("/workflows/{wid}")
 def get_wf(wid: str, user=Depends(current_user), svc=Depends(workflow_service)): return svc.get(wid, user["id"])

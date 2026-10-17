@@ -113,5 +113,5 @@ of a PR that has not been merged yet. One commit per item; migrations `0011`–`
 - Identities whose workspace could not be derived by the backfill (no Slack connection at migration time) must be linked again.
 - Compose trusts all private ranges as proxies and its nginx overwrites `X-Forwarded-For`. Behind a load balancer, switch nginx to append and narrow `STUDIO_TRUSTED_PROXIES` to nginx + the balancer.
 - An approver needs a usable connection (their own, or an org one) of that platform to receive a verification code. Telegram also needs the user to have started the bot.
-- Slack Enterprise Grid org-wide installs and OAuth distribution are not supported: each workspace is a bot token pasted by a user or an admin.
-- Admins are managed by environment variable only (no admin UI or RBAC yet, TASK-0014).
+- Slack Enterprise Grid org-wide installs are not supported. OAuth distribution ("Add to Slack") was added by TASK-0014 (DEC-0023); pasting a bot token still works.
+- Admins: managed in Settings → Users since TASK-0014 (DEC-0023); `STUDIO_ADMIN_EMAILS` is a bootstrap.

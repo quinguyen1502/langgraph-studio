@@ -23,7 +23,7 @@ REQ-0011: Tool nodes should call tools exposed by configured MCP servers. The op
 - Table `mcp_servers` (migration `0020_mcp_servers`). The scopes are the same as approval channels: `user` (owner only) and `org` (managed by admins, usable by everyone). Transport and scope are fixed after creation.
 - stdio servers start a process on the API/worker host. They need `STUDIO_MCP_STDIO=1` (default off) and an admin. Turning the flag off also stops existing stdio servers (`MCP_STDIO_DISABLED`).
 - HTTP servers: any user (personal) or an admin (org). The URL must resolve to public addresses unless `STUDIO_MCP_ALLOW_PRIVATE=1`. Each request connects to the IP validated just before (the pinning helper shared with webhooks, `services/webhooks.public_address`), so a DNS change cannot redirect calls to internal services. Redirects are not followed.
-- Admin today means `users.is_admin` (demo user in dev, `STUDIO_ADMIN_EMAILS`). TASK-0014 moves it to RBAC permissions.
+- Admin today means `users.is_admin` (demo user in dev, `STUDIO_ADMIN_EMAILS`). TASK-0014 moves it to RBAC permissions (`org.manage`, DEC-0023).
 
 ### Secrets
 - One field `secrets` per server: environment variables for stdio, HTTP headers for HTTP (e.g. `Authorization`). They are stored as one Fernet token (the same key as credentials), and only names with masked values are returned. In an update, a `null` value keeps the stored value and names not listed are removed. Changing the configuration clears the cached tools.

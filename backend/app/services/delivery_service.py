@@ -23,8 +23,9 @@ def backoff(attempt: int) -> float:
 
 class DeliveryService:
     def __init__(self, repo: WebhookDeliveryRepository, workflows: WorkflowRepository, jobs: JobQueue,
-                 secrets: Optional[Callable[[Optional[str]], list[str]]] = None):
+                 secrets: Optional[Callable[[Optional[str]], list[str]]] = None, access=None):
         self.repo, self.workflows, self.jobs, self.secrets = repo, workflows, jobs, secrets  # secrets: token id -> active secrets
+        self.access = access  # AccessService (TASK-0014)
 
     @staticmethod
     def public(d: WebhookDelivery) -> dict:
@@ -70,6 +71,7 @@ class DeliveryService:
 
     # ---- owner API ----
     def _owned(self, wid: str, uid: str):
+        if self.access is not None: self.access.workflow(wid, uid, "share"); return  # deliveries belong to API tokens
         if self.workflows.get_owned(wid, uid) is None: raise AppError("WORKFLOW_NOT_FOUND")
 
     def list(self, wid: str, uid: str) -> list[dict]:

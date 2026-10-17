@@ -136,6 +136,22 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **HTTP**: URL phải là địa chỉ công khai (chống SSRF, kết nối ghim vào IP đã kiểm tra) trừ khi `STUDIO_MCP_ALLOW_PRIVATE=1` (vd. sidecar trong compose).
 - Thiết kế: DEC-0022.
 
+## Vai trò, chia sẻ workflow & "Add to Slack" (TASK-0014)
+- **Vai trò** (toàn studio): `admin` (quản lý người dùng, kênh/máy chủ MCP của tổ chức, toàn quyền mọi workflow), `editor` (mặc định: tạo
+  workflow, credential, kho tri thức, máy chủ MCP, kênh riêng), `viewer` (chỉ mở và chạy workflow được chia sẻ). Không có SSO.
+- Cài đặt → **Người dùng** (admin): đổi vai trò, vô hiệu hoá tài khoản (có hiệu lực ngay, kể cả token và WebSocket đang mở), bảng quyền.
+  Không thể tự đổi vai trò / tự vô hiệu hoá, và luôn còn ít nhất một admin.
+- `STUDIO_ADMIN_EMAILS` chỉ còn là **bootstrap**: email trong danh sách thành admin khi đăng ký, và khi khởi động **chỉ khi không còn admin
+  nào hoạt động** (khôi phục khi bị khoá). Tài khoản đầu tiên (user demo) là admin. `STUDIO_DEFAULT_ROLE=viewer` để tài khoản mới chỉ xem.
+- **Chia sẻ**: nút **Chia sẻ** trong editor (chủ sở hữu hoặc admin) → thêm email với quyền *Người xem* (mở, chạy) hoặc *Người chỉnh sửa*
+  (thêm sửa, lưu). Chỉ chủ sở hữu / admin xoá, chia sẻ, tạo API token. Người xem thấy editor chỉ đọc; vai trò `viewer` giới hạn mọi chia sẻ ở mức xem.
+- Lần chạy workflow được chia sẻ dùng **credential, kho tri thức, máy chủ MCP và subgraph của chủ sở hữu**; người không có quyền sửa chỉ chạy
+  bản đã lưu. Lịch sử chạy: chủ sở hữu / admin thấy mọi lần chạy, người khác chỉ thấy lần chạy của mình.
+- **Add to Slack**: đặt `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET` (trang *Basic Information* của Slack app) và
+  `STUDIO_PUBLIC_URL`; trong Slack app thêm Redirect URL `{STUDIO_PUBLIC_URL}/api/approvals/slack/oauth/callback`, bật *Manage Distribution*.
+  Thẻ Slack trong Cài đặt → Kênh phê duyệt hiện nút **Add to Slack** (cá nhân, hoặc tổ chức cho admin); dán bot token vẫn dùng được.
+- Thiết kế: DEC-0023.
+
 ## Kho tri thức & node Retriever (TASK-0012)
 - Cài đặt → **Kho tri thức**: tạo kho, tải `.txt` / `.md` / `.pdf` (≤ 10 MB), xem số đoạn, thử tìm kiếm, đổi model/khoá, lập chỉ mục lại.
 - Embedding: credential OpenAI(-compatible) của kho → `OPENAI_API_KEY` → mock offline cố định (`mock:512`, không cần khoá). Mặc định
@@ -372,8 +388,7 @@ Endpoint callback:
 - Telegram: `POST {STUDIO_PUBLIC_URL}/api/approvals/callback/telegram/{channel_id}` (nút **Đăng ký webhook** tự đặt).
 
 **Kết nối cá nhân và toàn tổ chức.** Mỗi user có thể tạo kết nối riêng (*Cá nhân*), chỉ dùng trên workflow của mình. **Admin**
-(`users.is_admin`, đặt bằng `STUDIO_ADMIN_EMAILS=a@x.com,b@y.com`, áp dụng khi đăng ký và khi khởi động; user demo là admin ngoài
-production) tạo thêm kết nối *Toàn tổ chức* mà mọi user đều chọn được trên node Human; chỉ admin sửa / xoá được kết nối này.
+(vai trò `admin`, quản lý ở Cài đặt → **Người dùng**; xem mục RBAC) tạo thêm kết nối *Toàn tổ chức* mà mọi user đều chọn được trên node Human; chỉ admin sửa / xoá được kết nối này.
 
 **Xác minh tài khoản chat.** Trong **Kênh phê duyệt → Tài khoản của tôi**, nhập Slack member ID / Telegram user ID → **Liên kết & gửi mã**:
 bot nhắn riêng (DM) một mã 6 số; nhập mã → **Xác minh**. Chưa xác minh thì nút bấm trong chat bị từ chối (`APPROVAL_IDENTITY_UNKNOWN`).

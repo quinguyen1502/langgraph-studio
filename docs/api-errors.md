@@ -103,6 +103,19 @@
 | `IMPORT_INVALID` | 400 | Import failed: {reason} |
 | `IMPORT_JOB_NOT_FOUND` | 404 | Import job not found |
 | `IMPORT_NOT_READY` | 400 | Import job is not ready or the graph is invalid |
+| `AUTH_ACCOUNT_DISABLED` | 403 | This account has been deactivated |
+| `PERMISSION_DENIED` | 403 | Your role does not allow this ({permission}) |
+| `USER_NOT_FOUND` | 404 | User not found |
+| `USER_ROLE_INVALID` | 400 | Role must be one of: {roles} |
+| `USER_LAST_ADMIN` | 409 | The studio needs at least one active admin |
+| `USER_SELF_CHANGE` | 409 | You cannot change your own role or deactivate your own account |
+| `SHARE_USER_NOT_FOUND` | 404 | No active account with that email |
+| `SHARE_ROLE_INVALID` | 400 | Share role must be viewer or editor |
+| `SHARE_OWNER` | 400 | The owner already has full access |
+| `SHARE_NOT_FOUND` | 404 | This workflow is not shared with that user |
+| `SLACK_OAUTH_NOT_CONFIGURED` | 503 | Add to Slack is not configured (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET) |
+| `SLACK_OAUTH_STATE_INVALID` | 400 | The Slack sign-in link is invalid or expired, please try again |
+| `SLACK_OAUTH_FAILED` | 502 | Slack did not complete the installation: {reason} |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |

@@ -25,6 +25,13 @@ class SlackChannel(ApprovalChannel):
         if not data.get("ok"): raise AppError("CHANNEL_API_FAILED", kind=self.label, reason=str(data.get("error") or "not ok"))
         return data
 
+    def oauth_access(self, code: str, redirect_uri: str) -> dict:
+        """Add to Slack (TASK-0014): exchange the OAuth code for the workspace's bot token (oauth.v2.access)."""
+        _, data = self.call("POST", f"{config.slack_api_url()}/oauth.v2.access", data={"code": code, "redirect_uri": redirect_uri},
+                            auth=(config.slack_client_id(), config.slack_client_secret()))
+        if not data.get("ok"): raise AppError("SLACK_OAUTH_FAILED", reason=str(data.get("error") or "not ok"))
+        return data
+
     @staticmethod
     def _blocks(msg: ApprovalMessage) -> list[dict]:
         text = f"*{msg.title}*\n" + "\n".join(msg.lines) + (f"\n<{msg.link}|{msg.open_label}>" if msg.link else "")

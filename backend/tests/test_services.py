@@ -52,7 +52,7 @@ def test_workflow_crud_naming_and_ownership(svc):
     with pytest.raises(AppError): s.rename(b["id"], "Flow A", "u1")
     with pytest.raises(AppError): s.rename(b["id"], "   ", "u1")
     assert s.duplicate(a["id"], "u1")["name"] == "Flow A (copy 2)"
-    s.delete(a["id"], "u1"); assert len(s.list("u1")) == 2
+    s.delete(a["id"], "u1", confirm_name="Flow A"); assert len(s.list("u1")) == 2
 
 
 def test_save_keeps_server_source_and_ignores_client_source(svc):

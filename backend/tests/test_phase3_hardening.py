@@ -50,7 +50,8 @@ def test_teams_and_team_shares():
     c.delete(f"/api/teams/{t['id']}/members/{b.id}", headers=H(adm))
     assert code(c.delete(f"/api/teams/{t['id']}/members/{b.id}", headers=H(adm))) == "TEAM_MEMBER_NOT_FOUND"
     assert c.get(f"/api/workflows/{wid}", headers=H(b.token)).status_code == 404
-    assert c.delete(f"/api/teams/{t['id']}", headers=H(adm)).status_code == 200
+    assert code(c.delete(f"/api/teams/{t['id']}", params={"confirm_name": name.lower()}, headers=H(adm))) == "CONFIRM_NAME_MISMATCH"
+    assert c.delete(f"/api/teams/{t['id']}", params={"confirm_name": name}, headers=H(adm)).status_code == 200
     acts = [e["action"] for e in audit(adm, q=name)["items"]]
     assert {"team.create", "team.member_add", "team.member_remove", "team.delete"} <= set(acts) and acts.count("team.member_add") == 1
     assert sum(e["action"] == "share.team" and e["details"]["team"] == name for e in audit(adm, category="share", limit=200)["items"]) == 1
@@ -95,10 +96,11 @@ def test_delete_or_anonymise_accounts():
     wid = first_wf(a)
     me = c.get("/api/me", headers=H(adm)).json()["data"]["id"]
     assert code(c.request("DELETE", f"/api/admin/users/{me}", json={}, headers=H(adm))) == "USER_SELF_CHANGE"
-    r = c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "anonymize"}, headers=H(adm))
+    assert code(c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "anonymize", "reassign_to": b.email}, headers=H(adm))) == "CONFIRM_NAME_MISMATCH"
+    r = c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "anonymize", "confirm_name": a.email}, headers=H(adm))
     assert code(r) == "USER_HAS_WORKFLOWS" and r.json()["error"]["details"]["count"] == 1
-    assert code(c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "wipe"}, headers=H(adm))) == "USER_DELETE_MODE_INVALID"
-    r = c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "anonymize", "reassign_to": b.email}, headers=H(adm)).json()["data"]
+    assert code(c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "wipe", "confirm_name": a.email}, headers=H(adm))) == "USER_DELETE_MODE_INVALID"
+    r = c.request("DELETE", f"/api/admin/users/{a.id}", json={"mode": "anonymize", "reassign_to": b.email, "confirm_name": a.email}, headers=H(adm)).json()["data"]
     assert r["reassigned"] == [wid] and WorkflowRepository(get_db()).get(wid).owner == b.id
     u = UserRepository(get_db()).get_by_id(a.id)
     assert u.email == f"deleted-{a.id}@deleted.invalid" and not u.active and u.password is None
@@ -106,8 +108,9 @@ def test_delete_or_anonymise_accounts():
     assert c.get("/api/credentials", headers=H(b.token)).json()["data"] == []  # b has none; a's key was purged with the account
     assert all(x["id"] != a.id for x in c.get("/api/admin/users", headers=H(adm)).json()["data"]["users"])
     # hard delete: a user with no workflows left
-    d = register("dd"); c.delete(f"/api/workflows/{first_wf(d)}", headers=H(d.token))
-    assert c.request("DELETE", f"/api/admin/users/{d.id}", json={"mode": "delete"}, headers=H(adm)).json()["data"]["mode"] == "delete"
+    d = register("dd"); dw = first_wf(d)
+    c.delete(f"/api/workflows/{dw}", params={"confirm_name": c.get(f"/api/workflows/{dw}", headers=H(d.token)).json()["data"]["name"]}, headers=H(d.token))
+    assert c.request("DELETE", f"/api/admin/users/{d.id}", json={"mode": "delete", "confirm_name": d.email}, headers=H(adm)).json()["data"]["mode"] == "delete"
     assert UserRepository(get_db()).get_by_id(d.id) is None and code(c.get("/api/me", headers=H(d.token))) == "AUTH_TOKEN_INVALID"
     assert {"user.anonymize", "user.delete"} <= {e["action"] for e in audit(adm, category="user")["items"]}
 
@@ -140,7 +143,9 @@ def test_delete_blocked_by_dependents_and_children_changed_note():
     a = register("sg")
     child = save(a, wf(f"Child {uuid.uuid4().hex[:4]}", N("x", "llm", prompt="hi", output_field="out")))
     parent = save(a, wf("Parent", N("sub", "subgraph", workflow_id=child)))
-    r = c.delete(f"/api/workflows/{child}", headers=H(a.token))
+    cname = c.get(f"/api/workflows/{child}", headers=H(a.token)).json()["data"]["name"]
+    assert code(c.delete(f"/api/workflows/{child}", headers=H(a.token))) == "CONFIRM_NAME_MISMATCH"  # checked before the dependents
+    r = c.delete(f"/api/workflows/{child}", params={"confirm_name": cname}, headers=H(a.token))
     assert code(r) == "WORKFLOW_IN_USE" and r.json()["error"]["details"]["dependents"] == [{"id": parent, "name": "Parent"}]
     assert c.get(f"/api/workflows/{child}/dependents", headers=H(a.token)).json()["data"]["dependents"][0]["id"] == parent
     assert c.get(f"/api/workflows/{parent}/versions", headers=H(a.token)).json()["data"]["children_changed"] == []
@@ -149,7 +154,7 @@ def test_delete_blocked_by_dependents_and_children_changed_note():
     c.post("/api/workflows", json=w, headers=H(a.token))
     ch = c.get(f"/api/workflows/{parent}/versions", headers=H(a.token)).json()["data"]["children_changed"]
     assert ch[0]["id"] == child and ch[0]["version"] == 2
-    assert c.delete(f"/api/workflows/{child}?force=true", headers=H(a.token)).status_code == 200
+    assert c.delete(f"/api/workflows/{child}", params={"force": "true", "confirm_name": cname}, headers=H(a.token)).status_code == 200
 
 
 def test_errors_inside_subgraphs_name_nodes_by_label():

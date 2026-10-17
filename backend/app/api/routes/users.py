@@ -1,8 +1,10 @@
 """User administration and workflow sharing (TASK-0014)."""
-from fastapi import APIRouter, Depends
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Query
 from ...core import permissions as P
-from ...schemas.rbac import ShareIn, UserUpdate
-from ..deps import current_user, share_service, user_service, workflow_service
+from ...schemas.rbac import MemberIn, PolicyIn, ShareIn, TeamIn, TeamShareIn, TransferIn, UserDelete, UserUpdate
+from ..deps import audit_service, current_user, ownership_service, policy_service, share_service, team_service, user_service, workflow_service
 
 router = APIRouter(prefix="/api", tags=["rbac"])
 
@@ -27,14 +29,11 @@ def delete_share(wid: str, target: str, user=Depends(current_user), svc=Depends(
 
 
 # ---- TASK-0029: teams, team shares, ownership transfer, account deletion, audit, policy ----
-from fastapi import Query  # noqa: E402
-from ...schemas.rbac import MemberIn, PolicyIn, TeamIn, TeamShareIn, TransferIn, UserDelete  # noqa: E402
-from ..deps import audit_service, ownership_service, policy_service, team_service  # noqa: E402
 
 
 @router.delete("/admin/users/{target}")
 def delete_user(target: str, body: UserDelete, user=Depends(current_user), svc=Depends(user_service)):
-    return svc.delete(user["id"], target, body.mode, body.reassign_to)
+    return svc.delete(user["id"], target, body.mode, body.reassign_to, body.confirm_name)
 
 @router.get("/admin/audit")
 def audit(category: str | None = None, q: str | None = None, since: str | None = None, limit: int = Query(50, ge=1, le=200),
@@ -57,7 +56,8 @@ def create_team(body: TeamIn, user=Depends(current_user), svc=Depends(team_servi
 def update_team(tid: str, body: TeamIn, user=Depends(current_user), svc=Depends(team_service)): return svc.update(user["id"], tid, body.name, body.description)
 
 @router.delete("/teams/{tid}")
-def delete_team(tid: str, user=Depends(current_user), svc=Depends(team_service)): return svc.delete(user["id"], tid)
+def delete_team(tid: str, confirm_name: Optional[str] = Query(None, max_length=400), user=Depends(current_user), svc=Depends(team_service)):
+    return svc.delete(user["id"], tid, confirm_name)
 
 @router.post("/teams/{tid}/members")
 def add_member(tid: str, body: MemberIn, user=Depends(current_user), svc=Depends(team_service)): return svc.add_member(user["id"], tid, body.email)

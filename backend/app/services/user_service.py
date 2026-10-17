@@ -1,7 +1,7 @@
 """User administration (TASK-0014; audit, deletion TASK-0029). Callers need users.manage."""
 from __future__ import annotations
 from ..core import permissions as P
-from ..core.errors import AppError
+from ..core.errors import AppError, require_confirm_name
 from ..repositories import UserRepository
 from .access import AccessService
 from .auth_service import normalise_email
@@ -45,14 +45,14 @@ class UserService:
             self.users.set_active(target, active); self._log(uid, "user.activate" if active else "user.deactivate", u)
         return self.public(self.users.get_by_id(target))
 
-    def delete(self, uid: str, target: str, mode: str = "anonymize", reassign_to: str | None = None) -> dict:
+    def delete(self, uid: str, target: str, mode: str = "anonymize", reassign_to: str | None = None, confirm_name: str | None = None) -> dict:
         """Delete or anonymise an account. Owned workflows must first move to `reassign_to` (an editor or admin);
         references the new owner cannot use are flagged per workflow. Personal resources (keys, knowledge bases,
         personal MCP servers and channels, tokens) are removed in both modes; `delete` also removes the runs they started
         and the account row, `anonymize` keeps a deactivated tombstone so run history stays attributable."""
         self.access.require(uid, P.USERS_MANAGE); u = self._get(target)
         if mode not in DELETE_MODES: raise AppError("USER_DELETE_MODE_INVALID")
-        self._guard(uid, u, True)
+        self._guard(uid, u, True); require_confirm_name(confirm_name, u.email)
         owned = self.workflows.list_for_owner(target)
         moved, flagged = [], []
         if owned:

@@ -39,7 +39,7 @@ def test_register_ownership_crud():
     d = c.post(f"/api/workflows/{wid}/duplicate", headers=H(t)).json()["data"]["id"]
     assert c.patch(f"/api/workflows/{d}", json={"name": "Renamed"}, headers=H(t)).status_code == 200
     assert any(w["name"] == "Renamed" for w in c.get("/api/workflows", headers=H(t)).json()["data"])
-    assert c.delete(f"/api/workflows/{d}", headers=H(t)).status_code == 200
+    assert c.delete(f"/api/workflows/{d}", params={"confirm_name": "Renamed"}, headers=H(t)).status_code == 200
     assert len(c.get("/api/workflows", headers=H(t)).json()["data"]) == 1
     other = c.post("/api/auth/register", json={"email": f"o{uuid.uuid4().hex[:6]}@example.com", "password": "secret12"}).json()["data"]["token"]
     assert c.delete(f"/api/workflows/{wid}", headers=H(other)).status_code == 404  # another user's workflow (admins act as owner, TASK-0014)

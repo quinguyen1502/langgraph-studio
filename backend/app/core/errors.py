@@ -136,6 +136,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "USER_DELETE_MODE_INVALID": (400, "Mode must be anonymize or delete"),
     "WORKFLOW_IN_USE": (409, "{count} workflow(s) use this workflow as a subgraph"),
     "ORG_RESOURCE_NOT_ALLOWED": (403, "Your role may not use organization-wide resources at run time ({kind})"),
+    "CONFIRM_NAME_MISMATCH": (400, "Type the exact name to confirm the deletion"),
 }
 
 
@@ -151,3 +152,8 @@ class AppError(Exception):
         d = {"code": self.code, "message": self.message}
         if self.details is not None: d["details"] = self.details
         return d
+
+
+def require_confirm_name(given: str | None, expected: str) -> None:
+    """High-risk deletes (workflow, user, team) need the client to echo the exact name the user typed (UI rule: type to confirm)."""
+    if given != expected: raise AppError("CONFIRM_NAME_MISMATCH")

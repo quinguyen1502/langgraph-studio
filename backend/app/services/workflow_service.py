@@ -4,7 +4,7 @@ import json, time, uuid
 from sqlalchemy.exc import IntegrityError
 from ..core import config
 from ..core import permissions as P
-from ..core.errors import AppError
+from ..core.errors import AppError, require_confirm_name
 from ..engine import subgraphs
 from ..engine.examples import EXAMPLE
 from ..models import Workflow, WorkflowVersion
@@ -190,9 +190,9 @@ class WorkflowService:
                 out.append({"id": w.id if vis else None, "name": w.name if vis else None})
         return out
 
-    def delete(self, wid: str, uid: str, force: bool = False) -> dict:
-        """Refuses (WORKFLOW_IN_USE with the dependents) while other workflows embed this one, unless `force`."""
-        w = self.owned(wid, uid, P.DELETE)
+    def delete(self, wid: str, uid: str, force: bool = False, confirm_name: str | None = None) -> dict:
+        """Needs the exact name (CONFIRM_NAME_MISMATCH); refuses (WORKFLOW_IN_USE with the dependents) while other workflows embed this one, unless `force`."""
+        w = self.owned(wid, uid, P.DELETE); require_confirm_name(confirm_name, w.name)
         deps = self.dependents(wid, uid)
         if deps and not force: raise AppError("WORKFLOW_IN_USE", details={"count": len(deps), "dependents": deps}, count=len(deps))
         self.repo.delete(wid); self.runs.delete_for_workflow(wid)

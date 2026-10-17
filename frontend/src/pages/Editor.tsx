@@ -305,8 +305,8 @@ function Studio() {
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
-        <Tip tip={t('hist.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('hist.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
-        <Tip tip={t('hist.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('hist.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
+        <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
+        <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
       <Tip tip={t('shortcuts.button')}><Button variant="ghost" size="icon" id="shortcuts-btn" aria-label={t('shortcuts.button')} onClick={() => setCheat(true)}><Keyboard /></Button></Tip>
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       <Dialog>

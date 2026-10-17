@@ -952,7 +952,11 @@
       "zoomIn": "Phóng to",
       "zoomOut": "Thu nhỏ",
       "undo": "Hoàn tác",
-      "redo": "Làm lại"
+      "redo": "Làm lại",
+      "copy": "Sao chép node đang chọn",
+      "cut": "Cắt node đang chọn",
+      "paste": "Dán node",
+      "duplicate": "Nhân bản node đang chọn"
     }
   },
   "history": {
@@ -989,5 +993,16 @@
     "description": "Mô tả",
     "visibility": "Ai thấy được",
     "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới."
+  },
+  "clipboard": {
+    "duplicate": "Nhân bản",
+    "copied_one": "Đã sao chép {{count}} node",
+    "copied_other": "Đã sao chép {{count}} node",
+    "cut_one": "Đã cắt {{count}} node",
+    "cut_other": "Đã cắt {{count}} node",
+    "pasted_one": "Đã dán {{count}} node",
+    "pasted_other": "Đã dán {{count}} node",
+    "pastedCleared_one": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây",
+    "pastedCleared_other": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây"
   }
 }

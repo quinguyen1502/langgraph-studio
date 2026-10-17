@@ -952,7 +952,11 @@
       "zoomIn": "Zoom in",
       "zoomOut": "Zoom out",
       "undo": "Undo",
-      "redo": "Redo"
+      "redo": "Redo",
+      "copy": "Copy selected nodes",
+      "cut": "Cut selected nodes",
+      "paste": "Paste nodes",
+      "duplicate": "Duplicate selected nodes"
     }
   },
   "history": {
@@ -989,5 +993,16 @@
     "description": "Description",
     "visibility": "Visible to",
     "saved": "Template \"{{name}}\" saved. Find it under New workflow."
+  },
+  "clipboard": {
+    "duplicate": "Duplicate",
+    "copied_one": "Copied {{count}} node",
+    "copied_other": "Copied {{count}} nodes",
+    "cut_one": "Cut {{count}} node",
+    "cut_other": "Cut {{count}} nodes",
+    "pasted_one": "Pasted {{count}} node",
+    "pasted_other": "Pasted {{count}} nodes",
+    "pastedCleared_one": "Pasted {{count}} node — {{creds}} credential not available here was cleared",
+    "pastedCleared_other": "Pasted {{count}} nodes — {{creds}} credential(s) not available here were cleared"
   }
 }

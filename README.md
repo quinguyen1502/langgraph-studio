@@ -117,6 +117,12 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **LLM**: `model`, `prompt` (biến `{{state.field}}`), `output_field`.
 - **Tool**: `mode=function` + `function` (đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py`, ví dụ `lookup_order`) hoặc `mode=http` + `method`, `url`, `body` (template).
 - **Condition**: `field`; giá trị field được so khớp với `label` của các cạnh ra (chính xác → không phân biệt hoa thường → chứa chuỗi), `default` tuỳ chọn → `add_conditional_edges`.
+- **Nhánh song song** (TASK-0011): node (không phải Condition) có nhiều cạnh ra → các nhánh chạy cùng superstep. Trường state được nhiều
+  nhánh ghi cần `reducer`: `append` (list, gom mọi kết quả), `merge` (object), `add` (number/integer); mặc định `replace`. Thiếu reducer → lỗi validate.
+- **Join**: chờ mọi nhánh đi vào rồi chạy một lần (cạnh chờ của LangGraph); cần ≥ 2 cạnh vào, không nhận trực tiếp từ Condition.
+- **Subgraph**: `workflow_id` của một workflow đã lưu (của bạn). Workflow con được nhúng inline: node bên trong hiện trong trace dạng
+  `Subgraph › node` (id `sub/node`), dừng ở Human, checkpoint và khôi phục như node thường. State dùng chung theo tên trường; vòng tham chiếu,
+  workflow không tồn tại / import, lồng quá 5 cấp đều bị báo lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`). Thiết kế: DEC-0020.
 
 ## API
 Mọi endpoint trả về envelope: `{"success": true, "data": …, "error": null}` hoặc `{"success": false, "data": null, "error": {"code": "AUTH_INVALID_CREDENTIALS", "message": "…", "details": …}}`. Danh mục mã lỗi: `docs/api-errors.md` (DEC-0010).
@@ -135,7 +141,7 @@ UI có tiếng Anh và tiếng Việt (react-i18next, `frontend/src/locales/en.j
 `example` – Customer Support: Start → Classify intent (LLM) → Route (Condition theo `intent`) → `order_status`: Lookup order (tool) → Reply / `general`: General answer → End. Thử input `{"message":"Đơn A100 đâu rồi?"}` hoặc `{"message":"Giờ mở cửa?"}`.
 
 ## Giới hạn MVP
-Auth đơn giản (không refresh token, không reset mật khẩu, không phân quyền chia sẻ), không chạy song song/loop phức tạp (mỗi LLM/Tool chỉ 1 cạnh ra), không có undo, mock LLM chỉ dùng heuristic từ khoá.
+Auth đơn giản (không refresh token, không reset mật khẩu, không phân quyền chia sẻ), không có undo, mock LLM chỉ dùng heuristic từ khoá.
 
 ## Cấu trúc backend & database (TASK-0017)
 Backend chia lớp `core / models / schemas / repositories / services / api / engine` — sơ đồ và quy tắc import ở `docs/backend-architecture.md` (DEC-0009).

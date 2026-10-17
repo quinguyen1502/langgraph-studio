@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, Query
-from ...engine.validator import validate
 from ...schemas.workflow import Rename, WorkflowIn
 from ..deps import current_user, limit_body, run_service, workflow_service
 
@@ -27,7 +26,7 @@ def del_wf(wid: str, user=Depends(current_user), svc=Depends(workflow_service)):
 def runs(wid: str, user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"])
 
 @router.post("/validate", dependencies=[Depends(limit_body)])
-def validate_wf(body: WorkflowIn, user=Depends(current_user)): return {"errors": validate(body.as_dict())}
+def validate_wf(body: WorkflowIn, user=Depends(current_user), svc=Depends(workflow_service)): return {"errors": svc.validate(body.as_dict(), user["id"])}
 
 # ---- versions (TASK-0008) ----
 @router.get("/workflows/{wid}/versions")

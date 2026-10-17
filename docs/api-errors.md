@@ -127,7 +127,6 @@
 | `USER_DELETE_MODE_INVALID` | 400 | Mode must be anonymize or delete |
 | `WORKFLOW_IN_USE` | 409 | {count} workflow(s) use this workflow as a subgraph |
 | `ORG_RESOURCE_NOT_ALLOWED` | 403 | Your role may not use organization-wide resources at run time ({kind}) |
-| `CONFIRM_NAME_MISMATCH` | 400 | Type the exact name to confirm the deletion |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |

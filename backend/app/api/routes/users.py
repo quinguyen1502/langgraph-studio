@@ -1,6 +1,4 @@
 """User administration and workflow sharing (TASK-0014)."""
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from ...core import permissions as P
 from ...schemas.rbac import MemberIn, PolicyIn, ShareIn, TeamIn, TeamShareIn, TransferIn, UserDelete, UserUpdate
@@ -33,7 +31,7 @@ def delete_share(wid: str, target: str, user=Depends(current_user), svc=Depends(
 
 @router.delete("/admin/users/{target}")
 def delete_user(target: str, body: UserDelete, user=Depends(current_user), svc=Depends(user_service)):
-    return svc.delete(user["id"], target, body.mode, body.reassign_to, body.confirm_name)
+    return svc.delete(user["id"], target, body.mode, body.reassign_to)
 
 @router.get("/admin/audit")
 def audit(category: str | None = None, q: str | None = None, since: str | None = None, limit: int = Query(50, ge=1, le=200),
@@ -56,8 +54,7 @@ def create_team(body: TeamIn, user=Depends(current_user), svc=Depends(team_servi
 def update_team(tid: str, body: TeamIn, user=Depends(current_user), svc=Depends(team_service)): return svc.update(user["id"], tid, body.name, body.description)
 
 @router.delete("/teams/{tid}")
-def delete_team(tid: str, confirm_name: Optional[str] = Query(None, max_length=400), user=Depends(current_user), svc=Depends(team_service)):
-    return svc.delete(user["id"], tid, confirm_name)
+def delete_team(tid: str, user=Depends(current_user), svc=Depends(team_service)): return svc.delete(user["id"], tid)
 
 @router.post("/teams/{tid}/members")
 def add_member(tid: str, body: MemberIn, user=Depends(current_user), svc=Depends(team_service)): return svc.add_member(user["id"], tid, body.email)

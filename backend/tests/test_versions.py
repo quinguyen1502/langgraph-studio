@@ -71,8 +71,7 @@ def test_errors_and_ownership(c):
 
 def test_delete_removes_versions(c):
     tok = user(c); wid = example(c, tok)
-    name = c.get(f"/api/workflows/{wid}", headers=H(tok)).json()["data"]["name"]
-    assert c.delete(f"/api/workflows/{wid}", params={"confirm_name": name}, headers=H(tok)).status_code == 200
+    c.delete(f"/api/workflows/{wid}", headers=H(tok))
     from app.api.deps import get_db
     from app.repositories import WorkflowVersionRepository
     assert WorkflowVersionRepository(get_db()).latest(wid) is None

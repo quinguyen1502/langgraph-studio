@@ -351,8 +351,7 @@
     "USER_HAS_WORKFLOWS": "Người dùng này sở hữu {{count}} workflow: hãy chọn người nhận trước",
     "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
     "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})",
-    "CONFIRM_NAME_MISMATCH": "Nhập đúng tên để xác nhận xoá"
+    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})"
   },
   "lang": {
     "en": "English",

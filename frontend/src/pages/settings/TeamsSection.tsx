@@ -54,8 +54,8 @@ export function TeamsSection() {
     catch (e: any) { setErr(e.message) }
   }
   const del = (tm: Team) => confirmDel.ask({ title: t('teams.deleteTitle', { name: tm.name }), name: tm.name, description: t('teams.deleteBody'),
-    onConfirm: async (typed: string) => {
-      await api(`/api/teams/${tm.id}?${new URLSearchParams({ confirm_name: typed })}`, { method: 'DELETE' })
+    onConfirm: async () => {
+      await api(`/api/teams/${tm.id}`, { method: 'DELETE' })
       setData(d => d && { ...d, teams: d.teams.filter(x => x.id !== tm.id) }) } })
   return <div className="space-y-4">
     <div className="flex gap-2"><Input id="team-new-name" placeholder={t('teams.namePlaceholder')} aria-label={t('teams.name')} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && name.trim() && create()} className="max-w-sm" />

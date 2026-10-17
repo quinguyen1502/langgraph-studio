@@ -64,8 +64,8 @@ export function WorkflowsPage() {
       confirmLabel: deps.length ? t('list.deleteAnyway') : undefined,
       children: deps.length ? <Alert variant="destructive" id="delete-dependents"><AlertCircle /><AlertDescription><div>{t('list.inUse', { count: deps.length })}</div>
         <ul className="mt-1 list-disc pl-4">{deps.map((d, i) => <li key={d.id ?? i}>{d.name ?? t('list.hiddenWorkflow')}{d.id && <span className="ml-1 font-mono text-xs">{d.id}</span>}</li>)}</ul></AlertDescription></Alert> : null,
-      onConfirm: async (typed: string) => {
-        await api(`/api/workflows/${w.id}?${new URLSearchParams({ confirm_name: typed, ...(deps.length ? { force: 'true' } : {}) })}`, { method: 'DELETE' }); load()
+      onConfirm: async () => {
+        await api(`/api/workflows/${w.id}${deps.length ? '?force=true' : ''}`, { method: 'DELETE' }); load()
       } })
   }
   const shown = useMemo(() => { const k = q.trim().toLowerCase(); return k ? items.filter(w => w.name.toLowerCase().includes(k) || w.id.includes(k)) : items }, [items, q])

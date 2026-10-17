@@ -38,7 +38,6 @@ test('versions: save, diff, restore, run tagged with version', async ({ page }) 
     await expect(page.locator('#versions-notice')).toContainText('giống hệt')
     await expect(page.locator('[data-testid=version-row]')).toHaveCount(4)
   } finally {
-    const name = (await (await page.request.get(`/api/workflows/${wid}`, { headers: H })).json()).data.name
-    await page.request.delete(`/api/workflows/${wid}?confirm_name=${encodeURIComponent(name)}`, { headers: H })
+    await page.request.delete(`/api/workflows/${wid}`, { headers: H })
   }
 })

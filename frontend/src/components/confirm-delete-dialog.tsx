@@ -1,6 +1,6 @@
-/** The one delete confirmation (UI rule, docs/ui-conventions.md): the destructive button stays disabled until the user
- * types the item's exact name. `children` is the reasons/warnings slot; `onConfirm(typed)` gets the typed name so
- * high-risk deletes can pass it on as `confirm_name`. Errors thrown by `onConfirm` are shown inside the dialog. */
+/** The one delete confirmation (UI rule, docs/ui-conventions.md, DEC-0025): the destructive button stays disabled until the
+ * user types the item's exact name. Confirmation is UI-only — the API stays a plain DELETE. `children` is the
+ * reasons/warnings slot; errors thrown by `onConfirm` are shown inside the dialog. */
 import { useState, type ReactNode } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
 import { Loader2, Trash2, TriangleAlert } from 'lucide-react'
@@ -16,7 +16,7 @@ export type ConfirmDeleteOptions = {
   confirmLabel?: string
   children?: ReactNode         // reasons / warnings / extra fields
   disabled?: boolean           // extra condition (e.g. a required field in the slot)
-  onConfirm: (typed: string) => Promise<unknown> | unknown
+  onConfirm: () => Promise<unknown> | unknown
 }
 
 export function ConfirmDeleteDialog({ open, onOpenChange, title, name, description, confirmLabel, children, disabled, onConfirm }:
@@ -26,7 +26,7 @@ export function ConfirmDeleteDialog({ open, onOpenChange, title, name, descripti
   const change = (o: boolean) => { if (busy) return; if (!o) { setTyped(''); setErr('') } onOpenChange(o) }
   const go = async () => {
     setBusy(true); setErr('')
-    try { await onConfirm(typed); setTyped(''); onOpenChange(false) } catch (e: any) { setErr(e?.message || String(e)) } finally { setBusy(false) }
+    try { await onConfirm(); setTyped(''); onOpenChange(false) } catch (e: any) { setErr(e?.message || String(e)) } finally { setBusy(false) }
   }
   const match = typed === name
   return <AlertDialog open={open} onOpenChange={change}>

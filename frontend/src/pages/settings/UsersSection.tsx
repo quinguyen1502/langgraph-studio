@@ -23,8 +23,8 @@ function DeleteUserDialog({ user, onClose, onDone }: { user: AdminUser | null; o
   const { t } = useTranslation(); const [mode, setMode] = useState('anonymize'); const [to, setTo] = useState('')
   useEffect(() => { setMode('anonymize'); setTo('') }, [user])
   if (!user) return null
-  const go = async (typed: string) => {
-    const r = await api<{ reassigned: string[]; flagged: any[] }>(`/api/admin/users/${user.id}`, { method: 'DELETE', json: { mode, reassign_to: to.trim() || null, confirm_name: typed } })
+  const go = async () => {
+    const r = await api<{ reassigned: string[]; flagged: any[] }>(`/api/admin/users/${user.id}`, { method: 'DELETE', json: { mode, reassign_to: to.trim() || null } })
     onDone(t('users.deleted', { email: user.email, count: r.reassigned.length, flagged: r.flagged.length }))
   }
   return <ConfirmDeleteDialog open onOpenChange={o => !o && onClose()} title={t('users.deleteTitle', { email: user.email })} name={user.email}

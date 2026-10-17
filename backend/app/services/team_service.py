@@ -2,7 +2,7 @@
 from __future__ import annotations
 import time, uuid
 from ..core import permissions as P
-from ..core.errors import AppError, require_confirm_name
+from ..core.errors import AppError
 from ..models import Team, TeamMember
 from ..repositories import TeamRepository, UserRepository
 from .auth_service import normalise_email
@@ -50,8 +50,8 @@ class TeamService:
         if t.name != old: self.audit.record(uid, "team.rename", "team", tid, t.name, before=old)
         return {"id": t.id, "name": t.name, "description": t.description}
 
-    def delete(self, uid: str, tid: str, confirm_name: str | None = None) -> dict:
-        self.access.require(uid, P.USERS_MANAGE); t = self._team(tid); require_confirm_name(confirm_name, t.name)
+    def delete(self, uid: str, tid: str) -> dict:
+        self.access.require(uid, P.USERS_MANAGE); t = self._team(tid)
         self.teams.delete(tid); self.audit.record(uid, "team.delete", "team", tid, t.name)
         return {"ok": True}
 

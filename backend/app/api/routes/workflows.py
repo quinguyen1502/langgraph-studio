@@ -1,5 +1,3 @@
-from typing import Optional
-
 from fastapi import APIRouter, Depends, Query
 from ...schemas.workflow import Rename, WorkflowIn
 from ..deps import current_user, limit_body, run_service, workflow_service
@@ -22,8 +20,7 @@ def rename_wf(wid: str, body: Rename, user=Depends(current_user), svc=Depends(wo
 def dup_wf(wid: str, user=Depends(current_user), svc=Depends(workflow_service)): return svc.duplicate(wid, user["id"])
 
 @router.delete("/workflows/{wid}")
-def del_wf(wid: str, force: bool = Query(False), confirm_name: Optional[str] = Query(None, max_length=400), user=Depends(current_user), svc=Depends(workflow_service)):
-    return svc.delete(wid, user["id"], force, confirm_name)
+def del_wf(wid: str, force: bool = Query(False), user=Depends(current_user), svc=Depends(workflow_service)): return svc.delete(wid, user["id"], force)
 
 @router.get("/workflows/{wid}/runs")
 def runs(wid: str, user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"])

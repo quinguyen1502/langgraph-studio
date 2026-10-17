@@ -47,9 +47,6 @@ test('team share, transfer, activity log and delete user with reassignment', asy
   await page.locator('#delete-reassign').fill('admin@example.com'); await confirmDelete(page, heir)
   await expect(page.locator('#users-notice')).toContainText(heir); await expect(row).toHaveCount(0)
   const w = await (await page.request.get(`/api/workflows/${wid}`, { headers: auth })).json(); expect(w.data.id).toBe(wid)
-  // server side: a high-risk delete without the typed name is refused
-  const tid = (await (await page.request.get('/api/teams', { headers: auth })).json()).data.teams.find((x: any) => x.name === `Ops ${stamp}`).id
-  expect((await (await page.request.delete(`/api/teams/${tid}?confirm_name=ops`, { headers: auth })).json()).error.code).toBe('CONFIRM_NAME_MISMATCH')
   // remove the member, stop the team share, then delete the team — each asks for the name
   await page.goto('/settings/teams'); await card.getByRole('button', { name: `Gỡ ${member}` }).click(); await confirmDelete(page, member)
   await expect(card).not.toContainText(member)

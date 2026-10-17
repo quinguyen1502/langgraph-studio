@@ -35,7 +35,6 @@ class TransferIn(BaseModel):
 class UserDelete(BaseModel):
     mode: str = Field("anonymize", max_length=20)
     reassign_to: Optional[str] = Field(None, max_length=254)
-    confirm_name: Optional[str] = Field(None, max_length=254)  # the account e-mail, typed by the admin
 
 
 class PolicyIn(BaseModel):

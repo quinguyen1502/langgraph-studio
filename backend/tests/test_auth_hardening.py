@@ -63,12 +63,11 @@ def test_rename_rules_and_duplicate_naming():
 
 def test_delete_last_and_foreign_or_deleted_404():
     t = user(); other = user()
-    for w in c.get("/api/workflows", headers=H(t)).json()["data"]: assert c.delete(f"/api/workflows/{w['id']}", params={"confirm_name": w["name"]}, headers=H(t)).status_code == 200
+    for w in c.get("/api/workflows", headers=H(t)).json()["data"]: assert c.delete(f"/api/workflows/{w['id']}", headers=H(t)).status_code == 200
     assert c.get("/api/workflows", headers=H(t)).json()["data"] == []
     wid = c.get("/api/workflows", headers=H(other)).json()["data"][0]["id"]
     assert c.get(f"/api/workflows/{wid}", headers=H(t)).status_code == 404
-    name = c.get(f"/api/workflows/{wid}", headers=H(other)).json()["data"]["name"]
-    c.delete(f"/api/workflows/{wid}", params={"confirm_name": name}, headers=H(other))
+    c.delete(f"/api/workflows/{wid}", headers=H(other))
     assert c.get(f"/api/workflows/{wid}", headers=H(other)).status_code == 404
 
 def test_many_workflows_list_fast():

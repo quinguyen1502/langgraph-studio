@@ -351,8 +351,7 @@
     "USER_HAS_WORKFLOWS": "This user owns {{count}} workflow(s): choose who takes them over first",
     "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
     "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})",
-    "CONFIRM_NAME_MISMATCH": "Type the exact name to confirm the deletion"
+    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})"
   },
   "lang": {
     "en": "English",

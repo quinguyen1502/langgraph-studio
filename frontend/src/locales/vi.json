@@ -351,7 +351,12 @@
     "USER_HAS_WORKFLOWS": "Người dùng này sở hữu {{count}} workflow: hãy chọn người nhận trước",
     "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
     "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})"
+    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})",
+    "TEMPLATE_NOT_FOUND": "Không tìm thấy mẫu",
+    "TEMPLATE_READ_ONLY": "Không thể xoá mẫu này",
+    "TEMPLATE_INVALID": "Tệp mẫu không hợp lệ",
+    "TEMPLATE_NAME_REQUIRED": "Cần nhập tên mẫu",
+    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức"
   },
   "lang": {
     "en": "English",
@@ -957,5 +962,32 @@
     "undoTip": "Hoàn tác (Ctrl/⌘+Z)",
     "redoTip": "Làm lại (Ctrl/⌘+Shift+Z)",
     "unsaved": "Chưa lưu"
+  },
+  "templates": {
+    "title": "Workflow mới",
+    "subtitle": "Bắt đầu từ trang trống hoặc từ một mẫu. Mẫu không bao giờ chứa thông tin xác thực hay cơ sở tri thức — hãy tự chọn sau khi tạo.",
+    "blank": "Workflow trống",
+    "blankHint": "Chỉ có Bắt đầu và Kết thúc",
+    "import": "Nhập mẫu",
+    "export": "Xuất",
+    "useNamed": "Tạo workflow từ {{name}}",
+    "noDescription": "Không có mô tả",
+    "invalidJson": "Tệp không phải JSON hợp lệ",
+    "deleteTitle": "Xoá mẫu",
+    "deleteBody": "Mẫu \"{{name}}\" sẽ bị xoá. Các workflow đã tạo từ mẫu không bị ảnh hưởng.",
+    "scope": {
+      "builtin": "Có sẵn",
+      "user": "Chỉ mình tôi",
+      "org": "Toàn tổ chức"
+    },
+    "saveAs": "Lưu thành mẫu",
+    "saveAsTitle": "Lưu thành mẫu",
+    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kênh phê duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
+    "saveAsConfirm": "Lưu mẫu",
+    "unsavedNote": "Bạn có thay đổi chưa lưu. Mẫu dùng phiên bản đã lưu gần nhất — hãy lưu workflow trước để bao gồm các thay đổi.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "visibility": "Ai thấy được",
+    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới."
   }
 }

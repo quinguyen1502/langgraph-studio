@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0021
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -33,3 +33,7 @@ Resolve the remaining limits of DEC-0017 and provide UI screenshots for review.
 ## Links
 
 - DEC-0018, REV-0015, QA-0015; branch `factory/task-0021-effectively-once`.
+
+## Activity Log
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0015. QA QA-0015.

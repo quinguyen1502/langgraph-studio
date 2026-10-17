@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0020
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -34,3 +34,7 @@ Resolve the items deferred in DEC-0016.
 ## Links
 
 - DEC-0017, REV-0014, QA-0014; branch `factory/task-0020-deferred-hardening`.
+
+## Activity Log
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0014. QA QA-0014.

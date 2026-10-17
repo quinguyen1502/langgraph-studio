@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0023
-- Status: backlog
+- Status: done
 - Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
@@ -41,6 +41,9 @@ Implement REQ-0013: Editor hotkeys and shortcut cheatsheet.
 - Requirement: `.factory-state/artifacts/REQ-0013-editor-hotkeys.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
+- Review: `.factory-state/artifacts/REV-0022-task-0023.md`
+- QA: `.factory-state/artifacts/QA-0022-task-0023.md`
+
 ## Expected Outputs
 
 - Implementation, tests (unit + Playwright e2e), README update, screenshots (light/dark × en/vi)
@@ -76,6 +79,8 @@ Implement REQ-0013: Editor hotkeys and shortcut cheatsheet.
 ## Activity Log
 
 - 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0022. QA QA-0022.
 
 ## Handoff Notes
 

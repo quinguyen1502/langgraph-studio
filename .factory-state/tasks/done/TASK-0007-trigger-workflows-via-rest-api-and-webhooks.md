@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0007
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -83,6 +83,8 @@ Implement REQ-0004: Trigger workflows via REST API and webhooks.
 - 2026-10-16: Implemented on `factory/task-0007-trigger-workflows-via-rest-api-and-webhooks` (stacked on TASK-0006); moved to review.
 
 - 2026-10-16: Created task during Factory import/onboarding.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0011. QA QA-0011.
 
 ## Handoff Notes
 

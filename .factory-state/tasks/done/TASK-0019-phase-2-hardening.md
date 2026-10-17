@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0019
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -36,6 +36,12 @@ Resolve the open issues recorded in REV-0008 … REV-0012 (TASK-0009, 0010, 0006
 - New error codes: `RUN_EXPIRED` (410) and `RATE_LIMITED` (429), in the catalog, docs and en/vi.
 - Tests: `tests/test_hardening.py`, updates to `test_triggers.py` and `test_versions.py`, e2e `versions`, `hitl` and `api-trigger`.
 
+## Links
+
+- Review: `.factory-state/artifacts/REV-0013-task-0019.md`
+- QA: `.factory-state/artifacts/QA-0013-task-0019.md`
+
 ## Activity Log
 
 - 2026-10-17: Created and implemented on `factory/task-0019-phase-2-hardening` (stacked on TASK-0008, PR #15); moved to review.
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0013. QA QA-0013.

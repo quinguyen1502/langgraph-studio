@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0024
-- Status: backlog
+- Status: done
 - Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
@@ -39,6 +39,9 @@ Implement REQ-0014: Editor undo and redo history.
 
 - Requirement: `.factory-state/artifacts/REQ-0014-editor-undo-redo.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
+
+- Review: `.factory-state/artifacts/REV-0023-task-0024.md`
+- QA: `.factory-state/artifacts/QA-0023-task-0024.md`
 
 ## Expected Outputs
 
@@ -75,6 +78,8 @@ Implement REQ-0014: Editor undo and redo history.
 ## Activity Log
 
 - 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0023. QA QA-0023.
 
 ## Handoff Notes
 

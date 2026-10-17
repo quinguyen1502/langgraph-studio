@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0029
-- Status: backlog
+- Status: done
 - Owner:
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -42,3 +42,13 @@ Resolve the open issues of Phase 3 (DEC-0023 "Consequences / open", REV-0020, DE
 - Tests on SQLite and Postgres + Redis, e2e, migration 0022 on both databases.
 - New error codes in the catalog, docs/api-errors.md and en/vi.
 - Screenshots in 4 variants and contact sheet.
+
+## Links
+
+- Review: `.factory-state/artifacts/REV-0021-task-0029.md`
+- QA: `.factory-state/artifacts/QA-0021-task-0029.md`
+
+
+## Activity Log
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0021. QA QA-0021.

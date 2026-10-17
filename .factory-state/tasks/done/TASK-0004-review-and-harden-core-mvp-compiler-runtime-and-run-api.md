@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0004
-- Status: todo
+- Status: done
 - Owner: Grok Bot (agent)
 - Priority: Phase 1 Feasibility, step 4 — after TASK-0003 (auth/list hardening), before TASK-0005 (real LLM providers)
 - Previous ID: TASK-0014 (renumbered 2026-10-16, DEC-0007)
@@ -110,6 +110,8 @@ Review and harden the core MVP (REQ-0001): audit the validator, compiler and run
 - 2026-10-16: Coverage baseline (TASK-0016 branch, 35 tests): statements 92% (636 stmts, 48 missed), branches+statements 89%.
 - 2026-10-16: Implemented. The audit findings are in REV-0005-task-0004. Coverage after (60 tests): statements 94% (819, 51 missed), branches+statements 91%.
 - 2026-10-16: Moved doing -> review. QA-0005-task-0004 records the results; the manual real-provider E2E is pending for the owner.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `todo`. Review REV-0005. QA QA-0005.
 
 ## Handoff Notes
 

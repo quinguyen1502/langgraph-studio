@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0022
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -51,3 +51,7 @@ DEC-0019 updated, REV/QA follow-up sections, README, roadmap; screenshots 22–2
 ## Links
 
 - DEC-0019, REV-0016, QA-0016; branch `factory/task-0022-approval-channels`.
+
+## Activity Log
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0016. QA QA-0016.

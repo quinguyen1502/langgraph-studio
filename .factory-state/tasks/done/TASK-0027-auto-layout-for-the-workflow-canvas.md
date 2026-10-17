@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0027
-- Status: backlog
+- Status: done
 - Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
@@ -38,6 +38,9 @@ Implement REQ-0017: Auto-layout for the workflow canvas.
 
 - Requirement: `.factory-state/artifacts/REQ-0017-auto-layout.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
+
+- Review: `.factory-state/artifacts/REV-0026-task-0027.md`
+- QA: `.factory-state/artifacts/QA-0026-task-0027.md`
 
 ## Expected Outputs
 
@@ -74,6 +77,8 @@ Implement REQ-0017: Auto-layout for the workflow canvas.
 
 - 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
 - 2026-10-17: Approved by the owner (no longer a suggestion).
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0026. QA QA-0026.
 
 ## Handoff Notes
 

@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0003
-- Status: todo
+- Status: done
 - Owner: Grok Bot (agent)
 - Priority: Phase 1 Feasibility, step 3 — after TASK-0002 (CI), before TASK-0004 (core hardening)
 - Created: 2026-10-16
@@ -100,6 +100,8 @@ Prove the login → workflow list → open → run path is solid: harden registr
 - 2026-10-16: Owner decision: login rate limiting / lockout out of scope (deferred). A prototype was removed before commit.
 - 2026-10-16: Implemented backend rules, frontend states, Playwright E2E (5 tests), screenshots. Local: pytest 32 passed, build + lint OK, E2E 5 passed, `factory verify run --profile full` passed.
 - 2026-10-16: Moved doing -> review. Review: REV-0003-task-0003; QA: QA-0003-task-0003.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `todo`. Review REV-0003. QA QA-0003.
 
 ## Handoff Notes
 

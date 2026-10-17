@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0002
-- Status: review
+- Status: done
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -87,6 +87,8 @@ Add GitHub Actions CI (backend pytest on Python 3.12; frontend `npm ci && npm ru
 - 2026-10-16: Created task during Factory import/onboarding.
 - 2026-10-16: Scope extended per DEC-0005; moved to doing on branch `factory/task-0002-add-github-actions-ci-for-backend-tests-and-frontend-build`.
 - 2026-10-16: Implemented ci.yml, backend/pyproject.toml, tests/conftest.py, import dir default; migrated local imports to ~/.langgraph-studio/imports. Local: pytest 19 passed; factory deps apply OK; factory verify run --profile full PASSED (backend test, frontend build, frontend lint).
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0001. QA QA-0001.
 
 ## Handoff Notes
 

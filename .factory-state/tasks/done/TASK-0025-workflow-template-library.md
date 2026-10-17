@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0025
-- Status: backlog
+- Status: done
 - Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
@@ -42,6 +42,9 @@ Implement REQ-0015: Workflow template library.
 - Requirement: `.factory-state/artifacts/REQ-0015-template-library.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 
+- Review: `.factory-state/artifacts/REV-0024-task-0025.md`
+- QA: `.factory-state/artifacts/QA-0024-task-0025.md`
+
 ## Expected Outputs
 
 - Implementation, tests (unit + Playwright e2e), README update, screenshots (light/dark × en/vi)
@@ -77,6 +80,8 @@ Implement REQ-0015: Workflow template library.
 ## Activity Log
 
 - 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0024. QA QA-0024.
 
 ## Handoff Notes
 

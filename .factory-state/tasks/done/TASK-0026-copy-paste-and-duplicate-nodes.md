@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0026
-- Status: backlog
+- Status: done
 - Phase: 5 — Editor UX
 - Owner:
 - Created: 2026-10-17
@@ -38,6 +38,9 @@ Implement REQ-0016: Copy, paste and duplicate nodes.
 
 - Requirement: `.factory-state/artifacts/REQ-0016-copy-paste-nodes.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
+
+- Review: `.factory-state/artifacts/REV-0025-task-0026.md`
+- QA: `.factory-state/artifacts/QA-0025-task-0026.md`
 
 ## Expected Outputs
 
@@ -75,6 +78,8 @@ Implement REQ-0016: Copy, paste and duplicate nodes.
 
 - 2026-10-17: Created in backlog (Phase 5: Editor UX) via `factory task create`.
 - 2026-10-17: Approved by the owner (no longer a suggestion).
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0025. QA QA-0025.
 
 ## Handoff Notes
 

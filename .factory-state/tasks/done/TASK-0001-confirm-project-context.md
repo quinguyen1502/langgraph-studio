@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0001
-- Status: review
+- Status: done
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -70,6 +70,11 @@ Validate the owner-approved specification, declared technology direction, expect
 - Keep `main` as integration branch or introduce `develop`?
 - Confirm roadmap priorities (P0/P1/P2) in `roadmap.md`.
 
+## Links
+
+- Review: owner accepted the discovery through DEC-0001..DEC-0005. No separate REV artifact.
+- QA: observed install, test, and build commands are in the activity log above. No separate QA artifact.
+
 ## Activity Log
 
 - 2026-10-16: Owner answered open questions: DEC-0001 (stack Preferred, CI Approved), DEC-0002 (main), DEC-0003 (copy), DEC-0004 (roadmap accepted), DEC-0005 (deps/verify unblock folded into TASK-0002).
@@ -77,6 +82,8 @@ Validate the owner-approved specification, declared technology direction, expect
 
 - 2026-10-16: Created task.
 - 2026-10-16: Discovery performed by agent. Observed commands: `./dev.sh` (install/run), `cd backend && .venv/bin/python -m pytest -q` (19 passed), `cd frontend && npm run build` (passes, includes `tsc -b`). Lint/format Unknown. Updated DISC-0001, project.md, vision.md, roadmap.md, project-specs intake; created ARCH-0001, REQ-0001..REQ-0012, TASK-0002..TASK-0013 (old numbering; see `docs/factory-task-renumbering.md`).
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`.
 
 ## Handoff Notes
 

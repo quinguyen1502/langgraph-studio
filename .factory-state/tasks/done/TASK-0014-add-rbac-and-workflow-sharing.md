@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0014
 - Previous ID: TASK-0013 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
+- Status: done
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -37,6 +37,9 @@ Implement REQ-0012: Add RBAC and workflow sharing.
 - Requirement: `.factory-state/artifacts/REQ-0012-rbac-sharing.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
+
+- Review: `.factory-state/artifacts/REV-0020-task-0014.md`
+- QA: `.factory-state/artifacts/QA-0020-task-0014.md`
 
 ## Expected Outputs
 
@@ -75,6 +78,8 @@ Implement REQ-0012: Add RBAC and workflow sharing.
 
 - 2026-10-16: Renumbered TASK-0013 -> TASK-0014 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `backlog`. Review REV-0020. QA QA-0020.
 
 ## Handoff Notes
 

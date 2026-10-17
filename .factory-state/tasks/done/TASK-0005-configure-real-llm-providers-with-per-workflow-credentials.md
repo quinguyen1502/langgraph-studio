@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0005
 - Previous ID: TASK-0003 (renumbered 2026-10-16, DEC-0007)
-- Status: review
+- Status: done
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -83,6 +83,8 @@ Implement REQ-0002: Configure real LLM providers with per-workflow credentials.
 - 2026-10-16: Implemented `backend/app/credentials.py` (Fernet at rest, masked hints), credential CRUD API, provider calls for OpenAI/compatible + Anthropic via injectable httpx client, per-node `credential_id`, Credentials dialog + LLM node credential select. Tests: `backend/tests/test_llm_providers.py` (7 tests, mocked HTTP). Local: pytest 26 passed; factory verify run --profile full PASSED. Moved to review.
 
 - 2026-10-16: Created task during Factory import/onboarding.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0002. QA QA-0002.
 
 ## Handoff Notes
 

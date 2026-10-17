@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0017
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -79,6 +79,8 @@ Restructure the backend into small, clear layers (core, models, schemas, reposit
 
 - 2026-10-16: Created on owner request (Phase 1). Branch `factory/task-0017-restructure-backend-layers` based on the TASK-0004 branch. Owner decision: SQLAlchemy 2.0 ORM + Alembic (DEC-0009).
 - 2026-10-16: Implemented; 70 backend tests (coverage 95%), build and 10 E2E pass. Moved todo -> review. REV-0006, QA-0006.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0006. QA QA-0006.
 
 ## Handoff Notes
 

@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0030
-- Status: review
+- Status: done
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
 - Updated: 2026-10-17
@@ -48,3 +48,13 @@ Let LLM nodes use local models (Ollama, LM Studio, any OpenAI-compatible server 
 - e2e: 28 passed, 4 skipped (all specs). `npm run build` OK.
 - Compose: api/worker resolve `host.docker.internal` (172.17.0.1) and list models from a fake Ollama on the host; `http://localhost:11434` from the container returns `PROVIDER_UNREACHABLE` as documented. Needed `iptables-legacy -I FORWARD -i br-<net> -o br-<net> -j ACCEPT` on this box for the new compose network.
 - Follow-up: SQLite 260 passed, 10 skipped; Postgres 17 (pgvector) + Redis 7 via Compose `--env-file` 269 passed, 1 skipped (migration 0024 applied). e2e full suite 31 passed, 4 skipped (new `e2e/llm-streaming-embeddings.spec.ts`). Build OK. Screenshots `/workspace/ss-review/56-llm-*`.
+
+## Links
+
+- Decision: `.factory-state/decisions/DEC-0032-llm-provider-registry.md`
+- Review: `.factory-state/artifacts/REV-0028-task-0030.md`
+- QA: `.factory-state/artifacts/QA-0028-task-0030.md`
+
+## Activity Log
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0028. QA QA-0028 (pass with follow-up). PR #32 was already merged.

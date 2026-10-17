@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0008
 - Previous ID: TASK-0006 (renumbered 2026-10-16, DEC-0007)
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -86,6 +86,8 @@ Implement REQ-0005: Add workflow versioning with diff and rollback.
 
 - 2026-10-16: Renumbered TASK-0006 -> TASK-0008 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0012. QA QA-0012.
 
 ## Handoff Notes
 

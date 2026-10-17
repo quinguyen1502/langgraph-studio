@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0018
-- Status: review
+- Status: done
 - Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -62,6 +62,8 @@ Give every REST endpoint one response envelope with stable English error codes. 
 ## Activity Log
 
 - 2026-10-16: Created on owner request (Phase 1). Branch `factory/task-0018-api-envelope-error-codes-i18n` based on the TASK-0005 branch (PR #9). Implemented; pytest 88 passed, build/lint OK, E2E 13 passed (4 screenshot specs skipped). Moved to review. REV-0007, QA-0007.
+
+- 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0007. QA QA-0007.
 
 ## Handoff Notes
 

@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import delete, select
+from sqlalchemy import delete, select, update
 from ..models import Run
 from ..models.database import Database
 
@@ -15,6 +15,10 @@ class RunRepository:
     def get(self, rid: str) -> Optional[Run]:
         with self.db.session() as s:
             return s.get(Run, rid)
+
+    def set_status(self, rid: str, status: str) -> None:
+        with self.db.session() as s:
+            s.execute(update(Run).where(Run.id == rid).values(status=status)); s.commit()
 
     def list_waiting(self, owner: str, limit: int = 100) -> list[Run]:
         with self.db.session() as s:

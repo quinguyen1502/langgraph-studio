@@ -30,7 +30,7 @@ services:
 
   api:
     build: ./backend
-    environment:
+    environment: &api-env
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-studio}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-studio}
       REDIS_URL: redis://redis:6379/0
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
@@ -49,10 +49,29 @@ services:
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-}
       LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-}
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
+      # API-triggered runs (TASK-0007) are executed by the `worker` service through the Redis queue
+      STUDIO_WORKER: "0"
     volumes: [apidata:/data]  # import venvs + generated secret.key when STUDIO_SECRET_KEY is empty
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Executes queued API/webhook runs (TASK-0007). Scale with `docker compose up --scale worker=3`.
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *api-env
+      STUDIO_WORKER: "1"
+    volumes: [apidata:/data]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      api: { condition: service_healthy }  # api runs the migrations first
     restart: unless-stopped
 
   web:

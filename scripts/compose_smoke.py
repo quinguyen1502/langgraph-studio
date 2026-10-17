@@ -29,3 +29,19 @@ async def main():
 
 
 asyncio.run(main())
+
+
+def api_trigger_check():
+    """TASK-0007: token + sync trigger through nginx (executed by the worker service via the Redis queue)."""
+    with httpx.Client(base_url=BASE, timeout=60) as c:
+        tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
+        wid = c.get("/api/workflows", headers={"Authorization": f"Bearer {tok}"}).json()["data"][0]["id"]
+        secret = c.post(f"/api/workflows/{wid}/tokens", json={"name": "smoke"}, headers={"Authorization": f"Bearer {tok}"}).json()["data"]["token"]
+        d = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "refund"}, "mode": "sync"},
+                   headers={"Authorization": f"Bearer {secret}"}).json()["data"]
+        print("api trigger:", d["status"], d["source"], d["final_state"]["intent"])
+        assert d["status"] == "ok" and d["source"] == "api"
+    print("API TRIGGER OK")
+
+
+api_trigger_check()

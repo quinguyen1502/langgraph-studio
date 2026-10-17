@@ -53,7 +53,7 @@ test('wrong password shows a generic error', async ({ page }) => {
 
 test('expired token redirects to login with notice and returns to original page', async ({ page }) => {
   await page.goto('/login'); await login(page, 'admin@example.com', 'admin123')
-  await expect(page).toHaveURL(/\/workflows$/)
+  await expect(page).toHaveURL(/\/workflows$/); await page.waitForLoadState("networkidle") // list + pending-runs requests done before the token is swapped
   await page.evaluate(t => localStorage.setItem('token', t), fakeExpiredJwt())
   await page.goto('/workflows/example')
   await expect(page).toHaveURL(/\/login\?expired=1&next=%2Fworkflows%2Fexample/)

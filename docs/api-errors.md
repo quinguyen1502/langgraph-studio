@@ -81,5 +81,8 @@
 | `IMPORT_NOT_READY` | 400 | Import job is not ready or the graph is invalid |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
+| `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |
+| `TOKEN_NOT_FOUND` | 404 | Token not found |
+| `CALLBACK_URL_INVALID` | 400 | callback_url must be a public http(s) URL |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

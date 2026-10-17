@@ -235,7 +235,10 @@
     "IMPORT_JOB_NOT_FOUND": "Import job not found",
     "IMPORT_NOT_READY": "Import job is not ready or the graph is invalid",
     "RUN_NOT_WAITING": "This run is not waiting for a response",
-    "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)"
+    "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)",
+    "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",
+    "TOKEN_NOT_FOUND": "Token not found",
+    "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL"
   },
   "lang": {
     "en": "English",
@@ -274,5 +277,21 @@
     "respond": "Respond",
     "cancelRun": "Cancel run",
     "resumeFailed": "Could not resume: {{error}}"
+  },
+  "api": {
+    "button": "API",
+    "title": "Trigger via API",
+    "desc": "Start this workflow from other systems with a per-workflow token. Runs appear in history with source API.",
+    "copyOnce": "Copy the token now; it is shown only once.",
+    "copy": "Copy",
+    "revoked": "revoked",
+    "active": "active",
+    "lastUsed": "last used {{when}}",
+    "revokeAria": "Revoke {{name}}",
+    "empty": "No tokens yet.",
+    "name": "Token name",
+    "create": "Create token",
+    "example": "Example",
+    "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result."
   }
 }

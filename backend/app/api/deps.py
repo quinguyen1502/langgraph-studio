@@ -5,12 +5,15 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
 from ..core.errors import AppError
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
 from ..services.run_bus import RunBus, make_run_bus
+from ..services.job_queue import JobQueue, make_job_queue
 from ..services.run_service import RunService
+from ..services.run_worker import RunWorker
+from ..services.trigger_service import TriggerService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 
@@ -23,6 +26,20 @@ def get_db() -> Database:
 @lru_cache
 def get_run_bus() -> RunBus:
     return make_run_bus(config.REDIS_URL)  # Redis when REDIS_URL is set, else in-memory
+
+
+@lru_cache
+def get_job_queue() -> JobQueue:
+    return make_job_queue(config.REDIS_URL)  # Redis list when REDIS_URL is set, else in-process
+
+
+@lru_cache
+def run_worker() -> RunWorker:
+    return RunWorker(get_job_queue(), run_service)
+
+
+def trigger_service() -> TriggerService:
+    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue())
 
 
 @lru_cache

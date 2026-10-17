@@ -1,0 +1,104 @@
+/** Building blocks of the approval-channel settings (TASK-0022): action feedback, secret fields, copyable URLs,
+ *  one connection (config, Test connection, replace secrets, register, remove) and the add-connection form. */
+import { useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AlertCircle, Check, Copy, KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import type { Channel, ChannelKind } from '@/lib/approvals'
+import { api } from '@/lib/api'
+
+export function ErrorAlert({ children }: { children: ReactNode }) {
+  return <Alert variant="destructive"><AlertCircle /><AlertDescription>{children}</AlertDescription></Alert>
+}
+
+/** Run an API call and show its error or a success note right where the button is. */
+export function useAction(onDone: () => void = () => {}) {
+  const [err, setErr] = useState(''); const [note, setNote] = useState(''); const [busy, setBusy] = useState(false)
+  const run = async (fn: () => Promise<unknown>, ok: string | ((r: any) => string)) => {
+    setErr(''); setNote(''); setBusy(true)
+    try { const r = await fn(); setNote(typeof ok === 'function' ? ok(r) : ok); onDone(); return true }
+    catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
+  }
+  const alerts = <>{err && <ErrorAlert>{err}</ErrorAlert>}
+    {note && <Alert><Check /><AlertDescription>{note}</AlertDescription></Alert>}</>
+  return { run, alerts, busy }
+}
+
+type Vals = Record<string, string>
+const filled = (k: ChannelKind, v: Vals) => k.fields.some(f => !k.optional.includes(f) && v[f]?.trim())
+
+function SecretFields({ k, vals, setVals, idp, placeholder }: { k: ChannelKind; vals: Vals; setVals: (f: (v: Vals) => Vals) => void; idp: string; placeholder?: string }) {
+  const { t } = useTranslation()
+  return <div className="grid gap-3 sm:grid-cols-2">
+    {k.fields.map(f => <div key={f} className="space-y-1.5">
+      <Label htmlFor={`${idp}-${f}`}>{t(`approvals.field.${f}`)}{k.optional.includes(f) && <span className="text-muted-foreground"> · {t('approvals.optional')}</span>}</Label>
+      <Input id={`${idp}-${f}`} type="password" autoComplete="off" value={vals[f] || ''} placeholder={placeholder}
+        onChange={e => setVals(v => ({ ...v, [f]: e.target.value }))} /></div>)}
+  </div>
+}
+
+function CopyField({ id, label, value }: { id: string; label: string; value: string }) {
+  const { t } = useTranslation(); const [copied, setCopied] = useState(false)
+  return <div className="space-y-1.5"><Label htmlFor={id}>{label}</Label>
+    <div className="flex gap-2"><Input readOnly value={value} className="font-mono text-xs" id={id} />
+      <Button variant="outline" size="icon" aria-label={t('approvals.copy')} onClick={() => { navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? <Check /> : <Copy />}</Button></div></div>
+}
+
+/** One connection: account, callback URL, Test connection; its owner (or an admin for org ones) can replace secrets, register, remove. */
+export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: ChannelKind; publicUrl: string | null; onChange: () => void }) {
+  const { t } = useTranslation(); const [vals, setVals] = useState<Vals>({}); const [edit, setEdit] = useState(false)
+  const { run, alerts, busy } = useAction(() => { setVals({}); onChange() })
+  const test = useAction()
+  const url = c.callback_url || location.origin + c.callback_path
+  const shared = c.shared_callback_path ? (c.shared_callback_url || location.origin + c.shared_callback_path) : null
+  const idp = `ch-${c.id}`
+  return <div className="space-y-3 rounded-lg border p-4" data-testid={`channel-${c.kind}-${c.scope}`} data-channel-id={c.id}>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="font-medium">{c.name || t(`approvals.kind.${c.kind}`)}</span>
+      {c.team_id && <span className="font-mono text-xs text-muted-foreground">({c.team_id})</span>}
+      <Badge variant="outline" className="font-mono">{c.hint}</Badge>
+    </div>
+    {shared ? <>
+      <CopyField id={`${idp}-shared`} label={t('approvals.sharedUrl')} value={shared} />
+      <p className="text-xs text-muted-foreground">{t('approvals.sharedHelp', { team: c.team_id })}</p></>
+      : <CopyField id={`${idp}-url`} label={t('approvals.callbackUrl')} value={url} />}
+    {!publicUrl && <p className="text-xs text-muted-foreground">{t('approvals.publicUrlMissing')}</p>}
+    {!c.editable && <p className="text-xs text-muted-foreground">{t('approvals.orgReadOnly')}</p>}
+    {edit && <SecretFields k={k} vals={vals} setVals={setVals} idp={idp} placeholder={t('approvals.keepSecret')} />}
+    {alerts}{test.alerts}
+    <div className="flex flex-wrap justify-end gap-2">
+      <Button variant="outline" size="sm" id={`${idp}-test`} disabled={test.busy}
+        onClick={() => test.run(() => api<{ name: string | null }>(`/api/approvals/channels/${c.id}/test`, { method: 'POST' }),
+          r => t('settings.testOk', { name: r.name || t(`approvals.kind.${c.kind}`) }))}><PlugZap />{t('settings.test')}</Button>
+      {c.editable && <>
+        {c.kind === 'telegram' && <Button variant="outline" size="sm" id={`${idp}-register`} disabled={busy}
+          onClick={() => run(() => api(`/api/approvals/channels/${c.id}/register-webhook`, { method: 'POST' }), t('approvals.registered'))}><Webhook />{t('approvals.register')}</Button>}
+        {edit ? <Button size="sm" id={`${idp}-save`} disabled={busy || !filled(k, vals)}
+          onClick={async () => { if (await run(() => api(`/api/approvals/channels/${c.id}`, { method: 'PUT', json: vals }), t('approvals.saved'))) setEdit(false) }}><Save />{t('approvals.save')}</Button>
+          : <Button variant="outline" size="sm" id={`${idp}-edit`} onClick={() => setEdit(true)}><KeyRound />{t('approvals.replaceSecrets')}</Button>}
+        <Button variant="ghost" size="sm" disabled={busy} onClick={() => run(() => api(`/api/approvals/channels/${c.id}`, { method: 'DELETE' }), t('approvals.removed'))}><Trash2 />{t('approvals.remove')}</Button>
+      </>}
+    </div>
+  </div>
+}
+
+/** New connection of one platform in one scope (the tab it sits in): optional name + secrets. */
+export function AddConnection({ k, scope, onChange }: { k: ChannelKind; scope: 'user' | 'org'; onChange: () => void }) {
+  const { t } = useTranslation(); const [name, setName] = useState(''); const [vals, setVals] = useState<Vals>({})
+  const { run, alerts, busy } = useAction(() => { setVals({}); setName(''); onChange() })
+  const idp = `add-${k.kind}-${scope}`
+  return <div className="space-y-3 rounded-lg border border-dashed p-4" data-testid={idp}>
+    <div className="flex items-center gap-2 text-sm font-medium"><Plus className="size-4" />{t('approvals.add')}</div>
+    <div className="space-y-1.5"><Label htmlFor={`${idp}-name`}>{t('approvals.name')}<span className="text-muted-foreground"> · {t('approvals.optional')}</span></Label>
+      <Input id={`${idp}-name`} value={name} onChange={e => setName(e.target.value)} placeholder={t('approvals.namePh')} /></div>
+    <SecretFields k={k} vals={vals} setVals={setVals} idp={idp} />
+    <p className="text-xs text-muted-foreground">{t(`approvals.help.${k.kind}`)}</p>
+    {alerts}
+    <div className="flex justify-end"><Button size="sm" id={`${idp}-save`} disabled={busy || !filled(k, vals)}
+      onClick={() => run(() => api('/api/approvals/channels', { method: 'POST', json: { kind: k.kind, scope, name, ...vals } }), t('approvals.saved'))}><Save />{t('approvals.save')}</Button></div>
+  </div>
+}

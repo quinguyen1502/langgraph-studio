@@ -394,19 +394,10 @@
     "emailNotConfigured": "E-mail is not set up on this server (SMTP_HOST), so no e-mails are sent yet."
   },
   "approvals": {
-    "open": "Approval channels",
-    "title": "Approval channels",
-    "description": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
-    "tab": {
-      "channels": "Channels",
-      "accounts": "My accounts",
-      "audit": "Audit log"
-    },
     "kind": {
       "slack": "Slack",
       "telegram": "Telegram"
     },
-    "notConnected": "not connected",
     "optional": "optional",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
@@ -460,7 +451,7 @@
       "title": "Approval channel",
       "channel": "Send the approval request to",
       "studioOnly": "Studio only",
-      "connectFirst": "No usable connection. Add one under Approval channels in the user menu (or ask an admin for an organization one).",
+      "connectFirst": "No usable connection. Add one in Settings → Channels (or ask an admin for an organization one).",
       "target": {
         "slack": "Slack channel ID",
         "telegram": "Telegram chat ID"
@@ -486,18 +477,62 @@
       "user": "Personal",
       "org": "Organization"
     },
-    "scopeLabel": "Available to",
     "add": "Add a connection",
     "platform": "Platform",
     "name": "Name",
     "namePh": "e.g. Acme workspace",
     "noChannels": "No connections yet. Add your own Slack app or Telegram bot below.",
-    "scopeHelp": "Personal connections are only usable on your own workflows; organization ones are set up by an admin.",
-    "scopeHelpAdmin": "As an admin you can add organization connections that every user can pick on a Human node.",
     "orgReadOnly": "Managed by an admin. You can pick it on your Human nodes.",
     "replaceSecrets": "Replace secrets",
     "sharedUrl": "Request URL (all workspaces)",
     "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret.",
     "noConnection": "No connection"
+  },
+  "settings": {
+    "title": "Settings",
+    "open": "Open settings",
+    "back": "Workflows",
+    "clear": "Clear search",
+    "toggle": "Show or hide",
+    "nav": {
+      "channels": "Channels",
+      "accounts": "My accounts",
+      "audit": "Audit log"
+    },
+    "intro": {
+      "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
+      "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
+      "audit": "Every approval request and decision made through a chat channel."
+    },
+    "status": {
+      "connected": "Connected",
+      "notSetUp": "Not set up"
+    },
+    "platform": {
+      "slack": "Buttons in a Slack channel. One connection per workspace.",
+      "telegram": "Buttons in a Telegram group or private chat, through your bot."
+    },
+    "scopeHelp": {
+      "org": "Organization connections are set up by an admin and usable by everyone.",
+      "user": "Personal connections are only usable on your own workflows."
+    },
+    "orgAskAdmin": "No organization connection yet. Ask an admin to add one.",
+    "myAccounts": "My accounts",
+    "myAccountsHelp": "Link and verify your account so your button presses count.",
+    "noAccountSlot": "Add a connection first to link your account.",
+    "test": "Test connection",
+    "testOk": "Connection works ({{name}})",
+    "searchChannels": "Search channels, workspaces…",
+    "searchAudit": "Search workflow, run, person…",
+    "filter": {
+      "status": "Status",
+      "scope": "Scope",
+      "anyStatus": "All statuses",
+      "anyScope": "All scopes",
+      "anyAction": "All decisions",
+      "anyPlatform": "All platforms"
+    },
+    "noMatch": "Nothing matches these filters.",
+    "auditCount": "{{shown}} of {{total}} entries"
   }
 }

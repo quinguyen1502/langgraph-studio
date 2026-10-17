@@ -25,6 +25,9 @@ def update_channel(cid: str, body=Body(None), user=Depends(current_user), svc=De
 @router.delete("/channels/{cid}")
 def delete_channel(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.delete(user["id"], cid)
 
+@router.post("/channels/{cid}/test")
+def test_channel(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.test(user["id"], cid)
+
 @router.post("/channels/{cid}/register-webhook")
 def register_webhook(cid: str, user=Depends(current_user), svc=Depends(channel_service)): return svc.register_webhook(user["id"], cid)
 

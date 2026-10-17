@@ -394,19 +394,10 @@
     "emailNotConfigured": "Máy chủ chưa cấu hình e-mail (SMTP_HOST), nên hiện chưa gửi e-mail nào."
   },
   "approvals": {
-    "open": "Kênh phê duyệt",
-    "title": "Kênh phê duyệt",
-    "description": "Phê duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hóa.",
-    "tab": {
-      "channels": "Kênh",
-      "accounts": "Tài khoản của tôi",
-      "audit": "Nhật ký"
-    },
     "kind": {
       "slack": "Slack",
       "telegram": "Telegram"
     },
-    "notConnected": "chưa kết nối",
     "optional": "không bắt buộc",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
@@ -460,7 +451,7 @@
       "title": "Kênh phê duyệt",
       "channel": "Gửi yêu cầu phê duyệt tới",
       "studioOnly": "Chỉ trong Studio",
-      "connectFirst": "Chưa có kết nối dùng được. Thêm trong Kênh phê duyệt ở menu người dùng (hoặc nhờ admin tạo kết nối toàn tổ chức).",
+      "connectFirst": "Chưa có kết nối dùng được. Thêm trong Cài đặt → Kênh (hoặc nhờ admin tạo kết nối toàn tổ chức).",
       "target": {
         "slack": "Slack channel ID",
         "telegram": "Telegram chat ID"
@@ -486,18 +477,62 @@
       "user": "Cá nhân",
       "org": "Toàn tổ chức"
     },
-    "scopeLabel": "Dùng cho",
     "add": "Thêm kết nối",
     "platform": "Nền tảng",
     "name": "Tên",
     "namePh": "vd. Workspace Acme",
     "noChannels": "Chưa có kết nối. Thêm Slack app hoặc Telegram bot của bạn bên dưới.",
-    "scopeHelp": "Kết nối cá nhân chỉ dùng được trên workflow của bạn; kết nối toàn tổ chức do admin thiết lập.",
-    "scopeHelpAdmin": "Là admin, bạn có thể thêm kết nối toàn tổ chức mà mọi người dùng đều chọn được trên node Human.",
     "orgReadOnly": "Do admin quản lý. Bạn có thể chọn nó trên node Human của mình.",
     "replaceSecrets": "Thay khoá bí mật",
     "sharedUrl": "Request URL (mọi workspace)",
     "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app.",
     "noConnection": "Chưa có kết nối"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "open": "Mở cài đặt",
+    "back": "Workflow",
+    "clear": "Xoá tìm kiếm",
+    "toggle": "Hiện hoặc ẩn",
+    "nav": {
+      "channels": "Kênh",
+      "accounts": "Tài khoản của tôi",
+      "audit": "Nhật ký"
+    },
+    "intro": {
+      "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
+      "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
+      "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat."
+    },
+    "status": {
+      "connected": "Đã kết nối",
+      "notSetUp": "Chưa thiết lập"
+    },
+    "platform": {
+      "slack": "Nút bấm trong kênh Slack. Mỗi workspace một kết nối.",
+      "telegram": "Nút bấm trong group hoặc chat riêng Telegram, qua bot của bạn."
+    },
+    "scopeHelp": {
+      "org": "Kết nối toàn tổ chức do admin thiết lập, mọi người đều dùng được.",
+      "user": "Kết nối cá nhân chỉ dùng được cho workflow của bạn."
+    },
+    "orgAskAdmin": "Chưa có kết nối toàn tổ chức. Hãy nhờ admin thêm.",
+    "myAccounts": "Tài khoản của tôi",
+    "myAccountsHelp": "Liên kết và xác minh tài khoản để nút bạn bấm được tính.",
+    "noAccountSlot": "Hãy thêm kết nối trước để liên kết tài khoản.",
+    "test": "Kiểm tra kết nối",
+    "testOk": "Kết nối hoạt động ({{name}})",
+    "searchChannels": "Tìm kênh, workspace…",
+    "searchAudit": "Tìm workflow, lượt chạy, người…",
+    "filter": {
+      "status": "Trạng thái",
+      "scope": "Phạm vi",
+      "anyStatus": "Mọi trạng thái",
+      "anyScope": "Mọi phạm vi",
+      "anyAction": "Mọi quyết định",
+      "anyPlatform": "Mọi nền tảng"
+    },
+    "noMatch": "Không có mục nào khớp bộ lọc.",
+    "auditCount": "{{shown}} / {{total}} mục"
   }
 }

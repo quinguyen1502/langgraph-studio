@@ -468,3 +468,15 @@ def test_api_run_resumed_from_the_studio_sends_its_callback_once(c, api, monkeyp
     for _ in range(2): asyncio.run(run_service().settled(rid))  # same settled state: idempotent
     log = [d for d in c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"] if d["run_id"] == rid]
     assert len(log) == 2 and len([b for b in got if b["run_id"] == rid]) == 2  # the pause + the result, nothing twice
+
+
+def test_test_connection(c, api, monkeypatch):
+    from app.core.errors import AppError
+    o = user(c); ch = connect(c, o, "slack")
+    r = c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(o["token"]))
+    assert r.status_code == 200 and r.json()["data"] == {"ok": True, "name": "Team 2222", "team_id": "2222", "matches": True}
+    assert c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(user(c)["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    def broken(self, secrets): raise AppError("CHANNEL_API_FAILED", kind="Slack", reason="invalid_auth")
+    monkeypatch.setattr(type(ADAPTERS["slack"]), "describe", broken)
+    r = c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(o["token"]))
+    assert r.status_code == 502 and r.json()["error"]["code"] == "CHANNEL_API_FAILED"

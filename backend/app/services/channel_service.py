@@ -121,6 +121,14 @@ class ChannelService:
     def delete(self, uid: str, cid: str) -> dict:
         self._writable(uid, cid); self.repo.delete_channel(cid); return {"ok": True}
 
+    def test(self, uid: str, cid: str) -> dict:
+        """Test connection: the platform accepts the stored credentials (Slack auth.test / Telegram getMe).
+        Read-only, so anyone who may use the connection may test it; failures are 502 CHANNEL_API_FAILED."""
+        c = self.repo.channel(cid)
+        if not self.usable(uid, c): raise AppError("CHANNEL_NOT_FOUND")
+        info = self.adapter(c.kind).describe(self.secrets(c))
+        return {"ok": True, "name": info.get("name"), "team_id": info.get("team_id"), "matches": (info.get("team_id") or None) == (c.team_id or None)}
+
     def register_webhook(self, uid: str, cid: str) -> dict:
         c = self._writable(uid, cid)
         base = config.public_url()

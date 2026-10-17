@@ -336,7 +336,7 @@ user của studio qua **tài khoản chat đã xác minh**; chỉ **chủ run** 
 Token trong nút được ký (HMAC), dùng **một lần** và **hết hạn** (`STUDIO_APPROVAL_TTL`, mặc định 86400 s). Sau khi quyết định, tin nhắn
 gốc được sửa (bỏ nút, ghi ai duyệt lúc nào). Tin nhắn và nút theo **ngôn ngữ** (en/vi) của chủ run; câu trả lời riêng cho người bấm
 theo ngôn ngữ của họ (ngôn ngữ chọn trong studio được lưu vào tuỳ chọn tài khoản). Mọi yêu cầu / quyết định / lần bấm bị từ chối nằm
-trong **Nhật ký** (menu người dùng → Kênh phê duyệt). Không cấu hình kênh thì không có gì thay đổi (no-op). Thiết kế: DEC-0019.
+trong **Cài đặt → Nhật ký** (`/settings/audit`, lọc theo nội dung, quyết định, nền tảng). Không cấu hình kênh thì không có gì thay đổi (no-op). Thiết kế: DEC-0019.
 
 **Yêu cầu chung: URL công khai.** Slack và Telegram gọi về studio qua HTTPS công khai. Đặt `STUDIO_PUBLIC_URL=https://studio.example.com`
 (cũng dùng cho link trong tin nhắn). Ở máy dev có thể dùng tunnel (`cloudflared tunnel --url http://localhost:8090` hoặc `ngrok http 8090`).
@@ -369,16 +369,16 @@ Mỗi tài khoản chat chỉ có một người dùng đã xác minh (ràng bu�
 1. https://api.slack.com/apps → **Create New App** → *From scratch*, chọn workspace.
 2. **OAuth & Permissions** → Bot Token Scopes: `chat:write`, `im:write` (DM mã xác minh); thêm `chat:write.public` nếu muốn gửi vào kênh public mà bot chưa được mời → **Install to Workspace** → copy **Bot User OAuth Token** (`xoxb-…`).
 3. **Basic Information** → copy **Signing Secret**.
-4. Studio: menu người dùng → **Kênh phê duyệt** → **Thêm kết nối** → Slack, *Cá nhân* hoặc *Toàn tổ chức* → dán bot token + signing secret → **Lưu**. Studio gọi `auth.test` để lấy tên và `team_id` của workspace. Copy **Request URL (mọi workspace)**.
+4. Studio: menu người dùng → **Cài đặt** → **Kênh** (`/settings/channels`) → thẻ **Slack** → tab *Cá nhân* hoặc *Toàn tổ chức* → dán bot token + signing secret → **Lưu** (nút **Kiểm tra kết nối** gọi lại `auth.test` / `getMe`). Studio gọi `auth.test` để lấy tên và `team_id` của workspace. Copy **Request URL (mọi workspace)**.
 5. Slack app → **Interactivity & Shortcuts** → bật, **Request URL** = URL vừa copy → Save. Workspace khác: lặp lại 1–5 (cùng Request URL).
 6. Mời bot vào kênh (`/invite @tên-bot`) và lấy **Channel ID** (chi tiết kênh → cuối trang, dạng `C0123ABCD`).
-7. Mỗi người duyệt: **Tài khoản của tôi** → Slack member ID (hồ sơ → ⋮ → *Copy member ID*) → nhận mã qua DM → xác minh.
+7. Mỗi người duyệt: **Cài đặt → Tài khoản của tôi** (hoặc ngay trong thẻ Slack) → Slack member ID (hồ sơ → ⋮ → *Copy member ID*) → nhận mã qua DM → xác minh.
 
 Callback được xác thực bằng `X-Slack-Signature` (HMAC-SHA256 của `v0:{timestamp}:{body}` với signing secret), timestamp lệch tối đa 5 phút.
 
 ### Tạo Telegram bot
 1. Chat với **@BotFather** → `/newbot` → copy token (`123456:AA…`).
-2. Studio → **Kênh phê duyệt** → **Thêm kết nối** → Telegram → dán token (webhook secret để trống thì studio tự sinh) → **Lưu** → **Đăng ký webhook**
+2. Studio → **Cài đặt → Kênh** → thẻ **Telegram** → tab *Cá nhân* / *Toàn tổ chức* → dán token (webhook secret để trống thì studio tự sinh) → **Lưu** → **Đăng ký webhook**
    (gọi `setWebhook` với URL callback + `secret_token`; cần `STUDIO_PUBLIC_URL` dạng https).
 3. Thêm bot vào group (hoặc nhắn riêng cho bot) và lấy **chat ID** (group thường dạng `-100…`; ví dụ gửi một tin vào group rồi mở
    `https://api.telegram.org/bot<token>/getUpdates` *trước khi* đăng ký webhook, hoặc dùng @RawDataBot).

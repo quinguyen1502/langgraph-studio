@@ -87,5 +87,7 @@
 | `VERSION_NOT_FOUND` | 404 | Workflow version not found |
 | `RUN_EXPIRED` | 410 | This run waited too long for a response and expired |
 | `RATE_LIMITED` | 429 | Too many requests, retry in {retry_after} s |
+| `NOTIFICATION_NOT_FOUND` | 404 | Notification not found |
+| `DELIVERY_NOT_FOUND` | 404 | Webhook delivery not found |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

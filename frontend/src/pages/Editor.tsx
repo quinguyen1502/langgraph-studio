@@ -32,6 +32,7 @@ import { LanguageSwitcher } from '@/components/language-switcher'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 import { PendingBadge } from '@/components/pending-badge'
+import { NotificationBell } from '@/components/notification-bell'
 import type { Credential } from '@/components/credentials-dialog'
 import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
@@ -254,7 +255,7 @@ function Studio() {
       <div className="ml-auto flex items-center gap-2">
         {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
         <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
-        <PendingBadge /><LanguageSwitcher /><ThemeToggle /><UserMenu />
+        <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>
 

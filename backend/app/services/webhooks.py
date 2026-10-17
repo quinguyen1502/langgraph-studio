@@ -8,6 +8,7 @@
   signing secret (shown once when the token is created). `verify_signature` is the reference check.
 """
 import hashlib, hmac, ipaddress, json, socket, time
+from dataclasses import dataclass
 from typing import Optional
 from urllib.parse import urlparse, urlunparse
 import httpx
@@ -16,7 +17,6 @@ from ..core.errors import AppError
 from ..core.logging import get_logger
 
 log = get_logger("webhooks")
-ATTEMPTS = 2
 SIGNATURE_HEADER = "X-Studio-Signature"
 TOLERANCE_S = 300  # receivers should reject signatures older than this (replay protection)
 
@@ -57,40 +57,63 @@ def pinned_request(url: str, ip: str) -> tuple[str, dict, dict]:
     return urlunparse(u._replace(netloc=netloc)), headers, ext
 
 
-def sign(secret: str, body: bytes, ts: Optional[int] = None) -> str:
+def _mac(secret: str, body: bytes, ts: int) -> str:
+    return hmac.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
+
+
+def sign(secrets: "str | list[str]", body: bytes, ts: Optional[int] = None) -> str:
+    """`t=<ts>,v1=<mac>[,v1=<mac>…]`, one v1 per active secret (during a rotation grace period both the new
+    and the previous secret sign, so receivers can switch over without dropping callbacks; TASK-0020)."""
     ts = int(ts if ts is not None else time.time())
-    mac = hmac.new(secret.encode(), f"{ts}.".encode() + body, hashlib.sha256).hexdigest()
-    return f"t={ts},v1={mac}"
+    secrets = [secrets] if isinstance(secrets, str) else secrets
+    return ",".join([f"t={ts}"] + [f"v1={_mac(s, body, ts)}" for s in secrets])
 
 
 def verify_signature(secret: str, header: str, body: bytes, tolerance: int = TOLERANCE_S, now: Optional[float] = None) -> bool:
-    """Reference receiver-side check (documented in the README)."""
+    """Reference receiver-side check (documented in the README): any v1 may match."""
     try:
-        parts = dict(p.split("=", 1) for p in (header or "").split(","))
-        ts = int(parts["t"])
-    except (ValueError, KeyError):
+        parts = [p.split("=", 1) for p in (header or "").split(",")]
+        ts = int(next(v for k, v in parts if k == "t"))
+    except (ValueError, StopIteration):
         return False
     if abs((now or time.time()) - ts) > tolerance: return False
-    expected = sign(secret, body, ts).split("v1=", 1)[1]
-    return hmac.compare_digest(expected, parts.get("v1", ""))
+    expected = _mac(secret, body, ts)
+    return any(k == "v1" and hmac.compare_digest(expected, v) for k, v in parts)
 
 
-def deliver(url: str, payload: dict, secret: Optional[str] = None) -> bool:
-    """POST the result to the caller's webhook (pinned IP, signed when a secret is known); one retry. Never raises."""
+@dataclass
+class Attempt:
+    ok: bool
+    code: Optional[int] = None
+    latency_ms: Optional[float] = None
+    error: Optional[str] = None
+    retryable: bool = True  # False when the address itself is refused (SSRF guard): retrying cannot help
+
+
+def post(url: str, payload: dict, secrets: "list[str] | None" = None, event: str = "run.finished") -> Attempt:
+    """ONE signed POST to the pinned, validated IP. Never raises. Retries are scheduled by the caller
+    (DeliveryService, exponential backoff through the job queue)."""
     body = json.dumps(payload, ensure_ascii=False, separators=(",", ":")).encode()
-    for attempt in range(ATTEMPTS):
-        try:
-            _, ip = resolve(url)
-            target, headers, ext = pinned_request(url, ip)
-            headers.update({"Content-Type": "application/json", "X-Studio-Event": "run.finished"})
-            if secret: headers[SIGNATURE_HEADER] = sign(secret, body)
-            with http_client() as c:
-                r = c.send(c.build_request("POST", target, content=body, headers=headers, extensions=ext))
-            if r.status_code < 400: return True
-            log.warning("callback %s returned HTTP %s", url, r.status_code)
-        except AppError:
-            log.warning("callback %s refused (address not allowed or unresolvable)", url); return False
-        except httpx.HTTPError as e:
-            log.warning("callback %s failed: %s", url, type(e).__name__)
-        if attempt + 1 < ATTEMPTS: time.sleep(1)
-    return False
+    t0 = time.perf_counter()
+    try:
+        _, ip = resolve(url)
+        target, headers, ext = pinned_request(url, ip)
+        headers.update({"Content-Type": "application/json", "X-Studio-Event": event})
+        if secrets: headers[SIGNATURE_HEADER] = sign(secrets, body)
+        with http_client() as c:
+            r = c.send(c.build_request("POST", target, content=body, headers=headers, extensions=ext))
+        ms = round((time.perf_counter() - t0) * 1000, 2)
+        if r.status_code < 400: return Attempt(True, r.status_code, ms)
+        log.warning("webhook %s returned HTTP %s", url, r.status_code)
+        return Attempt(False, r.status_code, ms, f"HTTP {r.status_code}")
+    except AppError:
+        log.warning("webhook %s refused (address not allowed or unresolvable)", url)
+        return Attempt(False, None, None, "address not allowed or unresolvable", retryable=False)
+    except httpx.HTTPError as e:
+        log.warning("webhook %s failed: %s", url, type(e).__name__)
+        return Attempt(False, None, round((time.perf_counter() - t0) * 1000, 2), type(e).__name__)
+
+
+def deliver(url: str, payload: dict, secret: "str | list[str] | None" = None) -> bool:
+    """Single synchronous delivery (kept for callers without a delivery log)."""
+    return post(url, payload, [secret] if isinstance(secret, str) else secret).ok

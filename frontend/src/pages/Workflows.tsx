@@ -17,6 +17,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
 import { PendingBadge } from '@/components/pending-badge'
+import { NotificationBell } from '@/components/notification-bell'
 import { ImportDialog } from '@/components/import-dialog'
 import { CredentialsDialog } from '@/components/credentials-dialog'
 
@@ -63,7 +64,7 @@ export function WorkflowsPage() {
   return <div className="min-h-screen bg-background text-foreground">
     <header className="h-14 border-b flex items-center gap-3 px-6">
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
-      <div className="ml-auto flex items-center gap-1"><PendingBadge /><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
+      <div className="ml-auto flex items-center gap-1"><PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
     </header>
     <main className="max-w-6xl mx-auto p-6 space-y-4">
       <div className="flex items-end justify-between gap-4">

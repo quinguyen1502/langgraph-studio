@@ -135,21 +135,23 @@ def _fake():
     return fakeredis.FakeRedis(decode_responses=True)
 
 
-def test_redis_queue_ack_and_recover_stale():
+def test_redis_queue_ack_and_lease_reaper():
+    """TASK-0020 replaced heartbeats with per-job leases (visibility timeout) reaped periodically."""
     r = _fake()
-    dead = jq.RedisJobQueue("redis://fake", client=r, worker_id="dead"); dead.heartbeat()
+    dead = jq.RedisJobQueue("redis://fake", client=r, worker_id="dead", visibility=30)
     dead.enqueue({"run_id": "a"}); dead.enqueue({"run_id": "b"})
     ja = dead.dequeue(1); assert ja["run_id"] == "a" and r.llen(dead.processing) == 1
-    dead.ack(ja); assert r.llen(dead.processing) == 0
+    dead.ack(ja); assert r.llen(dead.processing) == 0 and not list(r.scan_iter(match=jq.LEASE_PREFIX + "*"))
     jb = dead.dequeue(1); assert jb["run_id"] == "b"   # taken, never acked: the worker "crashes"
-    alive = jq.RedisJobQueue("redis://fake", client=r, worker_id="alive"); alive.heartbeat()
-    assert alive.recover_stale() == 0                     # dead worker still has a heartbeat
-    r.delete(jq.HEARTBEAT_PREFIX + "dead")
+    alive = jq.RedisJobQueue("redis://fake", client=r, worker_id="alive", visibility=30)
+    assert alive.reap() == 0 and alive.reap() == 0      # lease still valid
+    for k in r.scan_iter(match=jq.LEASE_PREFIX + "*"): r.delete(k)  # lease expired
     alive.enqueue({"run_id": "c"})
-    assert alive.recover_stale() == 1 and r.llen(dead.processing) == 0
+    assert alive.reap() == 0                            # first strike: only suspected
+    assert alive.reap() == 1 and r.llen(dead.processing) == 0
     got = alive.dequeue(1); assert got["run_id"] == "b" and got["recovered"] is True  # recovered jobs go first
     assert alive.dequeue(1)["run_id"] == "c"
-    assert jq.InMemoryJobQueue().recover_stale() == 0
+    assert jq.InMemoryJobQueue().reap() == 0
 
 
 def test_worker_reexecutes_recovered_running_job(c):

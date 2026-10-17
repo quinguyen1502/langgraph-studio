@@ -11,6 +11,10 @@ class UserRepository:
         with self.db.session() as s:
             return s.scalars(select(User).where(User.email == email)).first()
 
+    def get_by_id(self, uid: str) -> Optional[User]:
+        with self.db.session() as s:
+            return s.get(User, uid)
+
     def add(self, uid: str, email: str, password_hash: str, created: float) -> User:
         with self.db.session() as s:
             u = User(id=uid, email=email, password=password_hash, created=created); s.add(u); s.commit(); return u

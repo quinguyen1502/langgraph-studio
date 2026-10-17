@@ -137,7 +137,7 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `services/redis_async.py`: one `redis.asyncio` client per event loop. Used by `RedisRunBus.astart/afinish/apublish` and the Redis rate limiter.
 - `services/job_queue.py`, `RedisJobQueue`:
   - `dequeue` = BLMOVE into `studio:run-jobs:processing:<worker>`; `ack` = LREM;
-  - `heartbeat` = `studio:worker:<id>` with a TTL; `recover_stale` requeues dead workers' jobs as `recovered`.
+  - `heartbeat` = `studio:worker:<id>` with a TTL; `recover_stale` requeues dead workers' jobs as `recovered`. *(Replaced by leases + reaper in TASK-0020.)*
   - `RunWorker` acks after `run_job` and re-executes `running` jobs only when they are `recovered`.
 - `RunService`:
   - `expire_waiting` (sweep in the app lifespan every 60 s, plus lazy checks in `waiting_run` and `pending`), status `expired`;
@@ -147,3 +147,13 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `engine/usage.prices()` gives built-ins, overridden by `STUDIO_PRICES_FILE` and then by `STUDIO_PRICES`.
 - `telemetry.disable_langchain_tracer()` is called when our LangSmith exporter is configured.
 - Migration `0007_hardening`: `workflow_tokens.signing_secret` (Fernet-encrypted).
+
+## Deferred hardening (TASK-0020, DEC-0017)
+
+- `NotificationService` (+ `NotificationRepository`, route `api/routes/notifications.py`): `run_event` stores a row, then sends SMTP e-mail and the notify webhook in a background thread. Called from `RunService.record` on waiting/expired.
+- `DeliveryService` (+ `WebhookDeliveryRepository`): `create` stores and enqueues a `delivery` job; `attempt` uses `webhooks.post` -> `Attempt(ok, code, latency_ms, error, retryable)` and re-enqueues with `backoff(n)` via `JobQueue.enqueue_at`; `redeliver` resets attempts.
+- `TriggerService.signing_secrets` returns the current secret plus the previous one inside `STUDIO_SECRET_GRACE`; `webhooks.sign` emits one `v1` per secret; `rotate_secret`.
+- `RedisJobQueue`: leases `studio:job-lease:<sha1>` (TTL = visibility), `touch`, `ack`, `reap` (two-strike), delayed zset `studio:run-jobs:delayed` + `promote_due`. `RunWorker` dispatches by `kind`, renews leases while running, and runs a `maintain` loop (promote + reap).
+- `RunService`: `plan_recover` resumes `recovered` jobs from the last progress checkpoint (`runs.save_progress`, engine `_checkpoint` events); `_close_waiting` shared by cancel and expire.
+- `Telemetry`: `start_run` / `node` / `end_run` export spans live (`RunSpan`); segments parented through the checkpoint's `trace`; optional `MeterProvider` metrics.
+- Migration `0008_notifications_deliveries`: `notifications`, `webhook_deliveries`, `workflow_tokens.signing_secret_prev` / `secret_rotated`.

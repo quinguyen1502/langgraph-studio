@@ -242,7 +242,9 @@
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
-    "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây."
+    "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây.",
+    "NOTIFICATION_NOT_FOUND": "Không tìm thấy thông báo.",
+    "DELIVERY_NOT_FOUND": "Không tìm thấy lần gửi webhook."
   },
   "lang": {
     "en": "English",
@@ -300,7 +302,11 @@
     "example": "Ví dụ",
     "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả.",
     "signingSecret": "Khoá ký webhook",
-    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem README)."
+    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem README).",
+    "rotate": "Đổi khoá ký",
+    "rotateAria": "Đổi khoá ký của {{name}}",
+    "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",
+    "tokensTab": "Token"
   },
   "versions": {
     "button": "Phiên bản",
@@ -331,5 +337,30 @@
     "unsavedWarning": "Bạn có thay đổi chưa lưu trong editor. Khôi phục sẽ thay thế chúng.",
     "loadMore": "Tải thêm",
     "shown": "{{shown}} / {{total}}"
+  },
+  "deliveries": {
+    "tab": "Lần gửi",
+    "empty": "Chưa có lần gửi webhook nào.",
+    "refresh": "Làm mới",
+    "redeliver": "Gửi lại",
+    "attempts_one": "{{count}} lần thử",
+    "attempts_other": "{{count}} lần thử",
+    "next": "thử lại lúc {{when}}",
+    "status": {
+      "pending": "đang chờ",
+      "retrying": "đang thử lại",
+      "ok": "đã gửi",
+      "failed": "thất bại"
+    }
+  },
+  "notify": {
+    "title": "Thông báo",
+    "empty": "Không có thông báo.",
+    "markAll": "Đánh dấu đã đọc hết",
+    "unread_one": "{{count}} thông báo chưa đọc",
+    "unread_other": "{{count}} thông báo chưa đọc",
+    "run_waiting": "{{workflow}} đang chờ bạn: {{label}}",
+    "run_expired": "Một run đang chờ của {{workflow}} đã hết hạn",
+    "unknownWorkflow": "Một workflow"
   }
 }

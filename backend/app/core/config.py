@@ -50,4 +50,23 @@ def sync_wait_max() -> float: return max(0.0, float(os.environ.get("STUDIO_SYNC_
 def trigger_rate_limit() -> int: return max(0, _int("STUDIO_TRIGGER_RATE_LIMIT", 60))  # runs per token per window (0 = off)
 def trigger_rate_window() -> int: return max(1, _int("STUDIO_TRIGGER_RATE_WINDOW", 60))  # seconds
 def version_keep() -> int: return max(0, _int("STUDIO_VERSION_KEEP", 0))  # keep last N versions (0 = all)
+# --- TASK-0020 ---
+def webhook_max_attempts() -> int: return max(1, _int("STUDIO_WEBHOOK_MAX_ATTEMPTS", 5))
+def webhook_backoff_base() -> float: return max(0.0, float(os.environ.get("STUDIO_WEBHOOK_BACKOFF_BASE", 2)))  # s; delay = base * 2^(n-1)
+def webhook_backoff_max() -> float: return max(0.0, float(os.environ.get("STUDIO_WEBHOOK_BACKOFF_MAX", 300)))
+def secret_grace() -> float: return max(0.0, float(os.environ.get("STUDIO_SECRET_GRACE", 24 * 3600)))  # old signing secret stays valid
+def job_visibility() -> int: return max(3, _int("STUDIO_JOB_VISIBILITY_TIMEOUT", 30))  # lease of a taken job
+def job_reap_every() -> float: return max(0.2, float(os.environ.get("STUDIO_JOB_REAP_EVERY", 15)))
+def public_url() -> str: return (os.environ.get("STUDIO_PUBLIC_URL") or "").rstrip("/")  # links in e-mails
+def smtp() -> dict | None:
+    """SMTP settings for notification e-mail; None (no-op) when SMTP_HOST is unset."""
+    host = os.environ.get("SMTP_HOST", "").strip()
+    if not host: return None
+    return {"host": host, "port": _int("SMTP_PORT", 587), "user": os.environ.get("SMTP_USER") or None,
+            "password": os.environ.get("SMTP_PASSWORD") or None, "sender": os.environ.get("SMTP_FROM") or "studio@localhost",
+            "starttls": os.environ.get("SMTP_STARTTLS", "1") != "0", "ssl": os.environ.get("SMTP_SSL") == "1"}
+def notify_webhook() -> tuple[str, str | None] | None:
+    url = os.environ.get("STUDIO_NOTIFY_WEBHOOK_URL", "").strip()
+    return (url, os.environ.get("STUDIO_NOTIFY_WEBHOOK_SECRET") or None) if url else None
+def otel_metrics() -> bool: return os.environ.get("STUDIO_OTEL_METRICS", "").lower() in ("1", "true", "yes", "on")
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"

@@ -6,5 +6,7 @@ from .run import Run
 from .credential import Credential
 from .workflow_token import WorkflowToken
 from .workflow_version import WorkflowVersion
+from .notification import Notification
+from .webhook_delivery import WebhookDelivery
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery"]

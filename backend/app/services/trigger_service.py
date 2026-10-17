@@ -32,7 +32,8 @@ class TriggerService:
 
     @staticmethod
     def _public(t: WorkflowToken) -> dict:
-        return {"id": t.id, "name": t.name, "prefix": t.prefix, "created": t.created, "last_used": t.last_used, "revoked": t.revoked}
+        return {"id": t.id, "name": t.name, "prefix": t.prefix, "created": t.created, "last_used": t.last_used, "revoked": t.revoked,
+                "signed": bool(t.signing_secret), "secret_rotated": t.secret_rotated}
 
     def list_tokens(self, wid: str, uid: str) -> list[dict]:
         self._owned(wid, uid); return [self._public(t) for t in self.tokens.list_for_workflow(wid)]
@@ -46,10 +47,24 @@ class TriggerService:
                                           token_hash=_hash(secret), prefix=secret[:10], created=time.time(), signing_secret=crypto.encrypt(signing)))
         return {**self._public(t), "token": secret, "signing_secret": signing}
 
-    def signing_secret(self, tid: Optional[str]) -> Optional[str]:
-        """Decrypted webhook signing secret of a token (None for tokens created before TASK-0019)."""
+    def signing_secrets(self, tid: Optional[str]) -> list[str]:
+        """Active webhook signing secrets of a token: the current one, plus the previous one during the rotation
+        grace period (STUDIO_SECRET_GRACE). Empty for tokens created before TASK-0019 (unsigned)."""
         t = self.tokens.get(tid) if tid else None
-        return crypto.decrypt(t.signing_secret) if t and t.signing_secret else None
+        if not t or not t.signing_secret: return []
+        out = [crypto.decrypt(t.signing_secret)]
+        if t.signing_secret_prev and t.secret_rotated and time.time() - t.secret_rotated < config.secret_grace():
+            out.append(crypto.decrypt(t.signing_secret_prev))
+        return out
+
+    def rotate_secret(self, wid: str, tid: str, uid: str) -> dict:
+        """New signing secret (shown once); the old one keeps signing too until the grace period ends."""
+        self._owned(wid, uid); t = self.tokens.get(tid)
+        if t is None or t.workflow_id != wid: raise AppError("TOKEN_NOT_FOUND")
+        if t.revoked: raise AppError("TRIGGER_TOKEN_INVALID")
+        new = SECRET_PREFIX + secrets.token_urlsafe(24); now = time.time()
+        self.tokens.set_fields(tid, signing_secret=crypto.encrypt(new), signing_secret_prev=t.signing_secret, secret_rotated=now)
+        return {**self._public(self.tokens.get(tid)), "signing_secret": new, "grace_until": now + config.secret_grace()}
 
     def revoke_token(self, wid: str, tid: str, uid: str) -> dict:
         self._owned(wid, uid); t = self.tokens.get(tid)

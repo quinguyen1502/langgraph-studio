@@ -3,7 +3,7 @@ import json, time, uuid
 import httpx, pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.services import run_worker as worker_mod
+from app.services import run_worker as worker_mod, webhooks
 from app.services.job_queue import InMemoryJobQueue, RedisJobQueue, make_job_queue
 from app.services.trigger_service import check_callback_url
 from app.core.errors import AppError
@@ -93,16 +93,21 @@ def test_input_and_callback_validation(c, monkeypatch):
 
 def test_webhook_callback_receives_result(c, monkeypatch):
     got = []
-    def handler(req): got.append((req.headers["x-studio-event"], json.loads(req.content))); return httpx.Response(204)
-    monkeypatch.setattr(worker_mod, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+    def handler(req): got.append((req.headers["x-studio-event"], json.loads(req.content), req)); return httpx.Response(204)
+    monkeypatch.setattr(webhooks, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
     monkeypatch.setenv("STUDIO_ALLOW_PRIVATE_CALLBACKS", "1")
-    tok = user(c); wid = example(c, tok); secret = token_for(c, tok, wid)["token"]
-    rid = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "hi"}, "callback_url": "http://127.0.0.1:9/hook"}, headers=H(secret)).json()["data"]["run_id"]
+    tok = user(c); wid = example(c, tok); created = token_for(c, tok, wid); secret = created["token"]
+    rid = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "hi"}, "callback_url": "http://localhost:9/hook"}, headers=H(secret)).json()["data"]["run_id"]
     wait_done(c, wid, rid, secret)
     for _ in range(50):
         if got: break
         time.sleep(0.1)
-    event, body = got[0]
+    event, body, req = got[0]
+    # TASK-0019: connected to the pinned resolved IP, Host kept; HMAC-signed with the token's signing secret
+    assert req.url.host in ("127.0.0.1", "::1") and req.headers["host"] == "localhost:9"
+    assert created["signing_secret"].startswith("whsec_")
+    assert webhooks.verify_signature(created["signing_secret"], req.headers["x-studio-signature"], req.content)
+    assert not webhooks.verify_signature("whsec_wrong", req.headers["x-studio-signature"], req.content)
     assert event == "run.finished" and body["run_id"] == rid and body["status"] == "ok" and body["final_state"]["intent"] == "general"
 
 

@@ -1,5 +1,6 @@
 """LLM token usage and cost (TASK-0010). One place for the price table and the usage record shape."""
 from __future__ import annotations
+import functools, json, logging, os
 from typing import Any, Callable, Dict, Optional
 
 # USD per 1M tokens (input, output). Unknown models get cost None (shown as "-").
@@ -11,10 +12,43 @@ PRICES: Dict[str, tuple[float, float]] = {
 UsageSink = Callable[[str, Dict[str, Any]], None]  # (node_id, usage) -> None
 
 
+def _parse(raw: str, source: str) -> Dict[str, tuple[float, float]]:
+    """{"model-prefix": [input_per_1M, output_per_1M], ...}; invalid entries are skipped with a warning."""
+    out: Dict[str, tuple[float, float]] = {}
+    try: data = json.loads(raw)
+    except ValueError:
+        logging.getLogger("studio.usage").warning("ignoring invalid price table in %s (not JSON)", source); return out
+    for k, v in (data.items() if isinstance(data, dict) else []):
+        try: out[str(k).lower()] = (float(v[0]), float(v[1]))
+        except (TypeError, ValueError, IndexError, KeyError):
+            logging.getLogger("studio.usage").warning("ignoring price entry %r in %s", k, source)
+    return out
+
+
+@functools.lru_cache(maxsize=8)
+def _prices(env_json: str, path: str, mtime: float) -> Dict[str, tuple[float, float]]:
+    table = dict(PRICES)
+    if path:
+        try:
+            with open(path, encoding="utf-8") as f: table.update(_parse(f.read(), path))
+        except OSError: logging.getLogger("studio.usage").warning("price file %s not readable", path)
+    if env_json: table.update(_parse(env_json, "STUDIO_PRICES"))  # env wins over the file
+    return table
+
+
+def prices() -> Dict[str, tuple[float, float]]:
+    """Built-in table overridden/extended by STUDIO_PRICES_FILE (JSON file) and STUDIO_PRICES (JSON string).
+    Re-read when the env or the file's mtime changes (TASK-0019)."""
+    path = os.environ.get("STUDIO_PRICES_FILE", "").strip()
+    try: mtime = os.path.getmtime(path) if path else 0.0
+    except OSError: mtime = -1.0
+    return _prices(os.environ.get("STUDIO_PRICES", "").strip(), path, mtime)
+
+
 def price_for(model: str) -> Optional[tuple[float, float]]:
-    m = (model or "").lower()
-    for k in sorted(PRICES, key=len, reverse=True):  # longest prefix wins (gpt-4o-mini before gpt-4o)
-        if m.startswith(k): return PRICES[k]
+    m = (model or "").lower(); table = prices()
+    for k in sorted(table, key=len, reverse=True):  # longest prefix wins (gpt-4o-mini before gpt-4o)
+        if m.startswith(k): return table[k]
     return None
 
 

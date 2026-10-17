@@ -26,7 +26,8 @@
     "cancelled": "cancelled",
     "running": "running",
     "done": "done",
-    "waiting": "waiting"
+    "waiting": "waiting",
+    "expired": "expired"
   },
   "auth": {
     "loginTitle": "Sign in to LangGraph Studio",
@@ -239,7 +240,9 @@
     "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",
     "TOKEN_NOT_FOUND": "Token not found",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
-    "VERSION_NOT_FOUND": "That version no longer exists."
+    "VERSION_NOT_FOUND": "That version no longer exists.",
+    "RUN_EXPIRED": "This run waited too long for a response and has expired.",
+    "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s."
   },
   "lang": {
     "en": "English",
@@ -277,7 +280,9 @@
     "pendingDesc": "Runs paused at a Human node",
     "respond": "Respond",
     "cancelRun": "Cancel run",
-    "resumeFailed": "Could not resume: {{error}}"
+    "resumeFailed": "Could not resume: {{error}}",
+    "pendingCount_one": "{{count}} run waiting for your response",
+    "pendingCount_other": "{{count}} runs waiting for your response"
   },
   "api": {
     "button": "API",
@@ -293,7 +298,9 @@
     "name": "Token name",
     "create": "Create token",
     "example": "Example",
-    "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result."
+    "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result.",
+    "signingSecret": "Webhook signing secret",
+    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see README)."
   },
   "versions": {
     "button": "Versions",
@@ -319,6 +326,10 @@
     "restored": "Restored v{{n}} as a new version.",
     "unsaved": "unsaved",
     "runVersion": "Ran version v{{n}}",
-    "runUnsaved": "Ran with unsaved changes"
+    "runUnsaved": "Ran with unsaved changes",
+    "unchanged": "v{{n}} is identical to the current version, so nothing was restored.",
+    "unsavedWarning": "You have unsaved changes in the editor. Restoring replaces them.",
+    "loadMore": "Load more",
+    "shown": "{{shown}} of {{total}}"
   }
 }

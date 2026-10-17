@@ -85,5 +85,7 @@
 | `TOKEN_NOT_FOUND` | 404 | Token not found |
 | `CALLBACK_URL_INVALID` | 400 | callback_url must be a public http(s) URL |
 | `VERSION_NOT_FOUND` | 404 | Workflow version not found |
+| `RUN_EXPIRED` | 410 | This run waited too long for a response and expired |
+| `RATE_LIMITED` | 429 | Too many requests, retry in {retry_after} s |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

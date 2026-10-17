@@ -44,6 +44,8 @@ CATALOG: dict[str, tuple[int, str]] = {
     "RUN_RESPONSE_INVALID": (400, "The response must be text (max {max} characters)"),
     "TRIGGER_TOKEN_INVALID": (401, "Missing, invalid or revoked workflow token"),
     "TOKEN_NOT_FOUND": (404, "Token not found"),
+    "RUN_EXPIRED": (410, "This run waited too long for a response and expired"),
+    "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
     "VERSION_NOT_FOUND": (404, "Workflow version not found"),
     "CALLBACK_URL_INVALID": (400, "callback_url must be a public http(s) URL"),
     "NODE_FAILED": (500, "Node failed"),

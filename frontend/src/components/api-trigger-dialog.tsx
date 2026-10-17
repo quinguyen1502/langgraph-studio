@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 
-type Token = { id: string; name: string; prefix: string; created: number; last_used: number | null; revoked: number | null; token?: string }
+type Token = { id: string; name: string; prefix: string; created: number; last_used: number | null; revoked: number | null; token?: string; signing_secret?: string }
 const when = (s: number | null) => s ? new Date(s * 1000).toLocaleString(i18n.resolvedLanguage) : '—'
 
 /** Per-workflow API tokens + how to call the trigger endpoint (TASK-0007). */
@@ -38,6 +38,10 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
         <span>{t('api.copyOnce')}</span>
         <div className="flex gap-2"><Input readOnly id="api-token-value" className="font-mono text-xs" value={created.token} />
           <Button variant="outline" size="icon" aria-label={t('api.copy')} onClick={() => copy(created.token!)}>{copied ? <Check /> : <Copy />}</Button></div>
+        {created.signing_secret && <div className="space-y-1"><Label htmlFor="api-signing-secret" className="text-xs">{t('api.signingSecret')}</Label>
+          <div className="flex gap-2"><Input readOnly id="api-signing-secret" className="font-mono text-xs" value={created.signing_secret} />
+            <Button variant="outline" size="icon" aria-label={t('api.copy')} onClick={() => copy(created.signing_secret!)}><Copy /></Button></div>
+          <p className="text-xs text-muted-foreground">{t('api.signingHelp')}</p></div>}
       </AlertDescription></Alert>}
       <div className="space-y-2">
         {items.map(tk => <div key={tk.id} data-testid="api-token-row" className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">

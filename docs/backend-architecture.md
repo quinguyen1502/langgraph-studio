@@ -127,3 +127,23 @@ Secrets are encrypted in the service before they reach the repository; only `res
   - `same_content` ignores the name and positions.
 - `RunService.plan` tags a run with the latest version when the workflow it runs has the same content as that version, otherwise `NULL` (unsaved edits). A resume or cancel keeps the original tag.
 - Routes live in `api/routes/workflows.py`: `/versions`, `/versions/diff`, `/versions/{n}`, `/versions/{n}/restore`.
+
+## Phase-2 hardening (TASK-0019, DEC-0016)
+
+- `services/webhooks.py` handles result webhooks:
+  - `resolve` (SSRF check + single DNS resolution), `pinned_request` (connect to the IP, keep Host/SNI);
+  - `sign` / `verify_signature` (HMAC-SHA256 over `"<ts>.<body>"`) and `deliver`.
+- `services/rate_limit.py`: fixed-window `RateLimiter`. It uses Redis (async client) when `REDIS_URL` is set and memory otherwise. Called by `TriggerService.check_rate`.
+- `services/redis_async.py`: one `redis.asyncio` client per event loop. Used by `RedisRunBus.astart/afinish/apublish` and the Redis rate limiter.
+- `services/job_queue.py`, `RedisJobQueue`:
+  - `dequeue` = BLMOVE into `studio:run-jobs:processing:<worker>`; `ack` = LREM;
+  - `heartbeat` = `studio:worker:<id>` with a TTL; `recover_stale` requeues dead workers' jobs as `recovered`.
+  - `RunWorker` acks after `run_job` and re-executes `running` jobs only when they are `recovered`.
+- `RunService`:
+  - `expire_waiting` (sweep in the app lifespan every 60 s, plus lazy checks in `waiting_run` and `pending`), status `expired`;
+  - `telemetry.waited_s` removes human waits from `duration_ms`.
+- `WorkflowService._write` retries version-number conflicts and prunes by `STUDIO_VERSION_KEEP`. `WorkflowVersionRepository.prune` never deletes versions referenced by `runs.workflow_version`.
+- `Database.migrate` holds `pg_advisory_xact_lock` (Postgres) or an `fcntl` lock on `<db>.migrate.lock` (SQLite).
+- `engine/usage.prices()` gives built-ins, overridden by `STUDIO_PRICES_FILE` and then by `STUDIO_PRICES`.
+- `telemetry.disable_langchain_tracer()` is called when our LangSmith exporter is configured.
+- Migration `0007_hardening`: `workflow_tokens.signing_secret` (Fernet-encrypted).

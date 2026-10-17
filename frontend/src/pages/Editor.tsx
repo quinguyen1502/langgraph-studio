@@ -31,6 +31,7 @@ import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
+import { PendingBadge } from '@/components/pending-badge'
 import type { Credential } from '@/components/credentials-dialog'
 import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
@@ -137,7 +138,12 @@ function Studio() {
   const { dark } = useTheme()
   const rf = useReactFlow(); const idc = useRef(1); const wsRef = useRef<WebSocket | null>(null)
 
+  // unsaved-changes tracking (TASK-0019): snapshot of the saved graph, taken after load/save
+  const savedSnap = useRef<string | null>(null); const takeBaseline = useRef(false)
+  const snap = () => { const { id: _id, ...rest } = toJSON(); return JSON.stringify(rest) }
+  useEffect(() => { if (takeBaseline.current) { takeBaseline.current = false; savedSnap.current = snap() } }, [nodes, edges, name, state])
   const load = (wf: any) => {
+    takeBaseline.current = true
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
     setSource(wf.source || null)
     setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
@@ -163,7 +169,7 @@ function Studio() {
   const save = async () => {
     try {
       const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
-      setWid(r.id); setErrors(r.errors); if (r.errors.length) setTab('input')
+      setWid(r.id); setErrors(r.errors); savedSnap.current = snap(); if (r.errors.length) setTab('input')
     } catch (e: any) { setErrors([t('editor.saveFailed', { error: e.message })]); setTab('input') }
   }
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
@@ -235,7 +241,7 @@ function Studio() {
       <Separator orientation="vertical" className="h-6!" />
       <Input value={name} onChange={e => setName(e.target.value)} className="w-72 h-8" />
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" onClick={save}><Save />{t('common.save')}</Button></Tip>
-      <VersionsDialog wid={wid} onRestored={wf => { load(wf); setErrors([]) }} />
+      <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
       <ApiTriggerDialog wid={wid} />
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
@@ -248,7 +254,7 @@ function Studio() {
       <div className="ml-auto flex items-center gap-2">
         {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
         <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
-        <LanguageSwitcher /><ThemeToggle /><UserMenu />
+        <PendingBadge /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>
 
@@ -365,7 +371,7 @@ function Studio() {
             {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
             {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => openRun(h)}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' || h.status === 'expired' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}

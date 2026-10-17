@@ -13,6 +13,7 @@ from ..services.run_bus import RunBus, make_run_bus
 from ..services.job_queue import JobQueue, make_job_queue
 from ..services.run_service import RunService
 from ..services.run_worker import RunWorker
+from ..services.rate_limit import RateLimiter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
@@ -35,11 +36,16 @@ def get_job_queue() -> JobQueue:
 
 @lru_cache
 def run_worker() -> RunWorker:
-    return RunWorker(get_job_queue(), run_service)
+    return RunWorker(get_job_queue(), run_service, lambda tid: trigger_service().signing_secret(tid))
+
+
+@lru_cache
+def get_rate_limiter() -> RateLimiter:
+    return make_rate_limiter(config.REDIS_URL)  # shared via Redis, else per process
 
 
 def trigger_service() -> TriggerService:
-    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue())
+    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue(), get_rate_limiter())
 
 
 @lru_cache

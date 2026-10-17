@@ -1,5 +1,7 @@
 """Workflow CRUD with ownership, naming rules and validation."""
 import json, time, uuid
+from sqlalchemy.exc import IntegrityError
+from ..core import config
 from ..core.errors import AppError
 from ..engine.examples import EXAMPLE
 from ..engine.validator import validate
@@ -7,6 +9,10 @@ from ..models import Workflow, WorkflowVersion
 from ..repositories import RunRepository, WorkflowRepository, WorkflowVersionRepository
 from .workflow_diff import diff_workflows
 from .naming import clean_name, unique_name
+
+
+VERSION_RETRIES = 3
+PAGE_MAX = 200
 
 
 def _dumps(d) -> str: return json.dumps(d, ensure_ascii=False)
@@ -25,9 +31,14 @@ class WorkflowService:
         if self.versions is None: return
         last = self.versions.latest(wid)
         if last is not None and last.data == data: return  # nothing changed: no new version
-        n = self.versions.next_number(wid)
-        self.versions.add(WorkflowVersion(id=f"{wid}-v{n}", workflow_id=wid, version=n, name=name, data=data,
-                                          author=uid, created=now, note=note))
+        for attempt in range(VERSION_RETRIES):  # two concurrent saves can pick the same number: retry with the next one
+            n = self.versions.next_number(wid)
+            try:
+                self.versions.add(WorkflowVersion(id=f"{wid}-v{n}", workflow_id=wid, version=n, name=name, data=data,
+                                                  author=uid, created=now, note=note)); break
+            except IntegrityError:
+                if attempt + 1 == VERSION_RETRIES: raise
+        if (keep := config.version_keep()): self.versions.prune(wid, keep)  # retention (runs keep their versions)
 
     def _versions(self) -> WorkflowVersionRepository:
         if self.versions is None: raise RuntimeError("versioning not configured")
@@ -38,11 +49,15 @@ class WorkflowService:
         if v is None: raise AppError("VERSION_NOT_FOUND")
         return v
 
-    def list_versions(self, wid: str, uid: str) -> list[dict]:
-        self.owned(wid, uid); rows = self._versions().list_with_authors(wid)
-        latest = rows[0][0].version if rows else None
-        return [{"version": v.version, "name": v.name, "created": v.created, "author_email": e, "note": v.note,
+    def list_versions(self, wid: str, uid: str, limit: int = 50, offset: int = 0) -> dict:
+        """One page, newest first: {items, total, limit, offset}."""
+        self.owned(wid, uid); repo = self._versions()
+        limit, offset = max(1, min(PAGE_MAX, int(limit))), max(0, int(offset))
+        latest = repo.latest(wid); rows = repo.list_with_authors(wid, limit, offset)
+        latest = latest.version if latest else None
+        items = [{"version": v.version, "name": v.name, "created": v.created, "author_email": e, "note": v.note,
                  "node_count": len(json.loads(v.data or "{}").get("nodes", [])), "current": v.version == latest} for v, e in rows]
+        return {"items": items, "total": repo.count(wid), "limit": limit, "offset": offset}
 
     def get_version(self, wid: str, n: int, uid: str) -> dict:
         self.owned(wid, uid); v = self._version(wid, n)
@@ -60,8 +75,11 @@ class WorkflowService:
         cur = json.loads(w.data or "{}")
         wf = {**old, "name": w.name}
         if cur.get("source"): wf["source"] = cur["source"]
+        before = self._versions().latest(wid)
         self._write(wid, w.name, wf, uid, new=False, note=f"Restored from v{n}")
-        return {"id": wid, "version": self._versions().latest(wid).version, "workflow": {"id": wid, **wf}}
+        after = self._versions().latest(wid)
+        # restoring content identical to the current version is a no-op: no new version (the UI says so)
+        return {"id": wid, "version": after.version, "unchanged": before is not None and after.id == before.id, "workflow": {"id": wid, **wf}}
 
     def current_version(self, wid: str) -> tuple[int, dict] | None:
         """(number, data) of the latest stored version, used to tag runs."""

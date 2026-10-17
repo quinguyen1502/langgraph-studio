@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from ...engine.validator import validate
 from ...schemas.workflow import Rename, WorkflowIn
 from ..deps import current_user, limit_body, run_service, workflow_service
@@ -31,7 +31,8 @@ def validate_wf(body: WorkflowIn, user=Depends(current_user)): return {"errors":
 
 # ---- versions (TASK-0008) ----
 @router.get("/workflows/{wid}/versions")
-def list_versions(wid: str, user=Depends(current_user), svc=Depends(workflow_service)): return svc.list_versions(wid, user["id"])
+def list_versions(wid: str, limit: int = Query(50, ge=1, le=200), offset: int = Query(0, ge=0), user=Depends(current_user), svc=Depends(workflow_service)):
+    return svc.list_versions(wid, user["id"], limit, offset)
 
 @router.get("/workflows/{wid}/versions/diff")
 def diff_versions(wid: str, a: int, b: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.diff_versions(wid, a, b, user["id"])

@@ -119,7 +119,19 @@
     "idBadge": "id: {{id}}",
     "pyFunction": "Python function",
     "httpRequest": "HTTP request",
-    "readOnly": "chỉ đọc"
+    "readOnly": "chỉ đọc",
+    "reducer": "Reducer",
+    "reducers": {
+      "replace": "Thay thế (ghi sau cùng thắng)",
+      "append": "Nối (gom tất cả)",
+      "merge": "Gộp khoá",
+      "add": "Cộng (tổng)"
+    },
+    "joinHint": "Chạy một lần, sau khi mọi nhánh đi vào đã xong. Trường được nhiều nhánh ghi cần có reducer trong state schema.",
+    "subgraphWorkflow": "Workflow cần chạy",
+    "subgraphOpen": "Mở workflow",
+    "subgraphMissing": "Workflow này không còn tồn tại hoặc không thuộc về bạn.",
+    "subgraphHint": "Các node của nó chạy trong lượt chạy này và hiện trong trace dạng \"Subgraph › node\". State dùng chung theo tên trường; trường riêng của nó được thêm vào lượt chạy."
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -128,7 +140,9 @@
     "condition": "Rẽ nhánh theo state field",
     "end": "Kết thúc",
     "code": "Node Python từ repo import",
-    "human": "Tạm dừng để duyệt hoặc nhập"
+    "human": "Tạm dừng để duyệt hoặc nhập",
+    "join": "Chờ mọi nhánh song song",
+    "subgraph": "Chạy một workflow đã lưu"
   },
   "trace": {
     "idle": "Chưa chạy",

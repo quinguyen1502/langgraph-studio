@@ -67,7 +67,7 @@ Builder supports embedding a saved workflow as a subgraph node and fan-out/fan-i
 
 ## Open Questions
 
-- Which state reducers must be supported (append list, merge dict)?
+- Resolved 2026-10-17 (DEC-0020): `replace` (default), `append` (list), `merge` (dict), `add` (number).
 
 ## Related Artifacts
 

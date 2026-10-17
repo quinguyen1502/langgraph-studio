@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0011
 - Previous ID: TASK-0010 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
+- Status: review
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-16
@@ -65,13 +65,15 @@ Implement REQ-0006: Support subgraphs and parallel branches in the builder.
 
 ## Assumptions
 
-- Integration branch is `main` (see DISC-0001).
+- Integration branch is `develop`; draft PR, never merged by the agent.
 
 ## Open Questions
 
 - Which state reducers must be supported (append list, merge dict)?
 
 ## Activity Log
+
+- 2026-10-17: Implemented (DEC-0020, REV-0017, QA-0017); moved to review. Open question resolved: reducers replace/append/merge/add.
 
 - 2026-10-16: Renumbered TASK-0010 -> TASK-0011 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.

@@ -3,8 +3,8 @@ import json, time, uuid
 from sqlalchemy.exc import IntegrityError
 from ..core import config
 from ..core.errors import AppError
+from ..engine import subgraphs
 from ..engine.examples import EXAMPLE
-from ..engine.validator import validate
 from ..models import Workflow, WorkflowVersion
 from ..repositories import RunRepository, WorkflowRepository, WorkflowVersionRepository
 from .workflow_diff import diff_workflows
@@ -115,7 +115,18 @@ class WorkflowService:
         wf.pop("source", None)  # never trust client-provided source metadata
         if old.get("source"): wf["source"] = old["source"]
         self._write(wid, wf.get("name", "Untitled"), wf, uid)
-        return {"id": wid, "errors": [] if wf.get("source") else validate(wf)}
+        return {"id": wid, "errors": [] if wf.get("source") else self.validate(wf, uid, wid)}
+
+    def validate(self, wf: dict, uid: str, wid=None):
+        """Static checks, with subgraph references resolved against this user's workflows (TASK-0011)."""
+        return subgraphs.validate_with(wf, self._loader(uid), wid or wf.get("id"))
+
+    def _loader(self, uid: str):
+        """Subgraph references resolve to workflows this user owns (RBAC sharing will widen this, TASK-0014)."""
+        def load(ref: str):
+            row = self.repo.get_owned(ref, uid)
+            return json.loads(row.data or "{}") if row else None
+        return load
 
     def rename(self, wid: str, name: str, uid: str) -> dict:
         w = self.owned(wid, uid); name = clean_name(name)

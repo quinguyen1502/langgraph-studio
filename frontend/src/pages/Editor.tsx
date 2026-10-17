@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, type LucideIcon } from 'lucide-react'
+import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -38,8 +38,9 @@ import { NotificationBell } from '@/components/notification-bell'
 import type { Credential } from '@/components/credentials-dialog'
 import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
+import { SubgraphSettings } from '@/components/subgraph-settings'
 
-type Field = { name: string; type: string }
+type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
 /** `desc` is resolved via i18n key `nodes.<type>`. */
 const META: Record<string, { label: string; icon: LucideIcon; color: string; accent: string }> = {
@@ -50,8 +51,15 @@ const META: Record<string, { label: string; icon: LucideIcon; color: string; acc
   end: { label: 'End', icon: Flag, color: 'bg-node-end-muted text-node-end', accent: 'bg-node-end' },
   human: { label: 'Human', icon: UserCheck, color: 'bg-node-human-muted text-node-human', accent: 'bg-node-human' },
 }
+META.join = { label: 'Join', icon: Merge, color: 'bg-node-join-muted text-node-join', accent: 'bg-node-join' }
+META.subgraph = { label: 'Subgraph', icon: Layers, color: 'bg-node-subgraph-muted text-node-subgraph', accent: 'bg-node-subgraph' }
+META.subgraph_exit = META.subgraph
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-const TYPES = ['start', 'llm', 'tool', 'condition', 'human', 'end']
+const TYPES = ['start', 'llm', 'tool', 'condition', 'human', 'join', 'subgraph', 'end']
+/** Reducers per field type (TASK-0011): how parallel writes combine. */
+const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
+/** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
+const canvasId = (nid: string) => nid.split('/')[0]
 
 function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
   const g = new dagre.graphlib.Graph(); g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 110 }); g.setDefaultEdgeLabel(() => ({}))
@@ -68,7 +76,8 @@ const DEFAULTS: Record<string, any> = {
   llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: '', output_field: '' }, // prompt comes from i18n `samples.prompt` on drop
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
-  human: { label: 'Approval', prompt: '', output_field: '' }, // response (text, or approved / rejected) goes to output_field
+  human: { label: 'Approval', prompt: '', output_field: '' },
+  join: { label: 'Join' }, subgraph: { label: 'Subgraph', workflow_id: '' }, // response (text, or approved / rejected) goes to output_field
 }
 
 function StatusBadge({ s }: { s?: string }) {
@@ -188,10 +197,10 @@ function Studio() {
     ws.onopen = () => ws.send(JSON.stringify(msg))
     ws.onmessage = m => {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
-      if (ev.type === 'node_started') mark(ev.node!, { _status: 'running' })
-      if (ev.type === 'run_waiting') mark(ev.node!, { _status: 'waiting' })
-      if (ev.type === 'node_finished') mark(ev.node!, { _status: 'done', _dur: ev.duration_ms })
-      if (ev.type === 'error') { setErrors(eventErrors(ev)); if (ev.node) mark(ev.node, { _status: 'error' }) }
+      if (ev.type === 'node_started') mark(canvasId(ev.node!), { _status: 'running' })
+      if (ev.type === 'run_waiting') mark(canvasId(ev.node!), { _status: 'waiting' })
+      if (ev.type === 'node_finished') mark(canvasId(ev.node!), ev.node!.includes('/') ? { _status: 'done' } : { _status: 'done', _dur: ev.duration_ms })
+      if (ev.type === 'error') { setErrors(eventErrors(ev)); if (ev.node) mark(canvasId(ev.node), { _status: 'error' }) }
       if (ev.type === 'run_cancelled' || (ev.type === 'error' && (ev as any).status === 'timeout')) setNodes(ns => ns.map(n => n.data._status === 'running' ? { ...n, data: { ...n.data, _status: 'cancelled' } } : n))
     }
     ws.onerror = () => setErrors(e => e.length ? e : [t('editor.wsLost')])
@@ -207,11 +216,12 @@ function Studio() {
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
-  const hlNode = traceSel ? trace.spans.find(x => x.key === traceSel)?.node : undefined
+  const hlSpan = traceSel ? trace.spans.find(x => x.key === traceSel)?.node : undefined
+  const hlNode = hlSpan ? canvasId(hlSpan) : undefined
   const nodesView = useMemo(() => hlNode ? nodes.map(n => n.id === hlNode ? { ...n, data: { ...n.data, _hl: true } } : n) : nodes, [nodes, hlNode])
   const onNodeClick = (id: string) => {
     setSel({ kind: 'node', id })
-    const spans = trace.spans.filter(x => x.node === id)
+    const spans = trace.spans.filter(x => canvasId(x.node) === id)
     if (spans.length) {
       const cur = spans.findIndex(x => x.key === traceSel) // repeated clicks cycle through loop iterations
       setTraceSel(spans[cur >= 0 ? (cur + 1) % spans.length : spans.length - 1].key); setTab('logs')
@@ -278,13 +288,18 @@ function Studio() {
         <Separator />
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.stateSchema')}</div>
-          <div className="space-y-1.5">{state.map((f, i) => <div className="flex gap-1" key={i}>
+          <div className="space-y-1.5">{state.map((f, i) => <div className="space-y-1" key={i}><div className="flex gap-1">
             <Input className="h-8 flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-            <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v } : x))}>
+            <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v, reducer: REDUCERS[v]?.includes(x.reducer || '') ? x.reducer : undefined } : x))}>
               <SelectTrigger size="sm" className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>{['string', 'number', 'integer', 'boolean', 'object', 'list'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
             </Select>
             <Button variant="ghost" size="icon" className="size-8" onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
+            </div>
+            {REDUCERS[f.type] && <Select value={f.reducer || 'replace'} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, reducer: v === 'replace' ? undefined : v } : x))}>
+              <SelectTrigger size="sm" className="w-full text-xs" id={`reducer-${f.name}`} aria-label={t('editor.reducer')}><SelectValue /></SelectTrigger>
+              <SelectContent>{REDUCERS[f.type].map(r => <SelectItem key={r} value={r}>{t(`editor.reducers.${r}`)}</SelectItem>)}</SelectContent>
+            </Select>}
           </div>)}</div>
           <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
         </div>
@@ -344,6 +359,8 @@ function Studio() {
             <F label={t('field.reference')}><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
             <F label={t('field.source')}><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
           </>}
+          {selNode.type === 'subgraph' && <SubgraphSettings wid={wid} value={d.workflow_id} onChange={v => upd('workflow_id', v)} />}
+          {selNode.type === 'join' && <p className="text-[11px] text-muted-foreground" id="join-hint">{t('editor.joinHint')}</p>}
           {selNode.type === 'condition' && <>
             <F label={t('editor.condField')}><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>

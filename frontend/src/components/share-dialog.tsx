@@ -9,13 +9,15 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import type { Issue, Shares, Teams } from '@/lib/rbac'
 import { TransferDialog } from '@/components/transfer-dialog'
 
-export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowId: string; disabled?: boolean; onTransferred?: (owner: string, flagged: Issue[]) => void }) {
+export function ShareDialog(props: { workflowId: string; disabled?: boolean; onTransferred?: (owner: string, flagged: Issue[]) => void; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const { workflowId, disabled, onTransferred } = props
   const { t } = useTranslation()
-  const [open, setOpen] = useState(false); const [data, setData] = useState<Shares | null>(null)
+  const [open, setOpen, controlled] = useOpenState(props.open, props.onOpenChange); const [data, setData] = useState<Shares | null>(null)
   const [email, setEmail] = useState(''); const [role, setRole] = useState<'viewer' | 'editor'>('viewer')
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const [kind, setKind] = useState<'user' | 'team'>('user'); const [teams, setTeams] = useState<Teams['teams']>([]); const [team, setTeam] = useState('')
@@ -32,7 +34,7 @@ export function ShareDialog({ workflowId, disabled, onTransferred }: { workflowI
   const remove = (uid: string, email: string) => confirmDel.ask({ title: t('share.removeTitle', { name: email }), name: email, description: t('share.removeBody'), confirmLabel: t('confirmDelete.remove'),
     onConfirm: async () => { await api(`/api/workflows/${workflowId}/shares/${uid}`, { method: 'DELETE' }); await load() } })
   return <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button variant="outline" size="sm" id="share-btn" disabled={disabled}><Share2 />{t('share.button')}</Button></DialogTrigger>
+    {!controlled && <DialogTrigger asChild><Button variant="outline" size="sm" id="share-btn" disabled={disabled}><Share2 />{t('share.button')}</Button></DialogTrigger>}
     <DialogContent className="sm:max-w-lg">
       <DialogHeader><DialogTitle>{t('share.title')}</DialogTitle><DialogDescription>{t('share.intro')}</DialogDescription></DialogHeader>
       {data?.can_share && <div className="flex items-end gap-2">

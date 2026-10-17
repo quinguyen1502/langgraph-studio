@@ -140,6 +140,9 @@ chọn *Trái sang phải* / *Trên xuống dưới* (trình duyệt ghi nhớ).
 `Ctrl/⌘+K` ở mọi trang (kể cả khi đang gõ): tìm gần đúng các thao tác của editor (kèm phím tắt), **Thêm node** (đặt giữa màn hình và được chọn),
 **Đến node**, **Mở workflow**, **Workflow mới** (mở thư viện mẫu) và các trang **Cài đặt**. Từ khoá tiếng Anh (vd. `retriever`, `mcp`) cũng tìm được.
 
+Thanh tiêu đề editor chỉ giữ tên, **Lưu**, **Chạy**/**Dừng** và **Hoàn tác/Làm lại**; các thao tác khác (Sắp xếp + hướng, Vừa màn hình, Phiên bản,
+Lưu thành mẫu, Chia sẻ, API, JSON, Bảng lệnh, Phím tắt, Xoá workflow) nằm trong menu **⋯**, dùng chung định nghĩa với bảng lệnh.
+
 ## Định dạng workflow
 ```json
 {"name": "...", "state": [{"name":"message","type":"string"}],

@@ -7,7 +7,7 @@ import { LayoutList, Plus, Settings, Workflow as WorkflowIcon } from 'lucide-rea
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Kbd } from '@/components/shortcut-cheatsheet'
 import { api, tokenValid } from '@/lib/api'
-import { grouped, searchValue, usePaletteCommands, type PaletteCommand } from '@/lib/palette'
+import { grouped, onPaletteRequest, searchValue, usePaletteCommands, type PaletteCommand } from '@/lib/palette'
 import { can, loadMe, type Me } from '@/lib/rbac'
 import { SHORTCUTS } from '@/lib/shortcuts'
 import { useShortcuts } from '@/lib/use-shortcuts'
@@ -22,6 +22,7 @@ export function CommandPalette() {
   useShortcuts({ palette: () => { if (!tokenValid() || loc.pathname === '/login' || loc.pathname === '/register') return false; setOpen(true) } })
   useEffect(() => { if (open) { api<W[]>('/api/workflows').then(setWfs).catch(() => setWfs([])); loadMe().then(setMe).catch(() => setMe(null)) } }, [open])  // mounted outside the routes: load on open
   useEffect(() => { setOpen(false) }, [loc.pathname])
+  useEffect(() => onPaletteRequest(() => setOpen(true)), [])
 
   const current = loc.pathname.startsWith('/workflows/') ? loc.pathname.split('/')[2] : null
   const cmds: PaletteCommand[] = [

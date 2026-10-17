@@ -5,7 +5,7 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
   await page.goto('/workflows/example')
-  await page.locator('#api-btn').click()
+  await page.locator('#more-btn').click(); await page.locator('#api-btn').click()
   await page.locator('#api-token-name').fill('e2e'); await page.locator('#api-create').click()
   const token = await page.locator('#api-token-value').inputValue()
   expect(token).toMatch(/^wft_/)
@@ -20,7 +20,7 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   await page.getByRole('tab', { name: 'Lịch sử' }).click()
   await expect(page.locator('[data-testid=history-row]').first().locator('[data-testid=history-source]')).toHaveText('API')
   // revoked tokens are rejected
-  await page.locator('#api-btn').click()
+  await page.locator('#more-btn').click(); await page.locator('#api-btn').click()
   await page.locator('[data-testid=api-token-row]', { hasText: 'e2e' }).first().getByRole('button', { name: /Thu hồi/ }).click()
   await confirmDelete(page, 'e2e')
   const r2 = await page.request.post('/api/hooks/workflows/example/runs', { headers: { Authorization: `Bearer ${token}` }, data: {} })

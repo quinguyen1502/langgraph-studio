@@ -153,7 +153,10 @@
     "mcpArgsHint": "Văn bản, hoặc {{field}} để truyền giá trị state giữ nguyên kiểu.",
     "mcpManage": "Quản lý máy chủ MCP",
     "viewOnly": "Chỉ xem",
-    "nameLabel": "Tên workflow"
+    "nameLabel": "Tên workflow",
+    "more": "Thao tác khác",
+    "moreTip": "Thao tác khác (bố cục, phiên bản, chia sẻ, API…)",
+    "deleteWorkflow": "Xoá workflow"
   },
   "nodes": {
     "start": "Điểm bắt đầu",

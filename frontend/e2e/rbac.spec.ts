@@ -15,7 +15,7 @@ test('share as viewer, read-only editor, admin changes the role and deactivates'
   const auth = await login(page); const name = `Shared ${Date.now()}`
   const wid = (await (await page.request.post('/api/workflows', { headers: auth, data: WF(name) })).json()).data.id
   await page.goto(`/workflows/${wid}`)
-  await page.locator('#share-btn').click(); await page.locator('#share-email').fill(email); await page.locator('#share-add').click()
+  await page.locator('#more-btn').click(); await page.locator('#share-btn').click(); await page.locator('#share-email').fill(email); await page.locator('#share-add').click()
   await expect(page.locator('#share-list')).toContainText(email); await expect(page.locator('#share-list')).toContainText('Chủ sở hữu')
   await page.keyboard.press('Escape')
 

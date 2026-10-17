@@ -22,7 +22,7 @@ test('save as template strips secrets; export, import, use and delete', async ({
   wf.nodes.splice(2, 0, N('call', 'tool', 430, { mode: 'http', url: 'https://x.example', credential_id: 'cred-xyz', headers: { Authorization: 'Bearer s3cret' }, output_field: 'answer' }))
   const wid = await newWorkflow(page, H, wf)
   await page.goto(`/workflows/${wid}`); await expect(page.locator('.react-flow__node')).toHaveCount(4)
-  await page.locator('#save-template-btn').click(); await expect(page.locator('#tpl-unsaved')).toHaveCount(0)
+  await page.locator('#more-btn').click(); await page.locator('#save-template-btn').click(); await expect(page.locator('#tpl-unsaved')).toHaveCount(0)
   await page.locator('#tpl-name').fill(name); await page.locator('#tpl-desc').fill('From e2e')
   await expect(page.locator('#tpl-scope')).toBeVisible()  // admin may share org-wide
   await page.locator('#tpl-save').click(); await expect(page.locator('#tpl-saved')).toBeVisible()

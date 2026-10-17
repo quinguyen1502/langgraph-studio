@@ -31,3 +31,15 @@ describe('helpers', () => {
     expect(freeSpot({ x: 500, y: 300 }, [{ x: 400, y: 265 }, { x: 440, y: 305 }])).toEqual({ x: 520, y: 385 })
   })
 })
+
+describe('menuSections / openPalette', () => {
+  it('lists only menu commands, in section order', async () => {
+    const { menuSections } = await import('../palette')
+    const s = menuSections([C('del', 'actions', { menu: 'danger' }), C('x', 'actions'), C('share', 'actions', { menu: 'workflow' }), C('tidy', 'actions', { menu: 'arrange' })])
+    expect(s.map(([k, v]) => [k, v.map(c => c.id)])).toEqual([['arrange', ['tidy']], ['workflow', ['share']], ['danger', ['del']]])
+  })
+  it('notifies palette openers until unsubscribed', async () => {
+    const { onPaletteRequest, openPalette } = await import('../palette')
+    let n = 0; const off = onPaletteRequest(() => n++); openPalette(); off(); openPalette(); expect(n).toBe(1)
+  })
+})

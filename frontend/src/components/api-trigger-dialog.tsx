@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DeliveriesList } from '@/components/deliveries-list'
 import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 
@@ -21,8 +22,9 @@ const when = (s: number | null) => s ? new Date(s * 1000).toLocaleString(i18n.re
 const Tip = ({ tip, children }: { tip: string; children: React.ReactElement }) => <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{tip}</TooltipContent></Tooltip>
 
 /** Per-workflow API tokens + how to call the trigger endpoint (TASK-0007). */
-export function ApiTriggerDialog({ wid }: { wid?: string }) {
-  const { t } = useTranslation(); const [open, setOpen] = useState(false)
+export function ApiTriggerDialog(props: { wid?: string; open?: boolean; onOpenChange?: (v: boolean) => void }) {
+  const { wid } = props
+  const { t } = useTranslation(); const [open, setOpen, controlled] = useOpenState(props.open, props.onOpenChange)
   const [items, setItems] = useState<Token[]>([]); const [name, setName] = useState(''); const [created, setCreated] = useState<Token | null>(null)
   const [err, setErr] = useState(''); const [copied, setCopied] = useState(false); const [showRevoked, setShowRevoked] = useState(false)
   const load = () => wid && api<Token[]>(`/api/workflows/${wid}/tokens`).then(setItems).catch(e => setErr(e.message))
@@ -45,7 +47,7 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
   const curl = `curl -X POST ${url} \\\n  -H "Authorization: Bearer ${created?.token ?? '<token>'}" -H "Content-Type: application/json" \\\n  -d '{"input": {"message": "hi"}, "mode": "sync"}'`
   const copy = async (s: string) => { try { await navigator.clipboard.writeText(s); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* clipboard blocked */ } }
   return <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button size="sm" variant="outline" id="api-btn" disabled={!wid}><Webhook />{t('api.button')}</Button></DialogTrigger>
+    {!controlled && <DialogTrigger asChild><Button size="sm" variant="outline" id="api-btn" disabled={!wid}><Webhook />{t('api.button')}</Button></DialogTrigger>}
     <DialogContent className="sm:max-w-2xl max-h-[90dvh] flex flex-col overflow-hidden" id="api-dialog">
       <DialogHeader className="shrink-0"><DialogTitle>{t('api.title')}</DialogTitle><DialogDescription>{t('api.desc')}</DialogDescription></DialogHeader>
       <Tabs defaultValue="tokens" className="flex min-h-0 flex-1 flex-col">

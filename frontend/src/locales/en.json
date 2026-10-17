@@ -153,7 +153,10 @@
     "mcpArgsHint": "Text, or {{field}} to pass a state value with its type.",
     "mcpManage": "Manage MCP servers",
     "viewOnly": "View only",
-    "nameLabel": "Workflow name"
+    "nameLabel": "Workflow name",
+    "more": "More actions",
+    "moreTip": "More actions (layout, versions, share, API…)",
+    "deleteWorkflow": "Delete workflow"
   },
   "nodes": {
     "start": "Start point",

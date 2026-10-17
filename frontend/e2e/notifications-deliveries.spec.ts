@@ -43,7 +43,7 @@ test('webhook deliveries: retried with backoff, logged, redelivered; secret rota
   await new Promise<void>(r => srv.listen(0, '127.0.0.1', r)); const port = (srv.address() as AddressInfo).port
   try {
     const H = await login(page)
-    await page.goto('/workflows/example'); await page.locator('#api-btn').click()
+    await page.goto('/workflows/example'); await page.locator('#more-btn').click(); await page.locator('#api-btn').click()
     await page.locator('#api-token-name').fill('deliveries'); await page.locator('#api-create').click()
     const token = await page.locator('#api-token-value').inputValue(); const first = await page.locator('#api-signing-secret').inputValue()
     await page.request.post('/api/hooks/workflows/example/runs', { headers: { Authorization: `Bearer ${token}` }, data: { input: { message: 'hi' }, callback_url: `http://127.0.0.1:${port}/cb` } })

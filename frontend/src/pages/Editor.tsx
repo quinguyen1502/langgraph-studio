@@ -4,9 +4,9 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus } from 'lucide-react'
-import dagre from '@dagrejs/dagre'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ChevronDown, ArrowRight, ArrowDown, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -25,6 +25,7 @@ import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
+import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
 import { ArrowLeft, Square, AlertTriangle } from 'lucide-react'
@@ -73,12 +74,6 @@ const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
 const canvasId = (nid: string) => nid.split('/')[0]
 
-function autoLayout(nodes: Node[], edges: Edge[]): Node[] {
-  const g = new dagre.graphlib.Graph(); g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 110 }); g.setDefaultEdgeLabel(() => ({}))
-  nodes.forEach(n => g.setNode(n.id, { width: 200, height: 70 })); edges.forEach(e => g.setEdge(e.source, e.target))
-  dagre.layout(g)
-  return nodes.map(n => { const p = g.node(n.id); return { ...n, position: { x: p.x - 100, y: p.y - 35 } } })
-}
 const styleEdges = (es: any[]): Edge[] => es.map(e => e.conditional ? { ...e, animated: true, style: { strokeDasharray: '6 4' }, labelBgPadding: [6, 3], labelBgBorderRadius: 4 } : e)
 function defaultInput(state: Field[]) {
   return JSON.stringify(Object.fromEntries(state.map(f => [f.name, f.type === 'list' ? [{ role: 'user', content: i18n.t('samples.greeting') }] : f.type === 'number' || f.type === 'integer' ? 0 : f.type === 'boolean' ? false : f.type === 'object' ? {} : 'hello'])), null, 2)
@@ -178,7 +173,7 @@ function Studio() {
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
     setSource(wf.source || null)
     if (wf.access) { setAccess(wf.access); setOwnerEmail(wf.mine ? null : wf.owner_email ?? null) }
-    setNodes(wf.needs_layout ? autoLayout(wf.nodes, wf.edges) : wf.nodes); setEdges(styleEdges(wf.edges))
+    setNodes(wf.needs_layout ? layoutGraph(wf.nodes, wf.edges, 'LR', false) : wf.nodes); setEdges(styleEdges(wf.edges))
     if (wf.source) setInput(defaultInput(wf.state || []))
   }
   const loadHistory = (id?: string) => id ? api<any[]>(`/api/workflows/${id}/runs`).then(hs => { setHistory(hs); return hs }) : undefined
@@ -256,6 +251,13 @@ function Studio() {
     if (cut) { removeIds(c.nodes.map(n => n.id)); note(t('clipboard.cut', { count: c.nodes.length })) } else note(t('clipboard.copied', { count: c.nodes.length }))
   }
   const editable = edit && !source
+  // auto-layout (TASK-0027, DEC-0030): one setNodes = one undo step; direction remembered per browser
+  const [layoutDir, setLayoutDir] = useState<Direction>(() => (localStorage.getItem('lgs.layoutDir') as Direction) === 'TB' ? 'TB' : 'LR')
+  const tidy = (dir: Direction = layoutDir) => {
+    if (!editable) return false
+    if (dir !== layoutDir) { setLayoutDir(dir); localStorage.setItem('lgs.layoutDir', dir) }
+    setNodes(ns => layoutGraph(ns, edges, dir)); window.setTimeout(() => rf.fitView({ duration: 250 }), 30)
+  }
     // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
   useShortcuts({
@@ -269,6 +271,7 @@ function Studio() {
     zoomOut: () => { rf.zoomOut({ duration: 150 }) },
     escape: () => { setSel(null); setNodes(ns => ns.map(n => n.selected ? { ...n, selected: false } : n)); setEdges(es => es.map(e => e.selected ? { ...e, selected: false } : e)); return false },
     cheatsheet: () => setCheat(true),
+    layout: () => tidy(),
     copy: () => copy(),
     cut: () => editable ? copy(true) : false,
     paste: () => { if (!editable) return false; const c = clipStore.read() ?? clipMem.current; if (!c) return false; insert(c, ++pasteN.current) },
@@ -331,6 +334,13 @@ function Studio() {
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
         <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
+      {editable && <div className="flex items-center" role="group" aria-label={t('layout.group')}>
+        <Tip tip={t('layout.tip')}><Button variant="outline" size="icon-sm" id="layout-btn" className="rounded-r-none" aria-label={t('layout.button')} onClick={() => tidy()}><Network className={layoutDir === 'TB' ? 'rotate-90' : undefined} /></Button></Tip>
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" id="layout-dir" className="h-7 rounded-l-none border-l-0 px-1" aria-label={t('layout.direction')}><ChevronDown /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem id="layout-lr" onSelect={() => tidy('LR')}><ArrowRight />{t('layout.lr')}{layoutDir === 'LR' && <Check className="ml-auto" />}</DropdownMenuItem>
+            <DropdownMenuItem id="layout-tb" onSelect={() => tidy('TB')}><ArrowDown />{t('layout.tb')}{layoutDir === 'TB' && <Check className="ml-auto" />}</DropdownMenuItem>
+          </DropdownMenuContent></DropdownMenu></div>}
       <Tip tip={t('shortcuts.button')}><Button variant="ghost" size="icon" id="shortcuts-btn" aria-label={t('shortcuts.button')} onClick={() => setCheat(true)}><Keyboard /></Button></Tip>
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       <Dialog>

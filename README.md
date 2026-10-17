@@ -132,6 +132,10 @@ Mẫu không bao giờ chứa credential, knowledge base, MCP server, kênh phê
 các node được chọn đi kèm; node dán ra có id mới và được chọn sẵn; mỗi lần dán là một bước hoàn tác. Có thể dán sang workflow khác trong cùng
 trình duyệt (vùng nhớ `localStorage`, định dạng `langgraph-studio/nodes` v1). Credential không thuộc quyền dùng của bạn sẽ bị bỏ trống khi dán.
 
+### Tự sắp xếp bố cục (TASK-0027)
+Nút **Sắp xếp** (hoặc `Shift+L`) xếp lại toàn bộ node theo lớp bằng dagre, dùng kích thước thật của từng node, không chồng lấn; mũi tên bên cạnh
+chọn *Trái sang phải* / *Trên xuống dưới* (trình duyệt ghi nhớ). Góc trên-trái của đồ thị giữ nguyên; một lần sắp xếp là một bước hoàn tác.
+
 ## Định dạng workflow
 ```json
 {"name": "...", "state": [{"name":"message","type":"string"}],

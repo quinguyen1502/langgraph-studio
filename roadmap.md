@@ -52,16 +52,16 @@ Status for all Phase 2–4 tasks: backlog.
 
 ## Phase 5 — Editor UX
 
-Added on 2026-10-17 at the owner's request. Status: in review (stacked draft PRs into develop, PLAN-0001).
+Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged into develop on 2026-10-17).
 
-- TASK-0023 Editor hotkeys and shortcut cheatsheet (REQ-0013) — review, DEC-0026
-- TASK-0024 Editor undo and redo history (REQ-0014), after TASK-0023 — review, DEC-0027
-- TASK-0025 Workflow template library: starter templates, save as template, import/export (REQ-0015) — review, DEC-0028
-- TASK-0026 Copy, paste and duplicate nodes (REQ-0016) — review, DEC-0029
-- TASK-0027 Auto-layout for the workflow canvas (REQ-0017) — review, DEC-0030
-- TASK-0028 Command palette (REQ-0018) — review, DEC-0031
+- TASK-0023 Editor hotkeys and shortcut cheatsheet (REQ-0013) — done, DEC-0026
+- TASK-0024 Editor undo and redo history (REQ-0014), after TASK-0023 — done, DEC-0027
+- TASK-0025 Workflow template library: starter templates, save as template, import/export (REQ-0015) — done, DEC-0028
+- TASK-0026 Copy, paste and duplicate nodes (REQ-0016) — done, DEC-0029
+- TASK-0027 Auto-layout for the workflow canvas (REQ-0017) — done, DEC-0030
+- TASK-0028 Command palette (REQ-0018) — done, DEC-0031
 
 
 ## LLM providers
 
-- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032): **review** — draft PR into `develop`.
+- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032): **done** — PR #32 merged into `develop` (migrations 0024_credential_headers, 0025_kb_dims).

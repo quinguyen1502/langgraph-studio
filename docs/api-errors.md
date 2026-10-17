@@ -90,5 +90,18 @@
 | `NOTIFICATION_NOT_FOUND` | 404 | Notification not found |
 | `DELIVERY_NOT_FOUND` | 404 | Webhook delivery not found |
 | `NOTIFICATION_PREFS_INVALID` | 422 | Notification preferences must be booleans: in_app, email |
+| `CHANNEL_KIND_UNSUPPORTED` | 400 | Unsupported approval channel: {kind} |
+| `CHANNEL_CONFIG_INVALID` | 400 | Channel setting {field} is missing or invalid |
+| `CHANNEL_NOT_FOUND` | 404 | Approval channel not configured |
+| `CHANNEL_PUBLIC_URL_REQUIRED` | 400 | Set STUDIO_PUBLIC_URL to the public https URL of the studio first |
+| `CHANNEL_SIGNATURE_INVALID` | 401 | Invalid channel request signature |
+| `CHANNEL_API_FAILED` | 502 | The {kind} API call failed: {reason} |
+| `IDENTITY_INVALID` | 400 | Invalid {kind} user id |
+| `IDENTITY_TAKEN` | 409 | This {kind} account is already linked to another user |
+| `APPROVAL_TOKEN_INVALID` | 400 | Invalid approval button |
+| `APPROVAL_TOKEN_EXPIRED` | 410 | This approval request has expired |
+| `APPROVAL_ALREADY_DECIDED` | 409 | This request was already answered |
+| `APPROVAL_IDENTITY_UNKNOWN` | 403 | Link your {kind} account in LangGraph Studio (Approval channels) to approve |
+| `APPROVAL_FORBIDDEN` | 403 | You are not allowed to approve this run |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

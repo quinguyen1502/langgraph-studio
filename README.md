@@ -328,3 +328,43 @@ def verify(secret: str, header: str, body: bytes, tolerance=300) -> bool:
 - **Cài đặt thông báo** (trong menu chuông): bật/tắt chuông trong ứng dụng và e-mail cho riêng bạn. API: `GET/PUT /api/notifications/preferences`.
 
 Chi tiết và các giới hạn còn lại: DEC-0018.
+
+## Phê duyệt qua Slack / Telegram (TASK-0022)
+
+Node **Human** có thể gửi yêu cầu phê duyệt (nút **Approve / Reject**) sang Slack hoặc Telegram. Người bấm nút được ánh xạ sang
+user của studio; chỉ **chủ run** hoặc **người duyệt được liệt kê** trên node mới phê duyệt được. Token trong nút được ký (HMAC),
+dùng **một lần** và **hết hạn** (`STUDIO_APPROVAL_TTL`, mặc định 86400 s). Sau khi quyết định, tin nhắn gốc được sửa (bỏ nút,
+ghi ai duyệt lúc nào). Mọi yêu cầu / quyết định / lần bấm bị từ chối nằm trong **Nhật ký** (menu người dùng → Kênh phê duyệt).
+Không cấu hình kênh thì không có gì thay đổi (no-op). Thiết kế: DEC-0019.
+
+**Yêu cầu chung: URL công khai.** Slack và Telegram gọi về studio qua HTTPS công khai. Đặt `STUDIO_PUBLIC_URL=https://studio.example.com`
+(cũng dùng cho link trong tin nhắn). Ở máy dev có thể dùng tunnel (`cloudflared tunnel --url http://localhost:8090` hoặc `ngrok http 8090`).
+Endpoint callback: `POST {STUDIO_PUBLIC_URL}/api/approvals/callback/{slack|telegram}/{channel_id}` (hiện trong dialog, có nút copy).
+
+### Tạo Slack app
+1. https://api.slack.com/apps → **Create New App** → *From scratch*, chọn workspace.
+2. **OAuth & Permissions** → Bot Token Scopes: `chat:write` (thêm `chat:write.public` nếu muốn gửi vào kênh public mà bot chưa được mời) → **Install to Workspace** → copy **Bot User OAuth Token** (`xoxb-…`).
+3. **Basic Information** → copy **Signing Secret**.
+4. Trong studio: menu người dùng → **Kênh phê duyệt** → Slack → dán bot token + signing secret → **Lưu**. Copy **URL callback**.
+5. Slack app → **Interactivity & Shortcuts** → bật, **Request URL** = URL callback → Save.
+6. Mời bot vào kênh (`/invite @tên-bot`) và lấy **Channel ID** (chi tiết kênh → cuối trang, dạng `C0123ABCD`).
+7. Mỗi người duyệt: **Tài khoản của tôi** → Slack member ID (hồ sơ → ⋮ → *Copy member ID*).
+
+Callback được xác thực bằng `X-Slack-Signature` (HMAC-SHA256 của `v0:{timestamp}:{body}` với signing secret), timestamp lệch tối đa 5 phút.
+
+### Tạo Telegram bot
+1. Chat với **@BotFather** → `/newbot` → copy token (`123456:AA…`).
+2. Studio → **Kênh phê duyệt** → Telegram → dán token (webhook secret để trống thì studio tự sinh) → **Lưu** → **Đăng ký webhook**
+   (gọi `setWebhook` với URL callback + `secret_token`; cần `STUDIO_PUBLIC_URL` dạng https).
+3. Thêm bot vào group (hoặc nhắn riêng cho bot) và lấy **chat ID** (group thường dạng `-100…`; ví dụ gửi một tin vào group rồi mở
+   `https://api.telegram.org/bot<token>/getUpdates` *trước khi* đăng ký webhook, hoặc dùng @RawDataBot).
+4. Mỗi người duyệt: **Tài khoản của tôi** → Telegram user ID (nhắn @userinfobot).
+
+Webhook được xác thực bằng header `X-Telegram-Bot-Api-Secret-Token`.
+
+### Cấu hình trên node Human
+Chọn node → **Kênh phê duyệt**: *Chỉ trong Studio* (mặc định) / Slack / Telegram, **Channel ID / chat ID**, **Người duyệt** (e-mail của
+user studio, phân tách bằng dấu phẩy). Trả lời ngay trong studio vẫn được; khi đó nút trong chat bị vô hiệu và tin nhắn ghi
+"Answered in LangGraph Studio". Run bị huỷ / hết hạn cũng đóng yêu cầu.
+
+Biến môi trường: `STUDIO_PUBLIC_URL`, `STUDIO_APPROVAL_TTL`, `SLACK_API_URL` / `TELEGRAM_API_URL` (chỉ để test với API giả).

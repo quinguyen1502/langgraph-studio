@@ -245,7 +245,20 @@
     "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây.",
     "NOTIFICATION_NOT_FOUND": "Không tìm thấy thông báo.",
     "DELIVERY_NOT_FOUND": "Không tìm thấy lần gửi webhook.",
-    "NOTIFICATION_PREFS_INVALID": "Cài đặt thông báo không hợp lệ."
+    "NOTIFICATION_PREFS_INVALID": "Cài đặt thông báo không hợp lệ.",
+    "CHANNEL_KIND_UNSUPPORTED": "Kênh phê duyệt không được hỗ trợ: {{kind}}.",
+    "CHANNEL_CONFIG_INVALID": "Thiết lập kênh {{field}} bị thiếu hoặc không hợp lệ.",
+    "CHANNEL_NOT_FOUND": "Chưa cấu hình kênh phê duyệt.",
+    "CHANNEL_PUBLIC_URL_REQUIRED": "Hãy đặt STUDIO_PUBLIC_URL thành URL https công khai của studio trước.",
+    "CHANNEL_SIGNATURE_INVALID": "Chữ ký yêu cầu từ kênh không hợp lệ.",
+    "CHANNEL_API_FAILED": "Gọi API {{kind}} thất bại: {{reason}}.",
+    "IDENTITY_INVALID": "ID người dùng {{kind}} không hợp lệ.",
+    "IDENTITY_TAKEN": "Tài khoản {{kind}} này đã được liên kết với người dùng khác.",
+    "APPROVAL_TOKEN_INVALID": "Nút phê duyệt không hợp lệ.",
+    "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn.",
+    "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết tài khoản {{kind}} trong LangGraph Studio (Kênh phê duyệt) để phê duyệt.",
+    "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này."
   },
   "lang": {
     "en": "English",
@@ -374,5 +387,86 @@
     "email": "E-mail",
     "emailHelp": "Gửi e-mail tới địa chỉ tài khoản của bạn.",
     "emailNotConfigured": "Máy chủ chưa cấu hình e-mail (SMTP_HOST), nên hiện chưa gửi e-mail nào."
+  },
+  "approvals": {
+    "open": "Kênh phê duyệt",
+    "title": "Kênh phê duyệt",
+    "description": "Phê duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hóa.",
+    "tab": {
+      "channels": "Kênh",
+      "accounts": "Tài khoản của tôi",
+      "audit": "Nhật ký"
+    },
+    "kind": {
+      "slack": "Slack",
+      "telegram": "Telegram"
+    },
+    "notConnected": "chưa kết nối",
+    "optional": "không bắt buộc",
+    "keepSecret": "Đã lưu, nhập giá trị mới để thay",
+    "help": {
+      "slack": "Tạo một Slack app có bot token (chat:write) và bật Interactivity với URL callback bên dưới.",
+      "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai)."
+    },
+    "field": {
+      "bot_token": "Bot token",
+      "signing_secret": "Signing secret",
+      "webhook_secret": "Webhook secret"
+    },
+    "callbackUrl": "URL callback",
+    "copy": "Sao chép",
+    "publicUrlMissing": "Chưa đặt STUDIO_PUBLIC_URL: nền tảng phải truy cập được máy chủ này qua địa chỉ https công khai.",
+    "save": "Lưu",
+    "saved": "Đã lưu",
+    "remove": "Gỡ",
+    "removed": "Đã gỡ",
+    "register": "Đăng ký webhook",
+    "registered": "Đã đăng ký webhook",
+    "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
+    "identity": {
+      "slack": "Slack member ID",
+      "telegram": "Telegram user ID"
+    },
+    "identityPh": {
+      "slack": "U0123ABCD",
+      "telegram": "123456789"
+    },
+    "identityHow": {
+      "slack": "Slack: hồ sơ của bạn → ⋮ → Copy member ID.",
+      "telegram": "Telegram: nhắn @userinfobot để xem ID dạng số."
+    },
+    "auditEmpty": "Chưa có yêu cầu phê duyệt nào.",
+    "col": {
+      "when": "Thời điểm",
+      "action": "Quyết định",
+      "who": "Ai",
+      "run": "Lượt chạy"
+    },
+    "action": {
+      "requested": "Đã gửi",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "denied": "Bị từ chối quyền",
+      "superseded": "Đã trả lời nơi khác",
+      "expired": "Hết hạn",
+      "send_failed": "Gửi thất bại",
+      "not_configured": "Chưa cấu hình"
+    },
+    "node": {
+      "title": "Kênh phê duyệt",
+      "channel": "Gửi yêu cầu phê duyệt tới",
+      "studioOnly": "Chỉ trong Studio",
+      "connectFirst": "Kênh này chưa được kết nối. Mở Kênh phê duyệt trong menu người dùng.",
+      "target": {
+        "slack": "Slack channel ID",
+        "telegram": "Telegram chat ID"
+      },
+      "targetPh": {
+        "slack": "C0123ABCD",
+        "telegram": "-1001234567890"
+      },
+      "approvers": "Người duyệt (e-mail)",
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ cần liên kết tài khoản trong Tài khoản của tôi."
+    }
   }
 }

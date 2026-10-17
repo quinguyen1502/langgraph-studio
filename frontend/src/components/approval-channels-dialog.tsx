@@ -1,0 +1,113 @@
+import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AlertCircle, Check, Copy, Save, Trash2, Webhook } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { api } from '@/lib/api'
+import i18n, { errorText } from '@/lib/i18n'
+
+export type ChannelKind = { kind: string; fields: string[]; optional: string[]; channel: { id: string; hint: string; callback_url: string | null; callback_path: string } | null }
+export type Channels = { kinds: ChannelKind[]; public_url: string | null }
+type Audit = { id: string; at: number; kind: string; action: string; code: string | null; run_id: string | null; workflow_name: string | null; actor: string | null; external_id: string | null }
+
+const ACTION_VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = { approved: 'default', rejected: 'destructive', denied: 'outline', send_failed: 'destructive' }
+
+function ChannelCard({ k, publicUrl, onChange }: { k: ChannelKind; publicUrl: string | null; onChange: () => void }) {
+  const { t } = useTranslation()
+  const [vals, setVals] = useState<Record<string, string>>({}); const [err, setErr] = useState(''); const [note, setNote] = useState(''); const [copied, setCopied] = useState(false)
+  const run = async (fn: () => Promise<unknown>, ok: string) => { setErr(''); setNote(''); try { await fn(); setNote(ok); setVals({}); onChange() } catch (e: any) { setErr(e.message) } }
+  const url = k.channel ? (k.channel.callback_url || location.origin + k.channel.callback_path) : null
+  return <div className="space-y-3 rounded-lg border p-4" data-testid={`channel-${k.kind}`}>
+    <div className="flex items-center gap-2">
+      <span className="font-medium">{t(`approvals.kind.${k.kind}`)}</span>
+      {k.channel ? <Badge variant="secondary" className="font-mono">{k.channel.hint}</Badge> : <Badge variant="outline">{t('approvals.notConnected')}</Badge>}
+    </div>
+    <p className="text-xs text-muted-foreground">{t(`approvals.help.${k.kind}`)}</p>
+    <div className="grid gap-3 sm:grid-cols-2">
+      {k.fields.map(f => <div key={f} className="space-y-1.5">
+        <Label htmlFor={`ch-${k.kind}-${f}`}>{t(`approvals.field.${f}`)}{k.optional.includes(f) && <span className="text-muted-foreground"> · {t('approvals.optional')}</span>}</Label>
+        <Input id={`ch-${k.kind}-${f}`} type="password" autoComplete="off" value={vals[f] || ''} placeholder={k.channel ? t('approvals.keepSecret') : ''}
+          onChange={e => setVals(v => ({ ...v, [f]: e.target.value }))} /></div>)}
+    </div>
+    {url && <div className="space-y-1.5"><Label>{t('approvals.callbackUrl')}</Label>
+      <div className="flex gap-2"><Input readOnly value={url} className="font-mono text-xs" id={`ch-${k.kind}-url`} />
+        <Button variant="outline" size="icon" aria-label={t('approvals.copy')} onClick={() => { navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? <Check /> : <Copy />}</Button></div>
+      {!publicUrl && <p className="text-xs text-muted-foreground">{t('approvals.publicUrlMissing')}</p>}</div>}
+    {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+    {note && <Alert><Check /><AlertDescription>{note}</AlertDescription></Alert>}
+    <div className="flex flex-wrap justify-end gap-2">
+      {k.channel && <Button variant="ghost" size="sm" onClick={() => run(() => api(`/api/approvals/channels/${k.kind}`, { method: 'DELETE' }), t('approvals.removed'))}><Trash2 />{t('approvals.remove')}</Button>}
+      {k.channel && k.kind === 'telegram' && <Button variant="outline" size="sm" id="ch-telegram-register"
+        onClick={() => run(() => api(`/api/approvals/channels/${k.kind}/register-webhook`, { method: 'POST' }), t('approvals.registered'))}><Webhook />{t('approvals.register')}</Button>}
+      <Button size="sm" id={`ch-${k.kind}-save`} disabled={!k.fields.some(f => !k.optional.includes(f) && vals[f]?.trim())}
+        onClick={() => run(() => api(`/api/approvals/channels/${k.kind}`, { method: 'PUT', json: vals }), t('approvals.saved'))}><Save />{t('approvals.save')}</Button>
+    </div>
+  </div>
+}
+
+function Identities() {
+  const { t } = useTranslation()
+  const [ids, setIds] = useState<Record<string, string | null> | null>(null); const [err, setErr] = useState(''); const [saved, setSaved] = useState(false)
+  useEffect(() => { api<Record<string, string | null>>('/api/approvals/identities').then(setIds).catch(e => setErr(e.message)) }, [])
+  const save = async () => {
+    setErr(''); setSaved(false)
+    try { setIds(await api('/api/approvals/identities', { method: 'PUT', json: Object.fromEntries(Object.entries(ids || {}).map(([k, v]) => [k, v || ''])) })); setSaved(true) }
+    catch (e: any) { setErr(e.message) }
+  }
+  return <div className="space-y-3">
+    <p className="text-sm text-muted-foreground">{t('approvals.identitiesHelp')}</p>
+    {ids && Object.keys(ids).map(k => <div key={k} className="space-y-1.5">
+      <Label htmlFor={`id-${k}`}>{t(`approvals.identity.${k}`)}</Label>
+      <Input id={`id-${k}`} className="font-mono" value={ids[k] || ''} placeholder={t(`approvals.identityPh.${k}`)} onChange={e => { setSaved(false); setIds(v => ({ ...v, [k]: e.target.value })) }} />
+      <p className="text-xs text-muted-foreground">{t(`approvals.identityHow.${k}`)}</p></div>)}
+    {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+    <div className="flex items-center justify-end gap-2">{saved && <span className="text-xs text-muted-foreground" id="id-saved">{t('approvals.saved')}</span>}
+      <Button size="sm" id="id-save" onClick={save} disabled={!ids}><Save />{t('approvals.save')}</Button></div>
+  </div>
+}
+
+function AuditLog() {
+  const { t } = useTranslation(); const [items, setItems] = useState<Audit[] | null>(null); const [err, setErr] = useState('')
+  useEffect(() => { api<Audit[]>('/api/approvals/audit').then(setItems).catch(e => setErr(e.message)) }, [])
+  if (err) return <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>
+  if (items && !items.length) return <p className="text-sm text-muted-foreground" id="audit-empty">{t('approvals.auditEmpty')}</p>
+  return <Table id="approval-audit">
+    <TableHeader><TableRow><TableHead>{t('approvals.col.when')}</TableHead><TableHead>{t('approvals.col.action')}</TableHead><TableHead>{t('approvals.col.who')}</TableHead><TableHead>{t('approvals.col.run')}</TableHead></TableRow></TableHeader>
+    <TableBody>{(items || []).map(e => <TableRow key={e.id} data-testid="audit-row">
+      <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{new Date(e.at * 1000).toLocaleString(i18n.resolvedLanguage)}</TableCell>
+      <TableCell className="whitespace-normal"><div className="flex max-w-56 flex-col items-start gap-1"><Badge variant={ACTION_VARIANT[e.action] || 'secondary'}>{t(`approvals.action.${e.action}`)}</Badge>
+        {e.code && <span className="text-xs text-muted-foreground">{errorText({ code: e.code, details: { kind: t(`approvals.kind.${e.kind}`) } })}</span>}</div></TableCell>
+      <TableCell className="whitespace-normal text-xs"><div className="max-w-40 truncate">{e.actor || '—'}</div><div className="text-muted-foreground">{t(`approvals.kind.${e.kind}`)}{e.external_id && <span className="font-mono"> · {e.external_id}</span>}</div></TableCell>
+      <TableCell className="text-xs"><div className="max-w-40 truncate">{e.workflow_name || '—'}</div><div className="font-mono text-muted-foreground">{e.run_id}</div></TableCell>
+    </TableRow>)}</TableBody>
+  </Table>
+}
+
+/** Approval through Slack / Telegram (TASK-0022): channel connections, my channel accounts, audit log. */
+export function ApprovalChannelsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const { t } = useTranslation(); const [data, setData] = useState<Channels | null>(null); const [err, setErr] = useState('')
+  const load = () => api<Channels>('/api/approvals/channels').then(d => { setData(d); setErr('') }).catch(e => setErr(e.message))
+  useEffect(() => { if (open) load() }, [open])
+  return <Dialog open={open} onOpenChange={onOpenChange}>
+    <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden sm:max-w-3xl" id="approvals-dialog">
+      <DialogHeader className="shrink-0"><DialogTitle>{t('approvals.title')}</DialogTitle><DialogDescription>{t('approvals.description')}</DialogDescription></DialogHeader>
+      <Tabs defaultValue="channels" className="flex min-h-0 flex-1 flex-col">
+        <TabsList className="shrink-0"><TabsTrigger value="channels" id="approvals-tab-channels">{t('approvals.tab.channels')}</TabsTrigger>
+          <TabsTrigger value="accounts" id="approvals-tab-accounts">{t('approvals.tab.accounts')}</TabsTrigger>
+          <TabsTrigger value="audit" id="approvals-tab-audit">{t('approvals.tab.audit')}</TabsTrigger></TabsList>
+        <div className="-mx-1 min-h-0 flex-1 space-y-4 overflow-y-auto px-1">
+          {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+          <TabsContent value="channels" className="space-y-4">{data?.kinds.map(k => <ChannelCard key={k.kind} k={k} publicUrl={data.public_url} onChange={load} />)}</TabsContent>
+          <TabsContent value="accounts"><Identities /></TabsContent>
+          <TabsContent value="audit"><AuditLog /></TabsContent>
+        </div>
+      </Tabs>
+    </DialogContent>
+  </Dialog>
+}

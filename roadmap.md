@@ -36,6 +36,7 @@ Status for all Phase 2–4 tasks: backlog.
 - TASK-0019 Phase-2 hardening (open issues of TASK-0006/7/8/9/10): **in review** (draft PR into `develop`, stacked on TASK-0008)
 - TASK-0020 Deferred hardening (notifications, webhook delivery log/retry/rotation, checkpoint recovery, lease reaper, live spans + OTel metrics): **in review** (draft PR into `develop`, stacked on TASK-0019)
 - TASK-0021 Effectively-once side effects (idempotency keys, node ledger, fencing), fan-out/imported checkpoints, lost-span export, live notifications + preferences: **in review** (draft PR into `develop`, stacked on TASK-0020)
+- TASK-0022 Human-in-the-loop approval through external channels (Slack, Telegram; adapter interface for WhatsApp/Teams/e-mail later): **in review** (draft PR into `develop`, stacked on TASK-0021)
 
 ## Phase 3 — Advanced
 

@@ -6,7 +6,8 @@ from ..core import config
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository
+from ..services.approval_service import ApprovalService
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -76,7 +77,10 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db))
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service())
+
+def approval_service() -> ApprovalService:
+    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), get_job_queue().enqueue)
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

@@ -5,7 +5,7 @@ Key source (first match):
   2. key file STUDIO_SECRET_KEY_FILE (default ~/.langgraph-studio/secret.key), created with 0600 on first use.
 """
 from __future__ import annotations
-import os
+import hashlib, hmac, os
 from typing import Optional
 from cryptography.fernet import Fernet, InvalidToken
 from .errors import AppError
@@ -37,6 +37,11 @@ def encrypt(secret: str) -> str: return fernet().encrypt(secret.encode()).decode
 def decrypt(token: str) -> str:
     try: return fernet().decrypt(token.encode()).decode()
     except InvalidToken: raise AppError("CREDENTIAL_DECRYPT_FAILED")
+
+
+def derive_key(purpose: str) -> bytes:
+    """A separate HMAC key per purpose (e.g. signing approval tokens), derived from the same secret key."""
+    return hmac.new(_key(), b"langgraph-studio:" + purpose.encode(), hashlib.sha256).digest()
 
 
 def mask(secret: str) -> str: return ("•" * 4) + secret[-4:] if len(secret) >= 8 else "•" * 4

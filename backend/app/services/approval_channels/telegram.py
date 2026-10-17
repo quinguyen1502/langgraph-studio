@@ -34,9 +34,9 @@ class TelegramChannel(ApprovalChannel):
         return {"registered": True, "manual": False}
 
     def send_request(self, secrets, target, msg: ApprovalMessage):
-        text = "\n".join([msg.title, *msg.lines] + ([f"Open: {msg.link}"] if msg.link else []))[:4000]
+        text = "\n".join([msg.title, *msg.lines] + ([f"{msg.open_label}: {msg.link}"] if msg.link else []))[:4000]
         res = self._api(secrets, "sendMessage", {"chat_id": target, "text": text, "disable_web_page_preview": True, "reply_markup": {"inline_keyboard": [[
-            {"text": "✅ Approve", "callback_data": msg.approve_token}, {"text": "❌ Reject", "callback_data": msg.reject_token}]]}})
+            {"text": f"✅ {msg.approve_label}", "callback_data": msg.approve_token}, {"text": f"❌ {msg.reject_label}", "callback_data": msg.reject_token}]]}})
         return {"chat_id": (res.get("chat") or {}).get("id", target), "message_id": res["message_id"]}
 
     def verify(self, secrets, headers, body):

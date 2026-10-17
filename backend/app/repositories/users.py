@@ -19,12 +19,12 @@ class UserRepository:
         with self.db.session() as s:
             u = User(id=uid, email=email, password=password_hash, created=created); s.add(u); s.commit(); return u
 
-    def set_prefs(self, uid: str, **prefs: bool) -> Optional[User]:
-        """Notification preferences (TASK-0021): notify_in_app / notify_email."""
+    def set_prefs(self, uid: str, **prefs) -> Optional[User]:
+        """Preferences: notify_in_app / notify_email (TASK-0021, booleans), lang (TASK-0022 follow-up, en | vi)."""
         with self.db.session() as s:
             u = s.get(User, uid)
             if u is None: return None
-            for k, v in prefs.items(): setattr(u, k, bool(v))
+            for k, v in prefs.items(): setattr(u, k, v if k == "lang" else bool(v))
             s.commit(); s.refresh(u); return u
 
     def set_admin(self, uid: str, admin: bool = True) -> None:

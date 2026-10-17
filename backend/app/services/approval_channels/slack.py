@@ -26,11 +26,11 @@ class SlackChannel(ApprovalChannel):
 
     @staticmethod
     def _blocks(msg: ApprovalMessage) -> list[dict]:
-        text = f"*{msg.title}*\n" + "\n".join(msg.lines) + (f"\n<{msg.link}|Open in LangGraph Studio>" if msg.link else "")
+        text = f"*{msg.title}*\n" + "\n".join(msg.lines) + (f"\n<{msg.link}|{msg.open_label}>" if msg.link else "")
         return [{"type": "section", "text": {"type": "mrkdwn", "text": text[:2900]}},
                 {"type": "actions", "block_id": "studio_approval", "elements": [
-                    {"type": "button", "action_id": "approve", "style": "primary", "text": {"type": "plain_text", "text": "Approve"}, "value": msg.approve_token},
-                    {"type": "button", "action_id": "reject", "style": "danger", "text": {"type": "plain_text", "text": "Reject"}, "value": msg.reject_token}]}]
+                    {"type": "button", "action_id": "approve", "style": "primary", "text": {"type": "plain_text", "text": msg.approve_label}, "value": msg.approve_token},
+                    {"type": "button", "action_id": "reject", "style": "danger", "text": {"type": "plain_text", "text": msg.reject_label}, "value": msg.reject_token}]}]
 
     def describe(self, secrets):
         d = self._api(secrets, "auth.test", {})

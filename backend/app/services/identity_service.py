@@ -9,16 +9,16 @@ import hashlib, hmac, secrets as pysecrets, time
 from typing import Callable, Optional
 from ..core import config, crypto
 from ..core.errors import AppError
-from ..repositories import ApprovalRepository
+from ..repositories import ApprovalRepository, UserRepository
 from .approval_channels import ApprovalChannel
+from .approval_channels.messages import lang_of, text
 
 
 class IdentityService:
-    def __init__(self, repo: ApprovalRepository, adapters: dict[str, ApprovalChannel], dm_channel: Callable[[str, str], Optional[tuple[ApprovalChannel, dict]]],
-                 text: Callable[[str, str], str] = lambda uid, code: f"LangGraph Studio verification code: {code}"):
-        """dm_channel(uid, kind) -> (adapter, secrets) of a channel that can DM this user, or None.
-        text(uid, code) -> the message (the user's language)."""
-        self.repo, self.adapters, self.dm_channel, self.text = repo, adapters, dm_channel, text
+    def __init__(self, repo: ApprovalRepository, users: UserRepository, adapters: dict[str, ApprovalChannel],
+                 dm_channel: Callable[[str, str], Optional[tuple[ApprovalChannel, dict]]]):
+        """dm_channel(uid, kind) -> (adapter, secrets) of a channel that can DM this user, or None."""
+        self.repo, self.users, self.adapters, self.dm_channel = repo, users, adapters, dm_channel
 
     def _adapter(self, kind: str) -> ApprovalChannel:
         if kind not in self.adapters: raise AppError("CHANNEL_KIND_UNSUPPORTED", kind=kind)
@@ -55,7 +55,7 @@ class IdentityService:
         via = self.dm_channel(uid, kind)
         if via is None: raise AppError("CHANNEL_NOT_FOUND")
         code = f"{pysecrets.randbelow(10**6):06d}"
-        via[0].send_dm(via[1], i.external_id, self.text(uid, code))  # 502 CHANNEL_API_FAILED (e.g. the user never started the bot)
+        via[0].send_dm(via[1], i.external_id, text(lang_of(self.users.get_by_id(uid)), "code", code=code, minutes=int(config.identity_code_ttl() // 60)))  # 502 CHANNEL_API_FAILED (e.g. the user never started the bot)
         self.repo.set_identity(uid, kind, code_hash=self._hash(uid, kind, i.external_id, code), code_expires=now + config.identity_code_ttl(),
                                code_sent_at=now, code_attempts=0)
         return self.get(uid)

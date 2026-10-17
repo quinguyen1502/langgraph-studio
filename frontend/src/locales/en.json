@@ -245,7 +245,7 @@
     "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s.",
     "NOTIFICATION_NOT_FOUND": "Notification not found.",
     "DELIVERY_NOT_FOUND": "Webhook delivery not found.",
-    "NOTIFICATION_PREFS_INVALID": "Invalid notification settings.",
+    "NOTIFICATION_PREFS_INVALID": "Invalid settings.",
     "CHANNEL_KIND_UNSUPPORTED": "Unsupported approval channel: {{kind}}.",
     "CHANNEL_CONFIG_INVALID": "Channel setting {{field}} is missing or invalid.",
     "CHANNEL_NOT_FOUND": "This approval channel is not configured.",

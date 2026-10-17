@@ -89,7 +89,7 @@
 | `RATE_LIMITED` | 429 | Too many requests, retry in {retry_after} s |
 | `NOTIFICATION_NOT_FOUND` | 404 | Notification not found |
 | `DELIVERY_NOT_FOUND` | 404 | Webhook delivery not found |
-| `NOTIFICATION_PREFS_INVALID` | 422 | Notification preferences must be booleans: in_app, email |
+| `NOTIFICATION_PREFS_INVALID` | 422 | Preferences: in_app and email must be booleans, lang must be en or vi |
 | `CHANNEL_KIND_UNSUPPORTED` | 400 | Unsupported approval channel: {kind} |
 | `CHANNEL_CONFIG_INVALID` | 400 | Channel setting {field} is missing or invalid |
 | `CHANNEL_NOT_FOUND` | 404 | Approval channel not configured |

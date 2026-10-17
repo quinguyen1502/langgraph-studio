@@ -9,11 +9,12 @@ Every step lands in the audit log. Without a configured channel everything is a 
 import base64, hashlib, hmac, json, secrets as pysecrets, threading, time, uuid
 from typing import Callable, Optional
 from ..core import config, crypto
-from ..core.errors import CATALOG, AppError
+from ..core.errors import AppError
 from ..core.logging import get_logger
 from ..models import ApprovalAudit, ApprovalRequest
 from ..repositories import ApprovalRepository, RunRepository, UserRepository, WorkflowRepository
 from .approval_channels import ApprovalChannel, ApprovalMessage
+from .approval_channels.messages import lang_of, text
 from .channel_service import ChannelService
 
 log = get_logger("approvals")
@@ -29,6 +30,7 @@ class ApprovalService:
         self.background = BACKGROUND if background is None else background
 
     def adapter(self, kind: str) -> ApprovalChannel: return self.channels.adapter(kind)
+    def _lang(self, uid: Optional[str]) -> str: return lang_of(self.users.get_by_id(uid)) if uid else "en"
     def _secrets(self, c) -> dict: return self.channels.secrets(c)
 
     # ---- tokens: "<a|r>.<request id>.<hmac>" (fits Telegram's 64-byte callback_data) ----
@@ -83,11 +85,12 @@ class ApprovalService:
         r = self.repo.add_request(ApprovalRequest(id=uuid.uuid4().hex[:12], run_id=rid, node_id=node["id"], owner=owner, workflow_id=wid, channel_id=c.id,
                                                   kind=kind, target=target, approvers=json.dumps(approvers), nonce=pysecrets.token_hex(8),
                                                   expires=time.time() + config.approval_ttl(), status="pending", created=time.time()))
-        w = self.workflows.get(wid) if wid else None
-        lines = [f"Workflow: {w.name}" if w else None, f"Step: {ev.get('label') or node['id']}", ev.get("prompt") and f"Question: {ev['prompt']}",
-                 f"Run: {rid}", f"Expires: {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime(r.expires))}"]
+        w = self.workflows.get(wid) if wid else None; lang = self._lang(owner)
+        lines = [w and text(lang, "workflow", v=w.name), text(lang, "step", v=ev.get("label") or node["id"]), ev.get("prompt") and text(lang, "question", v=ev["prompt"]),
+                 text(lang, "run", v=rid), text(lang, "expires", v=time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(r.expires)))]
         link = f"{config.public_url()}/workflows/{wid}?run={rid}" if config.public_url() and wid else None
-        msg = ApprovalMessage("Approval needed", [x for x in lines if x], link, self.token(r, "a"), self.token(r, "r"))
+        msg = ApprovalMessage(text(lang, "title"), [x for x in lines if x], link, self.token(r, "a"), self.token(r, "r"),
+                              text(lang, "approve"), text(lang, "reject"), text(lang, "open"))
         try:
             ref = self.adapter(kind).send_request(self._secrets(c), target, msg)
             self.repo.set_ref(r.id, ref); self._audit(owner, kind, "requested", r)
@@ -124,12 +127,16 @@ class ApprovalService:
         c, sec = self._connection(a, cid, headers, body, cb)
         if cb is None: return {"outcome": "ignored"}
         code, r, decision = self.decide(kind, c.id, cb.token, cb.external_user)
+        presser = self.repo.user_for(kind, cb.external_user) if cb.external_user else None
+        mine = self._lang(presser or (r.owner if r else None))  # private answers: the presser's language, else the owner's
         if code:
-            a.acknowledge(sec, cb, CATALOG[code][1].format(kind=a.label), accepted=False)
+            a.acknowledge(sec, cb, text(mine, code, kind=a.label), accepted=False)
             return {"outcome": "refused", "code": code}
-        who = self.users.get_by_id(r.decided_by); text = f"{'✅ Approved' if decision == 'approved' else '❌ Rejected'} by {who.email if who else cb.external_user}"
-        a.acknowledge(sec, cb, text, accepted=True)
-        self._update(a, sec, r, f"{text} at {time.strftime('%Y-%m-%d %H:%M UTC', time.gmtime())}")
+        who = self.users.get_by_id(r.decided_by); name = who.email if who else cb.external_user
+        key = "approved_by" if decision == "approved" else "rejected_by"
+        a.acknowledge(sec, cb, text(mine, key, who=name), accepted=True)
+        lang = self._lang(r.owner)  # the shared message: the owner's language, like the request
+        self._update(a, sec, r, text(lang, "at", text=text(lang, key, who=name), when=time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())))
         return {"outcome": decision}
 
     def decide(self, kind, cid, token, external) -> tuple[Optional[str], Optional[ApprovalRequest], Optional[str]]:
@@ -175,10 +182,10 @@ class ApprovalService:
             action = "expired" if reason == "expired" else "superseded"
             if self.repo.decide(r.id, action): closed.append(r); self._audit(r.owner, r.kind, action, r)
         if closed:
-            text = {"answered": "Answered in LangGraph Studio", "cancelled": "The run was cancelled", "expired": "The request expired"}.get(reason, "The run went on without this request")
+            key = reason if reason in ("answered", "cancelled", "expired") else "finished"
             def edit():
                 for r in closed:
                     c = self.repo.channel(r.channel_id)
-                    if c is not None and r.kind in self.adapters: self._update(self.adapters[r.kind], self._secrets(c), r, text)
+                    if c is not None and r.kind in self.adapters: self._update(self.adapters[r.kind], self._secrets(c), r, text(self._lang(r.owner), key))
             threading.Thread(target=edit, daemon=True).start() if self.background else edit()
         return len(closed)

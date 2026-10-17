@@ -91,7 +91,7 @@ def admin(c, monkeypatch):
 
 def code_for(api, external_id):
     """The last verification code the bot DMed to this chat account."""
-    msgs = [b.get("text", "") for _, b in api.calls if str(b.get("channel") or b.get("chat_id") or "") == external_id and "code" in b.get("text", "")]
+    msgs = [b.get("text", "") for _, b in api.calls if str(b.get("channel") or b.get("chat_id") or "") == external_id and "blocks" not in b and "reply_markup" not in b]
     return re.search(r"\b(\d{6})\b", msgs[-1]).group(1)
 
 def link(c, api, u, kind, external_id, own_channel=True):
@@ -177,6 +177,30 @@ def test_several_slack_workspaces_per_owner_routed_by_team_id(c, api):
     assert until(lambda: run_row(c, o, wid, rid)["status"] == "ok")
     upd = api.named("chat.update")[-1]; assert upd["channel"] == "C0B"
     assert [h for (u, _), h in zip(api.calls, api.auth) if u.endswith("chat.update")][-1] == f"Bearer xoxb-1111-{tb}-zzzzzzzz"  # B's (new) token
+
+
+def test_chat_texts_follow_the_owner_and_presser_language(c, api):
+    owner, approver, stranger = user(c), user(c), user(c)
+    for u, lang in ((owner, "vi"), (stranger, "en")):
+        r = c.put("/api/notifications/preferences", json={"lang": lang}, headers=H(u["token"])); assert r.json()["data"]["lang"] == lang
+    r = c.put("/api/notifications/preferences", json={"lang": "fr"}, headers=H(owner["token"]))
+    assert r.status_code == 422 and r.json()["error"]["code"] == "NOTIFICATION_PREFS_INVALID"
+    c.put("/api/notifications/preferences", json={"lang": "vi"}, headers=H(approver["token"]))
+    uo, ua, us = (f"U{uuid.uuid4().hex[:8].upper()}" for _ in range(3))
+    link(c, api, owner, "slack", uo); assert "Mã xác minh LangGraph Studio" in [b for b in api.named("chat.postMessage") if b["channel"] == uo][-1]["text"]
+    link(c, api, approver, "slack", ua); link(c, api, stranger, "slack", us)
+    assert "verification code" in [b for b in api.named("chat.postMessage") if b["channel"] == us][-1]["text"]
+    ch = c.get("/api/approvals/channels", headers=H(owner["token"])).json()["data"]["channels"][0]
+    wid = workflow(c, owner, {"channel_id": ch["id"], "channel": "slack", "target": "C0VI", "approvers": [approver["email"]]}); rid = start_waiting(c, owner, wid)
+    post = until(lambda: [p for p in api.requests() if p["channel"] == "C0VI"])[-1]
+    body = post["blocks"][0]["text"]["text"]
+    assert body.startswith("*Cần phê duyệt*") and "Bước: " in body and "Lượt chạy: " + rid in body
+    assert [e["text"]["text"] for e in post["blocks"][1]["elements"]] == ["Duyệt", "Từ chối"]
+    approve = post["blocks"][1]["elements"][0]["value"]
+    slack_post(c, ch["id"], press(approve, us))  # the stranger reads the refusal in English
+    assert [b for u, b in api.calls if u.startswith("https://hooks.slack.com/")][-1]["text"] == "You are not allowed to approve this run"
+    assert slack_post(c, ch["id"], press(approve, ua)).json()["data"] == {"outcome": "approved"}
+    assert api.named("chat.update")[-1]["text"].startswith(f"✅ {approver['email']} đã duyệt lúc ")
 
 
 def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):

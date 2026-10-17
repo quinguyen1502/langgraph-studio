@@ -15,3 +15,4 @@ class User(Base):
     notify_email: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     # admins manage org-wide approval channels (TASK-0022 follow-up)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    lang: Mapped[Optional[str]] = mapped_column(Text)  # en | vi: chat messages (approval requests, codes); NULL = en

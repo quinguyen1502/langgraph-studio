@@ -21,6 +21,9 @@ class ApprovalMessage:
     link: Optional[str]
     approve_token: str
     reject_token: str
+    approve_label: str = "Approve"   # button / link texts in the owner's language
+    reject_label: str = "Reject"
+    open_label: str = "Open in LangGraph Studio"
 
 
 @dataclass

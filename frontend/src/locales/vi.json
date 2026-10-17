@@ -245,7 +245,7 @@
     "RATE_LIMITED": "Quá nhiều yêu cầu. Thử lại sau {{retry_after}} giây.",
     "NOTIFICATION_NOT_FOUND": "Không tìm thấy thông báo.",
     "DELIVERY_NOT_FOUND": "Không tìm thấy lần gửi webhook.",
-    "NOTIFICATION_PREFS_INVALID": "Cài đặt thông báo không hợp lệ.",
+    "NOTIFICATION_PREFS_INVALID": "Cài đặt không hợp lệ.",
     "CHANNEL_KIND_UNSUPPORTED": "Kênh phê duyệt không được hỗ trợ: {{kind}}.",
     "CHANNEL_CONFIG_INVALID": "Thiết lập kênh {{field}} bị thiếu hoặc không hợp lệ.",
     "CHANNEL_NOT_FOUND": "Chưa cấu hình kênh phê duyệt.",

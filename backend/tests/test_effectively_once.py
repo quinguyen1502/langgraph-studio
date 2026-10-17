@@ -191,7 +191,7 @@ def test_recovery_exports_the_lost_segment_root_and_links_it(c):
 # ---------- (e) live push, HTML e-mail, preferences ----------
 def test_preferences_api(c):
     tok = user(c)
-    assert c.get("/api/notifications/preferences", headers=H(tok)).json()["data"] == {"in_app": True, "email": True, "email_configured": False}
+    assert c.get("/api/notifications/preferences", headers=H(tok)).json()["data"] == {"in_app": True, "email": True, "email_configured": False, "lang": "en"}
     assert c.put("/api/notifications/preferences", json={"email": False}, headers=H(tok)).json()["data"]["email"] is False
     for bad in ({"email": "no"}, {"push": True}, [], {}):
         r = c.put("/api/notifications/preferences", json=bad, headers=H(tok))

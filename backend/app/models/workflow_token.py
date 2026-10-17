@@ -16,4 +16,6 @@ class WorkflowToken(Base):
     created: Mapped[Optional[float]] = mapped_column(Float)
     last_used: Mapped[Optional[float]] = mapped_column(Float)
     signing_secret: Mapped[Optional[str]] = mapped_column(Text)  # encrypted webhook HMAC secret (TASK-0019)
+    signing_secret_prev: Mapped[Optional[str]] = mapped_column(Text)  # previous secret during rotation grace (TASK-0020)
+    secret_rotated: Mapped[Optional[float]] = mapped_column(Float)    # when the secret was last rotated
     revoked: Mapped[Optional[float]] = mapped_column(Float)  # time of revocation; NULL = active

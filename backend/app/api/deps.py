@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
 from ..core.errors import AppError
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -13,6 +13,8 @@ from ..services.run_bus import RunBus, make_run_bus
 from ..services.job_queue import JobQueue, make_job_queue
 from ..services.run_service import RunService
 from ..services.run_worker import RunWorker
+from ..services.delivery_service import DeliveryService
+from ..services.notification_service import NotificationService
 from ..services.rate_limit import RateLimiter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.telemetry import Telemetry
@@ -36,12 +38,20 @@ def get_job_queue() -> JobQueue:
 
 @lru_cache
 def run_worker() -> RunWorker:
-    return RunWorker(get_job_queue(), run_service, lambda tid: trigger_service().signing_secret(tid))
+    return RunWorker(get_job_queue(), run_service, delivery_service)
 
 
 @lru_cache
 def get_rate_limiter() -> RateLimiter:
     return make_rate_limiter(config.REDIS_URL)  # shared via Redis, else per process
+
+
+def delivery_service() -> DeliveryService:
+    db = get_db(); return DeliveryService(WebhookDeliveryRepository(db), WorkflowRepository(db), get_job_queue(), trigger_service().signing_secrets)
+
+
+def notification_service() -> NotificationService:
+    db = get_db(); return NotificationService(NotificationRepository(db), UserRepository(db), WorkflowRepository(db))
 
 
 def trigger_service() -> TriggerService:
@@ -60,7 +70,7 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db))
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service())
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

@@ -15,6 +15,7 @@ from ..models import Run
 from ..repositories import RunRepository, WorkflowRepository
 from .run_bus import InMemoryRunBus, RunBus
 from .telemetry import Telemetry, summarize, trace_url
+from ..core.logging import get_logger
 from .workflow_diff import same_content
 
 
@@ -30,6 +31,9 @@ class RunPlan:
     resume: Optional[dict] = None
     source: str = "ui"  # ui | api (TASK-0007)
     version: Optional[int] = None  # stored workflow version that runs; None = unsaved edits (TASK-0008)
+    trace_parent: Optional[dict] = None  # {trace_id, span_id} of the previous trace segment (TASK-0020)
+    recovered: bool = False       # continuing a queue job whose worker died (TASK-0020)
+    checkpointing: bool = False   # save a progress checkpoint after each node (queue jobs, TASK-0020)
 
     @property
     def imported(self) -> bool:
@@ -57,6 +61,7 @@ def _normalise(ev: dict) -> dict:
 
 
 RESPONSE_MAX = 10_000  # characters of a human response
+log = get_logger("runs")
 CANCEL_API = object()  # worker -> loop marker: the bus reported a cancel request
 
 
@@ -65,13 +70,14 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
-                 telemetry: Telemetry | None = None, versions=None):
+                 telemetry: Telemetry | None = None, versions=None, notifier=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
         self.bus = bus or InMemoryRunBus()
         self.versions = versions  # WorkflowVersionRepository (optional): tags runs with the version they ran
-        self.telemetry = telemetry or Telemetry(exporters=[])  # no-op unless an exporter is configured
+        self.telemetry = telemetry or Telemetry(exporters=[], metric_readers=[])  # no-op unless an exporter is configured
+        self.notifier = notifier  # NotificationService (optional): in-app/e-mail/webhook when a run waits or expires (TASK-0020)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -117,10 +123,14 @@ class RunService:
         ttl = config.wait_ttl()
         return bool(ttl) and (r.ended or r.started or 0) < (now or time.time()) - ttl
 
+    def _close_waiting(self, r: Run, ev: dict, status: str, uid: str) -> None:
+        """End a waiting run without executing it (cancel / expiry): one more trace segment, no node spans."""
+        cp = json.loads(r.checkpoint or "{}")
+        self.record(r.id, r.workflow_id, json.loads(r.input or "{}"), json.loads(r.events or "[]") + [ev], None, status, r.started, uid,
+                    source=r.source or "ui", version=r.workflow_version, trace_parent=cp.get("trace"), trace_events=[] if cp.get("trace") else None)
+
     def _expire(self, r: Run) -> None:
-        events = json.loads(r.events or "[]") + [{"type": "run_expired", "ts": time.time(), "ttl_s": config.wait_ttl()}]
-        self.record(r.id, r.workflow_id, json.loads(r.input or "{}"), events, None, "expired", r.started, r.owner or "",
-                    source=r.source or "ui", version=r.workflow_version)
+        self._close_waiting(r, {"type": "run_expired", "ts": time.time(), "ttl_s": config.wait_ttl()}, "expired", r.owner or "")
 
     def expire_waiting(self) -> int:
         """Expire runs that waited longer than STUDIO_WAIT_TTL (periodic sweep + lazily on access). Returns the count."""
@@ -136,7 +146,18 @@ class RunService:
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(uid) if self.credentials else None,
-                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response}, source=r.source or "ui", version=r.workflow_version)
+                       run_id=rid, previous=r, resume={"node": cp["node"], "state": cp["state"], "value": response}, source=r.source or "ui",
+                       version=r.workflow_version, trace_parent=cp.get("trace"))
+
+    def plan_recover(self, r: Run) -> Optional[RunPlan]:
+        """A recovered queue job (its worker died mid-run): continue from the last progress checkpoint saved after a
+        node finished (same {node, state} checkpoint as HITL). None when there is none (restart from the beginning)."""
+        cp = json.loads(r.checkpoint or "null")
+        if not cp or cp.get("kind") != "progress": return None
+        return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
+                       self.credentials.resolver(r.owner) if self.credentials else None, run_id=r.id, previous=r,
+                       resume={"node": cp["node"], "state": cp["state"]}, source=r.source or "api", version=r.workflow_version,
+                       trace_parent=cp.get("trace"), recovered=True, checkpointing=True)
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""
@@ -149,9 +170,8 @@ class RunService:
         return out
 
     def cancel_waiting(self, rid: str, uid: str) -> None:
-        r = self.waiting_run(rid, uid); events = json.loads(r.events or "[]")
-        events.append({"type": "run_cancelled", "ts": time.time(), "reason": "api"})
-        self.record(rid, r.workflow_id, json.loads(r.input or "{}"), events, None, "cancelled", r.started, uid, source=r.source or "ui", version=r.workflow_version)
+        r = self.waiting_run(rid, uid)
+        self._close_waiting(r, {"type": "run_cancelled", "ts": time.time(), "reason": "api"}, "cancelled", uid)
 
     # ---- history ----
     def history(self, wid: str, uid: str) -> list[dict]:
@@ -163,20 +183,38 @@ class RunService:
                  "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
                 for r in self.runs.list_for_workflow(wid)]
 
-    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui", version: Optional[int] = None) -> dict:
-        """Persist the run with its summary metrics and emit its trace. Returns {metrics, trace_id, trace_url}.
-        A waiting run keeps its checkpoint and gets its (single) trace only once it ends."""
+    def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui",
+               version: Optional[int] = None, span=None, trace_parent: Optional[dict] = None, trace_events: Optional[list] = None) -> dict:
+        """Persist the run with its summary metrics and close its trace segment. Returns {metrics, trace_id, trace_url}.
+        span: the live root span (node spans were already exported). Without one, the trace is built post-hoc from
+        `trace_events` (default: all events) under `trace_parent` (the previous segment of a paused run).
+        A waiting run keeps its checkpoint, which remembers the trace so the resumed segment joins it."""
         t1 = time.time(); metrics = summarize(events, t0, t1)  # from the full events, before capping
-        trace_id = None
-        if status != "waiting":
-            try: trace_id = self.telemetry.record_run({"id": rid, "workflow_id": wid, "owner": uid, "status": status, "started": t0, "ended": t1}, events, metrics)
-            except Exception: trace_id = None  # tracing must never fail a run
+        trace_id = None; run_meta = {"id": rid, "workflow_id": wid, "owner": uid, "status": status, "started": t0, "ended": t1, "source": source}
+        try:
+            if span is not None:
+                if checkpoint is not None: checkpoint = {**checkpoint, "trace": span.ids}
+                trace_id = self.telemetry.end_run(span, {**run_meta, "started": span.run["started"]}, metrics)
+            elif status != "waiting":
+                trace_id = self.telemetry.record_run(run_meta, events if trace_events is None else trace_events, metrics, trace_parent)
+        except Exception: trace_id = None  # tracing must never fail a run
+        if trace_id is None and trace_parent: trace_id = trace_parent.get("trace_id")
+        if self.notifier is not None and uid and status in ("waiting", "expired"):
+            ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), None)
+            try: self.notifier.run_event("run_waiting" if status == "waiting" else "run_expired", uid, rid, wid, ev)
+            except Exception: log.exception("notification for run %s failed", rid)  # never fails a run
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
                           final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source, workflow_version=version,
                           checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics))
         return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
+
+    async def _save_progress(self, rid, events, ev, plan, span) -> None:
+        """Persist events so far + {node, state} to continue from if this worker dies (TASK-0020)."""
+        cp = {"kind": "progress", "node": ev["node"], "state": ev["state"], "workflow": plan.workflow, **({"trace": span.ids} if span else {})}
+        try: await asyncio.to_thread(self.runs.save_progress, rid, _dumps(cap_run([cap_event(e) for e in events])), _dumps(cp))
+        except Exception: log.warning("saving progress of run %s failed", rid)  # recovery falls back to a restart
 
     # ---- execution ----
     async def execute(self, plan: RunPlan, send: Callable[[dict], Awaitable[bool]],
@@ -191,6 +229,9 @@ class RunService:
     async def _execute(self, rid, plan, send, listen, uid) -> str:
         t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus; checkpoint = None
         prev = plan.previous; started = prev.started if prev else t0
+        try: span = self.telemetry.start_run({"id": rid, "workflow_id": plan.workflow_id, "owner": uid, "started": t0,
+                                              "segment": "recovered" if plan.recovered else "resumed"}, plan.trace_parent)
+        except Exception: span = None  # tracing must never fail a run
         if prev: events.extend(json.loads(prev.events or "[]"))  # resumed: one run, one event log
         q: asyncio.Queue = asyncio.Queue(); loop = asyncio.get_running_loop(); cancel = threading.Event()
 
@@ -221,13 +262,18 @@ class RunService:
         async def emit(ev):
             nonlocal connected
             events.append(ev)
+            if span is not None and ev.get("type") in ("node_finished", "error"):
+                try: self.telemetry.node(span, ev)  # live span (TASK-0020)
+                except Exception: pass
             try: await bus.apublish(rid, ev)
             except Exception: pass  # fan-out is best effort; the socket and history stay authoritative
             if connected: connected = await send(cap_event(ev))
 
         try:
-            await emit({"type": "run_resumed" if prev else "run_started", "run_id": rid, "ts": t0,
-                        **({"node": plan.resume["node"], "response": plan.resume["value"]} if prev else {})})
+            if plan.recovered: first = {"type": "run_recovered", "run_id": rid, "ts": t0, "node": plan.resume["node"]}
+            elif prev: first = {"type": "run_resumed", "run_id": rid, "ts": t0, "node": plan.resume["node"], "response": plan.resume["value"]}
+            else: first = {"type": "run_started", "run_id": rid, "ts": t0}
+            await emit(first)
             threading.Thread(target=worker, daemon=True).start()
             listener = asyncio.create_task(listen()); deadline = t0 + config.run_timeout(); ended = None
             while True:
@@ -237,6 +283,9 @@ class RunService:
                     ev = get.result()
                     if ev is None: break
                     if ev is CANCEL_API: ended = "api"; cancel.set(); break
+                    if ev.get("type") == "_checkpoint":  # engine progress marker: never sent or stored as an event
+                        if plan.checkpointing: await self._save_progress(rid, events, ev, plan, span)
+                        continue
                     ev = _normalise(ev); ev["ts"] = time.time()
                     if ev["type"] == "run_finished": final = ev.get("state")
                     if ev["type"] == "error": status = "error"
@@ -259,8 +308,8 @@ class RunService:
         except asyncio.CancelledError:  # handler cancelled (server shutdown / client gone mid-await): still keep history
             cancel.set(); status = "cancelled"
             events.append({"type": "run_cancelled", "ts": time.time(), "reason": "disconnect"})
-            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source, plan.version))
+            await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source, plan.version, span))
             raise
-        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint, plan.source, plan.version)
+        summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint, plan.source, plan.version, span)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

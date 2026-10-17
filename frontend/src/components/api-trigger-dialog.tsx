@@ -1,17 +1,22 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useState } from 'react'
-import { AlertCircle, Check, Copy, Plus, Trash2, Webhook } from 'lucide-react'
+import { AlertCircle, Check, Copy, Plus, RefreshCw, Trash2, Webhook } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { DeliveriesList } from '@/components/deliveries-list'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 
-type Token = { id: string; name: string; prefix: string; created: number; last_used: number | null; revoked: number | null; token?: string; signing_secret?: string }
+type Token = { id: string; name: string; prefix: string; created: number; last_used: number | null; revoked: number | null; token?: string; signing_secret?: string; signed?: boolean; grace_until?: number }
 const when = (s: number | null) => s ? new Date(s * 1000).toLocaleString(i18n.resolvedLanguage) : '—'
+
+const Tip = ({ tip, children }: { tip: string; children: React.ReactElement }) => <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{tip}</TooltipContent></Tooltip>
 
 /** Per-workflow API tokens + how to call the trigger endpoint (TASK-0007). */
 export function ApiTriggerDialog({ wid }: { wid?: string }) {
@@ -25,6 +30,10 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
     try { const tk = await api<Token>(`/api/workflows/${wid}/tokens`, { method: 'POST', json: { name: name || 'API token' } }); setCreated(tk); setName(''); load() }
     catch (e: any) { setErr(e.message) }
   }
+  const rotate = async (id: string) => {
+    setErr('')
+    try { setCreated(await api<Token>(`/api/workflows/${wid}/tokens/${id}/rotate-secret`, { method: 'POST' })); load() } catch (e: any) { setErr(e.message) }
+  }
   const revoke = async (id: string) => { try { await api(`/api/workflows/${wid}/tokens/${id}`, { method: 'DELETE' }); load() } catch (e: any) { setErr(e.message) } }
   const url = `${location.origin}/api/hooks/workflows/${wid}/runs`
   const curl = `curl -X POST ${url} \\\n  -H "Authorization: Bearer ${created?.token ?? '<token>'}" -H "Content-Type: application/json" \\\n  -d '{"input": {"message": "hi"}, "mode": "sync"}'`
@@ -34,20 +43,26 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
     <DialogContent className="sm:max-w-2xl">
       <DialogHeader><DialogTitle>{t('api.title')}</DialogTitle><DialogDescription>{t('api.desc')}</DialogDescription></DialogHeader>
       {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
-      {created?.token && <Alert id="api-new-token"><Check /><AlertDescription className="space-y-2">
+      {(created?.token || created?.signing_secret) && <Alert id="api-new-token"><Check /><AlertDescription className="space-y-2">
         <span>{t('api.copyOnce')}</span>
-        <div className="flex gap-2"><Input readOnly id="api-token-value" className="font-mono text-xs" value={created.token} />
-          <Button variant="outline" size="icon" aria-label={t('api.copy')} onClick={() => copy(created.token!)}>{copied ? <Check /> : <Copy />}</Button></div>
+        {created.token && <div className="flex gap-2"><Input readOnly id="api-token-value" className="font-mono text-xs" value={created.token} />
+          <Button variant="outline" size="icon" aria-label={t('api.copy')} onClick={() => copy(created.token!)}>{copied ? <Check /> : <Copy />}</Button></div>}
+        {created.grace_until && <p className="text-xs" id="api-rotated">{t('api.rotated', { when: when(created.grace_until) })}</p>}
         {created.signing_secret && <div className="space-y-1"><Label htmlFor="api-signing-secret" className="text-xs">{t('api.signingSecret')}</Label>
           <div className="flex gap-2"><Input readOnly id="api-signing-secret" className="font-mono text-xs" value={created.signing_secret} />
             <Button variant="outline" size="icon" aria-label={t('api.copy')} onClick={() => copy(created.signing_secret!)}><Copy /></Button></div>
           <p className="text-xs text-muted-foreground">{t('api.signingHelp')}</p></div>}
       </AlertDescription></Alert>}
+      <Tabs defaultValue="tokens">
+      <TabsList><TabsTrigger value="tokens">{t('api.tokensTab')}</TabsTrigger><TabsTrigger value="deliveries" id="api-deliveries-tab">{t('deliveries.tab')}</TabsTrigger></TabsList>
+      <TabsContent value="deliveries" className="pt-2"><DeliveriesList wid={wid} /></TabsContent>
+      <TabsContent value="tokens" className="space-y-4 pt-2">
       <div className="space-y-2">
         {items.map(tk => <div key={tk.id} data-testid="api-token-row" className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm">
           <span className="font-medium">{tk.name}</span><span className="font-mono text-xs text-muted-foreground">{tk.prefix}…</span>
           {tk.revoked ? <Badge variant="secondary">{t('api.revoked')}</Badge> : <Badge variant="success">{t('api.active')}</Badge>}
           <span className="ml-auto text-xs text-muted-foreground">{t('api.lastUsed', { when: when(tk.last_used) })}</span>
+          {!tk.revoked && tk.signed && <Tip tip={t('api.rotate')}><Button variant="ghost" size="icon" className="size-7" data-testid="api-rotate" aria-label={t('api.rotateAria', { name: tk.name })} onClick={() => rotate(tk.id)}><RefreshCw /></Button></Tip>}
           {!tk.revoked && <Button variant="ghost" size="icon" className="size-7" aria-label={t('api.revokeAria', { name: tk.name })} onClick={() => revoke(tk.id)}><Trash2 /></Button>}
         </div>)}
         {!items.length && <p className="text-xs text-muted-foreground">{t('api.empty')}</p>}
@@ -60,6 +75,7 @@ export function ApiTriggerDialog({ wid }: { wid?: string }) {
       <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{t('api.example')}</Label>
         <pre id="api-curl" className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-[11px] text-muted-foreground whitespace-pre">{curl}</pre>
         <p className="text-xs text-muted-foreground">{t('api.modes')}</p></div>
+      </TabsContent></Tabs>
     </DialogContent>
   </Dialog>
 }

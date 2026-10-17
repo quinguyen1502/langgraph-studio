@@ -20,6 +20,11 @@ class RunRepository:
         with self.db.session() as s:
             s.execute(update(Run).where(Run.id == rid).values(status=status)); s.commit()
 
+    def save_progress(self, rid: str, events: str, checkpoint: str) -> None:
+        """Progress checkpoint of a running queue job (TASK-0020); only while it is still running."""
+        with self.db.session() as s:
+            s.execute(update(Run).where(Run.id == rid, Run.status == "running").values(events=events, checkpoint=checkpoint)); s.commit()
+
     def list_waiting(self, owner: str, limit: int = 100) -> list[Run]:
         with self.db.session() as s:
             return list(s.scalars(select(Run).where(Run.owner == owner, Run.status == "waiting").order_by(Run.started.desc()).limit(limit)))

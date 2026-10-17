@@ -5,5 +5,7 @@ from .runs import RunRepository
 from .credentials import CredentialRepository
 from .workflow_tokens import WorkflowTokenRepository
 from .workflow_versions import WorkflowVersionRepository
+from .notifications import NotificationRepository
+from .webhook_deliveries import WebhookDeliveryRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository"]

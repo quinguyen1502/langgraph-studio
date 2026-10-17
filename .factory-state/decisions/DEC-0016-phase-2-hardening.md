@@ -49,6 +49,8 @@
 
 ## Deferred
 
+> Resolved in TASK-0020 (DEC-0017), except exactly-once execution, which stays at-least-once by design (see DEC-0017, Idempotency limits).
+
 - Push/e-mail notifications for waiting runs.
 - A webhook delivery log, a retry queue, and secret rotation.
 - Exactly-once job execution: at-least-once with a `recovered` re-run is accepted.

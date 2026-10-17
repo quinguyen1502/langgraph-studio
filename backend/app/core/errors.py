@@ -46,6 +46,8 @@ CATALOG: dict[str, tuple[int, str]] = {
     "TOKEN_NOT_FOUND": (404, "Token not found"),
     "RUN_EXPIRED": (410, "This run waited too long for a response and expired"),
     "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
+    "NOTIFICATION_NOT_FOUND": (404, "Notification not found"),
+    "DELIVERY_NOT_FOUND": (404, "Webhook delivery not found"),
     "VERSION_NOT_FOUND": (404, "Workflow version not found"),
     "CALLBACK_URL_INVALID": (400, "callback_url must be a public http(s) URL"),
     "NODE_FAILED": (500, "Node failed"),

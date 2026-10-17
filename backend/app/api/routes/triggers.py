@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from ...core import config
 from ...schemas.envelope import EnvelopeResponse
 from ...schemas.trigger import TokenIn, TriggerIn
-from ..deps import current_user, trigger_service
+from ..deps import current_user, delivery_service, trigger_service
 
 router = APIRouter(prefix="/api", tags=["triggers"])
 
@@ -27,6 +27,15 @@ def list_tokens(wid: str, user=Depends(current_user), svc=Depends(trigger_servic
 
 @router.post("/workflows/{wid}/tokens")
 def create_token(wid: str, body: TokenIn, user=Depends(current_user), svc=Depends(trigger_service)): return svc.create_token(wid, user["id"], body.name)
+
+@router.post("/workflows/{wid}/tokens/{tid}/rotate-secret")
+def rotate_secret(wid: str, tid: str, user=Depends(current_user), svc=Depends(trigger_service)): return svc.rotate_secret(wid, tid, user["id"])
+
+@router.get("/workflows/{wid}/deliveries")
+def list_deliveries(wid: str, user=Depends(current_user), svc=Depends(delivery_service)): return svc.list(wid, user["id"])
+
+@router.post("/workflows/{wid}/deliveries/{did}/redeliver")
+def redeliver(wid: str, did: str, user=Depends(current_user), svc=Depends(delivery_service)): return svc.redeliver(wid, did, user["id"])
 
 @router.delete("/workflows/{wid}/tokens/{tid}")
 def revoke_token(wid: str, tid: str, user=Depends(current_user), svc=Depends(trigger_service)): return svc.revoke_token(wid, tid, user["id"])

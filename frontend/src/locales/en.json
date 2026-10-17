@@ -242,7 +242,9 @@
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
-    "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s."
+    "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s.",
+    "NOTIFICATION_NOT_FOUND": "Notification not found.",
+    "DELIVERY_NOT_FOUND": "Webhook delivery not found."
   },
   "lang": {
     "en": "English",
@@ -300,7 +302,11 @@
     "example": "Example",
     "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result.",
     "signingSecret": "Webhook signing secret",
-    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see README)."
+    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see README).",
+    "rotate": "Rotate signing secret",
+    "rotateAria": "Rotate the signing secret of {{name}}",
+    "rotated": "New signing secret. The previous one keeps signing callbacks until {{when}}, so receivers can switch over.",
+    "tokensTab": "Tokens"
   },
   "versions": {
     "button": "Versions",
@@ -331,5 +337,30 @@
     "unsavedWarning": "You have unsaved changes in the editor. Restoring replaces them.",
     "loadMore": "Load more",
     "shown": "{{shown}} of {{total}}"
+  },
+  "deliveries": {
+    "tab": "Deliveries",
+    "empty": "No webhook deliveries yet.",
+    "refresh": "Refresh",
+    "redeliver": "Redeliver",
+    "attempts_one": "{{count}} attempt",
+    "attempts_other": "{{count}} attempts",
+    "next": "next try {{when}}",
+    "status": {
+      "pending": "pending",
+      "retrying": "retrying",
+      "ok": "delivered",
+      "failed": "failed"
+    }
+  },
+  "notify": {
+    "title": "Notifications",
+    "empty": "No notifications.",
+    "markAll": "Mark all read",
+    "unread_one": "{{count}} unread notification",
+    "unread_other": "{{count}} unread notifications",
+    "run_waiting": "{{workflow}} is waiting for you: {{label}}",
+    "run_expired": "A waiting run of {{workflow}} expired",
+    "unknownWorkflow": "A workflow"
   }
 }

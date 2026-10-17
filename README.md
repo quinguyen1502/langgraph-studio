@@ -261,8 +261,7 @@ def verify(secret: str, header: str, body: bytes, tolerance=300) -> bool:
 - **Chế độ sync** chờ tối đa `STUDIO_SYNC_WAIT_MAX` giây (mặc định 30). Hết thời gian chờ thì trả về `202` kèm `poll_url` và header `Location`. Chế độ async cũng trả `poll_url`.
 - **Hàng đợi tin cậy (Redis)**:
   - Worker chuyển job sang danh sách "processing" của riêng nó (`BLMOVE`), và chỉ xoá job (ack) sau khi run đã được ghi lại.
-  - Mỗi worker ghi heartbeat (TTL 30 giây).
-  - Khi khởi động, worker đưa trở lại hàng đợi các job của worker đã chết, và chạy lại các job đó từ đầu.
+  - Job mất lease được đưa trở lại hàng đợi (xem TASK-0020 bên dưới).
   - **Hàng đợi in-memory chỉ dùng cho dev**, vì job bị mất khi tiến trình khởi động lại.
 - **SSRF / DNS rebinding**: tên miền chỉ được phân giải **một lần** lúc gửi.
   - Mọi địa chỉ phân giải ra đều được kiểm tra, rồi kết nối thẳng tới IP đó. Header `Host` và chứng chỉ TLS (SNI) vẫn theo tên miền gốc.
@@ -286,3 +285,25 @@ def verify(secret: str, header: str, body: bytes, tolerance=300) -> bool:
 - **Bảng giá**: `STUDIO_PRICES='{"my-model": [1.0, 2.0]}'` hoặc `STUDIO_PRICES_FILE=/path/prices.json` (đơn vị USD / 1 triệu token), ghi đè hoặc bổ sung bảng có sẵn. Tiền tố dài nhất được ưu tiên.
 - **Span được tạo khi run kết thúc**, dựng lại từ timestamp của các sự kiện; run đang chạy chưa có trace. Run đang chờ (HITL) chỉ có trace khi đã kết thúc.
 - **Tránh trace trùng trên LangSmith**: khi bật exporter LangSmith của Studio (`LANGSMITH_API_KEY` + `LANGSMITH_TRACING=true`), tracer LangSmith riêng của LangChain bị tắt (`LANGSMITH_TRACING_V2=false` + `langsmith.configure(enabled=False)`). Nhờ vậy mỗi lần gọi LLM chỉ xuất hiện một lần.
+
+## Hardening bổ sung (TASK-0020)
+
+### Thông báo khi run chờ người phản hồi
+- **Chuông thông báo** trên thanh tiêu đề hiện số thông báo chưa đọc. Bấm vào một thông báo để mở run và đánh dấu đã đọc. Có nút "Đánh dấu tất cả đã đọc".
+  - API: `GET /api/notifications?unread=1`, `POST /api/notifications/{id}/read`, `POST /api/notifications/read-all`.
+- **E-mail**: đặt `SMTP_HOST` (cùng `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS`/`SMTP_SSL`). Không đặt `SMTP_HOST` thì không gửi e-mail. Link trong e-mail dùng `STUDIO_PUBLIC_URL`.
+  - Thử ở máy local: `python -m aiosmtpd -n -l 127.0.0.1:1025` rồi đặt `SMTP_HOST=127.0.0.1 SMTP_PORT=1025 SMTP_STARTTLS=0`.
+- **Notify webhook** (tuỳ chọn): `STUDIO_NOTIFY_WEBHOOK_URL` nhận JSON cho mỗi run `waiting`/`expired`, được ký bằng `STUDIO_NOTIFY_WEBHOOK_SECRET` nếu có.
+
+### Webhook kết quả
+- **Nhật ký gửi (deliveries)**: mỗi callback được lưu với trạng thái, số lần thử, mã HTTP và độ trễ. Xem ở tab **Deliveries** trong hộp thoại API, có nút **Gửi lại**.
+- **Thử lại**: lỗi mạng và mọi phản hồi không phải 2xx được thử lại qua hàng đợi (địa chỉ bị chặn bởi SSRF guard thì thất bại ngay) với độ trễ tăng dần `min(STUDIO_WEBHOOK_BACKOFF_BASE^n, STUDIO_WEBHOOK_BACKOFF_MAX)`, tối đa `STUDIO_WEBHOOK_MAX_ATTEMPTS` lần. Bên nhận nên khử trùng lặp theo `run_id` + event.
+- **Đổi signing secret**: nút xoay khoá trên mỗi token. Secret mới chỉ hiện một lần. Secret cũ vẫn hợp lệ thêm `STUDIO_SECRET_GRACE` giây (mặc định 1 ngày): trong thời gian này header có hai giá trị `v1=`, bên nhận chấp nhận nếu một trong hai khớp.
+
+### Hàng đợi & khôi phục
+- Mỗi job đang chạy giữ một **lease** (TTL `STUDIO_JOB_VISIBILITY_TIMEOUT`, tự gia hạn). Một vòng quét định kỳ (`STUDIO_JOB_REAP_EVERY`) đưa lại hàng đợi các job mất lease, thay cho heartbeat.
+- Job được khôi phục **chạy tiếp từ checkpoint cuối** (sự kiện `run_recovered`) thay vì chạy lại từ đầu. Node đang chạy lúc sập có thể chạy lại, nên node có side effect (HTTP, tool) cần idempotent. Chi tiết: DEC-0017.
+
+### Telemetry
+- Span được xuất **ngay khi từng node xong**, không đợi hết run. Không cấu hình thì vẫn là no-op.
+- `STUDIO_OTEL_METRICS=1` cùng `OTEL_EXPORTER_OTLP_ENDPOINT`: xuất metrics `studio.runs`, `studio.run.duration`, `studio.tokens`, `studio.cost`, `studio.errors`.

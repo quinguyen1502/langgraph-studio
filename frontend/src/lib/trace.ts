@@ -39,7 +39,7 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
     } else if (e.type === 'run_finished') { if (st.v !== 'error') st.v = 'ok'; final = e.state
     } else if (e.type === 'run_summary') { summary = e
     } else if (e.type === 'run_waiting') { st.v = 'waiting'; waitingEv = e; const s = n ? open(n) : undefined; if (s) { s.status = 'waiting'; s.events.push(e) }
-    } else if (e.type === 'run_resumed') { st.v = 'running'; waitingEv = undefined; resumed = n
+    } else if (e.type === 'run_resumed' || e.type === 'run_recovered') { st.v = 'running'; waitingEv = undefined; resumed = n
       const s = n ? [...spans].reverse().find(x => x.node === n && x.status === 'waiting') : undefined; if (s) { s.status = 'running'; s.events.push(e) } }
   })
   // Speculative "started" rows (predicted next nodes) that never ran are dropped once the run ends.

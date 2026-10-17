@@ -1,80 +1,118 @@
-"""Run job queue (TASK-0007, DEC-0014; reliable delivery in TASK-0019, DEC-0016).
+"""Job queue (TASK-0007, DEC-0014; reliable in TASK-0019; leases + delayed jobs in TASK-0020, DEC-0017).
 
-- InMemoryJobQueue (REDIS_URL unset): **dev/single-process only**. Jobs live in the API process and are lost
-  on restart (their runs stay `queued`).
-- RedisJobQueue (REDIS_URL set): reliable queue.
-  - `dequeue` atomically moves a job from `studio:run-jobs` into this worker's processing list
-    `studio:run-jobs:processing:<worker id>` (BLMOVE).
-  - `ack` removes the job from that list once the run is recorded.
-  - Each worker refreshes a heartbeat key `studio:worker:<id>` (TTL HEARTBEAT_TTL).
-  - On start, `recover_stale` moves jobs from processing lists of workers whose heartbeat expired back to the
-    queue, marked `recovered` so the run is re-executed from the start.
-A job is a small JSON dict: {"run_id", "workflow_id", "owner", "input", "callback_url"?, "token_id"?}.
+Jobs are small JSON dicts. Kinds: run jobs {"run_id", "workflow_id", "owner", "input", "callback_url"?, "token_id"?}
+and webhook deliveries {"kind": "delivery", "delivery_id"}.
+
+- InMemoryJobQueue (REDIS_URL unset): **dev/single-process only**. Jobs are lost on restart.
+- RedisJobQueue (REDIS_URL set): at-least-once.
+  - `dequeue`: BLMOVE `studio:run-jobs` → `studio:run-jobs:processing:<worker>`, then take a **lease**
+    `studio:job-lease:<id>` with TTL = visibility timeout.
+  - The worker renews the lease (`touch`) while the job runs, and `ack` drops the job and its lease.
+  - `reap` (every worker, periodically): a job in ANY processing list whose lease is missing on two
+    consecutive passes is moved back to the queue head, marked `recovered`. That covers dead workers and
+    stuck ones. The two passes cover the instant between BLMOVE and taking the lease.
+  - Delayed jobs (webhook retries with backoff): `enqueue_at` adds to the sorted set `studio:run-jobs:delayed`,
+    and `promote_due` moves due jobs to the queue.
 Blocking calls are made from worker threads (asyncio.to_thread), never on the event loop.
 """
-import json, queue, uuid
+import hashlib, heapq, json, queue, threading, time, uuid
 from typing import Optional, Protocol
 
 QUEUE_KEY = "studio:run-jobs"
 PROCESSING_PREFIX = "studio:run-jobs:processing:"
-HEARTBEAT_PREFIX = "studio:worker:"
-HEARTBEAT_TTL = 30  # seconds; a worker refreshes it every few seconds
+DELAYED_KEY = "studio:run-jobs:delayed"
+LEASE_PREFIX = "studio:job-lease:"
+
+
+def _dump(job: dict) -> str: return json.dumps({k: v for k, v in job.items() if not k.startswith("_")}, ensure_ascii=False, sort_keys=True)
+def _lease_id(raw: str) -> str: return hashlib.sha1(raw.encode()).hexdigest()
 
 
 class JobQueue(Protocol):
     kind: str
     worker_id: str
     def enqueue(self, job: dict) -> None: ...
+    def enqueue_at(self, job: dict, due: float) -> None: ...
+    def promote_due(self, now: Optional[float] = None) -> int: ...
     def dequeue(self, timeout: float) -> Optional[dict]: ...  # blocking, returns None on timeout
+    def touch(self, job: dict) -> None: ...
     def ack(self, job: dict) -> None: ...
-    def heartbeat(self) -> None: ...
-    def recover_stale(self) -> int: ...
+    def reap(self) -> int: ...
 
 
 class InMemoryJobQueue:
     kind = "memory"
-    def __init__(self): self._q: "queue.Queue[dict]" = queue.Queue(); self.worker_id = "local"
+    def __init__(self):
+        self._q: "queue.Queue[dict]" = queue.Queue(); self.worker_id = "local"
+        self._delayed: list[tuple[float, int, dict]] = []; self._seq = 0; self._lock = threading.Lock()
     def enqueue(self, job): self._q.put(dict(job))
+    def enqueue_at(self, job, due):
+        with self._lock: self._seq += 1; heapq.heappush(self._delayed, (due, self._seq, dict(job)))
+    def promote_due(self, now=None):
+        now = now or time.time(); n = 0
+        with self._lock:
+            while self._delayed and self._delayed[0][0] <= now:
+                self._q.put(heapq.heappop(self._delayed)[2]); n += 1
+        return n
     def dequeue(self, timeout):
         try: return self._q.get(timeout=timeout)
         except queue.Empty: return None
+    def touch(self, job): pass
     def ack(self, job): pass
-    def heartbeat(self): pass
-    def recover_stale(self): return 0
+    def reap(self): return 0
 
 
 class RedisJobQueue:
     kind = "redis"
-    def __init__(self, url: str, client=None, worker_id: Optional[str] = None):
+    def __init__(self, url: str, client=None, worker_id: Optional[str] = None, visibility: Optional[int] = None):
         if client is None:
             import redis
             client = redis.Redis.from_url(url, decode_responses=True, socket_connect_timeout=2, socket_timeout=10)
         self.r = client; self.worker_id = worker_id or uuid.uuid4().hex[:12]
         self.processing = PROCESSING_PREFIX + self.worker_id
+        self._visibility = visibility; self._suspects: set[tuple[str, str]] = set()
 
-    def enqueue(self, job): self.r.lpush(QUEUE_KEY, json.dumps(job, ensure_ascii=False))
+    @property
+    def visibility(self) -> int:
+        from ..core import config
+        return self._visibility or config.job_visibility()
+
+    def enqueue(self, job): self.r.lpush(QUEUE_KEY, _dump(job))
+    def enqueue_at(self, job, due): self.r.zadd(DELAYED_KEY, {_dump(job) + f"|{uuid.uuid4().hex[:6]}": due})  # suffix: identical jobs stay distinct
+
+    def promote_due(self, now=None):
+        n = 0
+        for member in self.r.zrangebyscore(DELAYED_KEY, "-inf", now or time.time(), start=0, num=100):
+            if self.r.zrem(DELAYED_KEY, member):  # only the worker that removed it promotes it
+                self.r.lpush(QUEUE_KEY, member.rsplit("|", 1)[0]); n += 1
+        return n
 
     def dequeue(self, timeout):
         raw = self.r.blmove(QUEUE_KEY, self.processing, max(1, int(timeout)), "RIGHT", "LEFT")
         if raw is None: return None
+        self.r.set(LEASE_PREFIX + _lease_id(raw), self.worker_id, ex=self.visibility)
         job = json.loads(raw); job["_raw"] = raw  # exact payload, needed for LREM on ack
         return job
 
+    def touch(self, job):
+        if job.get("_raw"): self.r.set(LEASE_PREFIX + _lease_id(job["_raw"]), self.worker_id, ex=self.visibility)
+
     def ack(self, job):
         raw = job.get("_raw")
-        if raw: self.r.lrem(self.processing, 1, raw)
+        if raw:
+            self.r.lrem(self.processing, 1, raw); self.r.delete(LEASE_PREFIX + _lease_id(raw))
 
-    def heartbeat(self): self.r.set(HEARTBEAT_PREFIX + self.worker_id, "1", ex=HEARTBEAT_TTL)
-
-    def recover_stale(self) -> int:
-        """Requeue jobs held by workers that are gone (no heartbeat). Safe to run on every worker start."""
-        n = 0
+    def reap(self) -> int:
+        """Requeue jobs whose lease expired (seen expired on two consecutive passes). Safe on every worker."""
+        n = 0; seen: set[tuple[str, str]] = set()
         for key in self.r.scan_iter(match=PROCESSING_PREFIX + "*"):
-            wid = key[len(PROCESSING_PREFIX):]
-            if wid == self.worker_id or self.r.exists(HEARTBEAT_PREFIX + wid): continue
-            while (raw := self.r.rpop(key)) is not None:
-                job = json.loads(raw); job["recovered"] = True
-                self.r.rpush(QUEUE_KEY, json.dumps(job, ensure_ascii=False)); n += 1  # RPUSH: served next (BLMOVE takes from the right)
+            for raw in self.r.lrange(key, 0, -1):
+                if self.r.exists(LEASE_PREFIX + _lease_id(raw)): continue
+                if (key, raw) not in self._suspects: seen.add((key, raw)); continue
+                if self.r.lrem(key, 1, raw):  # only the reaper that removed it requeues it
+                    job = json.loads(raw); job["recovered"] = True
+                    self.r.rpush(QUEUE_KEY, _dump(job)); n += 1  # RPUSH: served next (BLMOVE takes from the right)
+        self._suspects = seen
         return n
 
 

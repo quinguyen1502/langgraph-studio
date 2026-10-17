@@ -39,10 +39,12 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator.
     A Human node without a response yields `run_waiting` {node, prompt, checkpoint{node, state}} and stops.
-    resume = {"node", "value", "state"} continues a paused run at that node with the saved state (TASK-0006)."""
+    resume = {"node", "value", "state"} continues a paused run at that node with the saved state (TASK-0006).
+    Without "value" it continues from a progress checkpoint (`_checkpoint` {node, state}, yielded whenever exactly one
+    node runs next; recovery of queue jobs, TASK-0020). Callers must not forward `_checkpoint` to clients."""
     if resume is None and (bad := check_input(wf, inputs)): raise ValidationError(bad)
     usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
-    held = {"node": resume["node"], "value": resume["value"]} if resume else None
+    held = ({"node": resume["node"], "value": resume["value"]} if "value" in resume else None) if resume else None
     app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)),
                            entry=resume["node"] if resume else None, resume=held)
     nodes = {n["id"]: n for n in wf["nodes"]}
@@ -74,6 +76,8 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
             nxt = _next_nodes(wf, last, state)
             pending = nxt or ([last] if nodes[last]["type"] == "condition" else [])
             t0 = time.perf_counter()
+            if len(nxt) == 1 and nodes[nxt[0]]["type"] != "end":  # a single next node: resumable from here
+                yield {"type": "_checkpoint", "node": nxt[0], "state": dict(state)}
             for n2 in nxt:
                 yield started(n2)
     except Interrupt as i:  # a Human node is waiting: hand back a checkpoint instead of an error

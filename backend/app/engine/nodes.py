@@ -45,7 +45,7 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
             else:
                 res = call_tool(TOOLS[d["function"]], state, effects.key(node["id"]) if effects else None)
             return {d["output_field"]: res}
-    else:  # start, condition, end -> passthrough
+    else:  # start, condition, end, join, subgraph entry/exit -> passthrough
         def fn(state):
             return {}
     return fn

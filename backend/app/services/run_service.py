@@ -8,6 +8,7 @@ from typing import Awaitable, Callable, Iterator, Optional
 from ..core import config
 from ..core.errors import CATALOG, AppError
 from ..engine import repo_import
+from ..engine import subgraphs
 from ..engine.errors import ValidationError
 from ..engine.limits import cap_event, cap_run, safe_error, size
 from ..engine.effects import Effects
@@ -39,6 +40,7 @@ class RunPlan:
     attempt: int = 1              # queue delivery attempt, sent to side effects as X-Studio-Attempt
     effects: Optional[Effects] = None  # idempotency keys / ledger / fencing guard, set by RunService._execute
     resumed_by: Optional[dict] = None  # {channel, user_id} when an approval channel answered (TASK-0022)
+    invalid: Optional[list] = None  # subgraph reference errors found while planning (TASK-0011), reported as WORKFLOW_INVALID
 
     @property
     def imported(self) -> bool:
@@ -46,6 +48,7 @@ class RunPlan:
 
     def events(self) -> Iterator[dict]:
         if self.imported: return repo_import.run_imported(self.workflow, dict(self.input), resume=self.resume, checkpointing=self.checkpointing)
+        if self.invalid: raise ValidationError(self.invalid)
         return run_stream(self.workflow, self.input, self.resolve, self.resume, self.effects)
 
 
@@ -122,7 +125,22 @@ class RunService:
         stored = json.loads(row.data or "{}") if row else {}
         wf = stored if stored.get("source") else (req.get("workflow") or stored)
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
-        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=self._version_of(wid, wf))
+        version = self._version_of(wid, wf)
+        wf, invalid = self._expand(uid, wid, wf)
+        return RunPlan(wid, wf, inp, self.credentials.resolver(uid) if self.credentials else None, version=version, invalid=invalid)
+
+    def _expand(self, uid: str, wid: Optional[str], wf: dict) -> tuple[dict, Optional[list]]:
+        """Inline subgraph nodes (TASK-0011) with the workflows this user may read. The expanded graph is what runs and
+        what checkpoints store, so a resumed or recovered run continues on the same graph even if a child changed."""
+        if wf.get("source") or not subgraphs.has_subgraphs(wf): return wf, None
+        try: return subgraphs.expand(wf, self.workflow_loader(uid), wid), None
+        except ValidationError as e: return wf, e.errors
+
+    def workflow_loader(self, uid: str):
+        def load(ref: str) -> Optional[dict]:
+            row = self.workflows.get_owned(ref, uid)
+            return json.loads(row.data or "{}") if row else None
+        return load
 
     def _version_of(self, wid, wf: dict) -> Optional[int]:
         """The latest stored version number if `wf` matches it in content, else None (unsaved edits)."""

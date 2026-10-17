@@ -7,6 +7,7 @@ from .compiler import compile_workflow
 from .effects import Effects
 from .errors import Interrupt, ValidationError
 from .limits import safe_error
+from .reducers import apply as apply_delta
 from .usage import merge as merge_usage
 from ..core.config import recursion_limit
 
@@ -84,7 +85,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
             for nid, delta in chunk.items():
                 if nid not in nodes: continue
                 delta = delta or {}
-                state.update(delta)
+                state = apply_delta(state, delta, wf.get("state") or [])
                 reused = effects is not None and nid in effects.reused
                 if reused: effects.reused.discard(nid)
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),

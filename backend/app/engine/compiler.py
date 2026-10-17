@@ -1,9 +1,10 @@
 """Compile workflow JSON {nodes, edges, state} into a LangGraph StateGraph."""
 from __future__ import annotations
-from typing import Any, Dict, Optional, TypedDict
+from typing import Annotated, Any, Dict, Optional, TypedDict
 from langgraph.graph import StateGraph, START, END
 from .errors import ValidationError
 from .nodes import node_fn
+from .reducers import fn_of
 from .validator import validate
 
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
@@ -16,10 +17,14 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
     entries = set([entry] if isinstance(entry, str) else (entry or []))
     errs = validate(wf)
     if errs: raise ValidationError(errs)
-    ann = {f["name"]: Optional[TYPE_MAP.get(f.get("type", "string"), str)] for f in wf.get("state", [])}
+    def annotation(f):
+        typ = TYPE_MAP.get(f.get("type", "string"), str); fn = fn_of(f)
+        return Annotated[typ, fn] if fn else Optional[typ]  # reducer fields: LangGraph combines parallel writes (TASK-0011)
+    ann = {f["name"]: annotation(f) for f in wf.get("state", [])}
     State = TypedDict("State", ann, total=False)  # type: ignore
     g = StateGraph(State)
     nodes = {n["id"]: n for n in wf["nodes"]}
+    joins = {nid for nid, n in nodes.items() if n["type"] == "join"}
     for nid, n in nodes.items():
         fn = node_fn(n, resolve, usage, resume, effects)
         g.add_node(nid, effects.wrap(n, fn) if effects else fn)
@@ -45,5 +50,8 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
             g.add_conditional_edges(nid, router, mapping)
         else:
             for e in out:
-                g.add_edge(nid, e["target"])
+                if e["target"] not in joins: g.add_edge(nid, e["target"])  # several edges = parallel branches (TASK-0011)
+    for j in joins:  # fan-in: the Join runs once, after every incoming branch finished
+        if j in entries: continue
+        g.add_edge([e["source"] for e in wf["edges"] if e["target"] == j], j)
     return g.compile(checkpointer=checkpointer)

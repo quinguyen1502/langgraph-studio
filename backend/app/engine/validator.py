@@ -2,7 +2,11 @@
 from __future__ import annotations
 from typing import Any, Dict, List
 from .templating import VAR_RE
+from .reducers import field_errors, reducer_of
 from .tools import TOOLS
+
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit")
+WRITERS = ("llm", "tool", "human")
 
 
 def validate(wf: Dict[str, Any]) -> List[str]:
@@ -24,7 +28,9 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     if not starts: errs.append("Exactly one Start node is required (none found)")
     elif len(starts) > 1: errs.append(f"Only one Start node is allowed (found {len(starts)}: {', '.join(n['id'] for n in starts)})")
     if not ends: errs.append("At least one End node is required")
-    fields = {f["name"] for f in wf.get("state", [])}
+    schema = [f for f in wf.get("state", []) if isinstance(f, dict) and f.get("name")]
+    fields = {f["name"] for f in schema}
+    for f in schema: errs += field_errors(f)
     for e in edges:
         missing = [x for x in (e["source"], e["target"]) if x not in ids]
         if missing:
@@ -35,7 +41,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     out = {i: [e for e in edges if e["source"] == i] for i in ids}
     for n in nodes:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
-        if t not in ("start", "llm", "tool", "condition", "end", "human"):
+        if t not in TYPES:
             errs.append(f"Node {nid}: invalid type '{t}'")
         if t != "end" and not out.get(nid):
             errs.append(f"Node {nid} ({d.get('label', t)}) has no outgoing edge")
@@ -44,8 +50,6 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "start" and any(e["target"] == nid for e in edges):
             errs.append("Start must not have incoming edges")
         if t in ("llm", "tool", "human"):
-            if len(out.get(nid, [])) > 1:
-                errs.append(f"Node {nid}: only one outgoing edge is allowed (use a Condition to branch)")
             of = d.get("output_field")
             if not of: errs.append(f"Node {nid}: output_field is missing")
             elif fields and of not in fields: errs.append(f"Node {nid}: output_field '{of}' is not in the state")
@@ -54,6 +58,13 @@ def validate(wf: Dict[str, Any]) -> List[str]:
                 errs.append(f"Node {nid}: function '{d.get('function')}' is not registered")
             if d.get("mode") == "http" and not d.get("url"):
                 errs.append(f"Node {nid}: URL is missing")
+        if t == "join":
+            inc = [e for e in edges if e["target"] == nid]
+            if len(inc) < 2: errs.append(f"Join node {nid}: needs at least two incoming edges (the branches it waits for)")
+            if any(types.get(e["source"]) == "condition" for e in inc):
+                errs.append(f"Join node {nid}: a Condition cannot feed a Join directly (the Join would wait for a branch that may never run)")
+        if t == "subgraph" and not d.get("workflow_id"):
+            errs.append(f"Subgraph node {nid}: choose a workflow")
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]
@@ -62,6 +73,18 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "llm":
             for v in VAR_RE.findall(d.get("prompt", "")):
                 if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
+    # parallel branches (several outgoing edges, no Condition) that write the same field need a reducer
+    red = {f["name"]: reducer_of(f) for f in schema}
+    for n in nodes:
+        if n.get("type") == "condition" or len(out.get(n["id"], [])) < 2: continue
+        writes: Dict[str, List[str]] = {}
+        for e in out[n["id"]]:
+            tgt = next((x for x in nodes if x["id"] == e["target"]), None)
+            of = (tgt or {}).get("data", {}).get("output_field") if (tgt or {}).get("type") in WRITERS else None
+            if of: writes.setdefault(of, []).append(tgt["id"])
+        for of, who in writes.items():
+            if len(who) > 1 and red.get(of, "replace") == "replace":
+                errs.append(f"Parallel nodes {', '.join(who)} all write state.{of}: give the field a reducer (append, merge or add) or use different fields")
     # cycles must pass through a Condition node (otherwise the loop can never exit)
     plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) != "condition" and e["target"] != i] for i in ids if types.get(i) != "condition"}
     state_: Dict[str, int] = {}

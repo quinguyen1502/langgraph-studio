@@ -921,5 +921,31 @@
     "remove": "Gỡ",
     "revoke": "Thu hồi",
     "unlink": "Huỷ liên kết"
+  },
+  "shortcuts": {
+    "title": "Phím tắt",
+    "intro": "Phím tắt dùng trên canvas. Ô nhập liệu giữ phím bình thường, trừ lưu, chạy và dừng.",
+    "button": "Phím tắt (?)",
+    "or": "hoặc",
+    "groups": {
+      "general": "Chung",
+      "canvas": "Canvas",
+      "run": "Chạy",
+      "history": "Lịch sử",
+      "clipboard": "Bộ nhớ tạm",
+      "navigation": "Điều hướng"
+    },
+    "actions": {
+      "save": "Lưu workflow",
+      "cheatsheet": "Hiện bảng phím tắt",
+      "escape": "Bỏ chọn / đóng bảng",
+      "run": "Chạy workflow",
+      "stop": "Dừng lần chạy",
+      "delete": "Xoá phần đang chọn (trừ Start/End)",
+      "selectAll": "Chọn tất cả",
+      "fitView": "Vừa khung nhìn",
+      "zoomIn": "Phóng to",
+      "zoomOut": "Thu nhỏ"
+    }
   }
 }

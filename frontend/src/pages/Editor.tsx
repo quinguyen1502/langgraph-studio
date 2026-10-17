@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
+import { Keyboard, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +43,9 @@ import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
+import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
+import { useShortcuts } from '@/lib/use-shortcuts'
+import { PROTECTED, removeElements, selectionIds } from '@/lib/graph-ops'
 
 type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -224,6 +227,25 @@ function Studio() {
     stream({ workflow_id: wid, workflow: toJSON(), input: inp })
   }
   const respond = (runId: string, response: string) => stream({ resume_run_id: runId, response }, true)
+  const cancelRun = () => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))
+  const removeIds = (nodeIds: string[], edgeIds: string[] = []) => {
+    const r = removeElements(nodes, edges, nodeIds, edgeIds); if (!r.removed) return
+    setNodes(r.nodes); setEdges(r.edges); if (sel && (nodeIds.includes(sel.id) || edgeIds.includes(sel.id))) setSel(null)
+  }
+  // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
+  const [cheat, setCheat] = useState(false)
+  useShortcuts({
+    save: () => { if (edit) save() },
+    run: () => { if (!running) run() },
+    stop: () => { if (running) cancelRun() },
+    delete: () => { if (!edit || source) return false; const s = selectionIds(nodes, edges, sel); removeIds(s.nodeIds, s.edgeIds) },
+    selectAll: () => { setNodes(ns => ns.map(n => ({ ...n, selected: true }))); setEdges(es => es.map(e => ({ ...e, selected: true }))) },
+    fitView: () => { rf.fitView({ duration: 200 }) },
+    zoomIn: () => { rf.zoomIn({ duration: 150 }) },
+    zoomOut: () => { rf.zoomOut({ duration: 150 }) },
+    escape: () => { setSel(null); setNodes(ns => ns.map(n => n.selected ? { ...n, selected: false } : n)); setEdges(es => es.map(e => e.selected ? { ...e, selected: false } : e)); return false },
+    cheatsheet: () => setCheat(true),
+  })
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
@@ -273,7 +295,9 @@ function Studio() {
       <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
       {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
-      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={() => wsRef.current?.readyState === WebSocket.OPEN && wsRef.current.send(JSON.stringify({ type: 'cancel' }))}><Square />{t('common.cancel')}</Button></Tip>}
+      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
+      <Tip tip={t('shortcuts.button')}><Button variant="ghost" size="icon" id="shortcuts-btn" aria-label={t('shortcuts.button')} onClick={() => setCheat(true)}><Keyboard /></Button></Tip>
+      <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       <Dialog>
         <Tip tip={t('editor.jsonTip')}><DialogTrigger asChild><Button variant="ghost" size="sm"><Braces />JSON</Button></DialogTrigger></Tip>
         <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
@@ -324,7 +348,7 @@ function Studio() {
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={edit ? onConnect : undefined} nodesConnectable={edit} nodesDraggable={edit} edgesReconnectable={edit} onNodeClick={(_, n) => onNodeClick(n.id)}
-        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={edit ? ['Delete', 'Backspace'] : null} fitView>
+        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
         <Background /><Controls /><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
     </main>
@@ -337,7 +361,7 @@ function Studio() {
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
           <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
-          <Button variant="destructive" size="sm" onClick={() => { setEdges(es => es.filter(x => x.id !== selEdge.id)); setSel(null) }}><Trash2 />{t('editor.deleteEdge')}</Button>
+          <Button variant="destructive" size="sm" id="delete-edge" onClick={() => removeIds([], [selEdge.id])}><Trash2 />{t('editor.deleteEdge')}</Button>
         </div>}
         {selNode && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
@@ -389,7 +413,7 @@ function Studio() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {!source && <Button variant="destructive" size="sm" onClick={() => { setNodes(ns => ns.filter(n => n.id !== selNode.id)); setEdges(es => es.filter(e => e.source !== selNode.id && e.target !== selNode.id)); setSel(null) }}><Trash2 />{t('editor.deleteNode')}</Button>}
+          {!source && !PROTECTED.has(selNode.type!) && <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button>}
         </div>}
       </div></fieldset></ScrollArea>
     </aside>

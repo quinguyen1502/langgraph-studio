@@ -1,0 +1,26 @@
+import { describe, expect, it } from 'vitest'
+import { removeElements, selectionIds } from '../graph-ops'
+
+const N = (id: string, type = 'llm', selected = false) => ({ id, type, position: { x: 0, y: 0 }, data: {}, selected }) as any
+const E = (id: string, s: string, t: string, selected = false) => ({ id, source: s, target: t, selected }) as any
+const nodes = [N('start', 'start'), N('a', 'llm', true), N('b'), N('end', 'end', true)]
+const edges = [E('e1', 'start', 'a'), E('e2', 'a', 'b'), E('e3', 'b', 'end', true)]
+
+describe('removeElements', () => {
+  it('drops nodes with their edges but never Start/End', () => {
+    const r = removeElements(nodes, edges, ['a', 'end'])
+    expect(r.nodes.map(n => n.id)).toEqual(['start', 'b', 'end'])
+    expect(r.edges.map(e => e.id)).toEqual(['e3'])
+  })
+  it('drops selected edges', () => {
+    expect(removeElements(nodes, edges, [], ['e2']).edges.map(e => e.id)).toEqual(['e1', 'e3'])
+  })
+})
+
+describe('selectionIds', () => {
+  it('uses the canvas selection first, then the inspector item', () => {
+    expect(selectionIds(nodes, edges)).toEqual({ nodeIds: ['a', 'end'], edgeIds: ['e3'] })
+    const plain = nodes.map(n => ({ ...n, selected: false })); const pe = edges.map(e => ({ ...e, selected: false }))
+    expect(selectionIds(plain, pe, { kind: 'edge', id: 'e1' })).toEqual({ nodeIds: [], edgeIds: ['e1'] })
+  })
+})

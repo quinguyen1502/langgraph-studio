@@ -956,7 +956,8 @@
       "copy": "Copy selected nodes",
       "cut": "Cut selected nodes",
       "paste": "Paste nodes",
-      "duplicate": "Duplicate selected nodes"
+      "duplicate": "Duplicate selected nodes",
+      "layout": "Tidy up the layout"
     }
   },
   "history": {
@@ -1004,5 +1005,13 @@
     "pasted_other": "Pasted {{count}} nodes",
     "pastedCleared_one": "Pasted {{count}} node — {{creds}} credential not available here was cleared",
     "pastedCleared_other": "Pasted {{count}} nodes — {{creds}} credential(s) not available here were cleared"
+  },
+  "layout": {
+    "group": "Layout",
+    "button": "Tidy up",
+    "tip": "Arrange nodes automatically (Shift+L)",
+    "direction": "Layout direction",
+    "lr": "Left to right",
+    "tb": "Top to bottom"
   }
 }

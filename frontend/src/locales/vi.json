@@ -956,7 +956,8 @@
       "copy": "Sao chép node đang chọn",
       "cut": "Cắt node đang chọn",
       "paste": "Dán node",
-      "duplicate": "Nhân bản node đang chọn"
+      "duplicate": "Nhân bản node đang chọn",
+      "layout": "Tự sắp xếp bố cục"
     }
   },
   "history": {
@@ -1004,5 +1005,13 @@
     "pasted_other": "Đã dán {{count}} node",
     "pastedCleared_one": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây",
     "pastedCleared_other": "Đã dán {{count}} node — đã bỏ {{creds}} thông tin xác thực không dùng được ở đây"
+  },
+  "layout": {
+    "group": "Bố cục",
+    "button": "Sắp xếp",
+    "tip": "Tự động sắp xếp node (Shift+L)",
+    "direction": "Hướng bố cục",
+    "lr": "Trái sang phải",
+    "tb": "Trên xuống dưới"
   }
 }

@@ -20,6 +20,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'fitView', keys: ['shift+1'], group: 'canvas' },
   { id: 'zoomIn', keys: ['mod+='], group: 'canvas' },
   { id: 'zoomOut', keys: ['mod+-'], group: 'canvas' },
+  { id: 'layout', keys: ['shift+l'], group: 'canvas' },
 ]
 export const GROUPS: ShortcutGroup[] = ['general', 'canvas', 'history', 'clipboard', 'run']
 

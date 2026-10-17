@@ -45,3 +45,16 @@ def test_identity_workspace_backfill(db):
     assert got == {("u1", "slack"): "TOWN", ("u2", "slack"): "TORG", ("u1", "telegram"): ""}  # personal first, else org; Telegram has none
     assert inspect(db.engine).get_pk_constraint("channel_identities")["constrained_columns"] == ["user_id", "kind", "team_id"]
     upgrade(db, "head")  # idempotent
+
+
+def test_verified_duplicates_are_resolved_then_the_index_holds(db):
+    import sqlalchemy.exc
+    upgrade(db, "0016_identity_workspaces")
+    ins = text("INSERT INTO channel_identities(user_id, kind, team_id, external_id, created, verified_at, code_attempts) VALUES (:u, 'slack', 'T1', 'U1', 1.0, :v, 0)")
+    with db.engine.begin() as c:
+        for u, v in (("late", 9.0), ("first", 3.0), ("pending", None)): c.execute(ins, {"u": u, "v": v})
+    upgrade(db, "head")
+    with db.engine.connect() as c:
+        assert [r[0] for r in c.execute(text("SELECT user_id FROM channel_identities WHERE verified_at IS NOT NULL"))] == ["first"]
+    with pytest.raises(sqlalchemy.exc.IntegrityError), db.engine.begin() as c:
+        c.execute(text("UPDATE channel_identities SET verified_at = 10.0 WHERE user_id = 'pending'"))

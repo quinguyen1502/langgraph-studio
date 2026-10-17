@@ -1,6 +1,6 @@
 """Human-in-the-loop approval through external channels (TASK-0022, DEC-0019)."""
 from typing import Optional
-from sqlalchemy import Float, Index, Integer, Text
+from sqlalchemy import text, Float, Index, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
@@ -26,7 +26,9 @@ class ChannelIdentity(Base):
     (the user typed the one-time code the bot sent to that account) authorizes button presses; one verified link per
     (kind, team_id, external_id)."""
     __tablename__ = "channel_identities"
-    __table_args__ = (Index("ix_channel_identities_external", "kind", "external_id"),)
+    __table_args__ = (Index("ix_channel_identities_external", "kind", "external_id"),
+                      Index("uq_channel_identities_verified", "kind", "team_id", "external_id", unique=True,  # one verified owner per account
+                            sqlite_where=text("verified_at IS NOT NULL"), postgresql_where=text("verified_at IS NOT NULL")))
     user_id: Mapped[str] = mapped_column(Text, primary_key=True)
     kind: Mapped[str] = mapped_column(Text, primary_key=True)
     team_id: Mapped[str] = mapped_column(Text, primary_key=True, default="", server_default="")  # Slack workspace; "" = no workspaces (Telegram)

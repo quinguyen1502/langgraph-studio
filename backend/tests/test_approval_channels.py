@@ -421,3 +421,25 @@ def test_callbacks_are_rate_limited_per_ip_and_per_channel(c, api, monkeypatch):
     codes = [slack_post(c, None, press("x", "U1", team=f"T{run}"), secret="0" * 32).status_code for _ in range(3)]
     assert codes == [401, 401, 429]
     assert slack_post(c, None, press("x", "U1", team=f"T{run}X"), secret="0" * 32).status_code == 401  # another workspace: own budget
+
+
+def test_concurrent_verification_has_one_winner(c, api, monkeypatch):
+    """Both users pass the "already taken?" read before either writes: the partial unique index picks one winner,
+    the loser gets IDENTITY_TAKEN (409), and the DB never holds two verified owners of one account."""
+    from sqlalchemy import text
+    from app.repositories.approvals import ApprovalRepository
+    a, b = user(c), user(c); ext = f"U{uuid.uuid4().hex[:8].upper()}"
+    for u in (a, b):
+        connect(c, u, "slack")
+        assert ident(c, u, "slack", ext).status_code == 200
+        assert c.post("/api/approvals/identities/slack/send-code", json={}, headers=H(u["token"])).status_code == 200
+    monkeypatch.setattr(ApprovalRepository, "user_for", lambda *_a, **_k: None)  # the race: nobody looks verified yet
+    ca, cb = [re.search(r"\b(\d{6})\b", m["text"]).group(1) for m in api.named("chat.postMessage")[-2:]]  # a's code, then b's
+    ra = c.post("/api/approvals/identities/slack/verify", json={"code": ca}, headers=H(a["token"]))
+    rb = c.post("/api/approvals/identities/slack/verify", json={"code": cb}, headers=H(b["token"]))
+    assert ra.status_code == 200 and slot(ra.json()["data"], "slack")["verified"] is True
+    assert rb.status_code == 409 and rb.json()["error"]["code"] == "IDENTITY_TAKEN"
+    monkeypatch.undo()
+    with approval_service().repo.db.session() as s:
+        n = s.execute(text("SELECT count(*) FROM channel_identities WHERE external_id = :e AND verified_at IS NOT NULL"), {"e": ext}).scalar_one()
+    assert n == 1

@@ -75,6 +75,15 @@ class ApprovalRepository:
     def set_identity(self, uid: str, kind: str, team: str = "", **vals) -> None:
         with self.db.session() as s: s.execute(update(ChannelIdentity).where(*self._key(uid, kind, team)).values(**vals)); s.commit()
 
+    def verify_identity(self, uid: str, kind: str, team: str, at: float) -> bool:
+        """Mark verified in one transaction; False if another user verified the same account first (unique index)."""
+        from sqlalchemy.exc import IntegrityError
+        with self.db.session() as s:
+            try:
+                s.execute(update(ChannelIdentity).where(*self._key(uid, kind, team))
+                          .values(verified_at=at, code_hash=None, code_expires=None, code_attempts=0)); s.commit(); return True
+            except IntegrityError: s.rollback(); return False
+
     def count_attempt(self, uid: str, kind: str, team: str = "") -> int:
         """Atomically count a wrong code; returns the new count."""
         with self.db.session() as s:

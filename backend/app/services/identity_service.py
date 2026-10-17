@@ -92,5 +92,6 @@ class IdentityService:
             raise AppError("IDENTITY_CODE_INVALID", left=left)
         other = self.repo.user_for(kind, i.external_id, team)
         if other is not None and other != uid: raise AppError("IDENTITY_TAKEN", kind=a.label)
-        self.repo.set_identity(uid, kind, team, verified_at=time.time(), code_hash=None, code_expires=None, code_attempts=0)
+        if not self.repo.verify_identity(uid, kind, team, time.time()):  # lost a concurrent verify: the index decides
+            raise AppError("IDENTITY_TAKEN", kind=a.label)
         return self.get(uid)

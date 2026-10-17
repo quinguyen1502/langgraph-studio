@@ -320,7 +320,7 @@ function Studio() {
       <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 h-8" aria-label={t('editor.nameLabel')} />
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-44 h-8" aria-label={t('editor.nameLabel')} />
       {edit && savedSnap.current !== null && snap() !== savedSnap.current && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}

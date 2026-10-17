@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { api } from '@/lib/api'
 import { can, useMe } from '@/lib/rbac'
 
@@ -26,7 +27,9 @@ export function SaveTemplateDialog({ wid, defaultName, isDirty }: { wid?: string
   }
   return (
     <Dialog open={open} onOpenChange={onOpen}>
-      <DialogTrigger asChild><Button size="sm" variant="outline" id="save-template-btn" disabled={!wid}><LayoutTemplate />{t('templates.saveAs')}</Button></DialogTrigger>
+      <Tooltip><TooltipTrigger asChild><span className="inline-flex">{/* icon-only keeps the editor toolbar compact */}
+        <DialogTrigger asChild><Button size="icon-sm" variant="outline" id="save-template-btn" aria-label={t('templates.saveAs')} disabled={!wid}><LayoutTemplate /></Button></DialogTrigger>
+      </span></TooltipTrigger><TooltipContent>{t('templates.saveAs')}</TooltipContent></Tooltip>
       <DialogContent id="save-template">
         <DialogHeader><DialogTitle>{t('templates.saveAsTitle')}</DialogTitle><DialogDescription>{t('templates.saveAsDesc')}</DialogDescription></DialogHeader>
         {done ? <Alert id="tpl-saved"><CheckCircle2 /><AlertDescription>{t('templates.saved', { name: done })}</AlertDescription></Alert> : <>

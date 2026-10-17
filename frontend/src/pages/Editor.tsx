@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon } from 'lucide-react'
 import dagre from '@dagrejs/dagre'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,6 +45,7 @@ import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
 import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
 import { useShortcuts } from '@/lib/use-shortcuts'
+import { useGraphHistory } from '@/lib/use-graph-history'
 import { PROTECTED, removeElements, selectionIds } from '@/lib/graph-ops'
 
 type Field = { name: string; type: string; reducer?: string }
@@ -167,7 +168,9 @@ function Studio() {
   // unsaved-changes tracking (TASK-0019): snapshot of the saved graph, taken after load/save
   const savedSnap = useRef<string | null>(null); const takeBaseline = useRef(false)
   const snap = () => { const { id: _id, ...rest } = toJSON(); return JSON.stringify(rest) }
-  useEffect(() => { if (takeBaseline.current) { takeBaseline.current = false; savedSnap.current = snap() } }, [nodes, edges, name, state])
+  // undo/redo (TASK-0024): snapshots of nodes, edges and the state schema; reset whenever a workflow is (re)loaded
+  const hist = useGraphHistory(nodes, edges, state, h => { setNodes(h.nodes.map(n => ({ ...n }))); setEdges(styleEdges(h.edges)); setState(h.state) })
+  useEffect(() => { if (takeBaseline.current) { takeBaseline.current = false; savedSnap.current = snap(); hist.reset(nodes, edges, state) } }, [nodes, edges, name, state])
   const load = (wf: any) => {
     takeBaseline.current = true
     setName(wf.name); setWid(wf.id); setState(wf.state || [])
@@ -245,6 +248,8 @@ function Studio() {
     zoomOut: () => { rf.zoomOut({ duration: 150 }) },
     escape: () => { setSel(null); setNodes(ns => ns.map(n => n.selected ? { ...n, selected: false } : n)); setEdges(es => es.map(e => e.selected ? { ...e, selected: false } : e)); return false },
     cheatsheet: () => setCheat(true),
+    undo: () => { if (edit) hist.undo() },
+    redo: () => { if (edit) hist.redo() },
   })
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
@@ -288,6 +293,7 @@ function Studio() {
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
       <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 h-8" aria-label={t('editor.nameLabel')} />
+      {edit && savedSnap.current !== null && snap() !== savedSnap.current && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
@@ -296,6 +302,9 @@ function Studio() {
       {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
+      {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
+        <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
+        <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
       <Tip tip={t('shortcuts.button')}><Button variant="ghost" size="icon" id="shortcuts-btn" aria-label={t('shortcuts.button')} onClick={() => setCheat(true)}><Keyboard /></Button></Tip>
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       <Dialog>

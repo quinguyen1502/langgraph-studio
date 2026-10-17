@@ -1,14 +1,6 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { login, SIMPLE } from './helpers'
 // TASK-0023: keyboard shortcuts in the editor and the cheat sheet.
-async function login(page: Page) {
-  await page.goto('/login'); await page.getByLabel('Email').fill('admin@example.com'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123')
-  await page.locator('#auth-submit').click(); await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
-}
-const N = (id: string, type: string, x: number, data: Record<string, unknown> = {}) => ({ id, type, position: { x, y: 120 }, data: { label: id, ...data } })
-export const SIMPLE = (name: string) => ({ name, state: [{ name: 'message', type: 'string' }, { name: 'answer', type: 'string' }],
-  nodes: [N('start', 'start', 40), N('reply', 'llm', 300, { label: 'Reply', model: 'gpt-4o-mini', prompt: 'Answer {{state.message}}', output_field: 'answer' }), N('end', 'end', 560)],
-  edges: [{ id: 'e1', source: 'start', target: 'reply' }, { id: 'e2', source: 'reply', target: 'end' }] })
 
 test('save, run, delete with the keyboard; typing is safe; cheat sheet lists every shortcut', async ({ page }) => {
   const H = await login(page)
@@ -34,7 +26,7 @@ test('save, run, delete with the keyboard; typing is safe; cheat sheet lists eve
   // ? opens the cheat sheet
   await page.locator('.react-flow__pane').click(); await page.keyboard.press('Shift+?')
   const sheet = page.locator('#shortcut-cheatsheet'); await expect(sheet).toBeVisible()
-  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(10)
+  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(12)
   await expect(sheet).toContainText('Ctrl'); await expect(sheet).toContainText('Lưu workflow')
   await page.keyboard.press('Escape'); await expect(sheet).toHaveCount(0)
 })

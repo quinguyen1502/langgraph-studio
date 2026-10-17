@@ -7,7 +7,8 @@ export type RunEvent = { type: string; node?: string; label?: string; node_type?
 export type Usage = { provider?: string; model?: string; tokens?: number; tokens_in?: number; tokens_out?: number; cost_usd?: number | null; estimated?: boolean }
 export type RunMetrics = { duration_ms: number; tokens: number; tokens_in: number; tokens_out: number; cost_usd: number | null; error_count: number }
 export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled' | 'waiting'
-  start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; cost?: number | null; usage?: Usage; events: RunEvent[] }
+  start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; cost?: number | null; usage?: Usage; events: RunEvent[]
+  live?: string }  // TASK-0030: LLM text streamed so far (node_token deltas; not stored in run history)
 export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout' | 'waiting' | 'expired'; start?: number; end?: number; total?: number
   tokens?: number; errors: string[]; final?: any; metrics?: RunMetrics; traceUrl?: string
   waiting?: { runId?: string; node?: string; label?: string; prompt?: string } }
@@ -25,6 +26,7 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
     if (e.type === 'node_started' && n) {
       const it = (counts[n] = (counts[n] || 0) + 1); const m = meta(n)
       spans.push({ key: `${n}#${it}`, node: n, label: e.label || m.label || n, type: e.node_type || m.type || 'code', iter: it, status: 'running', start: t(e, i), events: [e] })
+    } else if (e.type === 'node_token' && n) { const s = open(n); if (s) s.live = (s.live || '') + (typeof e.delta === 'string' ? e.delta : '')
     } else if (e.type === 'node_finished' && n) {
       let s = open(n)
       if (!s) { const it = (counts[n] = (counts[n] || 0) + 1); s = { key: `${n}#${it}`, node: n, label: e.label || meta(n).label || n, type: e.node_type || meta(n).type || 'code', iter: it, status: 'running', start: t(e, i) - (e.duration_ms || 0) / 1000, events: [] }; spans.push(s) }

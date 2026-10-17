@@ -17,6 +17,7 @@ class KnowledgeBase(Base):
     model: Mapped[Optional[str]] = mapped_column(Text)          # embedding model (default text-embedding-3-small)
     credential_id: Mapped[Optional[str]] = mapped_column(Text)  # OpenAI-compatible credential; none = env key or mock
     embedder: Mapped[Optional[str]] = mapped_column(Text)       # effective embedder of the stored vectors, e.g. mock:256
+    dims: Mapped[Optional[int]] = mapped_column(Integer)        # dimension of the stored vectors (TASK-0030); NULL = empty / legacy
     created: Mapped[float] = mapped_column(Float)
 
 

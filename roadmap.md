@@ -61,3 +61,7 @@ Added on 2026-10-17 at the owner's request. Status: in review (stacked draft PRs
 - TASK-0027 Auto-layout for the workflow canvas (REQ-0017) — review, DEC-0030
 - TASK-0028 Command palette (REQ-0018) — review, DEC-0031
 
+
+## LLM providers
+
+- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032): **review** — draft PR into `develop`.

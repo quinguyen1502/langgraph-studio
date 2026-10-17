@@ -10,7 +10,7 @@ const WF = {
     { id: 'e', type: 'end', position: { x: 560, y: 150 }, data: { label: 'End' } }],
   edges: [{ id: '1', source: 's', target: 'ask' }, { id: '2', source: 'ask', target: 'e' }],
 }
-const CHAT = 'http://127.0.0.1:8111'
+const CHAT = `http://127.0.0.1:${process.env.E2E_CHAT_PORT || 8111}`
 async function sent(page: Page, method: string, match: (b: any) => boolean) {
   let found: any = null
   await expect.poll(async () => { const calls = await (await page.request.get(`${CHAT}/_messages`)).json(); found = calls.filter((c: any) => c.method === method && match(c.body)).pop(); return !!found }).toBe(true)

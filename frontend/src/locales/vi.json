@@ -198,7 +198,8 @@
     "openTrace": "Mở trace",
     "usageDetail": "{{model}}: {{tin}} vào / {{tout}} ra token · {{cost}}",
     "estimated": "(ước tính)",
-    "waiting": "Đang chờ người duyệt"
+    "waiting": "Đang chờ người duyệt",
+    "streaming": "Đang nhận từ model…"
   },
   "import": {
     "button": "Import repo",
@@ -230,11 +231,33 @@
     "openai": "OpenAI / compatible",
     "anthropic": "Anthropic",
     "key": "API key",
-    "baseUrl": "Base URL (tuỳ chọn, cho endpoint OpenAI-compatible)",
+    "baseUrl": "Base URL (để trống = mặc định của provider)",
     "add": "Thêm credential",
     "deleteAria": "Xoá {{name}}",
     "deleteTitle": "Xoá thông tin xác thực {{name}}?",
-    "deleteBody": "Workflow và kho tri thức dùng khoá này sẽ lỗi cho tới khi chọn khoá khác. Không thể hoàn tác."
+    "deleteBody": "Workflow và kho tri thức dùng khoá này sẽ lỗi cho tới khi chọn khoá khác. Không thể hoàn tác.",
+    "keyOptional": "API key (không bắt buộc)",
+    "test": "Kiểm tra kết nối",
+    "testAria": "Kiểm tra kết nối {{name}}",
+    "testing": "Đang kết nối…",
+    "dockerHint": "Chạy trên máy của bạn. Khi studio chạy bằng Docker Compose, dùng http://host.docker.internal:<port> thay cho localhost.",
+    "header": "Header {{name}} (không bắt buộc)",
+    "refererPh": "https://trang-cua-ban.example",
+    "titlePh": "LangGraph Studio",
+    "providers": {
+      "openai": "OpenAI / tương thích",
+      "anthropic": "Anthropic",
+      "ollama": "Ollama (cục bộ)",
+      "lmstudio": "LM Studio (cục bộ)",
+      "openai_compatible": "Tương thích OpenAI (vLLM / llama.cpp / LocalAI)",
+      "openrouter": "OpenRouter"
+    },
+    "testOk_one": "Đã kết nối · {{count}} model · {{ms}} ms",
+    "testOk_other": "Đã kết nối · {{count}} model · {{ms}} ms",
+    "editAria": "Sửa {{name}}",
+    "editTitle": "Sửa credential {{name}}",
+    "keyKeep": "Giữ key đã lưu {{hint}}; nhập key mới để thay",
+    "clearKey": "Xoá key đã lưu"
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -355,6 +378,13 @@
     "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
     "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
     "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})",
+    "PROVIDER_UNREACHABLE": "Không kết nối được {{provider}} tại {{base_url}}: server có đang chạy và API có truy cập được không?",
+    "PROVIDER_AUTH_FAILED": "{{provider}} từ chối API key: {{reason}}",
+    "PROVIDER_BAD_RESPONSE": "{{provider}} trả về phản hồi không hợp lệ: {{reason}}",
+    "MODEL_NOT_FOUND": "{{provider}} không có model tên {{model}}",
+    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} không nhận header {{header}}",
+    "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} không hỗ trợ embedding; hãy chọn credential khác cho kho tri thức này",
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "Model embedding trả về vector {{got}} chiều nhưng kho tri thức đang lưu vector {{expected}} chiều; hãy index lại kho tri thức",
     "TEMPLATE_NOT_FOUND": "Không tìm thấy mẫu",
     "TEMPLATE_READ_ONLY": "Không thể xoá mẫu này",
     "TEMPLATE_INVALID": "Tệp mẫu không hợp lệ",
@@ -687,7 +717,10 @@
     "deleteTitle": "Xoá kho tri thức {{name}}?",
     "deleteBody": "Tài liệu và chỉ mục bị xoá; node Retriever dùng kho này sẽ lỗi. Không thể hoàn tác.",
     "deleteFileTitle": "Xoá tài liệu {{name}}?",
-    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác."
+    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác.",
+    "embedTest": "Kiểm tra embedding",
+    "embedOk": "Hoạt động · {{dims}} chiều · {{ms}} ms",
+    "dims": "{{dims}} chiều"
   },
   "mcp": {
     "new": "Thêm máy chủ MCP",
@@ -929,6 +962,13 @@
     "remove": "Gỡ",
     "revoke": "Thu hồi",
     "unlink": "Huỷ liên kết"
+  },
+  "models": {
+    "load": "Tải danh sách model từ credential",
+    "needCredential": "Chọn credential để tải danh sách model",
+    "choose": "Chọn trong {{count}} model",
+    "none": "Provider không trả về model nào; hãy gõ tên.",
+    "failed": "Không tải được danh sách model ({{error}}). Hãy gõ tên model."
   },
   "shortcuts": {
     "title": "Phím tắt",

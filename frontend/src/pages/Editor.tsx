@@ -46,6 +46,8 @@ import type { Channels } from '@/lib/approvals'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
 import type { Credential } from '@/components/credentials-dialog'
+import { ModelPicker } from '@/components/model-picker'
+import { useProviders } from '@/lib/providers'
 import { RunTrace } from '@/components/run-trace'
 import { buildTrace, fmtCost, fmtMs, withSummary } from '@/lib/trace'
 import { SubgraphSettings } from '@/components/subgraph-settings'
@@ -160,6 +162,7 @@ function Studio() {
   const [mode, setMode] = useState('')
   const [source, setSource] = useState<any>(null)
   const [creds, setCreds] = useState<Credential[]>([])
+  const providers = useProviders()
   const [channels, setChannels] = useState<Channels | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
@@ -471,7 +474,7 @@ function Studio() {
               <SelectTrigger className="w-full" id="llm-credential"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="none">{t('editor.credentialDefault')}</SelectItem>
                 {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select></F>
-            <F label={t('field.model')}><Input value={d.model} onChange={e => upd('model', e.target.value)} placeholder={creds.find(c => c.id === d.credential_id)?.provider === 'anthropic' ? 'claude-3-5-haiku-latest' : 'gpt-4o-mini'} /></F>
+            <F label={t('field.model')}><ModelPicker credentialId={d.credential_id || undefined} value={d.model || ''} onChange={v => upd('model', v)} placeholder={providers.find(p => p.id === creds.find(c => c.id === d.credential_id)?.provider)?.default_model || 'gpt-4o-mini'} /></F>
             <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}

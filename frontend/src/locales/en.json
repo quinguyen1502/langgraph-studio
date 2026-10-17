@@ -198,7 +198,8 @@
     "openTrace": "Open trace",
     "usageDetail": "{{model}}: {{tin}} in / {{tout}} out tokens · {{cost}}",
     "estimated": "(estimated)",
-    "waiting": "Waiting for a human"
+    "waiting": "Waiting for a human",
+    "streaming": "Streaming from the model…"
   },
   "import": {
     "button": "Import repo",
@@ -230,11 +231,33 @@
     "openai": "OpenAI / compatible",
     "anthropic": "Anthropic",
     "key": "API key",
-    "baseUrl": "Base URL (optional, for OpenAI-compatible endpoints)",
+    "baseUrl": "Base URL (empty = provider default)",
     "add": "Add credential",
     "deleteAria": "Delete {{name}}",
     "deleteTitle": "Delete credential {{name}}?",
-    "deleteBody": "Workflows and knowledge bases that use this key fail until another one is chosen. This cannot be undone."
+    "deleteBody": "Workflows and knowledge bases that use this key fail until another one is chosen. This cannot be undone.",
+    "keyOptional": "API key (optional)",
+    "test": "Test connection",
+    "testAria": "Test connection of {{name}}",
+    "testing": "Connecting…",
+    "dockerHint": "Runs on your machine. When the studio runs in Docker Compose use http://host.docker.internal:<port> instead of localhost.",
+    "header": "Header {{name}} (optional)",
+    "refererPh": "https://your-site.example",
+    "titlePh": "LangGraph Studio",
+    "providers": {
+      "openai": "OpenAI / compatible",
+      "anthropic": "Anthropic",
+      "ollama": "Ollama (local)",
+      "lmstudio": "LM Studio (local)",
+      "openai_compatible": "OpenAI-compatible (vLLM / llama.cpp / LocalAI)",
+      "openrouter": "OpenRouter"
+    },
+    "testOk_one": "Connected · {{count}} model · {{ms}} ms",
+    "testOk_other": "Connected · {{count}} models · {{ms}} ms",
+    "editAria": "Edit {{name}}",
+    "editTitle": "Edit credential {{name}}",
+    "keyKeep": "Stored key {{hint}} is kept; type a new one to replace it",
+    "clearKey": "Remove the stored key"
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -355,6 +378,13 @@
     "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
     "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
     "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})",
+    "PROVIDER_UNREACHABLE": "Could not reach {{provider}} at {{base_url}}: is the server running and reachable from the API?",
+    "PROVIDER_AUTH_FAILED": "{{provider}} rejected the API key: {{reason}}",
+    "PROVIDER_BAD_RESPONSE": "{{provider}} returned an unexpected response: {{reason}}",
+    "MODEL_NOT_FOUND": "{{provider}} has no model named {{model}}",
+    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} does not accept the header {{header}}",
+    "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} does not provide embeddings; choose another credential for this knowledge base",
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "The embedding model returns {{got}}-dimensional vectors but this knowledge base stores {{expected}}-dimensional ones; re-index the knowledge base",
     "TEMPLATE_NOT_FOUND": "Template not found",
     "TEMPLATE_READ_ONLY": "This template cannot be deleted",
     "TEMPLATE_INVALID": "Not a valid template file",
@@ -687,7 +717,10 @@
     "deleteTitle": "Delete knowledge base {{name}}?",
     "deleteBody": "Its documents and index are removed; Retriever nodes using it will fail. This cannot be undone.",
     "deleteFileTitle": "Delete document {{name}}?",
-    "deleteFileBody": "Its passages are removed from the index. This cannot be undone."
+    "deleteFileBody": "Its passages are removed from the index. This cannot be undone.",
+    "embedTest": "Test embedding",
+    "embedOk": "Works · {{dims}} dimensions · {{ms}} ms",
+    "dims": "{{dims}} dims"
   },
   "mcp": {
     "new": "Add MCP server",
@@ -929,6 +962,13 @@
     "remove": "Remove",
     "revoke": "Revoke",
     "unlink": "Unlink"
+  },
+  "models": {
+    "load": "Load models from the credential",
+    "needCredential": "Choose a credential to load its models",
+    "choose": "Choose from {{count}} models",
+    "none": "The provider returned no models; type the name.",
+    "failed": "Could not load models ({{error}}). Type the model name manually."
   },
   "shortcuts": {
     "title": "Keyboard shortcuts",

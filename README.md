@@ -206,6 +206,26 @@ Lưu thành mẫu, Chia sẻ, API, JSON, Bảng lệnh, Phím tắt, Xoá workfl
 - Lưu trữ: Postgres có pgvector (image compose `pgvector/pgvector:pg17`) → cột `vector`, tìm bằng SQL; Postgres thường hoặc SQLite → JSON + so cosine
   trong Python (cùng kết quả). API: `/api/knowledge-bases…` (xem `docs/api-errors.md` cho mã `KB_*`). Thiết kế: DEC-0021.
 
+## Nhà cung cấp LLM: Ollama, LM Studio, OpenAI-compatible, OpenRouter (TASK-0030)
+Mở **Credentials** (thanh trên) → chọn provider. Mỗi provider là một lớp nhỏ trong `backend/app/engine/providers.py` (registry, DEC-0032):
+
+| Provider | Base URL mặc định | API key | Danh sách model |
+| --- | --- | --- | --- |
+| Ollama | `http://localhost:11434` | không cần | `/api/tags` |
+| LM Studio | `http://localhost:1234/v1` | không cần | `/v1/models` |
+| OpenAI-compatible (vLLM, llama.cpp `server`, LocalAI) | `http://localhost:8000/v1` | tuỳ server | `/v1/models` |
+| OpenRouter | `https://openrouter.ai/api/v1` | **bắt buộc** (+ header tuỳ chọn `HTTP-Referer`, `X-Title`) | `/api/v1/models` |
+| OpenAI / Anthropic | như trước | bắt buộc | `/models`, `/v1/models` |
+
+- **Test connection** gọi danh sách model của provider (trước hoặc sau khi lưu); lỗi trả mã `PROVIDER_UNREACHABLE`, `PROVIDER_AUTH_FAILED`, `PROVIDER_BAD_RESPONSE`, `MODEL_NOT_FOUND` (`docs/api-errors.md`).
+- Trong node LLM, ô **Model** có nút tải danh sách model từ credential đã chọn; không tải được thì vẫn gõ tay.
+- Chạy bằng LangChain: `ChatOllama` (langchain-ollama) và `ChatOpenAI(base_url=…)` cho LM Studio / OpenRouter / OpenAI-compatible, nên streaming và `bind_tools` (tool calling) dùng được nếu model hỗ trợ (`engine.llm.chat_model(cred, model)`).
+- Cài đặt: Ollama `ollama serve` + `ollama pull llama3.2`; LM Studio: tab *Developer* → *Start server* và tải một model; OpenRouter: tạo key tại https://openrouter.ai/keys.
+- **Xem trực tiếp (streaming):** khi chạy, node LLM gửi từng đoạn văn bản qua WebSocket (`node_token`), và tab Logs hiện chữ đang sinh ở dòng của node và trong tab Output. Kết quả cuối không đổi, và các đoạn này không lưu vào lịch sử run.
+- **Embedding cho kho tri thức:** chọn credential Ollama / LM Studio / OpenAI-compatible / OpenRouter / OpenAI trong *Cài đặt → Kho tri thức*. Model mặc định theo provider (Ollama: `nomic-embed-text`, cần `ollama pull nomic-embed-text`). Nút **Kiểm tra embedding** cho biết số chiều. Mỗi kho lưu số chiều (`dims`). Nếu model trả vector khác số chiều, API báo `KB_EMBEDDING_DIMENSION_MISMATCH` và bạn chỉ cần bấm index lại.
+- **Sửa credential:** bấm biểu tượng bút ở dòng credential. Để trống ô key thì giữ key cũ (chỉ hiện dạng che), nhập key mới thì thay. Provider không đổi được.
+- **Docker Compose:** trong container, `localhost` là chính container. `api` và `worker` có `extra_hosts: host.docker.internal:host-gateway`, nên đặt base URL là `http://host.docker.internal:11434` (Ollama) hoặc `http://host.docker.internal:1234/v1` (LM Studio). Trên Linux, Ollama cần nghe trên mọi interface (`OLLAMA_HOST=0.0.0.0 ollama serve`), LM Studio bật *Serve on Local Network*; tường lửa có thể phải cho phép subnet Docker (vd. `sudo iptables -I INPUT -i br-+ -j ACCEPT` / `-i docker0`).
+
 ## API
 Mọi endpoint trả về envelope: `{"success": true, "data": …, "error": null}` hoặc `{"success": false, "data": null, "error": {"code": "AUTH_INVALID_CREDENTIALS", "message": "…", "details": …}}`. Danh mục mã lỗi: `docs/api-errors.md` (DEC-0010).
 

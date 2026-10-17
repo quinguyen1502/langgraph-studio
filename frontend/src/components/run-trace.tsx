@@ -61,6 +61,7 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
       <span className="truncate shrink-0 max-w-[25%] text-muted-foreground font-mono text-[10px]">{s.node}</span>
       {s.tokens != null && <Tooltip><TooltipTrigger asChild><span className="text-muted-foreground text-[10px]" data-testid="span-tokens">· {t('trace.tokensShort', { count: s.tokens })}{s.cost ? ` · ${fmtCost(s.cost)}` : ''}</span></TooltipTrigger>
         <TooltipContent>{t('trace.usageDetail', { model: s.usage?.model ?? '—', tin: s.usage?.tokens_in ?? 0, tout: s.usage?.tokens_out ?? 0, cost: fmtCost(s.cost) })}{s.usage?.estimated ? ` ${t('trace.estimated')}` : ''}</TooltipContent></Tooltip>}
+      {s.status === 'running' && s.live && <span data-testid="span-live" className="truncate min-w-0 font-mono text-[11px] text-muted-foreground">{s.live.slice(-160)}</span>}
       {s.error && <Tooltip><TooltipTrigger asChild><span className="truncate min-w-0 text-destructive text-[11px]">— {s.error}</span></TooltipTrigger>
         <TooltipContent className="max-w-md break-all">{s.error}</TooltipContent></Tooltip>}
     </span>
@@ -87,7 +88,7 @@ function DiffView({ s }: { s: Span }) {
 
 function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void }) {
   const { t } = useTranslation(); const m = meta(s.type); const I = m.icon
-  const [tab, setTab] = useState(s.status === 'error' ? 'output' : 'diff')
+  const [tab, setTab] = useState(s.status === 'error' || (s.status === 'running' && s.live) ? 'output' : 'diff')
   return <div className="w-[46%] min-w-80 border-l flex flex-col min-h-0" id="trace-detail">
     <div className="flex items-center gap-2 px-3 py-1.5 border-b text-xs">
       <span className={cn('rounded p-0.5', m.color)}><I className="size-3.5" /></span>
@@ -101,7 +102,10 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
       <ScrollArea className="flex-1 min-h-0"><div className="p-3 pt-2">
         {s.error && <Alert variant="destructive" className="mb-2 py-2 text-xs"><AlertTriangle /><AlertDescription className="break-all text-xs">{s.error}</AlertDescription></Alert>}
         <TabsContent value="input"><JsonView value={s.input} /></TabsContent>
-        <TabsContent value="output"><JsonView value={s.output} /></TabsContent>
+        <TabsContent value="output">{s.status === 'running' && s.live
+          ? <div className="space-y-1" id="trace-live"><div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Loader2 className="size-3 animate-spin" />{t('trace.streaming')}</div>
+              <pre className="whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{s.live}</pre></div>
+          : <JsonView value={s.output} />}</TabsContent>
         <TabsContent value="diff"><DiffView s={s} /></TabsContent>
         <TabsContent value="raw"><JsonView value={s.events} /></TabsContent>
       </div></ScrollArea>

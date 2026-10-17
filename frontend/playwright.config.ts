@@ -3,7 +3,9 @@ import os from 'os'
 import path from 'path'
 
 // Isolated stack: backend on 8100 (temp DB), Vite on 5190 proxying to it.
-const API = 8100, UI = 5190, CHAT = 8111  // CHAT: fake Slack/Telegram APIs (backend/tests/fixtures/mock_chat_api.py)
+// Ports are overridable (E2E_API_PORT/E2E_UI_PORT/E2E_CHAT_PORT) so two worktrees can run the suite side by side.
+const env = (k: string, d: number) => Number(process.env[k] || d)
+const API = env('E2E_API_PORT', 8100), UI = env('E2E_UI_PORT', 5190), CHAT = env('E2E_CHAT_PORT', 8111)  // CHAT: fake Slack/Telegram APIs (backend/tests/fixtures/mock_chat_api.py)
 const db = path.join(os.tmpdir(), `lgs-e2e-${Date.now()}.db`)
 export default defineConfig({
   testDir: './e2e',

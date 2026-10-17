@@ -52,7 +52,7 @@ def test_openai_embeddings_request(monkeypatch):
     def handler(req):
         seen["url"], seen["auth"], body = str(req.url), req.headers["authorization"], __import__("json").loads(req.content)
         return httpx.Response(200, json={"data": [{"index": i, "embedding": [float(i), 1.0]} for i, _ in enumerate(body["input"])]})
-    monkeypatch.setattr(llm, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(llm.providers, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
     cred = {"provider": "openai", "api_key": "sk-test", "base_url": "https://example.test/v1"}
     assert embeddings.embed(["a", "b"], None, cred) == [[0.0, 1.0], [1.0, 1.0]]
     assert seen["url"] == "https://example.test/v1/embeddings" and seen["auth"] == "Bearer sk-test"

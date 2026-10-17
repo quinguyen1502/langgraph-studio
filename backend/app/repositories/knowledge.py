@@ -86,6 +86,14 @@ class KnowledgeRepository:
             if pairs: s.execute(text(f"UPDATE kb_chunks SET embedding = {cast} WHERE id = :id"), [{"id": i, "e": self._vec(v)} for i, v in pairs])
             s.commit()
 
+    def stored_dims(self, kid: str) -> Optional[int]:
+        """Dimension of one stored vector of the knowledge base (legacy rows without `knowledge_bases.dims`)."""
+        with self.db.session() as s:
+            if self.has_vector():
+                return s.execute(text("SELECT vector_dims(embedding) FROM kb_chunks WHERE kb_id = :kb AND embedding IS NOT NULL LIMIT 1"), {"kb": kid}).scalar()
+            e = s.scalars(select(KbChunk.embedding).where(KbChunk.kb_id == kid, KbChunk.embedding.is_not(None)).limit(1)).first()
+            return len(json.loads(e)) if e else None
+
     def search(self, kid: str, vector: list[float], k: int) -> list[dict]:
         """Top-k chunks by cosine similarity: {text, score, document_id, filename, index}."""
         cols = "c.text, c.document_id, d.filename, c.idx"

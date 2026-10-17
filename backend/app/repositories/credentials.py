@@ -19,6 +19,13 @@ class CredentialRepository:
         with self.db.session() as s:
             return s.scalars(select(Credential).where(Credential.id == cid, Credential.owner == owner)).first()
 
+    def update_owned(self, cid: str, owner: str, **values) -> Optional[Credential]:
+        with self.db.session() as s:
+            c = s.scalars(select(Credential).where(Credential.id == cid, Credential.owner == owner)).first()
+            if c is None: return None
+            for k, v in values.items(): setattr(c, k, v)
+            s.commit(); s.refresh(c); return c
+
     def delete_owned(self, cid: str, owner: str) -> bool:
         with self.db.session() as s:
             n = s.execute(delete(Credential).where(Credential.id == cid, Credential.owner == owner)).rowcount; s.commit()

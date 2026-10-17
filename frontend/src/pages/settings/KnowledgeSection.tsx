@@ -2,7 +2,8 @@
  *  Retriever nodes pick one of these by id. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Database, FileText, Plus, RefreshCw, Search, Settings2, Trash2, Upload } from 'lucide-react'
+import { AlertCircle, CircleCheck, PlugZap, ChevronDown, Database, FileText, Plus, RefreshCw, Search, Settings2, Trash2, Upload } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,6 +17,8 @@ import { ErrorAlert, useAction } from '@/components/approvals/channel-parts'
 import type { Credential } from '@/components/credentials-dialog'
 import { useConfirmDelete } from '@/components/confirm-delete-dialog'
 import { api } from '@/lib/api'
+import { ModelPicker } from '@/components/model-picker'
+import { testEmbedding, useProviders, type EmbeddingTest } from '@/lib/providers'
 import { KB_ACCEPT, fmtBytes, type KbHit, type KnowledgeBase } from '@/lib/knowledge'
 import { cn } from '@/lib/utils'
 
@@ -23,17 +26,29 @@ type Form = { name: string; description: string; model: string; credential_id: s
 const toForm = (kb?: KnowledgeBase): Form => ({ name: kb?.name || '', description: kb?.description || '', model: kb?.model || 'text-embedding-3-small', credential_id: kb?.credential_id || '' })
 
 function KbFields({ form, set, creds, idp }: { form: Form; set: (f: Form) => void; creds: Credential[]; idp: string }) {
-  const { t } = useTranslation()
-  const openai = creds.filter(c => c.provider === 'openai')
+  const { t } = useTranslation(); const providers = useProviders()
+  const prov = (cid: string) => providers.find(p => p.id === creds.find(c => c.id === cid)?.provider)
+  const usable = creds.filter(c => providers.find(p => p.id === c.provider)?.supports_embeddings)
+  const [probe, setProbe] = useState<{ busy?: boolean; ok?: EmbeddingTest; err?: string }>({})
+  const pickCred = (v: string) => { const cid = v === 'none' ? '' : v; const was = prov(form.credential_id)?.default_embedding_model || 'text-embedding-3-small'
+    setProbe({}); set({ ...form, credential_id: cid, model: !form.model || form.model === was ? (prov(cid)?.default_embedding_model || 'text-embedding-3-small') : form.model }) }
+  const runProbe = async () => { setProbe({ busy: true }); try { setProbe({ ok: await testEmbedding(form.credential_id, form.model) }) } catch (e: any) { setProbe({ err: e.message }) } }
   return <div className="grid gap-3 sm:grid-cols-2">
     <div className="space-y-1.5"><Label htmlFor={`${idp}-name`}>{t('kb.name')}</Label><Input id={`${idp}-name`} value={form.name} onChange={e => set({ ...form, name: e.target.value })} /></div>
     <div className="space-y-1.5"><Label htmlFor={`${idp}-description`}>{t('kb.description')}</Label><Input id={`${idp}-description`} value={form.description} onChange={e => set({ ...form, description: e.target.value })} /></div>
-    <div className="space-y-1.5"><Label htmlFor={`${idp}-model`}>{t('kb.model')}</Label><Input id={`${idp}-model`} className="font-mono text-xs" value={form.model} onChange={e => set({ ...form, model: e.target.value })} /></div>
     <div className="space-y-1.5"><Label htmlFor={`${idp}-credential`}>{t('kb.credential')}</Label>
-      <Select value={form.credential_id || 'none'} onValueChange={v => set({ ...form, credential_id: v === 'none' ? '' : v })}>
+      <Select value={form.credential_id || 'none'} onValueChange={pickCred}>
         <SelectTrigger className="w-full" id={`${idp}-credential`}><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value="none">{t('kb.credentialDefault')}</SelectItem>
-          {openai.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.hint}</SelectItem>)}</SelectContent></Select></div>
+          {usable.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {t(`creds.providers.${c.provider}`, { defaultValue: c.provider })}{c.hint ? ` · ${c.hint}` : ''}</SelectItem>)}</SelectContent></Select></div>
+    <div className="space-y-1.5"><Label htmlFor={`${idp}-model`}>{t('kb.model')}</Label>
+      <ModelPicker idp={`${idp}-model`} credentialId={form.credential_id || undefined} value={form.model} onChange={v => { setProbe({}); set({ ...form, model: v }) }}
+        placeholder={prov(form.credential_id)?.default_embedding_model || 'text-embedding-3-small'} /></div>
+    {form.credential_id && <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+      <Button type="button" variant="outline" size="sm" id={`${idp}-embed-test`} disabled={probe.busy} onClick={runProbe}><PlugZap />{t('kb.embedTest')}</Button>
+      {probe.ok && <Badge variant="success" id={`${idp}-embed-ok`}><CircleCheck />{t('kb.embedOk', { dims: probe.ok.dims, ms: probe.ok.latency_ms })}</Badge>}
+      {probe.err && <Alert variant="destructive" id={`${idp}-embed-error`} className="py-2"><AlertCircle /><AlertDescription className="text-xs">{probe.err}</AlertDescription></Alert>}
+    </div>}
   </div>
 }
 
@@ -58,6 +73,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
           <Badge variant="secondary" data-testid="kb-docs">{t('kb.documents', { count: kb.documents })}</Badge>
           <Badge variant="outline">{t('kb.chunks', { count: kb.chunks })}</Badge>
           {kb.embedder && <Badge variant="outline" className="font-mono">{kb.embedder}</Badge>}
+          {kb.dims && <Badge variant="outline" data-testid="kb-dims">{t('kb.dims', { dims: kb.dims })}</Badge>}
         </CardTitle>
         <CardDescription>{kb.description || t('kb.noDescription')}</CardDescription>
         <CardAction><CollapsibleTrigger asChild><Button variant="ghost" size="icon" aria-label={t('settings.toggle')} id={`kb-${kb.id}-toggle`}>

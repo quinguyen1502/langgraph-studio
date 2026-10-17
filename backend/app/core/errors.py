@@ -140,6 +140,8 @@ CATALOG: dict[str, tuple[int, str]] = {
     "PROVIDER_AUTH_FAILED": (400, "{provider} rejected the API key: {reason}"),
     "PROVIDER_BAD_RESPONSE": (502, "{provider} returned an unexpected response: {reason}"),
     "MODEL_NOT_FOUND": (400, "{provider} has no model named {model}"),
+    "PROVIDER_EMBEDDINGS_UNSUPPORTED": (400, "{provider} does not provide embeddings; choose another credential for this knowledge base"),
+    "KB_EMBEDDING_DIMENSION_MISMATCH": (409, "The embedding model returns {got}-dimensional vectors but this knowledge base stores {expected}-dimensional ones; re-index the knowledge base"),
     "CREDENTIAL_HEADER_UNSUPPORTED": (400, "{provider} does not accept the header {header}"),
     "ORG_RESOURCE_NOT_ALLOWED": (403, "Your role may not use organization-wide resources at run time ({kind})"),
 }

@@ -195,7 +195,8 @@
     "openTrace": "Mở trace",
     "usageDetail": "{{model}}: {{tin}} vào / {{tout}} ra token · {{cost}}",
     "estimated": "(ước tính)",
-    "waiting": "Đang chờ người duyệt"
+    "waiting": "Đang chờ người duyệt",
+    "streaming": "Đang nhận từ model…"
   },
   "import": {
     "button": "Import repo",
@@ -249,7 +250,11 @@
       "openrouter": "OpenRouter"
     },
     "testOk_one": "Đã kết nối · {{count}} model · {{ms}} ms",
-    "testOk_other": "Đã kết nối · {{count}} model · {{ms}} ms"
+    "testOk_other": "Đã kết nối · {{count}} model · {{ms}} ms",
+    "editAria": "Sửa {{name}}",
+    "editTitle": "Sửa credential {{name}}",
+    "keyKeep": "Giữ key đã lưu {{hint}}; nhập key mới để thay",
+    "clearKey": "Xoá key đã lưu"
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -374,7 +379,9 @@
     "PROVIDER_AUTH_FAILED": "{{provider}} từ chối API key: {{reason}}",
     "PROVIDER_BAD_RESPONSE": "{{provider}} trả về phản hồi không hợp lệ: {{reason}}",
     "MODEL_NOT_FOUND": "{{provider}} không có model tên {{model}}",
-    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} không nhận header {{header}}"
+    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} không nhận header {{header}}",
+    "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} không hỗ trợ embedding; hãy chọn credential khác cho kho tri thức này",
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "Model embedding trả về vector {{got}} chiều nhưng kho tri thức đang lưu vector {{expected}} chiều; hãy index lại kho tri thức"
   },
   "lang": {
     "en": "English",
@@ -702,7 +709,10 @@
     "deleteTitle": "Xoá kho tri thức {{name}}?",
     "deleteBody": "Tài liệu và chỉ mục bị xoá; node Retriever dùng kho này sẽ lỗi. Không thể hoàn tác.",
     "deleteFileTitle": "Xoá tài liệu {{name}}?",
-    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác."
+    "deleteFileBody": "Các đoạn của tài liệu bị xoá khỏi chỉ mục. Không thể hoàn tác.",
+    "embedTest": "Kiểm tra embedding",
+    "embedOk": "Hoạt động · {{dims}} chiều · {{ms}} ms",
+    "dims": "{{dims}} chiều"
   },
   "mcp": {
     "new": "Thêm máy chủ MCP",

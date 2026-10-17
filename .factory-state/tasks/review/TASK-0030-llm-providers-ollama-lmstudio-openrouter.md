@@ -28,11 +28,12 @@ Let LLM nodes use local models (Ollama, LM Studio, any OpenAI-compatible server 
 - UI: provider list from the API, per-provider form (key optional label, default URL placeholder, Docker hint, header fields), "Test connection" on the form and on saved rows, LLM node model picker (fetched list + manual entry, warning on failure); deletes keep `ConfirmDeleteDialog`.
 - Docker Compose: `extra_hosts: host.docker.internal:host-gateway` on `api` and `worker`; README section.
 
+- Follow-up (owner request, same PR): live LLM output in the run trace (`node_token` events, not stored); registry embeddings for knowledge bases (Ollama, LM Studio, OpenAI-compatible, OpenRouter, OpenAI) with per-KB dimension (`dims`, migration 0024) and `KB_EMBEDDING_DIMENSION_MISMATCH` / `PROVIDER_EMBEDDINGS_UNSUPPORTED`; embedding test endpoint; edit a credential in place (`PUT /api/credentials/{id}`, secret kept unless re-entered).
+
 ### Out Of Scope
 
-- Token-by-token streaming of LLM node output into the run trace (the node still returns the final text; streaming is available to code using `chat_model()`).
-- Tool-calling agent node (no such node exists yet); embeddings for Ollama/LM Studio in knowledge bases.
-- Editing an existing credential (delete + re-add, as before).
+- Tool-calling agent node (no such node exists yet).
+- Streaming LLM nodes inside subgraphs and imported code.
 
 ## Acceptance Criteria
 
@@ -46,3 +47,4 @@ Let LLM nodes use local models (Ollama, LM Studio, any OpenAI-compatible server 
 - SQLite: 249 passed, 10 skipped. Postgres 17 (pgvector) + Redis 7 via `docker compose -p lgs-llm --env-file …`: 258 passed, 1 skipped.
 - e2e: 28 passed, 4 skipped (all specs). `npm run build` OK.
 - Compose: api/worker resolve `host.docker.internal` (172.17.0.1) and list models from a fake Ollama on the host; `http://localhost:11434` from the container returns `PROVIDER_UNREACHABLE` as documented. Needed `iptables-legacy -I FORWARD -i br-<net> -o br-<net> -j ACCEPT` on this box for the new compose network.
+- Follow-up: SQLite 260 passed, 10 skipped; Postgres 17 (pgvector) + Redis 7 via Compose `--env-file` 269 passed, 1 skipped (migration 0024 applied). e2e full suite 31 passed, 4 skipped (new `e2e/llm-streaming-embeddings.spec.ts`). Build OK. Screenshots `/workspace/ss-review/56-llm-*`.

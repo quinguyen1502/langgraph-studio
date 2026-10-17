@@ -185,6 +185,9 @@ Mở **Credentials** (thanh trên) → chọn provider. Mỗi provider là một
 - Trong node LLM, ô **Model** có nút tải danh sách model từ credential đã chọn; không tải được thì vẫn gõ tay.
 - Chạy bằng LangChain: `ChatOllama` (langchain-ollama) và `ChatOpenAI(base_url=…)` cho LM Studio / OpenRouter / OpenAI-compatible, nên streaming và `bind_tools` (tool calling) dùng được nếu model hỗ trợ (`engine.llm.chat_model(cred, model)`).
 - Cài đặt: Ollama `ollama serve` + `ollama pull llama3.2`; LM Studio: tab *Developer* → *Start server* và tải một model; OpenRouter: tạo key tại https://openrouter.ai/keys.
+- **Xem trực tiếp (streaming):** khi chạy, node LLM gửi từng đoạn văn bản qua WebSocket (`node_token`), và tab Logs hiện chữ đang sinh ở dòng của node và trong tab Output. Kết quả cuối không đổi, và các đoạn này không lưu vào lịch sử run.
+- **Embedding cho kho tri thức:** chọn credential Ollama / LM Studio / OpenAI-compatible / OpenRouter / OpenAI trong *Cài đặt → Kho tri thức*. Model mặc định theo provider (Ollama: `nomic-embed-text`, cần `ollama pull nomic-embed-text`). Nút **Kiểm tra embedding** cho biết số chiều. Mỗi kho lưu số chiều (`dims`). Nếu model trả vector khác số chiều, API báo `KB_EMBEDDING_DIMENSION_MISMATCH` và bạn chỉ cần bấm index lại.
+- **Sửa credential:** bấm biểu tượng bút ở dòng credential. Để trống ô key thì giữ key cũ (chỉ hiện dạng che), nhập key mới thì thay. Provider không đổi được.
 - **Docker Compose:** trong container, `localhost` là chính container. `api` và `worker` có `extra_hosts: host.docker.internal:host-gateway`, nên đặt base URL là `http://host.docker.internal:11434` (Ollama) hoặc `http://host.docker.internal:1234/v1` (LM Studio). Trên Linux, Ollama cần nghe trên mọi interface (`OLLAMA_HOST=0.0.0.0 ollama serve`), LM Studio bật *Serve on Local Network*; tường lửa có thể phải cho phép subnet Docker (vd. `sudo iptables -I INPUT -i br-+ -j ACCEPT` / `-i docker0`).
 
 ## API

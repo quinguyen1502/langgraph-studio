@@ -15,3 +15,18 @@ class ProviderProbeIn(BaseModel):
     api_key: str = ""
     base_url: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
+    credential_id: Optional[str] = None  # editing: test with this saved credential's key when none is typed
+
+
+class CredentialUpdate(BaseModel):
+    """Edit in place (TASK-0030). The provider is fixed; `api_key` omitted/empty keeps the stored secret,
+    `clear_key` removes it (providers where a key is optional)."""
+    name: str
+    base_url: Optional[str] = None
+    headers: Optional[Dict[str, str]] = None
+    api_key: Optional[str] = None
+    clear_key: bool = False
+
+
+class EmbeddingTestIn(BaseModel):
+    model: Optional[str] = None

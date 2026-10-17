@@ -195,7 +195,8 @@
     "openTrace": "Open trace",
     "usageDetail": "{{model}}: {{tin}} in / {{tout}} out tokens · {{cost}}",
     "estimated": "(estimated)",
-    "waiting": "Waiting for a human"
+    "waiting": "Waiting for a human",
+    "streaming": "Streaming from the model…"
   },
   "import": {
     "button": "Import repo",
@@ -249,7 +250,11 @@
       "openrouter": "OpenRouter"
     },
     "testOk_one": "Connected · {{count}} model · {{ms}} ms",
-    "testOk_other": "Connected · {{count}} models · {{ms}} ms"
+    "testOk_other": "Connected · {{count}} models · {{ms}} ms",
+    "editAria": "Edit {{name}}",
+    "editTitle": "Edit credential {{name}}",
+    "keyKeep": "Stored key {{hint}} is kept; type a new one to replace it",
+    "clearKey": "Remove the stored key"
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -374,7 +379,9 @@
     "PROVIDER_AUTH_FAILED": "{{provider}} rejected the API key: {{reason}}",
     "PROVIDER_BAD_RESPONSE": "{{provider}} returned an unexpected response: {{reason}}",
     "MODEL_NOT_FOUND": "{{provider}} has no model named {{model}}",
-    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} does not accept the header {{header}}"
+    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} does not accept the header {{header}}",
+    "PROVIDER_EMBEDDINGS_UNSUPPORTED": "{{provider}} does not provide embeddings; choose another credential for this knowledge base",
+    "KB_EMBEDDING_DIMENSION_MISMATCH": "The embedding model returns {{got}}-dimensional vectors but this knowledge base stores {{expected}}-dimensional ones; re-index the knowledge base"
   },
   "lang": {
     "en": "English",
@@ -702,7 +709,10 @@
     "deleteTitle": "Delete knowledge base {{name}}?",
     "deleteBody": "Its documents and index are removed; Retriever nodes using it will fail. This cannot be undone.",
     "deleteFileTitle": "Delete document {{name}}?",
-    "deleteFileBody": "Its passages are removed from the index. This cannot be undone."
+    "deleteFileBody": "Its passages are removed from the index. This cannot be undone.",
+    "embedTest": "Test embedding",
+    "embedOk": "Works · {{dims}} dimensions · {{ms}} ms",
+    "dims": "{{dims}} dims"
   },
   "mcp": {
     "new": "Add MCP server",

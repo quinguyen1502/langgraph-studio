@@ -376,7 +376,7 @@ class RunService:
 
         async def emit(ev):
             nonlocal connected
-            events.append(ev)
+            if ev.get("type") != "node_token": events.append(ev)  # live LLM text is not part of the stored event log
             if span is not None and ev.get("type") in ("node_finished", "error"):
                 try: self.telemetry.node(span, ev)  # live span (TASK-0020)
                 except Exception: pass

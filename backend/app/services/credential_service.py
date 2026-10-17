@@ -64,13 +64,40 @@ class CredentialService:
                        headers=json.dumps(hdrs) if hdrs else None, created=time.time())
         return public(self.repo.add(c))
 
+    def update(self, uid: str, cid: str, name: str, base_url: str | None, headers: Optional[Dict[str, str]],
+               api_key: Optional[str] = None, clear_key: bool = False) -> dict:
+        """Edit name / base URL / headers; the secret is kept unless a new key is entered (or cleared where optional)."""
+        c = self.repo.get_owned(cid, uid)
+        if c is None: raise AppError("CREDENTIAL_NOT_FOUND")
+        p = _provider(c.provider)
+        new_key = (api_key or "").strip()
+        has_key = bool(new_key) or (bool(c.secret) and not clear_key)
+        _, base, hdrs = _clean(p, new_key or ("kept" if has_key else ""), base_url, headers)
+        values: Dict[str, Any] = {"name": name.strip() or c.provider, "base_url": base, "headers": json.dumps(hdrs) if hdrs else None}
+        if new_key: values.update(secret=crypto.encrypt(new_key), hint=crypto.mask(new_key))
+        elif not has_key: values.update(secret=None, hint="")
+        return public(self.repo.update_owned(cid, uid, **values))
+
+    def embedding_test(self, uid: str, cid: str, model: Optional[str]) -> dict:
+        """Embed a probe text with the credential: proves the embedding model works and reports its dimension."""
+        cred = self.resolve(uid, cid); p = _provider(cred["provider"])
+        if not p.supports_embeddings: raise AppError("PROVIDER_EMBEDDINGS_UNSUPPORTED", provider=p.id)
+        m = (model or "").strip() or p.default_embedding_model
+        t0 = time.perf_counter()
+        try: vec = p.embed(["connection test"], m, cred)[0]
+        except registry.ProviderError as e: raise AppError(e.code, **e.params) from None
+        return {"ok": True, "model": m, "dims": len(vec), "latency_ms": round((time.perf_counter() - t0) * 1000)}
+
     def delete(self, cid: str, uid: str) -> dict:
         if not self.repo.delete_owned(cid, uid): raise AppError("CREDENTIAL_NOT_FOUND")
         return {"ok": True}
 
-    def probe(self, provider: str, api_key: str, base_url: str | None, headers: Optional[Dict[str, str]]) -> dict:
-        """Test unsaved settings: lists the provider's models (success = reachable + authorised)."""
+    def probe(self, provider: str, api_key: str, base_url: str | None, headers: Optional[Dict[str, str]],
+              uid: Optional[str] = None, credential_id: Optional[str] = None) -> dict:
+        """Test unsaved settings: lists the provider's models (success = reachable + authorised).
+        While editing, an empty key means the stored one of `credential_id` (owner only)."""
         p = _provider(provider)
+        if not (api_key or "").strip() and credential_id and uid: api_key = self.resolve(uid, credential_id)["api_key"]
         key, base, hdrs = _clean(p, api_key, base_url, headers)
         return _probe(p, {"provider": p.id, "api_key": key, "base_url": base, "headers": hdrs})
 

@@ -79,6 +79,8 @@
 | `PROVIDER_BAD_RESPONSE` | 502 | {provider} returned an unexpected response: {reason} |
 | `MODEL_NOT_FOUND` | 400 | {provider} has no model named {model} |
 | `CREDENTIAL_HEADER_UNSUPPORTED` | 400 | {provider} does not accept the header {header} |
+| `PROVIDER_EMBEDDINGS_UNSUPPORTED` | 400 | {provider} does not provide embeddings; choose another credential for this knowledge base |
+| `KB_EMBEDDING_DIMENSION_MISMATCH` | 409 | The embedding model returns {got}-dimensional vectors but this knowledge base stores {expected}-dimensional ones; re-index the knowledge base |
 | `KB_NOT_FOUND` | 404 | Knowledge base not found or not yours |
 | `KB_NAME_REQUIRED` | 400 | Knowledge base name is required |
 | `KB_NAME_TOO_LONG` | 400 | Knowledge base name must be at most {max} characters |
@@ -168,3 +170,5 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 ### LLM providers (TASK-0030)
 
 `PROVIDER_*` and `MODEL_NOT_FOUND` come from `POST /api/providers/{id}/test`, `GET /api/credentials/{id}/models` and, as the `code` of a run `error` event, from LLM nodes. `PROVIDER_AUTH_FAILED` is deliberately 400 (not 401) so the UI does not treat a rejected provider key as an expired studio session. `PROVIDER_UNREACHABLE` in Docker usually means the base URL says `localhost`: use `http://host.docker.internal:<port>` (see README, *Local LLM providers*).
+
+`PROVIDER_EMBEDDINGS_UNSUPPORTED` and `KB_EMBEDDING_DIMENSION_MISMATCH` come from knowledge-base uploads, re-index, search and `POST /api/credentials/{id}/embeddings/test`. A knowledge base stores the dimension of its vectors (`dims`); a model that suddenly returns another size (same name, e.g. a re-pulled local model) is refused instead of mixing vectors. Changing the model or credential still re-indexes automatically.

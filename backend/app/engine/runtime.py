@@ -72,7 +72,11 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     t0 = time.perf_counter(); pending: List[str] = []
     cfg = {"recursion_limit": recursion_limit(), "configurable": {"thread_id": "run"}}
     try:
-        for mode, chunk in app.stream(inputs, cfg, stream_mode=["updates", "checkpoints"]):
+        for mode, chunk in app.stream(inputs, cfg, stream_mode=["updates", "checkpoints", "custom"]):
+            if mode == "custom":  # live LLM text (TASK-0030): sent to the client, never stored (node_finished has the result)
+                if isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("delta"):
+                    yield {"type": "node_token", "node": chunk["node"], "iteration": counts.get(chunk["node"], 1), "delta": chunk["delta"]}
+                continue
             if mode == "checkpoints":  # superstep boundary: the nodes that run next, all inputs settled
                 nxt = [n for n in (chunk.get("next") or []) if n in nodes]
                 if not nxt: continue

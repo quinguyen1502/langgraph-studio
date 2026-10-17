@@ -7,7 +7,7 @@ models and how to build a LangChain chat model (streaming + `bind_tools` come wi
 Adding a provider = subclass `OpenAICompatible` (or `Provider`) with a few attributes and append it to REGISTRY.
 Errors are raised as `ProviderError(code, **params)`; codes live in core/errors.py (PROVIDER_*, MODEL_NOT_FOUND)."""
 from __future__ import annotations
-from typing import Any, ClassVar, Dict, List, Optional, Tuple
+from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 import httpx
 from ..core.errors import CATALOG
 from .usage import estimate_tokens, make_usage
@@ -66,7 +66,8 @@ class Provider:
     def info(self) -> Dict[str, Any]:
         return {"id": self.id, "label": self.label, "default_base_url": self.default_base_url, "default_model": self.default_model,
                 "key_required": self.key_required, "header_fields": list(self.header_fields),
-                "supports_tools": self.supports_tools, "streaming": True, "local": self.local}
+                "supports_tools": self.supports_tools, "streaming": True, "local": self.local,
+                "supports_embeddings": self.supports_embeddings, "default_embedding_model": self.default_embedding_model}
 
     @staticmethod
     def base(cred: Dict[str, Any], default: str) -> str:
@@ -96,19 +97,60 @@ class Provider:
     def map_error(self, e: Exception, model: str) -> Optional[ProviderError]:
         return None
 
-    def invoke(self, prompt: str, model: str, cred: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]:
+    stream_kwargs: ClassVar[Dict[str, Any]] = {}       # extra chat-model options when streaming (e.g. usage chunks)
+
+    def invoke(self, prompt: str, model: str, cred: Dict[str, Any], on_token: Optional[Callable[[str], None]] = None) -> Tuple[str, Dict[str, Any]]:
+        """Final text + usage. With `on_token` the LangChain model streams and every text delta is passed on as it arrives
+        (the returned text is the same concatenation)."""
         model = model or self.default_model
-        try: msg = self.chat_model(cred, model).invoke(prompt)
+        try:
+            if on_token is None: msg = self.chat_model(cred, model).invoke(prompt)
+            else:
+                msg = None
+                for chunk in self.chat_model(cred, model, **self.stream_kwargs).stream(prompt):
+                    if (d := _text(chunk.content)): on_token(d)
+                    msg = chunk if msg is None else msg + chunk
+                if msg is None: raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "empty stream")
         except ProviderError: raise
         except Exception as e:  # SDK-specific exceptions → catalog codes
             mapped = self.map_error(e, model) or _map_http_error(e, self.id, model, self.base(cred, self.default_base_url))
             raise mapped from None
-        out = msg.content if isinstance(msg.content, str) else "".join(
-            b.get("text", "") for b in msg.content if isinstance(b, dict))
+        out = _text(msg.content)
         u = getattr(msg, "usage_metadata", None) or {}
         usage = make_usage(self.id, model, u["input_tokens"], u["output_tokens"]) if u else \
             make_usage(self.id, model, estimate_tokens(prompt), estimate_tokens(out), estimated=True)
         return out.strip(), usage
+
+    # --- embeddings (knowledge bases) ----------------------------------------------------
+    supports_embeddings: ClassVar[bool] = True
+    default_embedding_model: ClassVar[str] = ""
+    embeddings_path: ClassVar[str] = "/embeddings"
+    embed_batch: ClassVar[int] = 96
+
+    def embed_request(self, model: str, texts: List[str]) -> Dict[str, Any]:
+        return {"model": model, "input": texts}
+
+    def parse_embeddings(self, data: Dict[str, Any]) -> List[List[float]]:
+        return [d["embedding"] for d in sorted(data["data"], key=lambda d: d.get("index", 0))]
+
+    def embed(self, texts: List[str], model: str, cred: Dict[str, Any]) -> List[List[float]]:
+        """One vector per text (OpenAI-style `/embeddings` by default). All vectors must share one dimension."""
+        if not self.supports_embeddings: raise ProviderError("PROVIDER_EMBEDDINGS_UNSUPPORTED", self.id)
+        model = model or self.default_embedding_model
+        url, out = self.base(cred, self.default_base_url) + self.embeddings_path, []
+        for i in range(0, len(texts), self.embed_batch):
+            batch = texts[i:i + self.embed_batch]
+            data = request(self.id, "POST", url, self.auth_headers(cred), self.embed_request(model, batch), model=model)
+            try: vecs = self.parse_embeddings(data)
+            except (TypeError, KeyError, AttributeError): raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "invalid embeddings response") from None
+            if len(vecs) != len(batch): raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "embedding count mismatch")
+            out += vecs
+        if len({len(v) for v in out}) > 1: raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "embeddings of different dimensions")
+        return out
+
+
+def _text(content: Any) -> str:
+    return content if isinstance(content, str) else "".join(b.get("text", "") for b in content if isinstance(b, dict))
 
 
 def _map_http_error(e: Exception, provider: str, model: str, base_url: str = "") -> ProviderError:
@@ -125,6 +167,7 @@ class OpenAICompatible(Provider):
     """Any server speaking the OpenAI Chat Completions API (vLLM, llama.cpp server, LocalAI, ...)."""
     id, label, default_base_url = "openai_compatible", "OpenAI-compatible (vLLM / llama.cpp / LocalAI)", "http://localhost:8000/v1"
     local = True
+    stream_kwargs = {"stream_usage": True}  # final chunk carries token usage (ignored by servers that do not send it)
 
     def chat_model(self, cred, model, **kw):
         from langchain_openai import ChatOpenAI
@@ -141,11 +184,15 @@ class OpenRouter(OpenAICompatible):
     id, label, default_base_url, default_model = "openrouter", "OpenRouter", "https://openrouter.ai/api/v1", "openrouter/auto"
     key_required, local = True, False
     header_fields = ("HTTP-Referer", "X-Title")
+    default_embedding_model = "openai/text-embedding-3-small"
 
 
 class Ollama(Provider):
     id, label, default_base_url, default_model = "ollama", "Ollama", "http://localhost:11434", "llama3.2"
     local, models_path = True, "/api/tags"
+    default_embedding_model, embeddings_path = "nomic-embed-text", "/api/embed"
+
+    def parse_embeddings(self, data): return data["embeddings"]
 
     def parse_models(self, data):
         return sorted(m.get("model") or m["name"] for m in data.get("models", []))
@@ -161,14 +208,25 @@ class Ollama(Provider):
         return None
 
 
-class OpenAI(Provider):
+class PlainHTTP(Provider):
+    """Providers called over plain HTTP (no token streaming): `_complete` returns (text, usage); a stream gets one delta."""
+    def _complete(self, prompt: str, model: str, cred: Dict[str, Any]) -> Tuple[str, Dict[str, Any]]: raise NotImplementedError
+
+    def invoke(self, prompt, model, cred, on_token=None):
+        out, usage = self._complete(prompt, model or self.default_model, cred)
+        if on_token and out: on_token(out)
+        return out, usage
+
+
+class OpenAI(PlainHTTP):
     """Hosted OpenAI (kept on plain HTTP like before TASK-0030; `ChatOpenAI` handles the same base URL for tools)."""
     id, label, default_base_url, default_model, key_required = "openai", "OpenAI / OpenAI-compatible", "https://api.openai.com/v1", "gpt-4o-mini", True
 
     def chat_model(self, cred, model, **kw): return OpenAICompatible.chat_model(self, cred, model, **kw)
 
-    def invoke(self, prompt, model, cred):
-        model = model or self.default_model
+    default_embedding_model = "text-embedding-3-small"
+
+    def _complete(self, prompt, model, cred):
         data = request(self.id, "POST", self.base(cred, self.default_base_url) + "/chat/completions", self.auth_headers(cred),
                        {"model": model, "messages": [{"role": "user", "content": prompt}]}, model=model)
         try: out = data["choices"][0]["message"]["content"].strip()
@@ -178,14 +236,13 @@ class OpenAI(Provider):
                      else make_usage(self.id, model, estimate_tokens(prompt), estimate_tokens(out), estimated=True))
 
 
-class Anthropic(Provider):
+class Anthropic(PlainHTTP):
     id, label, default_base_url, default_model, key_required = "anthropic", "Anthropic", "https://api.anthropic.com", "claude-3-5-haiku-latest", True
-    models_path = "/v1/models"
+    models_path, supports_embeddings = "/v1/models", False
 
     def auth_headers(self, cred): return {"x-api-key": cred.get("api_key") or "", "anthropic-version": "2023-06-01"}
 
-    def invoke(self, prompt, model, cred):
-        model = model or self.default_model
+    def _complete(self, prompt, model, cred):
         data = request(self.id, "POST", self.base(cred, self.default_base_url) + "/v1/messages", self.auth_headers(cred),
                        {"model": model, "max_tokens": 1024, "messages": [{"role": "user", "content": prompt}]}, model=model)
         try: out = "".join(b.get("text", "") for b in data["content"] if b.get("type") == "text").strip()

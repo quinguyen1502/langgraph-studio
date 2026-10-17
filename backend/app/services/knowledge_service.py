@@ -5,7 +5,7 @@ import os, time, uuid
 from typing import Any, Callable, Optional
 from ..core.errors import AppError
 from ..engine import documents, embeddings
-from ..engine.llm import LLMError
+from ..engine.providers import LLMError, ProviderError
 from ..models import KbDocument, KnowledgeBase
 from ..repositories import KnowledgeRepository
 
@@ -16,7 +16,7 @@ TOP_K_MAX = 20
 
 def public(kb: KnowledgeBase, docs: int = 0, chunks: int = 0) -> dict:
     return {"id": kb.id, "name": kb.name, "description": kb.description, "model": kb.model or embeddings.DEFAULT_MODEL,
-            "credential_id": kb.credential_id, "embedder": kb.embedder, "documents": docs, "chunks": chunks, "created": kb.created}
+            "credential_id": kb.credential_id, "embedder": kb.embedder, "dims": kb.dims, "documents": docs, "chunks": chunks, "created": kb.created}
 
 
 def public_doc(d: KbDocument) -> dict:
@@ -51,14 +51,14 @@ class KnowledgeService:
     def create(self, uid: str, name: str, description: str | None = None, model: str | None = None, credential_id: str | None = None) -> dict:
         n, cid = self._clean(uid, name, credential_id)
         kb = KnowledgeBase(id=uuid.uuid4().hex[:10], owner=uid, name=n, description=(description or "").strip() or None,
-                           model=(model or "").strip() or embeddings.DEFAULT_MODEL, credential_id=cid, created=time.time())
+                           model=self._model(uid, model, cid), credential_id=cid, created=time.time())
         return public(self.repo.add(kb))
 
     def update(self, kid: str, uid: str, name: str, description: str | None = None, model: str | None = None,
                credential_id: str | None = None) -> dict:
         """Changing the model or credential re-embeds the stored chunks when they would no longer match."""
         kb = self._owned(kid, uid); n, cid = self._clean(uid, name, credential_id)
-        self.repo.update(kid, name=n, description=(description or "").strip() or None, model=(model or "").strip() or embeddings.DEFAULT_MODEL,
+        self.repo.update(kid, name=n, description=(description or "").strip() or None, model=self._model(uid, model, cid),
                          credential_id=cid)
         kb = self._owned(kid, uid)
         if kb.embedder and kb.embedder != self._embedder_id(kb): self.reindex(kid, uid)
@@ -68,16 +68,38 @@ class KnowledgeService:
         self._owned(kid, uid); self.repo.delete(kid); return {"ok": True}
 
     # ---- embeddings ----
+    def _model(self, uid: str, model: Optional[str], cid: Optional[str]) -> str:
+        """Empty model = the default of the credential's provider (e.g. nomic-embed-text for Ollama)."""
+        cred = self.credentials.resolve(uid, cid) if cid and self.credentials is not None else None
+        return (model or "").strip() or embeddings.default_model(cred)
+
     def _cred(self, kb: KnowledgeBase) -> Optional[dict]:
         return self.credentials.resolve(kb.owner, kb.credential_id) if kb.credential_id and self.credentials is not None else None
 
-    def _embedder_id(self, kb: KnowledgeBase) -> str:
-        try: return embeddings.embedder_id(kb.model, self._cred(kb))
+    @staticmethod
+    def _call(fn):
+        try: return fn()
+        except ProviderError as e: raise AppError(e.code, **e.params) from None  # PROVIDER_UNREACHABLE, MODEL_NOT_FOUND, ...
         except LLMError as e: raise AppError("KB_EMBEDDING_FAILED", reason=str(e)) from None
 
+    def _embedder_id(self, kb: KnowledgeBase) -> str:
+        return self._call(lambda: embeddings.embedder_id(kb.model, self._cred(kb)))
+
     def _embed(self, kb: KnowledgeBase, texts: list[str]) -> list[list[float]]:
-        try: return embeddings.embed(texts, kb.model, self._cred(kb))
-        except LLMError as e: raise AppError("KB_EMBEDDING_FAILED", reason=str(e)) from None
+        return self._call(lambda: embeddings.embed(texts, kb.model, self._cred(kb)))
+
+    def _dims(self, kb: KnowledgeBase) -> Optional[int]:
+        """Dimension of the stored vectors: the column, else read from a chunk once and saved (legacy knowledge bases)."""
+        if kb.dims or not kb.embedder: return kb.dims
+        d = self.repo.stored_dims(kb.id)
+        if d: self.repo.update(kb.id, dims=d)
+        return d
+
+    def _check_dims(self, kb: KnowledgeBase, vectors: list[list[float]]) -> None:
+        """Same embedder name but a different vector size (e.g. a re-pulled local model): refuse instead of mixing."""
+        want = self._dims(kb)
+        if vectors and want and len(vectors[0]) != want:
+            raise AppError("KB_EMBEDDING_DIMENSION_MISMATCH", got=len(vectors[0]), expected=want)
 
     # ---- documents ----
     def upload(self, kid: str, uid: str, filename: str, data: bytes) -> dict:
@@ -91,10 +113,11 @@ class KnowledgeService:
         if not parts: raise AppError("KB_FILE_EMPTY")
         emb = self._embedder_id(kb)
         if kb.embedder and kb.embedder != emb: self.reindex(kid, uid)  # keep one embedder per knowledge base
-        vectors = self._embed(kb, parts)
+        kb = self._owned(kid, uid)  # reindex may have changed embedder/dims
+        vectors = self._embed(kb, parts); self._check_dims(kb, vectors)
         doc = self.repo.add_document(KbDocument(id=uuid.uuid4().hex[:10], kb_id=kid, filename=name, size=len(data), chunks=len(parts),
                                                 created=time.time()), parts, vectors)
-        if kb.embedder != emb: self.repo.update(kid, embedder=emb)
+        if kb.embedder != emb or not kb.dims: self.repo.update(kid, embedder=emb, dims=len(vectors[0]))
         return public_doc(doc)
 
     def delete_document(self, kid: str, did: str, uid: str) -> dict:
@@ -107,8 +130,8 @@ class KnowledgeService:
         kb = self._owned(kid, uid); rows = self.repo.chunk_texts(kid)
         vectors = self._embed(kb, [t for _, t in rows]) if rows else []
         self.repo.set_embeddings([(i, v) for (i, _), v in zip(rows, vectors)])
-        self.repo.update(kid, embedder=self._embedder_id(kb) if rows else None)
-        return {"ok": True, "chunks": len(rows)}
+        self.repo.update(kid, embedder=self._embedder_id(kb) if rows else None, dims=len(vectors[0]) if rows else None)
+        return {"ok": True, "chunks": len(rows), "dims": len(vectors[0]) if rows else None}
 
     # ---- search ----
     def search(self, kid: str, uid: str, query: str, top_k: int = 4) -> list[dict[str, Any]]:
@@ -118,7 +141,8 @@ class KnowledgeService:
         k = max(1, min(int(top_k or 4), TOP_K_MAX))
         if not kb.embedder: return []  # empty knowledge base
         if kb.embedder != self._embedder_id(kb): raise AppError("KB_EMBEDDER_CHANGED")
-        return self.repo.search(kid, self._embed(kb, [q])[0], k)
+        vec = self._embed(kb, [q]); self._check_dims(kb, vec)
+        return self.repo.search(kid, vec[0], k)
 
     def retriever(self, uid: str) -> Callable[[str, str, int], list[dict]]:
         """Port for Retriever nodes, bound to the run's user (engine.ports.Ports.retrieve)."""

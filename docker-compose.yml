@@ -39,6 +39,14 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
       STUDIO_RUN_TIMEOUT: ${STUDIO_RUN_TIMEOUT:-120}
+      # approval channels (TASK-0022): public https URL for Slack/Telegram callbacks, org-channel admins, callback limits.
+      # STUDIO_TRUST_PROXY=1: the `web` nginx in front of the api appends the client IP to X-Forwarded-For.
+      STUDIO_PUBLIC_URL: ${STUDIO_PUBLIC_URL:-}
+      STUDIO_APPROVAL_TTL: ${STUDIO_APPROVAL_TTL:-86400}
+      STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:-}
+      STUDIO_TRUST_PROXY: "1"
+      STUDIO_CALLBACK_RATE_LIMIT_IP: ${STUDIO_CALLBACK_RATE_LIMIT_IP:-60}
+      STUDIO_CALLBACK_RATE_LIMIT_CHANNEL: ${STUDIO_CALLBACK_RATE_LIMIT_CHANNEL:-300}
       # tracing (TASK-0010): empty = no-op. With `--profile tracing` set
       # OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 and STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}

@@ -80,3 +80,8 @@ def identity_code_attempts() -> int: return max(1, _int("STUDIO_IDENTITY_CODE_AT
 def identity_code_resend() -> int: return max(0, _int("STUDIO_IDENTITY_CODE_RESEND", 30))     # min seconds between two codes
 # --- TASK-0022 follow-up: org-wide approval channels ---
 def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.get("STUDIO_ADMIN_EMAILS") or "").split(",") if e.strip()}
+# --- TASK-0022 follow-up: rate limits of the public approval callbacks (fixed window, shared via Redis) ---
+def callback_rate_limit_ip() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_IP", 60))        # per client IP and window (0 = off)
+def callback_rate_limit_channel() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", 300))  # per connection / Slack team
+def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WINDOW", 60))
+def trust_proxy() -> bool: return os.environ.get("STUDIO_TRUST_PROXY") == "1"  # client IP = last X-Forwarded-For hop (our nginx)

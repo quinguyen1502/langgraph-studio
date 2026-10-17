@@ -40,6 +40,7 @@ def api(monkeypatch):
     fake = FakeApi()
     import app.services.approval_service as mod
     monkeypatch.setattr(mod, "BACKGROUND", False)  # send/edit inline: each test sees only its own platform calls
+    monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_IP", "0"); monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", "0")  # see test_callbacks_are_rate_limited
     for a in ADAPTERS.values(): monkeypatch.setattr(a, "transport", httpx.MockTransport(fake), raising=False)
     from sqlalchemy import delete
     from app.models import ApprovalChannel
@@ -382,3 +383,24 @@ def test_api_run_resumed_from_a_channel_sends_its_callback(c, api, monkeypatch):
     assert webhooks.verify_signature(tok["signing_secret"], final[2].headers["x-studio-signature"], final[2].content)  # same pipeline: signed
     log = c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"]
     assert sorted(d["status"] for d in log if d["run_id"] == rid) == ["ok", "ok"]
+
+
+def test_callbacks_are_rate_limited_per_ip_and_per_channel(c, api, monkeypatch):
+    monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_IP", "3"); monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", "5")
+    monkeypatch.setenv("STUDIO_TRUST_PROXY", "1")
+    o = user(c); ch = connect(c, o, "telegram"); url = f"/api/approvals/callback/telegram/{ch['id']}"
+    run = uuid.uuid4().hex[:6]
+    def hit(ip, path=url): return c.post(path, json={"update_id": 1}, headers={"X-Telegram-Bot-Api-Secret-Token": TG["webhook_secret"],
+                                                                           "X-Forwarded-For": f"6.6.6.6, 10.{run[:2]}.{ip}"})
+    ips = [f"{int(run[2:4], 16)}.{n}" for n in range(1, 4)]
+    assert [hit(ips[0]).status_code for _ in range(3)] == [200, 200, 200]  # 3 per IP (the spoofable first hop is ignored)
+    r = hit(ips[0]); assert r.status_code == 429 and r.json()["error"]["code"] == "RATE_LIMITED" and int(r.headers["Retry-After"]) >= 1
+    assert [hit(ips[1]).status_code for _ in range(2)] == [200, 200]   # 5 per connection, whatever the IP
+    assert hit(ips[2]).status_code == 429
+    other = connect(c, user(c), "telegram")
+    assert hit(ips[2], f"/api/approvals/callback/telegram/{other['id']}").status_code == 200  # other connections are not affected
+    # the shared Slack URL counts per claimed workspace; unauthenticated floods are cut before signature checks
+    monkeypatch.setenv("STUDIO_TRUST_PROXY", "0"); monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_IP", "0"); monkeypatch.setenv("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", "2")
+    codes = [slack_post(c, None, press("x", "U1", team=f"T{run}"), secret="0" * 32).status_code for _ in range(3)]
+    assert codes == [401, 401, 429]
+    assert slack_post(c, None, press("x", "U1", team=f"T{run}X"), secret="0" * 32).status_code == 401  # another workspace: own budget

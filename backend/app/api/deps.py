@@ -86,7 +86,8 @@ def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS)
 
 def approval_service() -> ApprovalService:
-    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue)
+    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
+                                         limiter=get_rate_limiter())
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

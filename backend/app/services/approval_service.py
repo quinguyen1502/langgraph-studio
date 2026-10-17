@@ -24,8 +24,9 @@ BACKGROUND = True  # send/edit messages off the request thread; tests switch it 
 
 class ApprovalService:
     def __init__(self, repo: ApprovalRepository, users: UserRepository, workflows: WorkflowRepository, runs: RunRepository, channels: ChannelService,
-                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None):
+                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None, limiter=None):
         self.repo, self.users, self.workflows, self.runs, self.channels, self.enqueue = repo, users, workflows, runs, channels, enqueue
+        self.limiter = limiter  # RateLimiter for the public callbacks (None = no limit)
         self.adapters = channels.adapters
         self.background = BACKGROUND if background is None else background
 
@@ -100,6 +101,20 @@ class ApprovalService:
         return r
 
     # ---- platform callback ----
+    async def check_rate(self, ip: str, kind: str, cid: Optional[str], body: bytes) -> None:
+        """Fixed-window limits on the unauthenticated callback endpoints, before any decryption or signature work:
+        per client IP (STUDIO_CALLBACK_RATE_LIMIT_IP) and per connection (STUDIO_CALLBACK_RATE_LIMIT_CHANNEL; the
+        claimed Slack team on the shared URL). 429 RATE_LIMITED + Retry-After."""
+        if self.limiter is None: return
+        window = config.callback_rate_window()
+        target = cid or (f"team:{self.adapter(kind).route_key(body)}" if kind in self.adapters else None) or "shared"
+        for key, limit in ((f"approval-cb:ip:{ip}", config.callback_rate_limit_ip()), (f"approval-cb:ch:{kind}:{target}", config.callback_rate_limit_channel())):
+            if not limit: continue
+            ok, retry = await self.limiter.hit(key, limit, window)
+            if not ok:
+                log.warning("approval callback rate limited (%s)", key)
+                raise AppError("RATE_LIMITED", headers={"Retry-After": str(retry)}, retry_after=retry)
+
     def _connection(self, a: ApprovalChannel, cid: Optional[str], headers: dict, body: bytes, cb) -> tuple:
         """The connection a callback authenticates against -> (row, secrets). Per-connection URL: that row. Shared URL
         (cid None): the rows of the claimed account (Slack team_id) whose secret verifies the signature; when several

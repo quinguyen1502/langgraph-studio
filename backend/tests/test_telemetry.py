@@ -145,7 +145,7 @@ def test_openai_usage_and_cost_from_provider(monkeypatch):
         body = json.loads(req.content); p = body["messages"][0]["content"]
         return httpx.Response(200, json={"model": "gpt-4o-mini", "choices": [{"message": {"content": "order_status" if "Classify" in p else "ok"}}],
                                          "usage": {"prompt_tokens": 1000, "completion_tokens": 200}})
-    monkeypatch.setattr(llm, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(llm.providers, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
     tok = user()
     cid = c.post("/api/credentials", json={"name": "o", "provider": "openai", "api_key": "sk-test-0123456789"}, headers=H(tok)).json()["data"]["id"]
     wf = copy.deepcopy(EXAMPLE)

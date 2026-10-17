@@ -24,6 +24,10 @@ dependencies = [
   "aiosmtpd>=1.4",         # local SMTP debug server for notification e-mail tests (TASK-0020)
   "opentelemetry-sdk>=1.27",                      # run traces (TASK-0010); no-op without an exporter
   "opentelemetry-exporter-otlp-proto-http>=1.27", # OTLP/HTTP exporter (also used for LangSmith)
+  "langchain-openai>=1.0", # LM Studio / OpenRouter / OpenAI-compatible chat models (TASK-0030)
+  "openai>=2.45,<3",       # 3.x switched to httpx2 (respx cannot mock it), DEC-0032
+  "langchain-ollama>=1.0", # Ollama chat models (TASK-0030)
+  "respx>=0.21",           # mocked provider HTTP in tests
   "pytest-cov",
   "pytest",  # test runner kept in base deps so `factory deps apply` (pip install -e .) can run verification
 ]

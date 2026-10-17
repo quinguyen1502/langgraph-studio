@@ -31,7 +31,7 @@ def mock_http(monkeypatch):
         if req.url.path == "/v1/messages":
             return httpx.Response(200, json={"content": [{"type": "text", "text": f"ANT:{body['model']}"}]})
         return httpx.Response(404)
-    monkeypatch.setattr(compiler, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
+    monkeypatch.setattr(compiler.providers, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(handler)))
     return calls
 
 def run_ws(tok, wid, inp):
@@ -80,7 +80,7 @@ def test_provider_error_is_event_without_secret(mock_http):
     t = user()
     cid = c.post("/api/credentials", json={"name": "bad", "provider": "openai", "api_key": SECRET_OAI, "base_url": "https://fail.example/v1"}, headers=H(t)).json()["data"]["id"]
     evs = run_ws(t, wf_with(t, cid), {"message": "hi"})
-    assert evs[-1]["type"] == "error" and "HTTP 401" in evs[-1]["errors"][0]
+    assert evs[-1]["type"] == "error" and evs[-1]["error"]["code"] == "PROVIDER_AUTH_FAILED" and "invalid api key" in evs[-1]["errors"][0]
     assert SECRET_OAI not in json.dumps(evs)
 
 def test_cannot_use_other_users_credential(mock_http):

@@ -68,6 +68,9 @@ services:
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
       # API-triggered runs (TASK-0007) are executed by the `worker` service through the Redis queue
       STUDIO_WORKER: "0"
+    # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
+    # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
+    extra_hosts: &host-gw ["host.docker.internal:host-gateway"]
     volumes: [apidata:/data]  # import venvs + generated secret.key when STUDIO_SECRET_KEY is empty
     depends_on:
       postgres: { condition: service_healthy }
@@ -81,6 +84,7 @@ services:
     environment:
       <<: *api-env
       STUDIO_WORKER: "1"
+    extra_hosts: *host-gw
     volumes: [apidata:/data]
     healthcheck:
       test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]

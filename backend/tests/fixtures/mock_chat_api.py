@@ -2,11 +2,13 @@
 
 Run: python mock_chat_api.py [port]  (default 8111). Point SLACK_API_URL=http://127.0.0.1:8111/slack and
 TELEGRAM_API_URL=http://127.0.0.1:8111/telegram at it. A bot token xoxb-<n>-<TEAM>-... answers auth.test with team <TEAM>.
+Also fakes LLM providers (TASK-0030): /ollama (Ollama API), /lmstudio/v1 (OpenAI-compatible), /openrouter/api/v1 (key sk-or-good).
 """
 import json, sys, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 CALLS: list[dict] = []
+OLLAMA_MODELS = ["llama3.2:latest", "qwen2.5:7b"]
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -19,6 +21,11 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/_messages"): return self._send(CALLS)
         if self.path.startswith("/health"): return self._send({"ok": True})
+        if self.path == "/ollama/api/tags": return self._send({"models": [{"name": m, "model": m} for m in OLLAMA_MODELS]})
+        if self.path == "/lmstudio/v1/models": return self._send({"object": "list", "data": [{"id": "qwen2.5-7b-instruct", "object": "model"}]})
+        if self.path == "/openrouter/api/v1/models":
+            if self.headers.get("Authorization") != "Bearer sk-or-good": return self._send({"error": {"message": "No auth credentials found", "code": 401}}, 401)
+            return self._send({"data": [{"id": "openrouter/auto"}, {"id": "meta-llama/llama-3.1-8b-instruct"}]})
         self._send({"ok": False}, 404)
 
     def do_DELETE(self):
@@ -30,6 +37,13 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError: body = {}
         method = self.path.rstrip("/").rsplit("/", 1)[-1]; auth = self.headers.get("Authorization", "")
         CALLS.append({"path": self.path, "method": method, "body": body, "at": time.time()})
+        if self.path == "/ollama/api/chat":
+            if body.get("model") not in OLLAMA_MODELS: return self._send({"error": f"model '{body.get('model')}' not found"}, 404)
+            text = "order_status" if "classify" in json.dumps(body).lower() else f"[ollama:{body['model']}] xin chào"
+            line = json.dumps({"model": body["model"], "created_at": "2026-01-01T00:00:00Z", "message": {"role": "assistant", "content": text},
+                               "done": True, "done_reason": "stop", "prompt_eval_count": 5, "eval_count": 3}).encode() + b"\n"
+            self.send_response(200); self.send_header("Content-Type", "application/x-ndjson"); self.send_header("Content-Length", str(len(line)))
+            self.end_headers(); return self.wfile.write(line)
         if self.path.startswith("/slack/"):
             if method == "auth.test":
                 parts = auth.removeprefix("Bearer ").split("-")

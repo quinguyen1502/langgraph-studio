@@ -168,3 +168,7 @@ Secrets are encrypted in the service before they reach the repository; only `res
 - `Telemetry`: `_IdGenerator` (forced ids for `close_lost`), `RunSpan.ref`, `start_run(links=)`.
 - `NotificationHub` (`services/notification_hub.py`) + WebSocket `/ws/notifications`; `NotificationService.preferences/set_preferences`, `email_text/email_html`.
 - Migration `0009_effectively_once`: `node_results`, `runs.lease_gen`, `users.notify_in_app/notify_email`.
+
+## LLM providers (TASK-0030, DEC-0032)
+
+`engine/providers.py` is the provider registry (one strategy class per provider: defaults, model listing, LangChain chat model). `engine/llm.py` dispatches LLM nodes to it; `services/credential_service.py` uses it for validation, model lists and connection tests. Engine failures are `ProviderError(code)` and become `AppError` in the service.

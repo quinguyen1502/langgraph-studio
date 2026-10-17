@@ -227,11 +227,29 @@
     "openai": "OpenAI / compatible",
     "anthropic": "Anthropic",
     "key": "API key",
-    "baseUrl": "Base URL (optional, for OpenAI-compatible endpoints)",
+    "baseUrl": "Base URL (empty = provider default)",
     "add": "Add credential",
     "deleteAria": "Delete {{name}}",
     "deleteTitle": "Delete credential {{name}}?",
-    "deleteBody": "Workflows and knowledge bases that use this key fail until another one is chosen. This cannot be undone."
+    "deleteBody": "Workflows and knowledge bases that use this key fail until another one is chosen. This cannot be undone.",
+    "keyOptional": "API key (optional)",
+    "test": "Test connection",
+    "testAria": "Test connection of {{name}}",
+    "testing": "Connecting…",
+    "dockerHint": "Runs on your machine. When the studio runs in Docker Compose use http://host.docker.internal:<port> instead of localhost.",
+    "header": "Header {{name}} (optional)",
+    "refererPh": "https://your-site.example",
+    "titlePh": "LangGraph Studio",
+    "providers": {
+      "openai": "OpenAI / compatible",
+      "anthropic": "Anthropic",
+      "ollama": "Ollama (local)",
+      "lmstudio": "LM Studio (local)",
+      "openai_compatible": "OpenAI-compatible (vLLM / llama.cpp / LocalAI)",
+      "openrouter": "OpenRouter"
+    },
+    "testOk_one": "Connected · {{count}} model · {{ms}} ms",
+    "testOk_other": "Connected · {{count}} models · {{ms}} ms"
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -351,7 +369,12 @@
     "USER_HAS_WORKFLOWS": "This user owns {{count}} workflow(s): choose who takes them over first",
     "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
     "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
-    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})"
+    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})",
+    "PROVIDER_UNREACHABLE": "Could not reach {{provider}} at {{base_url}}: is the server running and reachable from the API?",
+    "PROVIDER_AUTH_FAILED": "{{provider}} rejected the API key: {{reason}}",
+    "PROVIDER_BAD_RESPONSE": "{{provider}} returned an unexpected response: {{reason}}",
+    "MODEL_NOT_FOUND": "{{provider}} has no model named {{model}}",
+    "CREDENTIAL_HEADER_UNSUPPORTED": "{{provider}} does not accept the header {{header}}"
   },
   "lang": {
     "en": "English",
@@ -921,5 +944,12 @@
     "remove": "Remove",
     "revoke": "Revoke",
     "unlink": "Unlink"
+  },
+  "models": {
+    "load": "Load models from the credential",
+    "needCredential": "Choose a credential to load its models",
+    "choose": "Choose from {{count}} models",
+    "none": "The provider returned no models; type the name.",
+    "failed": "Could not load models ({{error}}). Type the model name manually."
   }
 }

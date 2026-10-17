@@ -61,3 +61,7 @@ Added to the backlog on 2026-10-17 at the owner's request. Status: backlog.
 - TASK-0027 Auto-layout for the workflow canvas (REQ-0017)
 - TASK-0028 Command palette (REQ-0018)
 
+
+## LLM providers
+
+- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032): **review** — draft PR into `develop`.

@@ -1,3 +1,4 @@
+import { SettingsPage } from '@/pages/settings/SettingsPage'
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { getToken, loginUrl, scheduleExpiry, tokenValid, wasExpired } from '@/lib/api'
@@ -17,6 +18,7 @@ export default function App() {
     <Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/workflows" element={<Protected><WorkflowsPage /></Protected>} />
     <Route path="/workflows/:id" element={<Protected><EditorPage /></Protected>} />
+    <Route path="/settings/:section?" element={<Protected><SettingsPage /></Protected>} />
     <Route path="*" element={<Navigate to="/workflows" replace />} />
   </Routes></BrowserRouter></TooltipProvider>
 }

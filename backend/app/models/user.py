@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import Boolean, Float, Text, true
+from sqlalchemy import Boolean, Float, Text, false, true
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
@@ -13,3 +13,6 @@ class User(Base):
     # notification preferences (TASK-0021)
     notify_in_app: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
     notify_email: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    # admins manage org-wide approval channels (TASK-0022 follow-up)
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False, server_default=false())
+    lang: Mapped[Optional[str]] = mapped_column(Text)  # en | vi: chat messages (approval requests, codes); NULL = en

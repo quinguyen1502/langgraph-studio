@@ -15,7 +15,6 @@ from ..core.logging import get_logger
 from ..repositories import StaleLease
 from .job_queue import JobQueue
 from .run_service import RunService, error_event
-from .trigger_service import run_result
 
 log = get_logger("worker")
 
@@ -29,6 +28,8 @@ class RunWorker:
         if job.get("kind") == "delivery":
             return await asyncio.to_thread(self.deliveries().attempt, job["delivery_id"]) if self.deliveries else None
         svc = self.services(); rid = job["run_id"]; row = svc.runs.get(rid); attempt = int(job.get("attempt") or 1)
+        if job.get("kind") == "resume" and (not job.get("recovered") or (row is not None and row.status == "waiting")):
+            return await self.resume_job(svc, job)  # a recovered resume job of a run that already started continues below
         # Claim = compare-and-set to `running` + a new fencing token (TASK-0021). Cancelled/finished jobs are skipped;
         # a recovered job (its worker died or lost the lease) may take over a `running` run, which fences the old worker out.
         gen = svc.runs.claim(rid, ("queued", "running") if job.get("recovered") else ("queued",)) if row is not None else None
@@ -47,11 +48,22 @@ class RunWorker:
                             source="api", fence=gen)
             except StaleLease: return "fenced"
             status = "error"
-        if status == "fenced": return status  # the worker that owns the run now reports its result
-        if job.get("callback_url") and self.deliveries:
-            r = svc.runs.get(rid)
-            await asyncio.to_thread(self.deliveries().create, job["workflow_id"], rid, job.get("token_id"), job["callback_url"], run_result(r))
-        return status
+            await svc.settled(rid)  # execute() did not run: the error result still goes to the callback
+        return status  # execute() queued the callback_url webhook (RunService.settled); a fenced worker leaves it to the new owner
+
+    async def resume_job(self, svc: RunService, job: dict) -> Optional[str]:
+        """Continue a waiting run with a decision from an approval channel (TASK-0022). The claim (waiting -> running,
+        compare-and-set) makes sure only one resume happens, however many jobs or clicks there were."""
+        rid, owner = job["run_id"], job["owner"]
+        try: plan = svc.plan_resume(owner, rid, job["response"], via_channel=True)
+        except AppError as e:
+            log.info("approval resume of run %s skipped: %s", rid, e.code); return None
+        gen = svc.runs.claim(rid, ("waiting",))
+        if gen is None: return None
+        plan.fence, plan.checkpointing, plan.resumed_by = gen, True, job.get("by")
+        async def send(ev): return True
+        async def listen(): await asyncio.Event().wait()
+        return await svc.execute(plan, send, listen, owner)  # settles -> callback_url (RunService.settled)
 
     async def _with_lease(self, job: dict) -> None:
         """Run the job while renewing its lease so the reaper leaves it alone."""

@@ -69,4 +69,18 @@ def notify_webhook() -> tuple[str, str | None] | None:
     url = os.environ.get("STUDIO_NOTIFY_WEBHOOK_URL", "").strip()
     return (url, os.environ.get("STUDIO_NOTIFY_WEBHOOK_SECRET") or None) if url else None
 def otel_metrics() -> bool: return os.environ.get("STUDIO_OTEL_METRICS", "").lower() in ("1", "true", "yes", "on")
+# --- TASK-0022: approval through external channels ---
+def approval_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_APPROVAL_TTL", 24 * 3600)))  # approval buttons expire (s)
+def slack_api_url() -> str: return (os.environ.get("SLACK_API_URL") or "https://slack.com/api").rstrip("/")
+def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
+# --- TASK-0022 follow-up: identity verification codes sent by the bot ---
+def identity_code_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_IDENTITY_CODE_TTL", 600)))  # a code is valid (s)
+def identity_code_attempts() -> int: return max(1, _int("STUDIO_IDENTITY_CODE_ATTEMPTS", 5))  # wrong codes before a new one is needed
+def identity_code_resend() -> int: return max(0, _int("STUDIO_IDENTITY_CODE_RESEND", 30))     # min seconds between two codes
+# --- TASK-0022 follow-up: org-wide approval channels ---
+def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.get("STUDIO_ADMIN_EMAILS") or "").split(",") if e.strip()}
+# --- TASK-0022 follow-up: rate limits of the public approval callbacks (fixed window, shared via Redis) ---
+def callback_rate_limit_ip() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_IP", 60))        # per client IP and window (0 = off)
+def callback_rate_limit_channel() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", 300))  # per connection / Slack team
+def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WINDOW", 60))

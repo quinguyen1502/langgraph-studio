@@ -18,6 +18,7 @@ from ..core.logging import get_logger
 from ..models import Notification
 from ..repositories import NotificationRepository, UserRepository, WorkflowRepository
 from . import webhooks
+from .approval_channels.messages import LANGS, lang_of
 
 log = get_logger("notify")
 KINDS = {"run_waiting": "A run is waiting for your response", "run_expired": "A waiting run expired"}
@@ -99,12 +100,13 @@ class NotificationService:
         u = self.users.get_by_id(uid) if self.users else None
         return {"in_app": True if u is None or u.notify_in_app is None else bool(u.notify_in_app),
                 "email": True if u is None or u.notify_email is None else bool(u.notify_email),
-                "email_configured": bool(config.smtp())}
+                "email_configured": bool(config.smtp()), "lang": lang_of(u)}
 
     def set_preferences(self, uid: str, body) -> dict:
-        if not isinstance(body, dict) or not body or any(k not in ("in_app", "email") or not isinstance(v, bool) for k, v in body.items()):
-            raise AppError("NOTIFICATION_PREFS_INVALID")
-        self.users.set_prefs(uid, **{f"notify_{k}": v for k, v in body.items()})
+        """{in_app?: bool, email?: bool, lang?: "en" | "vi"} (lang: chat messages, from the studio's language switcher)."""
+        ok = lambda k, v: (k in ("in_app", "email") and isinstance(v, bool)) or (k == "lang" and v in LANGS)  # noqa: E731
+        if not isinstance(body, dict) or not body or not all(ok(k, v) for k, v in body.items()): raise AppError("NOTIFICATION_PREFS_INVALID")
+        self.users.set_prefs(uid, **{(k if k == "lang" else f"notify_{k}"): v for k, v in body.items()})
         return self.preferences(uid)
 
 

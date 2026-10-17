@@ -11,6 +11,13 @@ class WebhookDeliveryRepository:
         with self.db.session() as s:
             s.add(d); s.commit(); return d
 
+    def add_once(self, d: WebhookDelivery) -> bool:
+        """Insert unless a delivery with the same dedupe_key exists (unique column decides under concurrency)."""
+        from sqlalchemy.exc import IntegrityError
+        with self.db.session() as s:
+            try: s.add(d); s.commit(); return True
+            except IntegrityError: s.rollback(); return False
+
     def get(self, did: str) -> Optional[WebhookDelivery]:
         with self.db.session() as s: return s.get(WebhookDelivery, did)
 

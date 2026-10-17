@@ -38,6 +38,7 @@ class RunPlan:
     fence: Optional[int] = None   # lease generation of the queue job (TASK-0021): every write carries it
     attempt: int = 1              # queue delivery attempt, sent to side effects as X-Studio-Attempt
     effects: Optional[Effects] = None  # idempotency keys / ledger / fencing guard, set by RunService._execute
+    resumed_by: Optional[dict] = None  # {channel, user_id} when an approval channel answered (TASK-0022)
 
     @property
     def imported(self) -> bool:
@@ -85,7 +86,8 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
-                 telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None):
+                 telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
+                 deliveries: Optional[Callable[[], object]] = None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -94,6 +96,8 @@ class RunService:
         self.telemetry = telemetry or Telemetry(exporters=[], metric_readers=[])  # no-op unless an exporter is configured
         self.notifier = notifier  # NotificationService (optional): in-app/e-mail/webhook when a run waits or expires (TASK-0020)
         self.ledger = ledger      # NodeResultRepository (optional): node-result ledger of queue jobs (TASK-0021)
+        self.deliveries = deliveries  # -> DeliveryService (optional): callback_url webhook when an API run settles
+        self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -156,10 +160,13 @@ class RunService:
         for r in stale: self._expire(r)
         return len(stale)
 
-    def plan_resume(self, uid: str, rid: str, response) -> RunPlan:
+    def plan_resume(self, uid: str, rid: str, response, via_channel: bool = False) -> RunPlan:
         if isinstance(response, bool): response = "approved" if response else "rejected"
         if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
+        if self.approvals is not None and not via_channel:  # answered in the studio: the channel buttons stop working (TASK-0022)
+            if self.approvals.decided_elsewhere(rid): raise AppError("RUN_NOT_WAITING")
+            self.approvals.close_run(rid, "answered")
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(uid) if self.credentials else None,
                        run_id=rid, previous=r, resume={**{k: cp[k] for k in RESUME_KEYS if k in cp}, "value": response}, source=r.source or "ui",
@@ -231,6 +238,13 @@ class RunService:
             ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), None)
             try: self.notifier.run_event("run_waiting" if status == "waiting" else "run_expired", uid, rid, wid, ev)
             except Exception: log.exception("notification for run %s failed", rid)  # never fails a run
+        if self.approvals is not None and uid:
+            try:
+                if status == "waiting":
+                    ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), None)
+                    if ev and checkpoint: self.approvals.on_waiting(rid, uid, wid, checkpoint.get("workflow") or {}, ev)
+                elif status in ("cancelled", "expired", "error", "timeout"): self.approvals.close_run(rid, status)
+            except Exception: log.exception("approval request for run %s failed", rid)  # never fails a run
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
@@ -259,9 +273,19 @@ class RunService:
         Returns the final status: ok | error | cancelled | timeout."""
         rid = plan.run_id or uuid.uuid4().hex[:10]; await self.bus.astart(rid, uid)  # registered so REST/other workers can cancel it
         status = None
-        try: status = await self._execute(rid, plan, send, listen, uid); return status
+        try:
+            status = await self._execute(rid, plan, send, listen, uid)
+            if status != "fenced": await self.settled(rid)
+            return status
         finally:
             if status != "fenced": await asyncio.shield(self.bus.afinish(rid))  # a fenced worker leaves the new owner's entry alone
+
+    async def settled(self, rid: str) -> None:
+        """Every run segment ends here (first run, studio/Slack/Telegram resume, recovery): an API run's callback_url
+        gets the result or the next pause, once (DeliveryService.for_run is idempotent)."""
+        if not self.deliveries: return
+        try: await asyncio.to_thread(self.deliveries().for_run, self.runs.get(rid))
+        except Exception: log.exception("queueing the callback of run %s failed", rid)
 
     async def _execute(self, rid, plan, send, listen, uid) -> str:
         t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus; checkpoint = None
@@ -315,7 +339,8 @@ class RunService:
         try:
             if plan.recovered: first = {"type": "run_recovered", "run_id": rid, "ts": t0, "node": plan.resume["node"], "nodes": resume_nodes(plan.resume),
                                         "attempt": plan.attempt}
-            elif prev: first = {"type": "run_resumed", "run_id": rid, "ts": t0, "node": plan.resume["node"], "response": plan.resume["value"]}
+            elif prev: first = {"type": "run_resumed", "run_id": rid, "ts": t0, "node": plan.resume["node"], "response": plan.resume["value"],
+                                **({"by": plan.resumed_by} if plan.resumed_by else {})}
             else: first = {"type": "run_started", "run_id": rid, "ts": t0}
             await emit(first)
             if plan.checkpointing: await self._save_progress(rid, events, plan.resume or {}, plan, span)  # this segment's trace, before any node

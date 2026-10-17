@@ -245,7 +245,25 @@
     "RATE_LIMITED": "Too many requests. Try again in {{retry_after}} s.",
     "NOTIFICATION_NOT_FOUND": "Notification not found.",
     "DELIVERY_NOT_FOUND": "Webhook delivery not found.",
-    "NOTIFICATION_PREFS_INVALID": "Invalid notification settings."
+    "NOTIFICATION_PREFS_INVALID": "Invalid settings.",
+    "CHANNEL_KIND_UNSUPPORTED": "Unsupported approval channel: {{kind}}.",
+    "CHANNEL_CONFIG_INVALID": "Channel setting {{field}} is missing or invalid.",
+    "CHANNEL_NOT_FOUND": "This approval channel is not configured.",
+    "CHANNEL_ADMIN_REQUIRED": "Only an admin can manage org-wide approval channels.",
+    "CHANNEL_PUBLIC_URL_REQUIRED": "Set STUDIO_PUBLIC_URL to the public https URL of the studio first.",
+    "CHANNEL_SIGNATURE_INVALID": "Invalid channel request signature.",
+    "CHANNEL_API_FAILED": "The {{kind}} API call failed: {{reason}}.",
+    "IDENTITY_INVALID": "Invalid {{kind}} user ID.",
+    "IDENTITY_TAKEN": "This {{kind}} account is already linked to another user.",
+    "IDENTITY_NOT_LINKED": "Link your {{kind}} account first.",
+    "IDENTITY_CODE_INVALID": "Wrong code, {{left}} attempt(s) left.",
+    "IDENTITY_CODE_EXPIRED": "The code expired, request a new one.",
+    "IDENTITY_CODE_ATTEMPTS": "Too many wrong codes, request a new one.",
+    "APPROVAL_TOKEN_INVALID": "Invalid approval button.",
+    "APPROVAL_TOKEN_EXPIRED": "This approval request has expired.",
+    "APPROVAL_ALREADY_DECIDED": "This request was already answered.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {{kind}} account in LangGraph Studio (Settings → My accounts) to approve.",
+    "APPROVAL_FORBIDDEN": "You are not allowed to approve this run."
   },
   "lang": {
     "en": "English",
@@ -374,5 +392,147 @@
     "email": "E-mail",
     "emailHelp": "Send an e-mail to your account address.",
     "emailNotConfigured": "E-mail is not set up on this server (SMTP_HOST), so no e-mails are sent yet."
+  },
+  "approvals": {
+    "kind": {
+      "slack": "Slack",
+      "telegram": "Telegram"
+    },
+    "optional": "optional",
+    "keepSecret": "Saved, enter a new value to replace",
+    "help": {
+      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
+      "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL)."
+    },
+    "field": {
+      "bot_token": "Bot token",
+      "signing_secret": "Signing secret",
+      "webhook_secret": "Webhook secret"
+    },
+    "callbackUrl": "Callback URL",
+    "copy": "Copy",
+    "publicUrlMissing": "STUDIO_PUBLIC_URL is not set: the platform must reach this server at a public https address.",
+    "saved": "Saved",
+    "remove": "Remove",
+    "removed": "Removed",
+    "register": "Register webhook",
+    "registered": "Webhook registered",
+    "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. Slack accounts are linked per workspace. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
+    "identity": {
+      "slack": "Slack member ID",
+      "telegram": "Telegram user ID"
+    },
+    "identityPh": {
+      "slack": "U0123ABCD",
+      "telegram": "123456789"
+    },
+    "identityHow": {
+      "slack": "Slack: your profile → ⋮ → Copy member ID.",
+      "telegram": "Telegram: message @userinfobot to see your numeric ID."
+    },
+    "auditEmpty": "No approval requests yet.",
+    "col": {
+      "when": "When",
+      "action": "Decision",
+      "who": "Who",
+      "run": "Run"
+    },
+    "action": {
+      "requested": "Requested",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "denied": "Refused",
+      "superseded": "Answered elsewhere",
+      "expired": "Expired",
+      "send_failed": "Send failed",
+      "not_configured": "Not configured"
+    },
+    "node": {
+      "title": "Approval channel",
+      "channel": "Send the approval request to",
+      "studioOnly": "Studio only",
+      "connectFirst": "No usable connection. Add one in Settings → Channels (or ask an admin for an organization one).",
+      "target": {
+        "slack": "Slack channel ID",
+        "telegram": "Telegram chat ID"
+      },
+      "targetPh": {
+        "slack": "C0123ABCD",
+        "telegram": "-1001234567890"
+      },
+      "approvers": "Approvers (e-mails)",
+      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts."
+    },
+    "verified": "Verified",
+    "unverified": "Not verified",
+    "linkSend": "Link & send code",
+    "unlink": "Unlink",
+    "codeSent": "Enter the 6-digit code the bot sent you",
+    "codeNeeded": "Send a code to verify this account",
+    "verify": "Verify",
+    "resend": "Send code",
+    "telegramStart": "Telegram bots can only message you after you press Start in the bot chat.",
+    "save": "Save",
+    "scope": {
+      "user": "Personal",
+      "org": "Organization"
+    },
+    "add": "Add a connection",
+    "platform": "Platform",
+    "name": "Name",
+    "namePh": "e.g. Acme workspace",
+    "noChannels": "No connections yet. Add your own Slack app or Telegram bot below.",
+    "orgReadOnly": "Managed by an admin. You can pick it on your Human nodes.",
+    "replaceSecrets": "Replace secrets",
+    "sharedUrl": "Request URL (all workspaces)",
+    "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret.",
+    "noConnection": "No connection"
+  },
+  "settings": {
+    "title": "Settings",
+    "open": "Open settings",
+    "back": "Workflows",
+    "clear": "Clear search",
+    "toggle": "Show or hide",
+    "nav": {
+      "channels": "Channels",
+      "accounts": "My accounts",
+      "audit": "Audit log"
+    },
+    "intro": {
+      "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
+      "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
+      "audit": "Every approval request and decision made through a chat channel."
+    },
+    "status": {
+      "connected": "Connected",
+      "notSetUp": "Not set up"
+    },
+    "platform": {
+      "slack": "Buttons in a Slack channel. One connection per workspace.",
+      "telegram": "Buttons in a Telegram group or private chat, through your bot."
+    },
+    "scopeHelp": {
+      "org": "Organization connections are set up by an admin and usable by everyone.",
+      "user": "Personal connections are only usable on your own workflows."
+    },
+    "orgAskAdmin": "No organization connection yet. Ask an admin to add one.",
+    "myAccounts": "My accounts",
+    "myAccountsHelp": "Link and verify your account so your button presses count.",
+    "noAccountSlot": "Add a connection first to link your account.",
+    "test": "Test connection",
+    "testOk": "Connection works ({{name}})",
+    "searchChannels": "Search channels, workspaces…",
+    "searchAudit": "Search workflow, run, person…",
+    "filter": {
+      "status": "Status",
+      "scope": "Scope",
+      "anyStatus": "All statuses",
+      "anyScope": "All scopes",
+      "anyAction": "All decisions",
+      "anyPlatform": "All platforms"
+    },
+    "noMatch": "Nothing matches these filters.",
+    "auditCount": "{{shown}} of {{total}} entries"
   }
 }

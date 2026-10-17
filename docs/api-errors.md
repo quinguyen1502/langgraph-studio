@@ -89,6 +89,24 @@
 | `RATE_LIMITED` | 429 | Too many requests, retry in {retry_after} s |
 | `NOTIFICATION_NOT_FOUND` | 404 | Notification not found |
 | `DELIVERY_NOT_FOUND` | 404 | Webhook delivery not found |
-| `NOTIFICATION_PREFS_INVALID` | 422 | Notification preferences must be booleans: in_app, email |
+| `NOTIFICATION_PREFS_INVALID` | 422 | Preferences: in_app and email must be booleans, lang must be en or vi |
+| `CHANNEL_KIND_UNSUPPORTED` | 400 | Unsupported approval channel: {kind} |
+| `CHANNEL_CONFIG_INVALID` | 400 | Channel setting {field} is missing or invalid |
+| `CHANNEL_NOT_FOUND` | 404 | Approval channel not configured |
+| `CHANNEL_ADMIN_REQUIRED` | 403 | Only an admin can manage org-wide approval channels |
+| `CHANNEL_PUBLIC_URL_REQUIRED` | 400 | Set STUDIO_PUBLIC_URL to the public https URL of the studio first |
+| `CHANNEL_SIGNATURE_INVALID` | 401 | Invalid channel request signature |
+| `CHANNEL_API_FAILED` | 502 | The {kind} API call failed: {reason} |
+| `IDENTITY_INVALID` | 400 | Invalid {kind} user id |
+| `IDENTITY_TAKEN` | 409 | This {kind} account is already linked to another user |
+| `IDENTITY_NOT_LINKED` | 404 | Link your {kind} account first |
+| `IDENTITY_CODE_INVALID` | 400 | Wrong code, {left} attempt(s) left |
+| `IDENTITY_CODE_EXPIRED` | 410 | The code expired, request a new one |
+| `IDENTITY_CODE_ATTEMPTS` | 429 | Too many wrong codes, request a new one |
+| `APPROVAL_TOKEN_INVALID` | 400 | Invalid approval button |
+| `APPROVAL_TOKEN_EXPIRED` | 410 | This approval request has expired |
+| `APPROVAL_ALREADY_DECIDED` | 409 | This request was already answered |
+| `APPROVAL_IDENTITY_UNKNOWN` | 403 | Link and verify your {kind} account in LangGraph Studio (Settings → My accounts) to approve |
+| `APPROVAL_FORBIDDEN` | 403 | You are not allowed to approve this run |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

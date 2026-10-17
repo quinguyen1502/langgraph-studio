@@ -1,6 +1,6 @@
 """Registration, login and token → user resolution."""
 import re, time, uuid
-from ..core import security
+from ..core import config, security
 from ..core.errors import AppError
 from ..repositories import UserRepository
 from .workflow_service import WorkflowService
@@ -26,6 +26,7 @@ class AuthService:
         if self.users.get_by_email(email): raise AppError("AUTH_EMAIL_TAKEN")
         uid = uuid.uuid4().hex[:10]
         self.users.add(uid, email, security.hash_password(password), time.time())
+        if email in config.admin_emails(): self.users.set_admin(uid)  # STUDIO_ADMIN_EMAILS (org-wide approval channels)
         self.workflows.seed_example(uid)  # new users get a copy of the example workflow
         return self._session(uid, email)
 

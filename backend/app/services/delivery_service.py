@@ -4,7 +4,7 @@ Each callback becomes a `webhook_deliveries` row. One attempt runs per queue job
 A failed attempt is rescheduled with exponential backoff (base * 2^(n-1), capped) through the queue's delayed
 set, until STUDIO_WEBHOOK_MAX_ATTEMPTS. The owner can list deliveries and redeliver one (a fresh round).
 """
-import json, time, uuid
+import hashlib, json, time, uuid
 from typing import Callable, Optional
 from ..core import config
 from ..core.errors import AppError
@@ -36,6 +36,21 @@ class DeliveryService:
         did = uuid.uuid4().hex[:12]; now = time.time()
         self.repo.add(WebhookDelivery(id=did, workflow_id=wid, run_id=run_id, token_id=token_id, url=url, event=DELIVERY_EVENT,
                                       payload=json.dumps(payload, ensure_ascii=False), status="pending", attempts=0, created=now, updated=now))
+        self.jobs.enqueue({"kind": "delivery", "delivery_id": did})
+        return did
+
+    def for_run(self, run) -> Optional[str]:
+        """The callback_url webhook of an API run that just settled (finished, or paused again at a Human node).
+        One path for every source - first run, resume from the studio, Slack/Telegram, recovery - and idempotent:
+        the key is the run's settled state, so a second caller for the same segment inserts nothing."""
+        from .trigger_service import run_result
+        if run is None or not run.callback_url or run.status in ("queued", "running"): return None
+        key = hashlib.sha256(f"{run.id}|{run.status}|{run.ended}|{len(run.events or '')}".encode()).hexdigest()[:32]
+        did = uuid.uuid4().hex[:12]; now = time.time()
+        row = WebhookDelivery(id=did, workflow_id=run.workflow_id, run_id=run.id, token_id=run.callback_token_id, url=run.callback_url,
+                              event=DELIVERY_EVENT, payload=json.dumps(run_result(run), ensure_ascii=False), status="pending",
+                              attempts=0, created=now, updated=now, dedupe_key=key)
+        if not self.repo.add_once(row): return None
         self.jobs.enqueue({"kind": "delivery", "delivery_id": did})
         return did
 

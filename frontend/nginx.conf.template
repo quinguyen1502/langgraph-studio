@@ -11,7 +11,10 @@ server {
   location /api/ {
     proxy_pass http://${API_UPSTREAM};
     proxy_set_header Host $host;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    # This nginx is the edge: it replaces X-Forwarded-For with the peer it sees, so a client cannot inject hops that the
+    # api's STUDIO_TRUSTED_PROXIES (Compose: private ranges) would skip. Behind a load balancer, append instead
+    # ($proxy_add_x_forwarded_for) and narrow STUDIO_TRUSTED_PROXIES to nginx + the balancer.
+    proxy_set_header X-Forwarded-For $remote_addr;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_read_timeout 300s;
   }

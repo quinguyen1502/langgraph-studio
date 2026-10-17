@@ -31,6 +31,8 @@ import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { useTheme, ThemeToggle } from '@/lib/theme'
 import { UserMenu } from '@/components/user-menu'
+import { HumanApprovalSettings } from '@/components/human-approval-settings'
+import type { Channels } from '@/lib/approvals'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
 import type { Credential } from '@/components/credentials-dialog'
@@ -131,6 +133,7 @@ function Studio() {
   const [mode, setMode] = useState('')
   const [source, setSource] = useState<any>(null)
   const [creds, setCreds] = useState<Credential[]>([])
+  const [channels, setChannels] = useState<Channels | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
   const [running, setRunning] = useState(false)
@@ -159,6 +162,7 @@ function Studio() {
       .catch(e => setLoadErr({ status: e.status ?? 0, msg: e.message }))
     api('/api/tools').then(setTools).catch(() => {})
     api<Credential[]>('/api/credentials').then(setCreds).catch(() => {})
+    api<Channels>('/api/approvals/channels').then(setChannels).catch(() => {})
     api('/api/health').then(h => setMode(h.llm_mode)).catch(() => {})
   }, [id])
 
@@ -322,6 +326,7 @@ function Studio() {
           {selNode.type === 'human' && <>
             <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><Textarea rows={4} id="human-prompt" className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+            <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
           </>}
           {selNode.type === 'tool' && <>
             <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>

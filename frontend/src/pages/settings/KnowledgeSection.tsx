@@ -2,7 +2,7 @@
  *  Retriever nodes pick one of these by id. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, Database, FileText, Plus, RefreshCw, Search, Trash2, Upload } from 'lucide-react'
+import { ChevronDown, Database, FileText, Plus, RefreshCw, Search, Settings2, Trash2, Upload } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -39,7 +39,7 @@ function KbFields({ form, set, creds, idp }: { form: Form; set: (f: Form) => voi
 function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: Credential[]; reload: () => void; defaultOpen: boolean }) {
   const { t } = useTranslation(); const [open, setOpen] = useState(defaultOpen)
   const [full, setFull] = useState<KnowledgeBase | null>(null); const [form, setForm] = useState(toForm(kb))
-  const [q, setQ] = useState(''); const [hits, setHits] = useState<KbHit[] | null>(null)
+  const [edit, setEdit] = useState(false); const [q, setQ] = useState(''); const [hits, setHits] = useState<KbHit[] | null>(null)
   const file = useRef<HTMLInputElement>(null)
   const load = () => api<KnowledgeBase>(`/api/knowledge-bases/${kb.id}`).then(setFull)
   const done = () => { load(); reload() }
@@ -69,7 +69,18 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
             <input ref={file} type="file" accept={KB_ACCEPT} className="hidden" id={`kb-${kb.id}-file`} onChange={e => upload(e.target.files?.[0])} />
             <Button size="sm" disabled={act.busy} onClick={() => file.current?.click()} id={`kb-${kb.id}-upload`}><Upload />{t('kb.upload')}</Button>
             <span className="text-xs text-muted-foreground">{t('kb.uploadHelp')}</span>
+            <Button size="sm" variant="ghost" className={cn('ml-auto', edit && 'bg-accent text-accent-foreground')} onClick={() => setEdit(!edit)} aria-expanded={edit} id={`kb-${kb.id}-settings`}><Settings2 />{t('kb.settings')}</Button>
           </div>
+          {edit && <div className="space-y-3 rounded-md border p-4" data-testid="kb-settings">
+            <KbFields form={form} set={setForm} creds={creds} idp={`kb-${kb.id}`} />
+            <p className="text-xs text-muted-foreground">{t('kb.embedHelp')}</p>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'PUT', json: { ...form, credential_id: form.credential_id || null } }), t('kb.saved'))}>{t('common.save')}</Button>
+              <Button size="sm" variant="outline" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}/reindex`, { method: 'POST' }), r => t('kb.reindexed', { count: r.chunks }))}><RefreshCw />{t('kb.reindex')}</Button>
+              <Button size="sm" variant="destructive" className="ml-auto" disabled={act.busy} id={`kb-${kb.id}-delete`}
+                onClick={() => { if (confirm(t('kb.confirmDelete', { name: kb.name }))) act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'DELETE' }), '') }}><Trash2 />{t('kb.delete')}</Button>
+            </div>
+          </div>}
           {files.length ? <div className="rounded-md border"><Table>
             <TableHeader><TableRow><TableHead>{t('kb.file')}</TableHead><TableHead className="text-right">{t('kb.size')}</TableHead><TableHead className="text-right">{t('kb.chunkCol')}</TableHead><TableHead /></TableRow></TableHeader>
             <TableBody>{files.map(f => <TableRow key={f.id} data-testid="kb-file">
@@ -90,18 +101,6 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
               <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground"><Badge variant="secondary" className="font-mono">{h.score.toFixed(3)}</Badge>{h.filename} · #{h.index + 1}</div>
               <p className="line-clamp-3 whitespace-pre-line">{h.text}</p></li>)}</ol>
               : <p className="text-sm text-muted-foreground">{t('kb.noHits')}</p>)}
-          </div>
-          <Separator />
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium">{t('kb.settings')}</h3>
-            <KbFields form={form} set={setForm} creds={creds} idp={`kb-${kb.id}`} />
-            <p className="text-xs text-muted-foreground">{t('kb.embedHelp')}</p>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'PUT', json: { ...form, credential_id: form.credential_id || null } }), t('kb.saved'))}>{t('common.save')}</Button>
-              <Button size="sm" variant="outline" disabled={act.busy} onClick={() => act.run(() => api(`/api/knowledge-bases/${kb.id}/reindex`, { method: 'POST' }), r => t('kb.reindexed', { count: r.chunks }))}><RefreshCw />{t('kb.reindex')}</Button>
-              <Button size="sm" variant="destructive" className="ml-auto" disabled={act.busy} id={`kb-${kb.id}-delete`}
-                onClick={() => { if (confirm(t('kb.confirmDelete', { name: kb.name }))) act.run(() => api(`/api/knowledge-bases/${kb.id}`, { method: 'DELETE' }), '') }}><Trash2 />{t('kb.delete')}</Button>
-            </div>
           </div>
         </CardContent>
       </CollapsibleContent>

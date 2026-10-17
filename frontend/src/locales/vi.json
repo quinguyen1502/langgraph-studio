@@ -602,6 +602,8 @@
     "reindexed": "Đã lập chỉ mục lại {{count}} đoạn",
     "delete": "Xoá kho tri thức",
     "confirmDelete": "Xoá kho tri thức \"{{name}}\" và toàn bộ tài liệu?",
-    "none": "Chưa có kho tri thức nào."
+    "none": "Chưa có kho tri thức nào.",
+    "documents_one": "{{count}} tài liệu",
+    "chunks_one": "{{count}} đoạn"
   }
 }

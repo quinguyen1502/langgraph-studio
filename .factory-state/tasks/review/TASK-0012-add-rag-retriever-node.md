@@ -5,10 +5,10 @@
 - Project: langgraph-studio
 - Task ID: TASK-0012
 - Previous ID: TASK-0011 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
+- Status: review
 - Owner:
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-17
 - Requirement IDs: REQ-0007
 - Design IDs:
 - Architecture IDs: ARCH-0001
@@ -72,6 +72,7 @@ Implement REQ-0007: Add RAG retriever node.
 
 ## Activity Log
 
+- 2026-10-17: Implemented (DEC-0021, REV-0018, QA-0018); moved to review. Open question resolved by the owner: pgvector + SQLite brute-force fallback.
 - 2026-10-16: Renumbered TASK-0011 -> TASK-0012 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.
 

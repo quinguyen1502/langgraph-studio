@@ -36,7 +36,7 @@ def test_mock_embedding_is_deterministic_and_semantic_enough():
     assert a == b and len(a) == embeddings.MOCK_DIMS
     q = embeddings.mock_embed("how do refunds work")
     assert embeddings.cosine(q, embeddings.mock_embed("Refunds are issued to the card")) > embeddings.cosine(q, embeddings.mock_embed("Orders ship from Hanoi"))
-    assert embeddings.embedder_id(None, None) == "mock:256"
+    assert embeddings.embedder_id(None, None) == "mock:512"
 
 
 def test_chunking_and_extraction():
@@ -93,7 +93,7 @@ def test_api_upload_search_and_run():
     assert up("big.txt", b"a" * (10 * 1024 * 1024 + 1))["error"]["code"] == "KB_FILE_TOO_LARGE"
     assert up("blank.txt", b"  \n ")["error"]["code"] == "KB_FILE_EMPTY"
     got = c.get(f"/api/knowledge-bases/{kb['id']}", headers=H(tok)).json()["data"]
-    assert got["documents"] == 2 and got["embedder"] == "mock:256" and len(got["files"]) == 2
+    assert got["documents"] == 2 and got["embedder"] == "mock:512" and len(got["files"]) == 2
     hits = c.post(f"/api/knowledge-bases/{kb['id']}/search", json={"query": "laptop warranty years", "top_k": 1}, headers=H(tok)).json()["data"]
     assert len(hits) == 1 and hits[0]["filename"] == "policy.pdf" and 0 < hits[0]["score"] <= 1
     other = user(c)  # owner only

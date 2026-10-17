@@ -8,18 +8,28 @@ from typing import Any, Dict, List, Optional
 from .llm import LLMError, _post
 
 DEFAULT_MODEL = "text-embedding-3-small"
-MOCK_DIMS = 256
+MOCK_DIMS = 512
 BATCH = 96
 _TOKEN = re.compile(r"\w+", re.UNICODE)
 
 
+STOP = frozenset("a an and are as at be by do does for from how i in is it my of on or our the to was we what when where which who why will with you your "
+                 "là và của có cho không được các những một này đó thì với tôi bạn".split())
+
+
+def _stem(w: str) -> str:
+    for suf in ("ing", "ed", "es", "s"):
+        if len(w) > len(suf) + 2 and w.endswith(suf): return w[:-len(suf)]
+    return w
+
+
 def mock_embed(text: str, dims: int = MOCK_DIMS) -> List[float]:
-    """Feature-hashed bag of words (+ bigrams), L2-normalised: deterministic, offline, and texts sharing words score higher."""
-    words = [w.lower() for w in _TOKEN.findall(text)]
+    """Feature-hashed bag of stemmed words without stop words, L2-normalised: deterministic, offline, and texts that
+    share content words score higher (enough to exercise retrieval end to end; not a semantic model)."""
     v = [0.0] * dims
-    for tok in words + [a + " " + b for a, b in zip(words, words[1:])]:
-        h = hashlib.blake2b(tok.encode(), digest_size=8).digest()
-        v[int.from_bytes(h[:4], "big") % dims] += 1.0 if h[4] & 1 else -1.0
+    for w in _TOKEN.findall(text.lower()):
+        if w in STOP: continue
+        v[int.from_bytes(hashlib.blake2b(_stem(w).encode(), digest_size=4).digest(), "big") % dims] += 1.0
     n = math.sqrt(sum(x * x for x in v)) or 1.0
     return [x / n for x in v]
 

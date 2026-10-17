@@ -123,6 +123,14 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **Subgraph**: `workflow_id` của một workflow đã lưu (của bạn). Workflow con được nhúng inline: node bên trong hiện trong trace dạng
   `Subgraph › node` (id `sub/node`), dừng ở Human, checkpoint và khôi phục như node thường. State dùng chung theo tên trường; vòng tham chiếu,
   workflow không tồn tại / import, lồng quá 5 cấp đều bị báo lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`). Thiết kế: DEC-0020.
+- **Retriever** (TASK-0012): `knowledge_base_id`, `query` (template), `top_k` (1–20), `output_field` → list `{text, score, filename, …}`.
+
+## Kho tri thức & node Retriever (TASK-0012)
+- Cài đặt → **Kho tri thức**: tạo kho, tải `.txt` / `.md` / `.pdf` (≤ 10 MB), xem số đoạn, thử tìm kiếm, đổi model/khoá, lập chỉ mục lại.
+- Embedding: credential OpenAI(-compatible) của kho → `OPENAI_API_KEY` → mock offline cố định (`mock:512`, không cần khoá). Mặc định
+  `text-embedding-3-small`. Đổi model/khoá thì tài liệu được lập chỉ mục lại; nếu embedder thay đổi ngoài UI, tìm kiếm báo `KB_EMBEDDER_CHANGED`.
+- Lưu trữ: Postgres có pgvector (image compose `pgvector/pgvector:pg17`) → cột `vector`, tìm bằng SQL; Postgres thường hoặc SQLite → JSON + so cosine
+  trong Python (cùng kết quả). API: `/api/knowledge-bases…` (xem `docs/api-errors.md` cho mã `KB_*`). Thiết kế: DEC-0021.
 
 ## API
 Mọi endpoint trả về envelope: `{"success": true, "data": …, "error": null}` hoặc `{"success": false, "data": null, "error": {"code": "AUTH_INVALID_CREDENTIALS", "message": "…", "details": …}}`. Danh mục mã lỗi: `docs/api-errors.md` (DEC-0010).
@@ -152,7 +160,7 @@ Backend chia lớp `core / models / schemas / repositories / services / api / en
 - Tạo migration mới: `cd backend && .venv/bin/alembic revision --autogenerate -m "mô tả"`, rồi `.venv/bin/alembic upgrade head`.
 
 ## Triển khai với Docker Compose (TASK-0009)
-Stack gồm `postgres` (17), `redis` (7), `api` (FastAPI, tự chạy `alembic upgrade head` + seed khi khởi động) và `web` (nginx phục vụ bản build Vite, proxy `/api` và `/ws`). Cả bốn service đều có healthcheck; dữ liệu nằm trong các volume `pgdata`, `redisdata`, `apidata`.
+Stack gồm `postgres` (17 + pgvector, image `pgvector/pgvector:pg17`), `redis` (7), `api` (FastAPI, tự chạy `alembic upgrade head` + seed khi khởi động) và `web` (nginx phục vụ bản build Vite, proxy `/api` và `/ws`). Cả bốn service đều có healthcheck; dữ liệu nằm trong các volume `pgdata`, `redisdata`, `apidata`.
 
 ```bash
 cp .env.example .env      # đặt JWT_SECRET và POSTGRES_PASSWORD (bắt buộc); không commit .env

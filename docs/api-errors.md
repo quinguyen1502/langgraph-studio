@@ -89,5 +89,6 @@
 | `RATE_LIMITED` | 429 | Too many requests, retry in {retry_after} s |
 | `NOTIFICATION_NOT_FOUND` | 404 | Notification not found |
 | `DELIVERY_NOT_FOUND` | 404 | Webhook delivery not found |
+| `NOTIFICATION_PREFS_INVALID` | 422 | Notification preferences must be booleans: in_app, email |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

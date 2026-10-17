@@ -91,12 +91,47 @@ def _safe(f):
 
 KEY_HINTS = ("API_KEY", "api_key", "API key", "credentials")
 
+CHECKPOINT_MAX = 2_000_000  # bytes of a serialized checkpoint; larger ones are skipped (recovery restarts instead)
+
+
+def attach_saver(g):
+    """Progress checkpoints (TASK-0021): give a graph WITHOUT its own checkpointer an in-memory LangGraph saver, so its
+    superstep checkpoints can be serialized to the server and restored in a fresh subprocess. None when not possible."""
+    if getattr(g, "checkpointer", None) is not None: return None  # the repo manages its own persistence
+    try:
+        try: from langgraph.checkpoint.memory import InMemorySaver as Saver
+        except ImportError: from langgraph.checkpoint.memory import MemorySaver as Saver
+        saver = Saver(); g.checkpointer = saver; return saver
+    except Exception: return None
+
+
+def dump_checkpoint(saver, cfg):
+    import base64
+    t = saver.get_tuple(cfg)
+    if t is None: return None
+    typ, data = saver.serde.dumps_typed((t.checkpoint, t.metadata))
+    return None if len(data) > CHECKPOINT_MAX else {"type": typ, "data": base64.b64encode(data).decode()}
+
+
+def load_checkpoint(saver, blob):
+    import base64
+    cp, md = saver.serde.loads_typed((blob["type"], base64.b64decode(blob["data"])))
+    saver.put({"configurable": {"thread_id": "studio", "checkpoint_ns": ""}}, cp, md, cp.get("channel_versions") or {})
+
+
 async def run_graph(repo, ref, inp):
     g = load_graph(repo, ref)
     ctx = inp.pop("__context__", None)
-    emit({"type": "node_started", "node": "__start__"}); emit({"type": "node_finished", "node": "__start__", "duration_ms": 0, "delta": inp})
+    resume = inp.pop("__resume__", None); saver = attach_saver(g) if (inp.pop("__checkpointing__", False) or resume) else None
+    cfg = {"configurable": {"thread_id": "studio"}} if saver else None
+    if resume and saver: load_checkpoint(saver, resume); inp = None  # continue the stored checkpoint
+    elif resume: emit({"type": "_restart"})  # cannot restore here: the server notes it and the graph starts over
+    if inp is not None:
+        emit({"type": "node_started", "node": "__start__"}); emit({"type": "node_finished", "node": "__start__", "duration_ms": 0, "delta": inp})
     starts = {}; final = None
-    kw = {"stream_mode": ["debug", "values"]}
+    kw = {"stream_mode": ["debug", "values"], **({"config": cfg} if cfg else {})}
+    if saver is not None and "durability" in inspect.signature(g.astream).parameters:
+        kw["durability"] = "sync"  # each checkpoint is saved before the next step starts, so it can be read right away
     cs = getattr(g, "context_schema", None) or getattr(getattr(g, "builder", None), "context_schema", None)
     if cs is not None and hasattr(cs, "__dataclass_fields__"):
         try: ctx = cs(**(ctx or {}))  # dataclass context with defaults (e.g. react-agent)
@@ -105,6 +140,13 @@ async def run_graph(repo, ref, inp):
     async for mode, chunk in g.astream(inp, **kw):
         if mode == "values": final = chunk; continue
         t, p = chunk.get("type"), chunk.get("payload", {})
+        if t == "checkpoint" and saver is not None:
+            nxt = [n for n in (p.get("next") or []) if n != "__start__"]
+            if nxt:
+                try: blob = dump_checkpoint(saver, cfg)
+                except Exception: blob = None  # unserializable state: no checkpoint for this step
+                if blob: emit({"type": "_checkpoint", "node": nxt[0], "nodes": nxt, "blob": blob})
+            continue
         if t == "task":
             starts[p.get("id")] = time.perf_counter(); emit({"type": "node_started", "node": p.get("name")})
         elif t == "task_result":

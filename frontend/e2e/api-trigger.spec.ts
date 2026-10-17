@@ -23,4 +23,13 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   await page.locator('[data-testid=api-token-row]', { hasText: 'e2e' }).first().getByRole('button', { name: /Thu hồi/ }).click()
   const r2 = await page.request.post('/api/hooks/workflows/example/runs', { headers: { Authorization: `Bearer ${token}` }, data: {} })
   expect(r2.status()).toBe(401); expect((await r2.json()).error.code).toBe('TRIGGER_TOKEN_INVALID')
+  // revoked tokens are hidden until "Show revoked" is switched on; the dialog fits the viewport with its tabs visible
+  const revokedRows = page.locator('[data-testid=api-token-row]', { hasText: 'đã thu hồi' })
+  await expect(revokedRows).toHaveCount(0)
+  const toggle = page.locator('#api-show-revoked'); await expect(toggle).toHaveAttribute('data-state', 'unchecked')
+  await toggle.click(); await expect(revokedRows.first()).toBeVisible()
+  const box = (await page.locator('#api-dialog').boundingBox())!; const vh = page.viewportSize()!.height
+  expect(box.y).toBeGreaterThanOrEqual(0); expect(box.y + box.height).toBeLessThanOrEqual(vh)
+  await expect(page.locator('#api-deliveries-tab')).toBeInViewport()
+  await toggle.click(); await expect(revokedRows).toHaveCount(0)
 })

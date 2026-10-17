@@ -4,8 +4,9 @@ from fastapi import Depends, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from ..core import config
 from ..core.errors import AppError
+from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -50,8 +51,13 @@ def delivery_service() -> DeliveryService:
     db = get_db(); return DeliveryService(WebhookDeliveryRepository(db), WorkflowRepository(db), get_job_queue(), trigger_service().signing_secrets)
 
 
+@lru_cache
+def get_notification_hub() -> NotificationHub:
+    return make_notification_hub(config.REDIS_URL)  # Redis pub/sub when REDIS_URL is set, else in-process (TASK-0021)
+
+
 def notification_service() -> NotificationService:
-    db = get_db(); return NotificationService(NotificationRepository(db), UserRepository(db), WorkflowRepository(db))
+    db = get_db(); return NotificationService(NotificationRepository(db), UserRepository(db), WorkflowRepository(db), hub=get_notification_hub())
 
 
 def trigger_service() -> TriggerService:
@@ -70,7 +76,7 @@ def auth_service() -> AuthService:
     return AuthService(UserRepository(get_db()), workflow_service())
 
 def run_service() -> RunService:
-    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service())
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db))
 
 def credential_service() -> CredentialService:
     return CredentialService(CredentialRepository(get_db()))

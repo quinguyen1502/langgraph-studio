@@ -12,6 +12,7 @@ from typing import Callable, Optional
 from ..core import config
 from ..core.errors import AppError
 from ..core.logging import get_logger
+from ..repositories import StaleLease
 from .job_queue import JobQueue
 from .run_service import RunService, error_event
 from .trigger_service import run_result
@@ -27,21 +28,26 @@ class RunWorker:
     async def run_job(self, job: dict) -> Optional[str]:
         if job.get("kind") == "delivery":
             return await asyncio.to_thread(self.deliveries().attempt, job["delivery_id"]) if self.deliveries else None
-        svc = self.services(); rid = job["run_id"]; row = svc.runs.get(rid)
-        # skip cancelled/finished jobs; a recovered job (its worker died mid-run) continues from its checkpoint
-        if row is None or not (row.status == "queued" or (row.status == "running" and job.get("recovered"))): return None
-        svc.runs.set_status(rid, "running")
+        svc = self.services(); rid = job["run_id"]; row = svc.runs.get(rid); attempt = int(job.get("attempt") or 1)
+        # Claim = compare-and-set to `running` + a new fencing token (TASK-0021). Cancelled/finished jobs are skipped;
+        # a recovered job (its worker died or lost the lease) may take over a `running` run, which fences the old worker out.
+        gen = svc.runs.claim(rid, ("queued", "running") if job.get("recovered") else ("queued",)) if row is not None else None
+        if gen is None: return None
         try:
-            plan = svc.plan_recover(row) if job.get("recovered") and row.status == "running" else None
-            if plan is None:  # fresh job, or recovered before its first checkpoint: (re)start from the beginning
+            if row.status == "running":  # recovered: continue from the last checkpoint (or restart without one)
+                plan = svc.plan_recover(row, gen, attempt)
+            else:
                 plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {}})
-                plan.run_id, plan.source, plan.checkpointing = rid, "api", True
+                plan.run_id, plan.source, plan.checkpointing, plan.fence, plan.attempt = rid, "api", True, gen, attempt
             async def send(ev): return True                       # nobody streams; history + webhook carry the result
             async def listen(): await asyncio.Event().wait()      # cancel arrives through the RunBus
             status = await svc.execute(plan, send, listen, job["owner"])
         except AppError as e:  # e.g. the workflow was deleted or is too large
-            svc.record(rid, job["workflow_id"], job.get("input") or {}, [error_event(e.to_dict())], None, "error", row.started, job["owner"], source="api")
+            try: svc.record(rid, job["workflow_id"], job.get("input") or {}, [error_event(e.to_dict())], None, "error", row.started, job["owner"],
+                            source="api", fence=gen)
+            except StaleLease: return "fenced"
             status = "error"
+        if status == "fenced": return status  # the worker that owns the run now reports its result
         if job.get("callback_url") and self.deliveries:
             r = svc.runs.get(rid)
             await asyncio.to_thread(self.deliveries().create, job["workflow_id"], rid, job.get("token_id"), job["callback_url"], run_result(r))

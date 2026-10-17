@@ -2,6 +2,7 @@
 from __future__ import annotations
 from typing import Any, Callable, Dict, Optional
 import httpx
+from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, call_llm
 from .templating import render
@@ -13,9 +14,10 @@ Resolver = Callable[[str], Dict[str, Any]]
 
 
 def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Optional[UsageSink] = None,
-            resume: Optional[Dict[str, Any]] = None):
+            resume: Optional[Dict[str, Any]] = None, effects: Optional[Effects] = None):
     """resolve(credential_id) -> decrypted credential; bound to the run's user by the service layer.
-    usage(node_id, record): optional sink for LLM token usage (TASK-0010)."""
+    usage(node_id, record): optional sink for LLM token usage (TASK-0010).
+    effects: idempotency keys for side effects (TASK-0021): HTTP Tool nodes send `Idempotency-Key`."""
     t, d = node["type"], node.get("data", {})
     if t == "llm":
         def fn(state):
@@ -37,11 +39,11 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
                 body = render(d.get("body", ""), state)
                 r = httpx.request(d.get("method", "GET"), render(d["url"], state),
                                   content=body.encode() if body else None,
-                                  headers={"Content-Type": "application/json"}, timeout=30)
+                                  headers={"Content-Type": "application/json", **(effects.headers(node["id"]) if effects else {})}, timeout=30)
                 try: res = r.json()
                 except Exception: res = r.text
             else:
-                res = TOOLS[d["function"]](state)
+                res = call_tool(TOOLS[d["function"]], state, effects.key(node["id"]) if effects else None)
             return {d["output_field"]: res}
     else:  # start, condition, end -> passthrough
         def fn(state):

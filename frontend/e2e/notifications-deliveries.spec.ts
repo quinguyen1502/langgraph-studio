@@ -63,3 +63,23 @@ test('webhook deliveries: retried with backoff, logged, redelivered; secret rota
     void H
   } finally { srv.close() }
 })
+
+test('live push: a run waiting via the API rings the bell without polling; notification settings', async ({ page }) => {
+  const H = await login(page)
+  await page.request.post('/api/notifications/read-all', { headers: H })
+  const wid = (await (await page.request.post('/api/workflows', { headers: H, data: { ...APPROVAL, name: `Live ${Date.now()}` } })).json()).data.id
+  const tok = (await (await page.request.post(`/api/workflows/${wid}/tokens`, { headers: H, data: { name: 'live' } })).json()).data.token
+  await page.goto('/workflows')
+  await expect(page.locator('#notify-bell')).toHaveAttribute('data-live', 'true')
+  await expect(page.locator('[data-testid=notify-count]')).toHaveCount(0)
+  await page.request.post(`/api/hooks/workflows/${wid}/runs`, { headers: { Authorization: `Bearer ${tok}` }, data: { input: { message: 'live 1' } } })
+  await expect(page.locator('[data-testid=notify-count]')).toHaveText('1', { timeout: 8_000 })  // well under the 30 s poll
+  await page.locator('#notify-bell').click(); await page.locator('#notify-settings').click()
+  const dlg = page.locator('#notify-settings-dialog'); await expect(dlg).toBeVisible()
+  await expect(page.locator('#notify-email-off')).toBeVisible()  // no SMTP in e2e
+  const email = page.locator('#notify-pref-email'); await expect(email).toHaveAttribute('data-state', 'checked')
+  await email.click(); await expect(email).toHaveAttribute('data-state', 'unchecked')
+  const prefs = (await (await page.request.get('/api/notifications/preferences', { headers: H })).json()).data
+  expect(prefs).toMatchObject({ in_app: true, email: false })
+  await email.click(); await expect(email).toHaveAttribute('data-state', 'checked')
+})

@@ -168,7 +168,7 @@ def test_recovered_job_continues_from_last_checkpoint(c):
     inp = {"message": "where is my order A100"}
     # a reference run with checkpointing, capturing each progress checkpoint
     saved = []; real = svc.runs.save_progress
-    svc.runs.save_progress = lambda rid, ev, cp: (saved.append((ev, cp)), real(rid, ev, cp))
+    svc.runs.save_progress = lambda rid, ev, cp, fence=None: (saved.append((ev, cp)), real(rid, ev, cp, fence))
     ref = uuid.uuid4().hex[:10]; svc.runs.add(Run(id=ref, workflow_id=wid, input=json.dumps(inp), events="[]", status="running", started=time.time(), owner=owner, source="api"))
     plan = svc.plan(owner, {"workflow_id": wid, "input": inp}); plan.run_id, plan.checkpointing = ref, True
     async def send(ev): return True
@@ -215,7 +215,7 @@ def test_worker_reaps_expired_leases_periodically(monkeypatch):
         t = asyncio.create_task(w.maintain()); await asyncio.sleep(1.2); w._stop = True; t.cancel()
     asyncio.run(go())
     queued = [json.loads(x) for x in r.lrange(jq.QUEUE_KEY, 0, -1)]
-    assert {"run_id": "orphan", "recovered": True} in queued and {"run_id": "later"} in queued and r.zcard(jq.DELAYED_KEY) == 0
+    assert {"run_id": "orphan", "recovered": True, "attempt": 2} in queued and {"run_id": "later"} in queued and r.zcard(jq.DELAYED_KEY) == 0
 
 
 def test_memory_queue_delayed_jobs():

@@ -48,6 +48,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
     "NOTIFICATION_NOT_FOUND": (404, "Notification not found"),
     "DELIVERY_NOT_FOUND": (404, "Webhook delivery not found"),
+    "NOTIFICATION_PREFS_INVALID": (422, "Notification preferences must be booleans: in_app, email"),
     "VERSION_NOT_FOUND": (404, "Workflow version not found"),
     "CALLBACK_URL_INVALID": (400, "callback_url must be a public http(s) URL"),
     "NODE_FAILED": (500, "Node failed"),

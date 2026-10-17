@@ -194,9 +194,12 @@ def to_workflow(job: dict, gid: str) -> dict:
                        "required_env": job.get("required_env", []), "imported_at": time.time()}}
 
 
-def run_imported(wf: dict, inp: dict, on_proc=None):
-    """Sync generator: run original compiled graph in its venv subprocess and yield events."""
+def run_imported(wf: dict, inp: dict, on_proc=None, resume: dict | None = None, checkpointing: bool = False):
+    """Sync generator: run original compiled graph in its venv subprocess and yield events.
+    checkpointing: the runner attaches an in-memory LangGraph saver (when the graph has none) and yields `_checkpoint`
+    {node, nodes, blob} after each superstep; resume = {"blob"} continues such a checkpoint (TASK-0021)."""
     s = wf["source"]
+    inp = {**inp, **({"__checkpointing__": True} if checkpointing else {}), **({"__resume__": resume["blob"]} if resume and resume.get("blob") else {})}
     missing = [k for k in s.get("required_env", []) if k not in os.environ and not _in_dotenv(s["repo_dir"], k)]
     if not os.path.exists(os.path.join(s["job_dir"], "venv", "bin", "python")):
         yield {"type": "error", "errors": ["The import environment is gone (venv deleted). Please import the repo again."]}; return

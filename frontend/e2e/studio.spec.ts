@@ -42,7 +42,8 @@ test('wrong password shows a generic error', async ({ page }) => {
   const email = `e2e-${uid()}@example.com`
   await register(page, email)
   await page.evaluate(() => localStorage.clear())
-  await page.goto('/login')
+  // the app may itself redirect to /login once the token is gone (a header poll gets 401), racing this goto
+  await page.goto('/login').catch(() => {}); await expect(page).toHaveURL(/\/login/); await page.waitForLoadState()
   await login(page, email, 'wrongpass1')
   await expect(page.locator('#auth-error')).toHaveText('Sai email hoặc mật khẩu')
   await login(page, `nobody-${email}`, 'wrongpass1')

@@ -19,7 +19,7 @@ export function PendingRuns() {
   return <Card id="pending-runs" className="gap-2 py-4">
     <CardHeader className="px-4"><CardTitle className="flex items-center gap-2 text-base"><UserCheck className="size-4 text-node-human" />{t('human.pendingTitle')}<Badge variant="secondary">{items.length}</Badge></CardTitle>
       <CardDescription>{t('human.pendingDesc')}</CardDescription></CardHeader>
-    <CardContent className="px-4 space-y-1">{items.map(p => <div key={p.id} data-testid="pending-row" className="flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
+    <CardContent className="px-4 space-y-1">{items.map(p => <div key={p.id} data-testid="pending-row" className="-mx-2 flex items-center gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-accent">
       <span className="font-medium truncate max-w-48">{p.workflow_name || p.workflow_id}</span>
       <span className="text-muted-foreground truncate max-w-40">{p.label}</span>
       <span className="truncate flex-1 text-muted-foreground">{p.prompt}</span>

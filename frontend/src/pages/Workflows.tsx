@@ -32,7 +32,7 @@ export function WorkflowsPage() {
   const [loading, setLoading] = useState(true); const [loadErr, setLoadErr] = useState('')
   const [notice, setNotice] = useState('')
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
-  const [del, setDel] = useState<W | null>(null); const [delErr, setDelErr] = useState(''); const [busy, setBusy] = useState(false)
+  const [del, setDel] = useState<W | null>(null); const [delErr, setDelErr] = useState(''); const [deps, setDeps] = useState<{ id: string | null; name: string | null }[] | null>(null); const [busy, setBusy] = useState(false)
   const me = useMe(); const [all, setAll] = useState(false)
   const creates = can(me, 'workflows.create')
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
@@ -58,8 +58,8 @@ export function WorkflowsPage() {
   const doDelete = async () => {
     if (!del) return
     setBusy(true); setDelErr('')
-    try { await api(`/api/workflows/${del.id}`, { method: 'DELETE' }); setDel(null); load() }
-    catch (e: any) { setDelErr(e.message) } finally { setBusy(false) }
+    try { await api(`/api/workflows/${del.id}${deps ? '?force=true' : ''}`, { method: 'DELETE' }); setDel(null); setDeps(null); load() }
+    catch (e: any) { if (e.code === 'WORKFLOW_IN_USE') setDeps(e.details?.dependents || []); else setDelErr(e.message) } finally { setBusy(false) }
   }
   const shown = useMemo(() => { const k = q.trim().toLowerCase(); return k ? items.filter(w => w.name.toLowerCase().includes(k) || w.id.includes(k)) : items }, [items, q])
   const empty = (icon: React.ReactNode, title: string, body: React.ReactNode, id: string) =>
@@ -106,7 +106,7 @@ export function WorkflowsPage() {
                     <DropdownMenuItem disabled={!canEdit(w.access)} onClick={() => { setRename(w); setNewName(w.name); setRenameErr('') }}><Pencil />{t('list.rename')}</DropdownMenuItem>
                     <DropdownMenuItem disabled={!creates} onClick={() => dup(w)}><Copy />{t('list.duplicate')}</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem variant="destructive" disabled={w.access !== 'owner'} onClick={() => { setDel(w); setDelErr('') }}><Trash2 />{t('common.delete')}</DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" disabled={w.access !== 'owner'} onClick={() => { setDel(w); setDelErr(''); setDeps(null) }}><Trash2 />{t('common.delete')}</DropdownMenuItem>
                   </DropdownMenuContent></DropdownMenu>
               </TableCell>
             </TableRow>)}
@@ -127,8 +127,10 @@ export function WorkflowsPage() {
     </Dialog>
     <Dialog open={!!del} onOpenChange={o => !o && setDel(null)}>
       <DialogContent><DialogHeader><DialogTitle>{t('list.deleteTitle')}</DialogTitle><DialogDescription className="break-all">{t('list.deleteBody', { name: del?.name })}</DialogDescription></DialogHeader>
+        {deps && <Alert variant="destructive" id="delete-dependents"><AlertCircle /><AlertDescription><div>{t('list.inUse', { count: deps.length })}</div>
+          <ul className="mt-1 list-disc pl-4">{deps.map((d, i) => <li key={d.id ?? i}>{d.name ?? t('list.hiddenWorkflow')}{d.id && <span className="ml-1 font-mono text-xs">{d.id}</span>}</li>)}</ul></AlertDescription></Alert>}
         {delErr && <p role="alert" className="text-sm text-destructive">{delErr}</p>}
-        <DialogFooter><Button variant="outline" onClick={() => setDel(null)}>{t('common.cancel')}</Button><Button id="delete-confirm" variant="destructive" onClick={doDelete} disabled={busy}>{busy && <Loader2 className="animate-spin" />}{t('common.delete')}</Button></DialogFooter></DialogContent>
+        <DialogFooter><Button variant="outline" onClick={() => setDel(null)}>{t('common.cancel')}</Button><Button id="delete-confirm" variant="destructive" onClick={doDelete} disabled={busy}>{busy && <Loader2 className="animate-spin" />}{deps ? t('list.deleteAnyway') : t('common.delete')}</Button></DialogFooter></DialogContent>
     </Dialog>
   </div>
 }

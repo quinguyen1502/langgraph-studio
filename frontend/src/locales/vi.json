@@ -77,7 +77,11 @@
     "title": "Workflows",
     "showAll": "Mọi workflow",
     "sharedBy": "Được chia sẻ bởi {{email}}",
-    "emptyViewer": "Chưa có workflow nào được chia sẻ với bạn. Hãy nhờ chủ sở hữu chia sẻ."
+    "emptyViewer": "Chưa có workflow nào được chia sẻ với bạn. Hãy nhờ chủ sở hữu chia sẻ.",
+    "inUse_one": "{{count}} workflow đang dùng workflow này làm subgraph:",
+    "inUse_other": "{{count}} workflow đang dùng workflow này làm subgraph:",
+    "hiddenWorkflow": "Một workflow bạn không xem được",
+    "deleteAnyway": "Vẫn xoá"
   },
   "editor": {
     "notFoundTitle": "Không tìm thấy workflow",
@@ -439,7 +443,9 @@
     "unchanged": "v{{n}} giống hệt phiên bản hiện tại nên không có gì được khôi phục.",
     "unsavedWarning": "Bạn có thay đổi chưa lưu trong editor. Khôi phục sẽ thay thế chúng.",
     "loadMore": "Tải thêm",
-    "shown": "{{shown}} / {{total}}"
+    "shown": "{{shown}} / {{total}}",
+    "childrenChanged_one": "{{count}} subgraph đã thay đổi sau phiên bản mới nhất của workflow này (lần chạy tới dùng bản mới):",
+    "childrenChanged_other": "{{count}} subgraph đã thay đổi sau phiên bản mới nhất của workflow này (lần chạy tới dùng bản mới):"
   },
   "deliveries": {
     "tab": "Lần gửi",
@@ -583,7 +589,9 @@
       "audit": "Nhật ký",
       "knowledge": "Kho tri thức",
       "mcp": "Máy chủ MCP",
-      "users": "Người dùng"
+      "users": "Người dùng",
+      "teams": "Nhóm",
+      "activity": "Hoạt động"
     },
     "intro": {
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
@@ -591,7 +599,9 @@
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
       "knowledge": "Tài liệu để node Retriever tìm kiếm. Văn bản được chia đoạn và tạo embedding; chỉ bạn dùng được kho tri thức của mình.",
       "mcp": "Công cụ từ máy chủ Model Context Protocol, dùng trong node MCP. Secret được mã hoá và không hiển thị lại.",
-      "users": "Ai có thể đăng nhập và vai trò của họ cho phép gì. Workflow được chia sẻ từ trình chỉnh sửa."
+      "users": "Ai có thể đăng nhập và vai trò của họ cho phép gì. Workflow được chia sẻ từ trình chỉnh sửa.",
+      "teams": "Nhóm người để chia sẻ workflow. Thành viên nhận quyền đã cấp cho nhóm.",
+      "activity": "Thay đổi về vai trò, chia sẻ, nhóm, quyền sở hữu, tài khoản và chính sách, mới nhất trước."
     },
     "status": {
       "connected": "Đã kết nối",
@@ -725,7 +735,24 @@
     "yes": "Được phép",
     "no": "Không được phép",
     "accessTitle": "Quyền với một workflow",
-    "accessNote": "Vai trò người xem giới hạn mọi chia sẻ ở mức người xem. Lần chạy workflow được chia sẻ dùng thông tin xác thực, kho tri thức và máy chủ MCP của chủ sở hữu."
+    "accessNote": "Vai trò người xem giới hạn mọi chia sẻ ở mức người xem. Lần chạy workflow được chia sẻ dùng thông tin xác thực, kho tri thức và máy chủ MCP của chủ sở hữu.",
+    "deleteFor": "Xoá {{email}}",
+    "deleteTitle": "Xoá {{email}}",
+    "deleteIntro": "Thông tin xác thực, kho tri thức, máy chủ MCP, kênh và API token riêng sẽ bị xoá. Không thể hoàn tác.",
+    "deleteMode": "Chế độ",
+    "modes": {
+      "anonymize": "Ẩn danh hoá",
+      "delete": "Xoá"
+    },
+    "modeHelp": {
+      "anonymize": "Giữ một tài khoản vô danh đã vô hiệu hoá để lịch sử chạy vẫn ghi “người dùng đã xoá”.",
+      "delete": "Xoá luôn tài khoản và các lần chạy người này đã khởi chạy."
+    },
+    "reassign_one": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
+    "reassign_other": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
+    "reassignHelp": "Người chỉnh sửa hoặc quản trị viên. Tham chiếu họ không dùng được sẽ được đánh dấu trong từng workflow.",
+    "deleted_one": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
+    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu)."
   },
   "share": {
     "button": "Chia sẻ",
@@ -752,13 +779,118 @@
       "run": "Chạy",
       "edit": "Sửa",
       "delete": "Xoá",
-      "share": "Chia sẻ"
-    }
+      "share": "Chia sẻ",
+      "transfer": "Chuyển"
+    },
+    "with": "Chia sẻ với",
+    "kindUser": "Người",
+    "kindTeam": "Nhóm",
+    "team": "Nhóm",
+    "pickTeam": "Chọn nhóm",
+    "noTeams": "Chưa có nhóm (quản trị viên tạo)"
   },
   "slackOauth": {
     "title": "Thêm vào Slack",
     "help": "Cài ứng dụng Slack của studio vào một workspace chỉ với một cú nhấp, không cần dán token.",
     "button": "Thêm vào Slack",
     "installed": "Đã kết nối workspace Slack."
+  },
+  "teams": {
+    "members_one": "{{count}} thành viên",
+    "members_other": "{{count}} thành viên",
+    "delete": "Xoá nhóm {{name}}",
+    "removeMember": "Gỡ {{email}}",
+    "noMembers": "Chưa có thành viên.",
+    "memberEmail": "Email thành viên",
+    "addMember": "Thêm",
+    "namePlaceholder": "Tên nhóm mới",
+    "name": "Tên nhóm",
+    "create": "Tạo nhóm",
+    "empty": "Chưa có nhóm. Tạo nhóm, thêm thành viên rồi chia sẻ workflow với nhóm từ trình chỉnh sửa."
+  },
+  "activity": {
+    "search": "Tìm người thực hiện, đối tượng hoặc thao tác…",
+    "category": "Loại",
+    "anyCategory": "Mọi loại",
+    "since": "Thời gian",
+    "cat": {
+      "user": "Người dùng",
+      "share": "Chia sẻ",
+      "team": "Nhóm",
+      "workflow": "Workflow",
+      "policy": "Chính sách"
+    },
+    "when": {
+      "all": "Mọi lúc",
+      "24h": "24 giờ qua",
+      "7d": "7 ngày qua",
+      "30d": "30 ngày qua",
+      "col": "Thời điểm"
+    },
+    "actor": "Bởi",
+    "action": "Thao tác",
+    "target": "Đối tượng",
+    "details": "Chi tiết",
+    "empty": "Không có hoạt động phù hợp.",
+    "range": "{{from}}–{{to}} / {{total}}",
+    "prev": "Trang trước",
+    "next": "Trang sau",
+    "actions": {
+      "user_role": "Đổi vai trò",
+      "user_activate": "Kích hoạt tài khoản",
+      "user_deactivate": "Vô hiệu hoá tài khoản",
+      "user_anonymize": "Ẩn danh hoá tài khoản",
+      "user_delete": "Xoá tài khoản",
+      "share_add": "Chia sẻ với người dùng",
+      "share_role": "Đổi quyền chia sẻ",
+      "share_remove": "Gỡ chia sẻ",
+      "share_team": "Chia sẻ với nhóm",
+      "share_team_remove": "Gỡ chia sẻ nhóm",
+      "team_create": "Tạo nhóm",
+      "team_rename": "Đổi tên nhóm",
+      "team_delete": "Xoá nhóm",
+      "team_member_add": "Thêm thành viên",
+      "team_member_remove": "Gỡ thành viên",
+      "workflow_transfer": "Chuyển quyền sở hữu",
+      "workflow_delete": "Xoá workflow",
+      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức"
+    },
+    "types": {
+      "user": "Người dùng",
+      "workflow": "Workflow",
+      "team": "Nhóm",
+      "policy": "Chính sách"
+    }
+  },
+  "transfer": {
+    "button": "Chuyển quyền sở hữu",
+    "title": "Chuyển quyền sở hữu",
+    "intro": "Chủ sở hữu mới phải là người chỉnh sửa hoặc quản trị viên. Sau đó lần chạy dùng thông tin xác thực, kho tri thức và máy chủ MCP riêng của chủ sở hữu mới.",
+    "newOwner": "Email chủ sở hữu mới",
+    "check": "Kiểm tra",
+    "issues_one": "{{count}} tham chiếu chủ sở hữu mới không dùng được. Gán lại sang tài nguyên của họ hoặc giữ và đánh dấu.",
+    "issues_other": "{{count}} tham chiếu chủ sở hữu mới không dùng được. Gán lại sang tài nguyên của họ hoặc giữ và đánh dấu.",
+    "clean": "{{email}} dùng được mọi tham chiếu.",
+    "rebindFor": "Gán lại {{node}}",
+    "keepFlagged": "Giữ (đánh dấu)",
+    "flagged": "Đã đánh dấu",
+    "keepAccess": "Giữ quyền chỉnh sửa cho chủ sở hữu hiện tại",
+    "submit": "Chuyển",
+    "hint": "Giao workflow này cho người chỉnh sửa hoặc quản trị viên khác.",
+    "done": "Đã chuyển quyền sở hữu cho {{email}}.",
+    "flaggedLine": "Cần sửa {{node}}: {{kind}} {{name}} không khả dụng với chủ sở hữu mới",
+    "kinds": {
+      "credential": "Thông tin xác thực",
+      "knowledge_base": "Kho tri thức",
+      "mcp_server": "Máy chủ MCP",
+      "subgraph": "Subgraph"
+    }
+  },
+  "policy": {
+    "title": "Tài nguyên tổ chức khi chạy",
+    "intro": "Vai trò được dùng kênh phê duyệt và máy chủ MCP toàn tổ chức khi chạy. Mặc định: người chỉnh sửa và quản trị viên.",
+    "adminAlways": "luôn được phép",
+    "blockedMcp": "Vai trò của bạn không được dùng máy chủ MCP của tổ chức khi chạy (chính sách quản trị).",
+    "blockedChannels": "Vai trò của bạn không được dùng kênh phê duyệt của tổ chức khi chạy (chính sách quản trị)."
   }
 }

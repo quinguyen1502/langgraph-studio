@@ -6,7 +6,7 @@ export type Role = 'admin' | 'editor' | 'viewer'
 export type Access = 'owner' | 'editor' | 'viewer'
 export type Me = { id: string; email: string; role: Role; permissions: string[]; is_admin: boolean }
 export type Share = { user_id: string; email: string; role: 'viewer' | 'editor'; created: number }
-export type Shares = { owner: { id: string; email: string | null }; can_share: boolean; shares: Share[] }
+export type Shares = { owner: { id: string; email: string | null }; can_share: boolean; can_transfer: boolean; shares: Share[]; teams: TeamShare[] }
 export type AdminUser = { id: string; email: string; role: Role; active: boolean; created: number | null; workflows: number }
 export type RoleMatrix = { roles: { role: Role; permissions: string[] }[]; permissions: string[]; workflow_access: { access: Access; actions: string[] }[] }
 
@@ -21,3 +21,14 @@ export function useMe(): Me | null {
 
 export const can = (me: Me | null, permission: string) => !!me?.permissions.includes(permission)
 export const canEdit = (a?: Access | null) => a === 'owner' || a === 'editor'
+
+// ---- TASK-0029 ----
+export type TeamMember = { user_id: string; email: string; role: Role; active: boolean }
+export type Team = { id: string; name: string; description: string | null; members: number; mine: boolean; member_list?: TeamMember[] }
+export type Teams = { can_manage: boolean; teams: Team[] }
+export type TeamShare = { team_id: string; name: string; role: 'viewer' | 'editor'; created: number }
+export type AuditItem = { id: string; at: number; actor: string | null; action: string; target_type: string; target_id: string | null; target: string | null; details: Record<string, any> }
+export type AuditPage = { items: AuditItem[]; total: number; limit: number; offset: number; categories: string[] }
+export type Issue = { node_id: string; node: string; field: string; kind: 'credential' | 'knowledge_base' | 'mcp_server' | 'subgraph'; id: string; name: string | null; rebindable: boolean }
+export type TransferPreview = { new_owner: string; issues: Issue[]; options: Record<string, { id: string; name: string }[]> }
+export type Policy = { org_resources_roles: Role[]; default: Role[] }

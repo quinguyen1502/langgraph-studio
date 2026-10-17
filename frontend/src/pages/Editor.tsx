@@ -269,7 +269,7 @@ function Studio() {
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
-      {wid && <ShareDialog workflowId={wid} />}
+      {wid && <ShareDialog workflowId={wid} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
       <VersionsDialog wid={wid} isDirty={() => savedSnap.current !== null && snap() !== savedSnap.current} onRestored={wf => { load(wf); setErrors([]) }} />
       {access === 'owner' && <ApiTriggerDialog wid={wid} />}
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>

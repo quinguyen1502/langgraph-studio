@@ -77,7 +77,11 @@
     "title": "Workflows",
     "showAll": "All workflows",
     "sharedBy": "Shared by {{email}}",
-    "emptyViewer": "Nothing is shared with you yet. Ask a workflow owner to share one."
+    "emptyViewer": "Nothing is shared with you yet. Ask a workflow owner to share one.",
+    "inUse_one": "{{count}} workflow uses this one as a subgraph:",
+    "inUse_other": "{{count}} workflows use this one as a subgraph:",
+    "hiddenWorkflow": "A workflow you cannot see",
+    "deleteAnyway": "Delete anyway"
   },
   "editor": {
     "notFoundTitle": "Workflow not found",
@@ -439,7 +443,9 @@
     "unchanged": "v{{n}} is identical to the current version, so nothing was restored.",
     "unsavedWarning": "You have unsaved changes in the editor. Restoring replaces them.",
     "loadMore": "Load more",
-    "shown": "{{shown}} of {{total}}"
+    "shown": "{{shown}} of {{total}}",
+    "childrenChanged_one": "{{count}} subgraph changed after this workflow's latest version (next runs use the new version):",
+    "childrenChanged_other": "{{count}} subgraphs changed after this workflow's latest version (next runs use the new versions):"
   },
   "deliveries": {
     "tab": "Deliveries",
@@ -583,7 +589,9 @@
       "audit": "Audit log",
       "knowledge": "Knowledge bases",
       "mcp": "MCP servers",
-      "users": "Users"
+      "users": "Users",
+      "teams": "Teams",
+      "activity": "Activity"
     },
     "intro": {
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
@@ -591,7 +599,9 @@
       "audit": "Every approval request and decision made through a chat channel.",
       "knowledge": "Documents that Retriever nodes search. Text is split into chunks and embedded; only you can use your knowledge bases.",
       "mcp": "Tools from Model Context Protocol servers, used by MCP tool nodes. Secrets are encrypted and never shown again.",
-      "users": "Who can sign in and what their role allows. Workflows are shared from the editor."
+      "users": "Who can sign in and what their role allows. Workflows are shared from the editor.",
+      "teams": "Groups of people to share workflows with. Members get the access the team was given.",
+      "activity": "Changes to roles, shares, teams, ownership, accounts and policy, newest first."
     },
     "status": {
       "connected": "Connected",
@@ -725,7 +735,24 @@
     "yes": "Allowed",
     "no": "Not allowed",
     "accessTitle": "Access to one workflow",
-    "accessNote": "A viewer role caps any share at viewer. Runs of a shared workflow use its owner's credentials, knowledge bases and MCP servers."
+    "accessNote": "A viewer role caps any share at viewer. Runs of a shared workflow use its owner's credentials, knowledge bases and MCP servers.",
+    "deleteFor": "Delete {{email}}",
+    "deleteTitle": "Delete {{email}}",
+    "deleteIntro": "Personal credentials, knowledge bases, MCP servers, channels and API tokens are removed. This cannot be undone.",
+    "deleteMode": "Mode",
+    "modes": {
+      "anonymize": "Anonymize",
+      "delete": "Delete"
+    },
+    "modeHelp": {
+      "anonymize": "Keeps a deactivated, nameless account so run history stays attributed to “deleted user”.",
+      "delete": "Also removes the account and the runs this user started."
+    },
+    "reassign_one": "Owns {{count}} workflow: new owner's email",
+    "reassign_other": "Owns {{count}} workflows: new owner's email",
+    "reassignHelp": "An editor or admin. References they cannot use are flagged in each workflow.",
+    "deleted_one": "{{email}} removed; {{count}} workflow reassigned ({{flagged}} flagged reference(s)).",
+    "deleted_other": "{{email}} removed; {{count}} workflows reassigned ({{flagged}} flagged reference(s))."
   },
   "share": {
     "button": "Share",
@@ -752,13 +779,118 @@
       "run": "Run",
       "edit": "Edit",
       "delete": "Delete",
-      "share": "Share"
-    }
+      "share": "Share",
+      "transfer": "Transfer"
+    },
+    "with": "Share with",
+    "kindUser": "Person",
+    "kindTeam": "Team",
+    "team": "Team",
+    "pickTeam": "Choose a team",
+    "noTeams": "No teams (an admin creates them)"
   },
   "slackOauth": {
     "title": "Add to Slack",
     "help": "Install the studio's Slack app in a workspace with one click; no token to paste.",
     "button": "Add to Slack",
     "installed": "Slack workspace connected."
+  },
+  "teams": {
+    "members_one": "{{count}} member",
+    "members_other": "{{count}} members",
+    "delete": "Delete team {{name}}",
+    "removeMember": "Remove {{email}}",
+    "noMembers": "No members yet.",
+    "memberEmail": "Member email",
+    "addMember": "Add",
+    "namePlaceholder": "New team name",
+    "name": "Team name",
+    "create": "Create team",
+    "empty": "No teams yet. Create one, add members, then share workflows with it from the editor."
+  },
+  "activity": {
+    "search": "Search actor, target or action…",
+    "category": "Category",
+    "anyCategory": "All categories",
+    "since": "Period",
+    "cat": {
+      "user": "Users",
+      "share": "Sharing",
+      "team": "Teams",
+      "workflow": "Workflows",
+      "policy": "Policy"
+    },
+    "when": {
+      "all": "Any time",
+      "24h": "Last 24 hours",
+      "7d": "Last 7 days",
+      "30d": "Last 30 days",
+      "col": "When"
+    },
+    "actor": "By",
+    "action": "Action",
+    "target": "Target",
+    "details": "Details",
+    "empty": "No matching activity.",
+    "range": "{{from}}–{{to}} of {{total}}",
+    "prev": "Previous page",
+    "next": "Next page",
+    "actions": {
+      "user_role": "Role changed",
+      "user_activate": "Account activated",
+      "user_deactivate": "Account deactivated",
+      "user_anonymize": "Account anonymized",
+      "user_delete": "Account deleted",
+      "share_add": "Shared with user",
+      "share_role": "Share role changed",
+      "share_remove": "Share removed",
+      "share_team": "Shared with team",
+      "share_team_remove": "Team share removed",
+      "team_create": "Team created",
+      "team_rename": "Team renamed",
+      "team_delete": "Team deleted",
+      "team_member_add": "Member added",
+      "team_member_remove": "Member removed",
+      "workflow_transfer": "Ownership transferred",
+      "workflow_delete": "Workflow deleted",
+      "policy_org_resources": "Org resource policy changed"
+    },
+    "types": {
+      "user": "User",
+      "workflow": "Workflow",
+      "team": "Team",
+      "policy": "Policy"
+    }
+  },
+  "transfer": {
+    "button": "Transfer ownership",
+    "title": "Transfer ownership",
+    "intro": "The new owner must be an editor or an admin. Runs then use the new owner's credentials, knowledge bases and personal MCP servers.",
+    "newOwner": "New owner's email",
+    "check": "Check",
+    "issues_one": "{{count}} reference cannot be used by the new owner. Re-bind it to one of theirs or keep it flagged.",
+    "issues_other": "{{count}} references cannot be used by the new owner. Re-bind them to theirs or keep them flagged.",
+    "clean": "Every reference can be used by {{email}}.",
+    "rebindFor": "Re-bind {{node}}",
+    "keepFlagged": "Keep (flagged)",
+    "flagged": "Flagged",
+    "keepAccess": "Keep editor access for the current owner",
+    "submit": "Transfer",
+    "hint": "Hand this workflow to another editor or admin.",
+    "done": "Ownership transferred to {{email}}.",
+    "flaggedLine": "Fix {{node}}: {{kind}} {{name}} is not available to the new owner",
+    "kinds": {
+      "credential": "Credential",
+      "knowledge_base": "Knowledge base",
+      "mcp_server": "MCP server",
+      "subgraph": "Subgraph"
+    }
+  },
+  "policy": {
+    "title": "Organization resources at run time",
+    "intro": "Roles whose runs may use org-wide approval channels and MCP servers. Default: editors and admins.",
+    "adminAlways": "always allowed",
+    "blockedMcp": "Your role cannot use organization MCP servers at run time (admin policy).",
+    "blockedChannels": "Your role cannot use organization approval channels at run time (admin policy)."
   }
 }

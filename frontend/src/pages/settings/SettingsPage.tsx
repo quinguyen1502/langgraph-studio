@@ -3,7 +3,7 @@
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Database, Users, MessageSquareShare, Plug, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Database, Users, UsersRound, History, MessageSquareShare, Plug, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/lib/theme'
@@ -15,6 +15,8 @@ import { AuditSection } from './AuditSection'
 import { KnowledgeSection } from './KnowledgeSection'
 import { McpSection } from './McpSection'
 import { UsersSection } from './UsersSection'
+import { TeamsSection } from './TeamsSection'
+import { ActivitySection } from './ActivitySection'
 import { can, useMe } from '@/lib/rbac'
 
 type Section = { id: string; icon: LucideIcon; Component: ComponentType; permission?: string }
@@ -25,6 +27,8 @@ export const SECTIONS: Section[] = [
   { id: 'knowledge', icon: Database, Component: KnowledgeSection },
   { id: 'mcp', icon: Plug, Component: McpSection },
   { id: 'users', icon: Users, Component: UsersSection, permission: 'users.manage' },
+  { id: 'teams', icon: UsersRound, Component: TeamsSection, permission: 'users.manage' },
+  { id: 'activity', icon: History, Component: ActivitySection, permission: 'users.manage' },
 ]
 
 export function SettingsPage() {

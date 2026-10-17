@@ -1,13 +1,8 @@
 import json, time, uuid
 from typing import Optional
 from sqlalchemy import delete, select, update
-from sqlalchemy.exc import IntegrityError
 from ..models import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
 from ..models.database import Database
-
-
-class IdentityTaken(Exception):
-    """The channel account is already linked to another studio user."""
 
 
 class ApprovalRepository:
@@ -38,20 +33,37 @@ class ApprovalRepository:
             n = s.execute(delete(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind)).rowcount; s.commit(); return n or 0
 
     # ---- identities ----
-    def identities(self, uid: str) -> dict[str, str]:
-        with self.db.session() as s: return {i.kind: i.external_id for i in s.scalars(select(ChannelIdentity).where(ChannelIdentity.user_id == uid))}
+    def identities(self, uid: str) -> dict[str, ChannelIdentity]:
+        with self.db.session() as s: return {i.kind: i for i in s.scalars(select(ChannelIdentity).where(ChannelIdentity.user_id == uid))}
+
+    def identity(self, uid: str, kind: str) -> Optional[ChannelIdentity]:
+        with self.db.session() as s: return s.get(ChannelIdentity, (uid, kind))
 
     def user_for(self, kind: str, external_id: str) -> Optional[str]:
+        """The studio user with a *verified* link to this account (None when nobody proved it)."""
         with self.db.session() as s:
-            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.external_id == external_id))
+            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.external_id == external_id,
+                                                                  ChannelIdentity.verified_at.is_not(None)))
 
-    def set_identity(self, uid: str, kind: str, external_id: Optional[str]) -> None:
-        """Link (or unlink with None). Raises IdentityTaken when another user already linked that account."""
+    def put_identity(self, uid: str, kind: str, external_id: Optional[str]) -> None:
+        """Link (unverified, no code yet) or unlink with None. Relinking the same account keeps its state."""
         with self.db.session() as s:
-            s.execute(delete(ChannelIdentity).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind))
-            if external_id: s.add(ChannelIdentity(user_id=uid, kind=kind, external_id=external_id, created=time.time()))
-            try: s.commit()
-            except IntegrityError: s.rollback(); raise IdentityTaken(kind)
+            row = s.get(ChannelIdentity, (uid, kind))
+            if row is not None and row.external_id == external_id: return
+            if row is not None: s.delete(row); s.flush()
+            if external_id: s.add(ChannelIdentity(user_id=uid, kind=kind, external_id=external_id, created=time.time(), code_attempts=0))
+            s.commit()
+
+    def set_identity(self, uid: str, kind: str, **vals) -> None:
+        with self.db.session() as s:
+            s.execute(update(ChannelIdentity).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind).values(**vals)); s.commit()
+
+    def count_attempt(self, uid: str, kind: str) -> int:
+        """Atomically count a wrong code; returns the new count."""
+        with self.db.session() as s:
+            s.execute(update(ChannelIdentity).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind)
+                      .values(code_attempts=ChannelIdentity.code_attempts + 1)); s.commit()
+            return s.scalar(select(ChannelIdentity.code_attempts).where(ChannelIdentity.user_id == uid, ChannelIdentity.kind == kind)) or 0
 
     # ---- requests ----
     def add_request(self, r: ApprovalRequest) -> ApprovalRequest:

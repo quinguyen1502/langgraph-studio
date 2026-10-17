@@ -74,3 +74,7 @@ def approval_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_APPRO
 def slack_api_url() -> str: return (os.environ.get("SLACK_API_URL") or "https://slack.com/api").rstrip("/")
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
+# --- TASK-0022 follow-up: identity verification codes sent by the bot ---
+def identity_code_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_IDENTITY_CODE_TTL", 600)))  # a code is valid (s)
+def identity_code_attempts() -> int: return max(1, _int("STUDIO_IDENTITY_CODE_ATTEMPTS", 5))  # wrong codes before a new one is needed
+def identity_code_resend() -> int: return max(0, _int("STUDIO_IDENTITY_CODE_RESEND", 30))     # min seconds between two codes

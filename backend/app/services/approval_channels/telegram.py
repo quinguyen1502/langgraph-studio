@@ -51,3 +51,6 @@ class TelegramChannel(ApprovalChannel):
 
     def update(self, secrets, ref, text):
         self._api(secrets, "editMessageText", {"chat_id": ref["chat_id"], "message_id": ref["message_id"], "text": text[:4000]})
+
+    def send_dm(self, secrets, external_id, text):
+        self._api(secrets, "sendMessage", {"chat_id": external_id, "text": text})  # works once the user pressed Start in the bot chat

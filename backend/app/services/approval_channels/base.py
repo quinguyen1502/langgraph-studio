@@ -80,6 +80,10 @@ class ApprovalChannel:
         """Replace the original message (buttons removed) with the outcome."""
         raise NotImplementedError
 
+    def send_dm(self, secrets: dict, external_id: str, text: str) -> None:
+        """Send a private message to one platform user (the identity verification code)."""
+        raise NotImplementedError
+
     # ---- HTTP helper ----
     def call(self, method: str, url: str, **kw) -> Any:
         try:

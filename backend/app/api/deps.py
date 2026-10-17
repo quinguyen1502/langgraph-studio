@@ -8,6 +8,7 @@ from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
 from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository
 from ..services.approval_service import ApprovalService
+from ..services.identity_service import IdentityService
 from ..services.auth_service import AuthService
 from ..services.credential_service import CredentialService
 from ..services.import_service import ImportService
@@ -98,3 +99,7 @@ def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) ->
 async def limit_body(request: Request):
     n = int(request.headers.get("content-length") or 0)
     if n > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
+
+
+def identity_service() -> IdentityService:
+    svc = approval_service(); return IdentityService(svc.repo, svc.adapters, svc.dm_channel)

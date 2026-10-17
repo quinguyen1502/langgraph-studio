@@ -64,7 +64,11 @@ CATALOG: dict[str, tuple[int, str]] = {
     "APPROVAL_TOKEN_INVALID": (400, "Invalid approval button"),
     "APPROVAL_TOKEN_EXPIRED": (410, "This approval request has expired"),
     "APPROVAL_ALREADY_DECIDED": (409, "This request was already answered"),
-    "APPROVAL_IDENTITY_UNKNOWN": (403, "Link your {kind} account in LangGraph Studio (Approval channels) to approve"),
+    "APPROVAL_IDENTITY_UNKNOWN": (403, "Link and verify your {kind} account in LangGraph Studio (Approval channels) to approve"),
+    "IDENTITY_NOT_LINKED": (404, "Link your {kind} account first"),
+    "IDENTITY_CODE_INVALID": (400, "Wrong code, {left} attempt(s) left"),
+    "IDENTITY_CODE_EXPIRED": (410, "The code expired, request a new one"),
+    "IDENTITY_CODE_ATTEMPTS": (429, "Too many wrong codes, request a new one"),
     "APPROVAL_FORBIDDEN": (403, "You are not allowed to approve this run"),
     # credentials
     "CREDENTIAL_NOT_FOUND": (404, "Credential not found or not yours"),

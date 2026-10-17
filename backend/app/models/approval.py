@@ -1,6 +1,6 @@
 """Human-in-the-loop approval through external channels (TASK-0022, DEC-0019)."""
 from typing import Optional
-from sqlalchemy import Float, Text, UniqueConstraint
+from sqlalchemy import Float, Index, Integer, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from .base import Base
 
@@ -18,13 +18,19 @@ class ApprovalChannel(Base):
 
 
 class ChannelIdentity(Base):
-    """Maps a channel account (Slack user id, Telegram user id) to a studio user."""
+    """Maps a channel account (Slack user id, Telegram user id) to a studio user. Only a *verified* link (the user typed
+    the one-time code the bot sent to that account) authorizes button presses; one verified link per account."""
     __tablename__ = "channel_identities"
-    __table_args__ = (UniqueConstraint("kind", "external_id", name="uq_channel_identities_kind_external"),)
+    __table_args__ = (Index("ix_channel_identities_external", "kind", "external_id"),)
     user_id: Mapped[str] = mapped_column(Text, primary_key=True)
     kind: Mapped[str] = mapped_column(Text, primary_key=True)
     external_id: Mapped[str] = mapped_column(Text)
     created: Mapped[float] = mapped_column(Float)
+    verified_at: Mapped[Optional[float]] = mapped_column(Float)
+    code_hash: Mapped[Optional[str]] = mapped_column(Text)       # HMAC of the pending one-time code (never the code)
+    code_expires: Mapped[Optional[float]] = mapped_column(Float)
+    code_sent_at: Mapped[Optional[float]] = mapped_column(Float)  # resend throttle
+    code_attempts: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # wrong codes for the pending one
 
 
 class ApprovalRequest(Base):

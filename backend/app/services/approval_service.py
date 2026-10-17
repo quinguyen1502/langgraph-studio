@@ -12,7 +12,7 @@ from ..core import config, crypto
 from ..core.errors import CATALOG, AppError
 from ..core.logging import get_logger
 from ..models import ApprovalAudit, ApprovalRequest
-from ..repositories import ApprovalRepository, IdentityTaken, RunRepository, UserRepository, WorkflowRepository
+from ..repositories import ApprovalRepository, RunRepository, UserRepository, WorkflowRepository
 from .approval_channels import ADAPTERS, ApprovalChannel, ApprovalMessage
 
 log = get_logger("approvals")
@@ -81,19 +81,10 @@ class ApprovalService:
     @staticmethod
     def _secrets(c) -> dict: return json.loads(crypto.decrypt(c.secrets))
 
-    # ---- user: channel identities ----
-    def identities(self, uid: str) -> dict:
-        mine = self.repo.identities(uid)
-        return {k: mine.get(k) for k in self.adapters}
-
-    def set_identities(self, uid: str, body) -> dict:
-        if not isinstance(body, dict) or not body: raise AppError("IDENTITY_INVALID", kind="channel")
-        for kind, v in body.items():
-            a = self.adapter(kind); v = v.strip() if isinstance(v, str) else v
-            if v and (not isinstance(v, str) or not a.valid_identity(v)): raise AppError("IDENTITY_INVALID", kind=a.label)
-            try: self.repo.set_identity(uid, kind, v or None)
-            except IdentityTaken: raise AppError("IDENTITY_TAKEN", kind=a.label)
-        return self.identities(uid)
+    def dm_channel(self, uid: str, kind: str):
+        """(adapter, secrets) of a channel that can DM this user's chat account (identity codes), or None."""
+        c = self.repo.channel_for(uid, kind)
+        return (self.adapter(kind), self._secrets(c)) if c is not None and kind in self.adapters else None
 
     # ---- audit ----
     def _audit(self, owner, kind, action, r: Optional[ApprovalRequest] = None, code=None, actor=None, external=None, run_id=None, wid=None):

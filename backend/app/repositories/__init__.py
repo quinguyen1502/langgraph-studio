@@ -8,6 +8,6 @@ from .workflow_versions import WorkflowVersionRepository
 from .notifications import NotificationRepository
 from .webhook_deliveries import WebhookDeliveryRepository
 from .node_results import NodeResultRepository
-from .approvals import ApprovalRepository, IdentityTaken
+from .approvals import ApprovalRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "IdentityTaken"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository"]

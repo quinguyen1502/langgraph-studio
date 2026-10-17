@@ -254,10 +254,14 @@
     "CHANNEL_API_FAILED": "The {{kind}} API call failed: {{reason}}.",
     "IDENTITY_INVALID": "Invalid {{kind}} user ID.",
     "IDENTITY_TAKEN": "This {{kind}} account is already linked to another user.",
+    "IDENTITY_NOT_LINKED": "Link your {{kind}} account first.",
+    "IDENTITY_CODE_INVALID": "Wrong code, {{left}} attempt(s) left.",
+    "IDENTITY_CODE_EXPIRED": "The code expired, request a new one.",
+    "IDENTITY_CODE_ATTEMPTS": "Too many wrong codes, request a new one.",
     "APPROVAL_TOKEN_INVALID": "Invalid approval button.",
     "APPROVAL_TOKEN_EXPIRED": "This approval request has expired.",
     "APPROVAL_ALREADY_DECIDED": "This request was already answered.",
-    "APPROVAL_IDENTITY_UNKNOWN": "Link your {{kind}} account in LangGraph Studio (Approval channels) to approve.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {{kind}} account in LangGraph Studio (Approval channels) to approve.",
     "APPROVAL_FORBIDDEN": "You are not allowed to approve this run."
   },
   "lang": {
@@ -416,13 +420,12 @@
     "callbackUrl": "Callback URL",
     "copy": "Copy",
     "publicUrlMissing": "STUDIO_PUBLIC_URL is not set: the platform must reach this server at a public https address.",
-    "save": "Save",
     "saved": "Saved",
     "remove": "Remove",
     "removed": "Removed",
     "register": "Register webhook",
     "registered": "Webhook registered",
-    "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. Only the run owner and the approvers listed on the Human node can approve.",
+    "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
     "identity": {
       "slack": "Slack member ID",
       "telegram": "Telegram user ID"
@@ -466,7 +469,17 @@
         "telegram": "-1001234567890"
       },
       "approvers": "Approvers (e-mails)",
-      "approversHelp": "Besides you (the run owner). They must link their account under My accounts."
-    }
+      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts."
+    },
+    "verified": "Verified",
+    "unverified": "Not verified",
+    "linkSend": "Link & send code",
+    "unlink": "Unlink",
+    "codeSent": "Enter the 6-digit code the bot sent you",
+    "codeNeeded": "Send a code to verify this account",
+    "verify": "Verify",
+    "resend": "Send code",
+    "telegramStart": "Telegram bots can only message you after you press Start in the bot chat.",
+    "save": "Save"
   }
 }

@@ -1,5 +1,5 @@
 """TASK-0022: approval of waiting runs through Slack / Telegram, with mocked platform APIs and signed callbacks."""
-import hashlib, hmac, json, time, uuid
+import hashlib, hmac, json, re, time, uuid
 from urllib.parse import urlencode
 import httpx, pytest
 from fastapi.testclient import TestClient
@@ -23,6 +23,9 @@ class FakeApi:
         if "fail" in json.dumps(body): return httpx.Response(200, json={"ok": False, "error": "channel_not_found"})
         return httpx.Response(200, json={"ok": True, "result": True})
     def named(self, name): return [b for u, b in self.calls if u.split("?")[0].endswith(name)]
+    def requests(self, name="chat.postMessage"):
+        """Approval requests only (messages with buttons), not identity-code DMs."""
+        return [b for b in self.named(name) if "blocks" in b or "reply_markup" in b]
 
 
 @pytest.fixture(scope="module")
@@ -70,6 +73,19 @@ def press(token, uid, action="approve"):
     return {"type": "block_actions", "user": {"id": uid}, "response_url": "https://hooks.slack.com/actions/T1/1/x",
             "actions": [{"action_id": action, "value": token}]}
 
+def code_for(api, external_id):
+    """The last verification code the bot DMed to this chat account."""
+    msgs = [b.get("text", "") for _, b in api.calls if str(b.get("channel") or b.get("chat_id") or "") == external_id and "code" in b.get("text", "")]
+    return re.search(r"\b(\d{6})\b", msgs[-1]).group(1)
+
+def link(c, api, u, kind, external_id, own_channel=True):
+    """Link + verify a chat account the way a user does: (own channel to receive the DM) -> link -> code -> verify."""
+    if own_channel: c.put(f"/api/approvals/channels/{kind}", json=SLACK if kind == "slack" else TG, headers=H(u["token"]))
+    assert c.put("/api/approvals/identities", json={kind: external_id}, headers=H(u["token"])).status_code == 200
+    assert c.post(f"/api/approvals/identities/{kind}/send-code", headers=H(u["token"])).status_code == 200
+    r = c.post(f"/api/approvals/identities/{kind}/verify", json={"code": code_for(api, external_id)}, headers=H(u["token"]))
+    assert r.json()["data"][kind]["verified"] is True, r.json()
+
 def run_row(c, owner, wid, rid): return next(r for r in c.get(f"/api/workflows/{wid}/runs", headers=H(owner["token"])).json()["data"] if r["id"] == rid)
 
 
@@ -92,25 +108,53 @@ def test_channel_settings_are_validated_encrypted_and_masked(c):
     assert c.post("/api/approvals/channels/slack/register-webhook", headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_PUBLIC_URL_REQUIRED"
 
 
-def test_identities_are_unique_per_channel_account(c):
-    a, b = user(c), user(c)
+def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
+    a, b = user(c), user(c); uid = f"U{uuid.uuid4().hex[:8].upper()}"
     assert c.put("/api/approvals/identities", json={"slack": "lower"}, headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_INVALID"
-    uid = f"U{uuid.uuid4().hex[:8].upper()}"
-    assert c.put("/api/approvals/identities", json={"slack": uid}, headers=H(a["token"])).json()["data"] == {"slack": uid, "telegram": None}
-    r = c.put("/api/approvals/identities", json={"slack": uid}, headers=H(b["token"]))
+    assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_NOT_LINKED"
+    got = c.put("/api/approvals/identities", json={"slack": uid}, headers=H(a["token"])).json()["data"]
+    assert got == {"slack": {"external_id": uid, "verified": False, "code_pending": False, "code_expires": None}, "telegram": None}
+    # no channel that could DM the account yet
+    assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
+    c.put("/api/approvals/channels/slack", json=SLACK, headers=H(a["token"]))
+    sent = c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["data"]["slack"]
+    assert sent["code_pending"] and not sent["verified"] and api.named("chat.postMessage")[-1]["channel"] == uid 
+    code = code_for(api, uid); assert code not in json.dumps(sent)
+    r = c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"]))  # resend throttle
+    assert r.status_code == 429 and r.json()["error"]["code"] == "RATE_LIMITED" and int(r.headers["Retry-After"]) > 0
+    wrong = "000000" if code != "000000" else "111111"
+    r = c.post("/api/approvals/identities/slack/verify", json={"code": wrong}, headers=H(a["token"]))
+    assert r.status_code == 400 and r.json()["error"] == {"code": "IDENTITY_CODE_INVALID", "message": "Wrong code, 4 attempt(s) left", "details": {"left": 4}}
+    for _ in range(3): c.post("/api/approvals/identities/slack/verify", json={"code": wrong}, headers=H(a["token"]))
+    r = c.post("/api/approvals/identities/slack/verify", json={"code": wrong}, headers=H(a["token"]))
+    assert r.status_code == 429 and r.json()["error"]["code"] == "IDENTITY_CODE_ATTEMPTS"
+    assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_CODE_ATTEMPTS"
+    monkeypatch.setenv("STUDIO_IDENTITY_CODE_RESEND", "0")
+    c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])); code = code_for(api, uid)
+    import app.services.identity_service as mod
+    from types import SimpleNamespace
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(mod, "time", SimpleNamespace(time=lambda: time.time() + 3600))
+        assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).status_code == 410  # IDENTITY_CODE_EXPIRED
+    c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])); code = code_for(api, uid)
+    assert c.post("/api/approvals/identities/slack/verify", json={"code": code}, headers=H(a["token"])).json()["data"]["slack"]["verified"] is True
+    # b claims the same account: may link (unverified) but cannot verify it while a holds it
+    c.put("/api/approvals/channels/slack", json=SLACK, headers=H(b["token"]))
+    c.put("/api/approvals/identities", json={"slack": uid}, headers=H(b["token"])); c.post("/api/approvals/identities/slack/send-code", headers=H(b["token"]))
+    r = c.post("/api/approvals/identities/slack/verify", json={"code": code_for(api, uid)}, headers=H(b["token"]))
     assert r.status_code == 409 and r.json()["error"]["code"] == "IDENTITY_TAKEN"
     assert c.put("/api/approvals/identities", json={"slack": ""}, headers=H(a["token"])).json()["data"]["slack"] is None  # unlink
-    assert c.put("/api/approvals/identities", json={"slack": uid}, headers=H(b["token"])).json()["data"]["slack"] == uid
+    link(c, api, b, "slack", uid, own_channel=False)
 
 
 def test_slack_approval_end_to_end(c, api):
     owner, approver, stranger = user(c), user(c), user(c)
     ch = c.put("/api/approvals/channels/slack", json=SLACK, headers=H(owner["token"])).json()["data"]
     ua, us = f"U{uuid.uuid4().hex[:8].upper()}", f"U{uuid.uuid4().hex[:8].upper()}"
-    c.put("/api/approvals/identities", json={"slack": ua}, headers=H(approver["token"])); c.put("/api/approvals/identities", json={"slack": us}, headers=H(stranger["token"]))
+    link(c, api, approver, "slack", ua); link(c, api, stranger, "slack", us)
     wid = workflow(c, owner, {"channel": "slack", "target": "C0APPROVALS", "approvers": [approver["email"].upper()]})
     rid = start_waiting(c, owner, wid)
-    post = until(lambda: api.named("chat.postMessage"))[0]
+    post = until(lambda: api.requests())[0]
     assert post["channel"] == "C0APPROVALS" and "Approve refund for order A100?" in post["blocks"][0]["text"]["text"]
     approve, reject = (e["value"] for e in post["blocks"][1]["elements"])
     # unauthenticated / tampered / replayed-late requests
@@ -119,10 +163,11 @@ def test_slack_approval_end_to_end(c, api):
     assert slack_post(c, ch["id"], press(approve[:-2] + "xx", ua)).json()["data"] == {"outcome": "refused", "code": "APPROVAL_TOKEN_INVALID"}
     assert slack_post(c, ch["id"], press(approve.replace("a.", "r.", 1), ua)).json()["data"]["code"] == "APPROVAL_TOKEN_INVALID"  # decision is signed
     # not mapped / not allowed: refused, told privately, run still waiting
+    unverified = user(c); c.put("/api/approvals/identities", json={"slack": "U0NOBODY"}, headers=H(unverified["token"]))  # linked, never verified
     assert slack_post(c, ch["id"], press(approve, "U0NOBODY")).json()["data"]["code"] == "APPROVAL_IDENTITY_UNKNOWN"
     assert slack_post(c, ch["id"], press(approve, us)).json()["data"]["code"] == "APPROVAL_FORBIDDEN"
     eph = [b for u, b in api.calls if u.startswith("https://hooks.slack.com/")]
-    assert len(eph) == 4 and {e["response_type"] for e in eph} == {"ephemeral"} and "not allowed" in eph[-1]["text"] and "Link your Slack account" in eph[-2]["text"]
+    assert len(eph) == 4 and {e["response_type"] for e in eph} == {"ephemeral"} and "not allowed" in eph[-1]["text"] and "Link and verify your Slack account" in eph[-2]["text"]
     assert run_row(c, owner, wid, rid)["status"] == "waiting"
     # allowed approver: accepted, run resumes in the worker, message edited
     assert slack_post(c, ch["id"], press(approve, ua)).json()["data"] == {"outcome": "approved"}
@@ -149,9 +194,9 @@ def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypa
     assert ch["callback_url"] == f"https://studio.example.com/api/approvals/callback/telegram/{ch['id']}"
     reg = c.post("/api/approvals/channels/telegram/register-webhook", headers=H(owner["token"])).json()["data"]
     assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query"]}
-    c.put("/api/approvals/identities", json={"telegram": tid}, headers=H(owner["token"]))
+    link(c, api, owner, "telegram", tid, own_channel=False)
     wid = workflow(c, owner, {"channel": "telegram", "target": "-100200300"}); rid = start_waiting(c, owner, wid)
-    msg = until(lambda: api.named("sendMessage"))[-1]
+    msg = until(lambda: api.requests("sendMessage"))[-1]
     keys = msg["reply_markup"]["inline_keyboard"][0]; reject = keys[1]["callback_data"]
     assert all(len(k["callback_data"].encode()) <= 64 for k in keys)  # Telegram's callback_data limit
     assert f"studio.example.com/workflows/{wid}?run={rid}" in msg["text"]
@@ -168,10 +213,10 @@ def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypa
 def test_expired_button_and_answer_in_studio_supersede(c, api):
     owner = user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
     ch = c.put("/api/approvals/channels/slack", json=SLACK, headers=H(owner["token"])).json()["data"]
-    c.put("/api/approvals/identities", json={"slack": ua}, headers=H(owner["token"]))
+    link(c, api, owner, "slack", ua, own_channel=False)
     wid = workflow(c, owner, {"channel": "slack", "target": "C1"})
     # (1) expired token
-    rid = start_waiting(c, owner, wid); approve = until(lambda: api.named("chat.postMessage"))[-1]["blocks"][1]["elements"][0]["value"]
+    rid = start_waiting(c, owner, wid); approve = until(lambda: api.requests())[-1]["blocks"][1]["elements"][0]["value"]
     svc = approval_service(); req = svc.repo.requests_for_run(rid)[0]
     from sqlalchemy import update
     from app.models import ApprovalRequest
@@ -186,7 +231,7 @@ def test_expired_button_and_answer_in_studio_supersede(c, api):
         assert slack_post(c, ch["id"], press(approve, ua)).json()["data"]["code"] == "APPROVAL_TOKEN_EXPIRED"
     assert svc.repo.request(req.id).status == "expired"
     # (2) answered in the studio: the channel request is closed and its message edited
-    rid2 = start_waiting(c, owner, wid); approve2 = until(lambda: len(api.named("chat.postMessage")) >= 2 and api.named("chat.postMessage"))[-1]["blocks"][1]["elements"][0]["value"]
+    rid2 = start_waiting(c, owner, wid); approve2 = until(lambda: len(api.requests()) >= 2 and api.requests())[-1]["blocks"][1]["elements"][0]["value"]
     with c.websocket_connect(f"/ws/run?token={owner['token']}") as w:
         w.send_json({"resume_run_id": rid2, "response": True})
         while w.receive_json()["type"] != "run_summary": pass

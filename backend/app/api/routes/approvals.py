@@ -1,11 +1,11 @@
 """Approval through external channels (TASK-0022, DEC-0019).
 
-Owner (JWT): channel connections, own channel identities, audit log.
+Owner (JWT): channel connections, own channel identities (link, one-time code, verify), audit log.
 Platforms (no JWT; verified by signature / secret header): POST /api/approvals/callback/{kind}/{channel_id}.
 """
 import asyncio
 from fastapi import APIRouter, Body, Depends, Request
-from ..deps import approval_service, current_user
+from ..deps import approval_service, current_user, identity_service
 
 router = APIRouter(prefix="/api/approvals", tags=["approvals"])
 
@@ -23,10 +23,16 @@ def delete_channel(kind: str, user=Depends(current_user), svc=Depends(approval_s
 def register_webhook(kind: str, user=Depends(current_user), svc=Depends(approval_service)): return svc.register_webhook(user["id"], kind)
 
 @router.get("/identities")
-def get_identities(user=Depends(current_user), svc=Depends(approval_service)): return svc.identities(user["id"])
+def get_identities(user=Depends(current_user), svc=Depends(identity_service)): return svc.get(user["id"])
 
 @router.put("/identities")
-def put_identities(body=Body(None), user=Depends(current_user), svc=Depends(approval_service)): return svc.set_identities(user["id"], body)
+def put_identities(body=Body(None), user=Depends(current_user), svc=Depends(identity_service)): return svc.link(user["id"], body)
+
+@router.post("/identities/{kind}/send-code")
+def send_code(kind: str, user=Depends(current_user), svc=Depends(identity_service)): return svc.send_code(user["id"], kind)
+
+@router.post("/identities/{kind}/verify")
+def verify_identity(kind: str, body=Body(None), user=Depends(current_user), svc=Depends(identity_service)): return svc.verify(user["id"], kind, body)
 
 @router.get("/audit")
 def audit(user=Depends(current_user), svc=Depends(approval_service)): return svc.audit_log(user["id"])

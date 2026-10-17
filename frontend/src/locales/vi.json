@@ -254,10 +254,14 @@
     "CHANNEL_API_FAILED": "Gọi API {{kind}} thất bại: {{reason}}.",
     "IDENTITY_INVALID": "ID người dùng {{kind}} không hợp lệ.",
     "IDENTITY_TAKEN": "Tài khoản {{kind}} này đã được liên kết với người dùng khác.",
+    "IDENTITY_NOT_LINKED": "Hãy liên kết tài khoản {{kind}} trước.",
+    "IDENTITY_CODE_INVALID": "Mã không đúng, còn {{left}} lần thử.",
+    "IDENTITY_CODE_EXPIRED": "Mã đã hết hạn, hãy yêu cầu mã mới.",
+    "IDENTITY_CODE_ATTEMPTS": "Nhập sai quá nhiều lần, hãy yêu cầu mã mới.",
     "APPROVAL_TOKEN_INVALID": "Nút phê duyệt không hợp lệ.",
     "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn.",
     "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời.",
-    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết tài khoản {{kind}} trong LangGraph Studio (Kênh phê duyệt) để phê duyệt.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong LangGraph Studio (Kênh phê duyệt) để phê duyệt.",
     "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này."
   },
   "lang": {
@@ -416,13 +420,12 @@
     "callbackUrl": "URL callback",
     "copy": "Sao chép",
     "publicUrlMissing": "Chưa đặt STUDIO_PUBLIC_URL: nền tảng phải truy cập được máy chủ này qua địa chỉ https công khai.",
-    "save": "Lưu",
     "saved": "Đã lưu",
     "remove": "Gỡ",
     "removed": "Đã gỡ",
     "register": "Đăng ký webhook",
     "registered": "Đã đăng ký webhook",
-    "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
+    "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Bot gửi mã một lần tới tài khoản đó; nhập mã ở đây để xác minh. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
     "identity": {
       "slack": "Slack member ID",
       "telegram": "Telegram user ID"
@@ -466,7 +469,17 @@
         "telegram": "-1001234567890"
       },
       "approvers": "Người duyệt (e-mail)",
-      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ cần liên kết tài khoản trong Tài khoản của tôi."
-    }
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi."
+    },
+    "verified": "Đã xác minh",
+    "unverified": "Chưa xác minh",
+    "linkSend": "Liên kết & gửi mã",
+    "unlink": "Huỷ liên kết",
+    "codeSent": "Nhập mã 6 số bot vừa gửi cho bạn",
+    "codeNeeded": "Gửi mã để xác minh tài khoản này",
+    "verify": "Xác minh",
+    "resend": "Gửi mã",
+    "telegramStart": "Bot Telegram chỉ nhắn được cho bạn sau khi bạn bấm Start trong cuộc trò chuyện với bot.",
+    "save": "Lưu"
   }
 }

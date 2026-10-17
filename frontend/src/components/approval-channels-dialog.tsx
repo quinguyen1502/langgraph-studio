@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Check, Copy, Save, Trash2, Webhook } from 'lucide-react'
+import { AlertCircle, Check, Copy, RotateCw, Save, Send, ShieldCheck, Trash2, Webhook } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -51,24 +51,53 @@ function ChannelCard({ k, publicUrl, onChange }: { k: ChannelKind; publicUrl: st
   </div>
 }
 
+type Identity = { external_id: string; verified: boolean; code_pending: boolean; code_expires: number | null } | null
+
+/** One chat account: link -> the bot DMs a one-time code -> type it back -> verified (only then do button presses count). */
+function IdentityRow({ kind, value, onChange }: { kind: string; value: Identity; onChange: (ids: Record<string, Identity>) => void }) {
+  const { t } = useTranslation()
+  const [ext, setExt] = useState(value?.external_id || ''); const [code, setCode] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
+  const call = async (path: string, init: Parameters<typeof api>[1]) => {
+    setErr(''); setBusy(true)
+    try { onChange(await api<Record<string, Identity>>(path, init)); return true } catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
+  }
+  const linkAndSend = async () => {
+    if (await call('/api/approvals/identities', { method: 'PUT', json: { [kind]: ext.trim() } }) && ext.trim()) await call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST' })
+  }
+  const changed = ext.trim() !== (value?.external_id || '')
+  return <div className="space-y-2 rounded-lg border p-4" data-testid={`identity-${kind}`}>
+    <div className="flex items-center gap-2">
+      <Label htmlFor={`id-${kind}`}>{t(`approvals.identity.${kind}`)}</Label>
+      {value && (value.verified ? <Badge id={`id-${kind}-verified`}><ShieldCheck />{t('approvals.verified')}</Badge> : <Badge variant="outline">{t('approvals.unverified')}</Badge>)}
+    </div>
+    <div className="flex gap-2">
+      <Input id={`id-${kind}`} className="font-mono" value={ext} placeholder={t(`approvals.identityPh.${kind}`)} onChange={e => setExt(e.target.value)} />
+      <Button size="sm" variant={changed || !value?.verified ? 'default' : 'outline'} id={`id-${kind}-link`} disabled={busy || (!changed && !!value?.verified) || (!changed && !ext.trim())}
+        onClick={linkAndSend}><Send />{ext.trim() ? t('approvals.linkSend') : t('approvals.unlink')}</Button>
+    </div>
+    <p className="text-xs text-muted-foreground">{t(`approvals.identityHow.${kind}`)}</p>
+    {value && !value.verified && !changed && <div className="space-y-1.5">
+      <Label htmlFor={`id-${kind}-code`} className="text-xs">{value.code_pending ? t('approvals.codeSent') : t('approvals.codeNeeded')}</Label>
+      <div className="flex flex-wrap gap-2">
+        <Input id={`id-${kind}-code`} className="w-36 font-mono tracking-widest" inputMode="numeric" maxLength={6} placeholder="123456" value={code} onChange={e => setCode(e.target.value.replace(/\D/g, ''))} />
+        <Button size="sm" id={`id-${kind}-verify`} disabled={busy || code.length !== 6}
+          onClick={async () => { if (await call(`/api/approvals/identities/${kind}/verify`, { method: 'POST', json: { code } })) setCode('') }}><ShieldCheck />{t('approvals.verify')}</Button>
+        <Button size="sm" variant="ghost" id={`id-${kind}-resend`} disabled={busy} onClick={() => call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST' })}><RotateCw />{t('approvals.resend')}</Button>
+      </div>
+      {kind === 'telegram' && <p className="text-xs text-muted-foreground">{t('approvals.telegramStart')}</p>}
+    </div>}
+    {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
+  </div>
+}
+
 function Identities() {
   const { t } = useTranslation()
-  const [ids, setIds] = useState<Record<string, string | null> | null>(null); const [err, setErr] = useState(''); const [saved, setSaved] = useState(false)
-  useEffect(() => { api<Record<string, string | null>>('/api/approvals/identities').then(setIds).catch(e => setErr(e.message)) }, [])
-  const save = async () => {
-    setErr(''); setSaved(false)
-    try { setIds(await api('/api/approvals/identities', { method: 'PUT', json: Object.fromEntries(Object.entries(ids || {}).map(([k, v]) => [k, v || ''])) })); setSaved(true) }
-    catch (e: any) { setErr(e.message) }
-  }
+  const [ids, setIds] = useState<Record<string, Identity> | null>(null); const [err, setErr] = useState('')
+  useEffect(() => { api<Record<string, Identity>>('/api/approvals/identities').then(setIds).catch(e => setErr(e.message)) }, [])
   return <div className="space-y-3">
     <p className="text-sm text-muted-foreground">{t('approvals.identitiesHelp')}</p>
-    {ids && Object.keys(ids).map(k => <div key={k} className="space-y-1.5">
-      <Label htmlFor={`id-${k}`}>{t(`approvals.identity.${k}`)}</Label>
-      <Input id={`id-${k}`} className="font-mono" value={ids[k] || ''} placeholder={t(`approvals.identityPh.${k}`)} onChange={e => { setSaved(false); setIds(v => ({ ...v, [k]: e.target.value })) }} />
-      <p className="text-xs text-muted-foreground">{t(`approvals.identityHow.${k}`)}</p></div>)}
     {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
-    <div className="flex items-center justify-end gap-2">{saved && <span className="text-xs text-muted-foreground" id="id-saved">{t('approvals.saved')}</span>}
-      <Button size="sm" id="id-save" onClick={save} disabled={!ids}><Save />{t('approvals.save')}</Button></div>
+    {ids && Object.keys(ids).map(k => <IdentityRow key={k} kind={k} value={ids[k]} onChange={setIds} />)}
   </div>
 }
 

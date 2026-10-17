@@ -58,3 +58,6 @@ class SlackChannel(ApprovalChannel):
     def update(self, secrets, ref, text):
         self._api(secrets, "chat.update", {"channel": ref["channel"], "ts": ref["ts"], "text": text,
                                            "blocks": [{"type": "section", "text": {"type": "mrkdwn", "text": text[:2900]}}]})
+
+    def send_dm(self, secrets, external_id, text):
+        self._api(secrets, "chat.postMessage", {"channel": external_id, "text": text})  # a user id opens the app DM (scope im:write)

@@ -15,7 +15,6 @@ from ..core.logging import get_logger
 from ..repositories import StaleLease
 from .job_queue import JobQueue
 from .run_service import RunService, error_event
-from .trigger_service import run_result
 
 log = get_logger("worker")
 
@@ -49,17 +48,8 @@ class RunWorker:
                             source="api", fence=gen)
             except StaleLease: return "fenced"
             status = "error"
-        if status == "fenced": return status  # the worker that owns the run now reports its result
-        await self._deliver(svc, rid, job.get("callback_url"), job.get("token_id"))
-        return status
-
-    async def _deliver(self, svc: RunService, rid: str, url: Optional[str] = None, token_id: Optional[str] = None) -> None:
-        """Queue the callback_url webhook with the run's current result (DeliveryService: signed, retried, logged).
-        Without an explicit URL the one stored on the run is used (API runs, TASK-0022 follow-up)."""
-        r = svc.runs.get(rid)
-        if r is None or not self.deliveries: return
-        url, token_id = url or r.callback_url, token_id or r.callback_token_id
-        if url: await asyncio.to_thread(self.deliveries().create, r.workflow_id, rid, token_id, url, run_result(r))
+            await svc.settled(rid)  # execute() did not run: the error result still goes to the callback
+        return status  # execute() queued the callback_url webhook (RunService.settled); a fenced worker leaves it to the new owner
 
     async def resume_job(self, svc: RunService, job: dict) -> Optional[str]:
         """Continue a waiting run with a decision from an approval channel (TASK-0022). The claim (waiting -> running,
@@ -73,9 +63,7 @@ class RunWorker:
         plan.fence, plan.checkpointing, plan.resumed_by = gen, True, job.get("by")
         async def send(ev): return True
         async def listen(): await asyncio.Event().wait()
-        status = await svc.execute(plan, send, listen, owner)
-        if status != "fenced": await self._deliver(svc, rid)  # API run: its callback_url gets the result (or the next pause)
-        return status
+        return await svc.execute(plan, send, listen, owner)  # settles -> callback_url (RunService.settled)
 
     async def _with_lease(self, job: dict) -> None:
         """Run the job while renewing its lease so the reaper leaves it alone."""

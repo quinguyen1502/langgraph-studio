@@ -86,7 +86,8 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
-                 telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None):
+                 telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
+                 deliveries: Optional[Callable[[], object]] = None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -95,6 +96,7 @@ class RunService:
         self.telemetry = telemetry or Telemetry(exporters=[], metric_readers=[])  # no-op unless an exporter is configured
         self.notifier = notifier  # NotificationService (optional): in-app/e-mail/webhook when a run waits or expires (TASK-0020)
         self.ledger = ledger      # NodeResultRepository (optional): node-result ledger of queue jobs (TASK-0021)
+        self.deliveries = deliveries  # -> DeliveryService (optional): callback_url webhook when an API run settles
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
@@ -271,9 +273,19 @@ class RunService:
         Returns the final status: ok | error | cancelled | timeout."""
         rid = plan.run_id or uuid.uuid4().hex[:10]; await self.bus.astart(rid, uid)  # registered so REST/other workers can cancel it
         status = None
-        try: status = await self._execute(rid, plan, send, listen, uid); return status
+        try:
+            status = await self._execute(rid, plan, send, listen, uid)
+            if status != "fenced": await self.settled(rid)
+            return status
         finally:
             if status != "fenced": await asyncio.shield(self.bus.afinish(rid))  # a fenced worker leaves the new owner's entry alone
+
+    async def settled(self, rid: str) -> None:
+        """Every run segment ends here (first run, studio/Slack/Telegram resume, recovery): an API run's callback_url
+        gets the result or the next pause, once (DeliveryService.for_run is idempotent)."""
+        if not self.deliveries: return
+        try: await asyncio.to_thread(self.deliveries().for_run, self.runs.get(rid))
+        except Exception: log.exception("queueing the callback of run %s failed", rid)
 
     async def _execute(self, rid, plan, send, listen, uid) -> str:
         t0 = time.time(); events: list = []; final = None; status = "ok"; connected = True; bus = self.bus; checkpoint = None

@@ -443,3 +443,28 @@ def test_concurrent_verification_has_one_winner(c, api, monkeypatch):
     with approval_service().repo.db.session() as s:
         n = s.execute(text("SELECT count(*) FROM channel_identities WHERE external_id = :e AND verified_at IS NOT NULL"), {"e": ext}).scalar_one()
     assert n == 1
+
+
+def test_api_run_resumed_from_the_studio_sends_its_callback_once(c, api, monkeypatch):
+    """Every resume source ends in RunService.settled: the studio (WebSocket) resume of an API run sends the callback too,
+    and settling the same segment again (a second worker, a recovery) inserts no second delivery."""
+    import asyncio
+    from app.api.deps import run_service
+    from app.services import webhooks
+    got = []
+    def hook(req): got.append(json.loads(req.content)); return httpx.Response(204)
+    monkeypatch.setattr(webhooks, "http_client", lambda: httpx.Client(transport=httpx.MockTransport(hook)))
+    monkeypatch.setenv("STUDIO_ALLOW_PRIVATE_CALLBACKS", "1")
+    owner = user(c); wid = workflow(c, owner, {})  # no chat channel: answered in the studio
+    tok = c.post(f"/api/workflows/{wid}/tokens", json={"name": "ci"}, headers=H(owner["token"])).json()["data"]
+    rid = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "order A100"}, "callback_url": "http://localhost:9/hook"},
+                 headers=H(tok["token"])).json()["data"]["run_id"]
+    until(lambda: [b for b in got if b["run_id"] == rid and b["status"] == "waiting"])
+    with c.websocket_connect(f"/ws/run?token={owner['token']}") as w:
+        w.send_json({"resume_run_id": rid, "response": "approved"})
+        while w.receive_json()["type"] != "run_summary": pass
+    final = until(lambda: [b for b in got if b["run_id"] == rid and b["status"] == "ok"])[0]
+    assert final["final_state"]["decision"] == "approved"
+    for _ in range(2): asyncio.run(run_service().settled(rid))  # same settled state: idempotent
+    log = [d for d in c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"] if d["run_id"] == rid]
+    assert len(log) == 2 and len([b for b in got if b["run_id"] == rid]) == 2  # the pause + the result, nothing twice

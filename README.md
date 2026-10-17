@@ -358,7 +358,12 @@ Mã hết hạn sau `STUDIO_IDENTITY_CODE_TTL` (600 s), tối đa `STUDIO_IDENTI
 
 **Giới hạn tần suất callback.** Endpoint công khai bị giới hạn theo IP (`STUDIO_CALLBACK_RATE_LIMIT_IP`, 60) và theo kết nối / workspace
 (`STUDIO_CALLBACK_RATE_LIMIT_CHANNEL`, 300) trong cửa sổ `STUDIO_CALLBACK_RATE_WINDOW` (60 s); vượt quá → `429 RATE_LIMITED`. Sau reverse
-proxy đặt `STUDIO_TRUST_PROXY=1` để lấy IP từ hop cuối của `X-Forwarded-For` (Compose đã bật vì nginx của `web` đứng trước `api`).
+proxy, đặt `STUDIO_TRUSTED_PROXIES` (danh sách CIDR của proxy): `X-Forwarded-For` được đọc từ phải sang trái, bỏ qua các hop tin cậy,
+và chỉ khi peer trực tiếp là proxy tin cậy (Compose mặc định là các dải private vì nginx của `web` đứng trước `api`). `STUDIO_TRUST_PROXY=1`
+(cũ) vẫn dùng được, tương đương tin đúng một hop.
+
+**Tài khoản theo workspace.** Liên kết Slack được lưu theo (workspace, member ID): cùng một member ID ở workspace khác cần xác minh riêng.
+Mỗi tài khoản chat chỉ có một người dùng đã xác minh (ràng buộc unique trong DB, kể cả khi hai người xác minh cùng lúc → `IDENTITY_TAKEN`).
 
 ### Tạo Slack app
 1. https://api.slack.com/apps → **Create New App** → *From scratch*, chọn workspace.
@@ -385,8 +390,9 @@ Webhook được xác thực bằng header `X-Telegram-Bot-Api-Secret-Token`.
 Chọn node → **Kênh phê duyệt**: *Chỉ trong Studio* (mặc định) hoặc một **kết nối** (cá nhân hoặc toàn tổ chức), **Channel ID / chat ID**,
 **Người duyệt** (e-mail của user studio, phân tách bằng dấu phẩy). Trả lời ngay trong studio vẫn được; khi đó nút trong chat bị vô hiệu
 và tin nhắn ghi "Answered in LangGraph Studio" / "Đã trả lời trong LangGraph Studio". Run bị huỷ / hết hạn cũng đóng yêu cầu. Run khởi
-chạy qua API có `callback_url` mà được tiếp tục từ chat sẽ gửi webhook `callback_url` qua pipeline giao nhận (ký, retry, mục Deliveries).
+chạy qua API có `callback_url` mà được tiếp tục (từ studio, Slack, Telegram hoặc sau khi khôi phục) sẽ gửi webhook `callback_url` đúng một
+lần cho mỗi lần dừng/kết thúc, qua pipeline giao nhận (ký, retry, mục Deliveries).
 
-Biến môi trường: `STUDIO_PUBLIC_URL`, `STUDIO_APPROVAL_TTL`, `STUDIO_ADMIN_EMAILS`, `STUDIO_TRUST_PROXY`, `STUDIO_CALLBACK_RATE_LIMIT_IP`,
+Biến môi trường: `STUDIO_PUBLIC_URL`, `STUDIO_APPROVAL_TTL`, `STUDIO_ADMIN_EMAILS`, `STUDIO_TRUSTED_PROXIES` (`STUDIO_TRUST_PROXY`), `STUDIO_CALLBACK_RATE_LIMIT_IP`,
 `STUDIO_CALLBACK_RATE_LIMIT_CHANNEL`, `STUDIO_CALLBACK_RATE_WINDOW`, `STUDIO_IDENTITY_CODE_TTL` / `_ATTEMPTS` / `_RESEND`,
 `SLACK_API_URL` / `TELEGRAM_API_URL` (chỉ để test với API giả, xem `backend/tests/fixtures/mock_chat_api.py`).

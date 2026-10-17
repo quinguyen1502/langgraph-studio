@@ -84,4 +84,3 @@ def admin_emails() -> set[str]: return {e.strip().lower() for e in (os.environ.g
 def callback_rate_limit_ip() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_IP", 60))        # per client IP and window (0 = off)
 def callback_rate_limit_channel() -> int: return max(0, _int("STUDIO_CALLBACK_RATE_LIMIT_CHANNEL", 300))  # per connection / Slack team
 def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WINDOW", 60))
-def trust_proxy() -> bool: return os.environ.get("STUDIO_TRUST_PROXY") == "1"  # client IP = last X-Forwarded-For hop (our nginx)

@@ -7,7 +7,7 @@ shared POST /api/approvals/callback/slack routed by team_id.
 import asyncio
 from typing import Optional
 from fastapi import APIRouter, Body, Depends, Request
-from ...core import config
+from ...core.client_ip import client_ip
 from ..deps import approval_service, channel_service, current_user, identity_service
 
 router = APIRouter(prefix="/api/approvals", tags=["approvals"])
@@ -44,17 +44,14 @@ def verify_identity(kind: str, body=Body(None), user=Depends(current_user), svc=
 def audit(user=Depends(current_user), svc=Depends(approval_service)): return svc.audit_log(user["id"])
 
 
-def client_ip(request: Request) -> str:
-    """The caller's IP. Behind our reverse proxy (STUDIO_TRUST_PROXY=1) the last X-Forwarded-For hop, which the
-    proxy appended itself; earlier hops are client-controlled and ignored."""
-    fwd = request.headers.get("x-forwarded-for") if config.trust_proxy() else None
-    if fwd and fwd.split(",")[-1].strip(): return fwd.split(",")[-1].strip()
-    return request.client.host if request.client else "unknown"
+def request_ip(request: Request) -> str:
+    """The caller's IP (STUDIO_TRUSTED_PROXIES / STUDIO_TRUST_PROXY, see core/client_ip)."""
+    return client_ip(request.client.host if request.client else None, request.headers.get("x-forwarded-for"))
 
 
 async def _callback(kind: str, cid: Optional[str], request: Request, svc):
     body = await request.body()
-    await svc.check_rate(client_ip(request), kind, cid, body)  # 429 RATE_LIMITED
+    await svc.check_rate(request_ip(request), kind, cid, body)  # 429 RATE_LIMITED
     return await asyncio.to_thread(svc.handle_callback, kind, cid, dict(request.headers), body)
 
 

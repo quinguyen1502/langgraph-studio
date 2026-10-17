@@ -40,11 +40,12 @@ services:
       OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
       STUDIO_RUN_TIMEOUT: ${STUDIO_RUN_TIMEOUT:-120}
       # approval channels (TASK-0022): public https URL for Slack/Telegram callbacks, org-channel admins, callback limits.
-      # STUDIO_TRUST_PROXY=1: the `web` nginx in front of the api appends the client IP to X-Forwarded-For.
+      # STUDIO_TRUSTED_PROXIES: CIDRs of proxies whose X-Forwarded-For hops are skipped (right to left). The default covers
+      # the Compose network (the `web` nginx); add your load balancer's range. STUDIO_TRUST_PROXY=1 is the old one-hop alias.
       STUDIO_PUBLIC_URL: ${STUDIO_PUBLIC_URL:-}
       STUDIO_APPROVAL_TTL: ${STUDIO_APPROVAL_TTL:-86400}
       STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:-}
-      STUDIO_TRUST_PROXY: "1"
+      STUDIO_TRUSTED_PROXIES: ${STUDIO_TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
       STUDIO_CALLBACK_RATE_LIMIT_IP: ${STUDIO_CALLBACK_RATE_LIMIT_IP:-60}
       STUDIO_CALLBACK_RATE_LIMIT_CHANNEL: ${STUDIO_CALLBACK_RATE_LIMIT_CHANNEL:-300}
       # tracing (TASK-0010): empty = no-op. With `--profile tracing` set

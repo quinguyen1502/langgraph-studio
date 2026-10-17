@@ -93,7 +93,7 @@ def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -106,6 +106,7 @@ class RunService:
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
         self.knowledge = knowledge  # KnowledgeService (optional): Retriever nodes (TASK-0012)
         self.mcp = mcp  # McpService (optional): MCP tool nodes (TASK-0013)
+        self.policy = policy  # PolicyService (optional): org resources at run time (TASK-0029)
         self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
@@ -135,7 +136,7 @@ class RunService:
         res = row.owner if row is not None and row.owner else uid  # a saved workflow uses its owner's resources (DEC-0023)
         wf, invalid = self._expand(res, wid, wf)
         return RunPlan(wid, wf, inp, self.credentials.resolver(res) if self.credentials else None, version=version, invalid=invalid,
-                       ports=self.ports(res))
+                       ports=self.ports(res, uid))
 
     def _workflow(self, wid: str, uid: str, action: str = P.VIEW):
         if self.access is not None: return self.access.workflow(wid, uid, action)
@@ -148,9 +149,11 @@ class RunService:
         row = self.workflows.get(wid) if wid and wid != "adhoc" else None
         return row.owner if row is not None and row.owner else uid
 
-    def ports(self, uid: str) -> Ports:
-        """Services nodes may call during a run, bound to the run's owner."""
-        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid) if self.mcp else None)
+    def ports(self, uid: str, actor: Optional[str] = None) -> Ports:
+        """Services nodes may call during a run, bound to the resource owner `uid`. Org-wide MCP servers follow the admin
+        policy for the person running (`actor`, TASK-0029)."""
+        org = self.policy.org_allowed(actor or uid) if self.policy is not None else True
+        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid, org) if self.mcp else None)
 
     def _expand(self, uid: str, wid: Optional[str], wf: dict) -> tuple[dict, Optional[list]]:
         """Inline subgraph nodes (TASK-0011) with the workflows this user may read. The expanded graph is what runs and
@@ -213,7 +216,7 @@ class RunService:
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(res) if self.credentials else None,
                        run_id=rid, previous=r, resume={**{k: cp[k] for k in RESUME_KEYS if k in cp}, "value": response}, source=r.source or "ui",
-                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(res))
+                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(res, uid))
 
     def plan_recover(self, r: Run, fence: Optional[int] = None, attempt: int = 2) -> RunPlan:
         """A recovered queue job (its worker died or lost its lease mid-run). With a progress checkpoint it continues
@@ -233,7 +236,7 @@ class RunService:
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(self.resources_of(r.workflow_id, r.owner or "")) if self.credentials else None, previous=r,
                        resume={k: cp[k] for k in RESUME_KEYS if k in cp}, version=r.workflow_version, recovered=True,
-                       ports=self.ports(self.resources_of(r.workflow_id, r.owner or "")), **common)
+                       ports=self.ports(self.resources_of(r.workflow_id, r.owner or ""), r.owner or ""), **common)
 
     def pending(self, uid: str) -> list[dict]:
         """Runs of this user waiting for a human response (newest first)."""

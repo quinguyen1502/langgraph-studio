@@ -334,7 +334,18 @@
     "SHARE_NOT_FOUND": "This workflow is not shared with that user",
     "SLACK_OAUTH_NOT_CONFIGURED": "Add to Slack is not configured (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET)",
     "SLACK_OAUTH_STATE_INVALID": "The Slack sign-in link is invalid or expired, please try again",
-    "SLACK_OAUTH_FAILED": "Slack did not complete the installation: {{reason}}"
+    "SLACK_OAUTH_FAILED": "Slack did not complete the installation: {{reason}}",
+    "TEAM_NOT_FOUND": "Team not found",
+    "TEAM_NAME_REQUIRED": "Team name is required",
+    "TEAM_NAME_TAKEN": "A team with this name already exists",
+    "TEAM_MEMBER_NOT_FOUND": "This user is not a member of the team",
+    "TRANSFER_SAME_OWNER": "This user already owns the workflow",
+    "TRANSFER_TARGET_ROLE": "The new owner must be an editor or an admin",
+    "TRANSFER_REBIND_INVALID": "Node {{node}}: choose a resource the new owner can use",
+    "USER_HAS_WORKFLOWS": "This user owns {{count}} workflow(s): choose who takes them over first",
+    "USER_DELETE_MODE_INVALID": "Mode must be anonymize or delete",
+    "WORKFLOW_IN_USE": "{{count}} workflow(s) use this workflow as a subgraph",
+    "ORG_RESOURCE_NOT_ALLOWED": "Your role may not use organization-wide resources at run time ({{kind}})"
   },
   "lang": {
     "en": "English",

@@ -16,7 +16,9 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
     checkpointer: LangGraph saver, used by the runtime to observe superstep checkpoints."""
     entries = set([entry] if isinstance(entry, str) else (entry or []))
     errs = validate(wf)
-    if errs: raise ValidationError(errs)
+    if errs:
+        from .subgraphs import readable  # expanded subgraph nodes by label (TASK-0029)
+        raise ValidationError(readable(errs, wf))
     def annotation(f):
         typ = TYPE_MAP.get(f.get("type", "string"), str); fn = fn_of(f)
         return Annotated[typ, fn] if fn else Optional[typ]  # reducer fields: LangGraph combines parallel writes (TASK-0011)

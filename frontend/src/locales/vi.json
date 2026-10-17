@@ -334,7 +334,18 @@
     "SHARE_NOT_FOUND": "Workflow này chưa được chia sẻ với người dùng đó",
     "SLACK_OAUTH_NOT_CONFIGURED": "Chưa cấu hình Thêm vào Slack (SLACK_CLIENT_ID / SLACK_CLIENT_SECRET)",
     "SLACK_OAUTH_STATE_INVALID": "Liên kết đăng nhập Slack không hợp lệ hoặc đã hết hạn, vui lòng thử lại",
-    "SLACK_OAUTH_FAILED": "Slack chưa hoàn tất cài đặt: {{reason}}"
+    "SLACK_OAUTH_FAILED": "Slack chưa hoàn tất cài đặt: {{reason}}",
+    "TEAM_NOT_FOUND": "Không tìm thấy nhóm",
+    "TEAM_NAME_REQUIRED": "Cần nhập tên nhóm",
+    "TEAM_NAME_TAKEN": "Đã có nhóm trùng tên",
+    "TEAM_MEMBER_NOT_FOUND": "Người dùng này không thuộc nhóm",
+    "TRANSFER_SAME_OWNER": "Người dùng này đã là chủ sở hữu workflow",
+    "TRANSFER_TARGET_ROLE": "Chủ sở hữu mới phải là người chỉnh sửa hoặc quản trị viên",
+    "TRANSFER_REBIND_INVALID": "Node {{node}}: hãy chọn tài nguyên mà chủ sở hữu mới dùng được",
+    "USER_HAS_WORKFLOWS": "Người dùng này sở hữu {{count}} workflow: hãy chọn người nhận trước",
+    "USER_DELETE_MODE_INVALID": "Chế độ phải là ẩn danh hoá hoặc xoá",
+    "WORKFLOW_IN_USE": "{{count}} workflow đang dùng workflow này làm subgraph",
+    "ORG_RESOURCE_NOT_ALLOWED": "Vai trò của bạn không được dùng tài nguyên toàn tổ chức khi chạy ({{kind}})"
   },
   "lang": {
     "en": "English",

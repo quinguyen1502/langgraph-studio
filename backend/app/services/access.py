@@ -11,8 +11,19 @@ from ..repositories import UserRepository, WorkflowRepository, WorkflowShareRepo
 
 
 class AccessService:
-    def __init__(self, users: UserRepository, workflows: WorkflowRepository, shares: WorkflowShareRepository):
-        self.users, self.workflows, self.shares = users, workflows, shares
+    def __init__(self, users: UserRepository, workflows: WorkflowRepository, shares: WorkflowShareRepository, teams=None):
+        self.users, self.workflows, self.shares, self.teams = users, workflows, shares, teams  # teams: TeamRepository (TASK-0029)
+
+    def share_role(self, wid: str, uid: str) -> Optional[str]:
+        """Best share role of the user on a workflow: direct share or through any of their teams."""
+        roles = [self.shares.role_of(wid, uid)] + ((self.teams.roles_for_user(uid, wid).get(wid) or []) if self.teams else [])
+        return P.best_share(roles)
+
+    def shared_map(self, uid: str) -> dict[str, str]:
+        out = dict(self.shares.for_user(uid))
+        if self.teams is not None:
+            for w, roles in self.teams.roles_for_user(uid).items(): out[w] = P.best_share([out.get(w), *roles])
+        return out
 
     def role(self, uid: str) -> Optional[str]:
         u = self.users.get_by_id(uid)
@@ -27,7 +38,7 @@ class AccessService:
     def access_of(self, w: Workflow, uid: str, role: Optional[str] = None) -> Optional[str]:
         role = role if role is not None else self.role(uid)
         if role is None: return None
-        return P.workflow_role(role, w.owner == uid, None if w.owner == uid else self.shares.role_of(w.id, uid))
+        return P.workflow_role(role, w.owner == uid, None if w.owner == uid else self.share_role(w.id, uid))
 
     def workflow(self, wid: str, uid: str, action: str = P.VIEW) -> Workflow:
         w = self.workflows.get(wid)
@@ -44,7 +55,7 @@ class AccessService:
         """(workflow, access) the user can open: own + shared; every workflow for admins asking for all."""
         role = self.role(uid)
         if role is None: return []
-        shared = self.shares.for_user(uid)
+        shared = self.shared_map(uid)
         if all_ and P.can(role, P.WORKFLOWS_ALL): rows = self.workflows.list_all()
         else: rows = sorted(self.workflows.list_for_owner(uid) + self.workflows.by_ids(shared), key=lambda w: -(w.updated or 0))
         pairs = ((w, P.workflow_role(role, w.owner == uid, shared.get(w.id))) for w in rows)

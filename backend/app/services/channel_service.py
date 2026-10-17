@@ -21,8 +21,9 @@ def callback_path(kind: str, cid: Optional[str] = None) -> str:
 
 
 class ChannelService:
-    def __init__(self, repo: ApprovalRepository, users: UserRepository, adapters: dict[str, ApprovalChannel]):
+    def __init__(self, repo: ApprovalRepository, users: UserRepository, adapters: dict[str, ApprovalChannel], org_allowed=None):
         self.repo, self.users, self.adapters = repo, users, adapters
+        self.org_allowed = org_allowed or (lambda uid: True)  # PolicyService.org_allowed (TASK-0029): roles that may use org connections
 
     def adapter(self, kind: str) -> ApprovalChannel:
         if kind not in self.adapters: raise AppError("CHANNEL_KIND_UNSUPPORTED", kind=kind)
@@ -46,15 +47,22 @@ class ChannelService:
         return c
 
     # ---- lookups used by approvals and identity codes ----
-    def for_node(self, owner: str, cfg: dict) -> Optional[ChannelRow]:
+    def org_denied(self, owner: str, cfg: dict) -> bool:
+        """The node's connection is org-wide and the policy does not let this user's role use it at run time."""
+        c = self.for_node(owner, cfg, policy=False)
+        return c is not None and c.scope == "org" and not self.org_allowed(owner)
+
+    def for_node(self, owner: str, cfg: dict, policy: bool = True) -> Optional[ChannelRow]:
         """The connection a Human node's `approval` config points at: `channel_id` (personal or org), or the legacy
         `channel` kind (the owner's personal connection, else the org one)."""
         if cfg.get("channel_id"):
             c = self.repo.channel(str(cfg["channel_id"]))
-            return c if self.usable(owner, c) and c.kind in self.adapters else None
+            ok = self.usable(owner, c) and c.kind in self.adapters and (not policy or c.scope != "org" or self.org_allowed(owner))
+            return c if ok else None
         kind = cfg.get("channel")
         if kind not in self.adapters: return None
-        return self.repo.find_channel(owner, kind, "user") or self.repo.org_channel(kind)
+        c = self.repo.find_channel(owner, kind, "user") or self.repo.org_channel(kind)
+        return None if c is not None and policy and c.scope == "org" and not self.org_allowed(owner) else c
 
     def dm_channel(self, uid: str, kind: str, team: str = "") -> Optional[tuple[ApprovalChannel, dict]]:
         """(adapter, secrets) able to DM this user's chat account: their personal connection, else the org one; for
@@ -85,7 +93,7 @@ class ChannelService:
         admin = self.is_admin(uid)
         return {"kinds": [{"kind": k, "fields": list(a.fields), "optional": list(a.optional)} for k, a in self.adapters.items()],
                 "channels": [self.public(c, uid, admin) for c in self.repo.channels_visible(uid) if c.kind in self.adapters],
-                "public_url": config.public_url() or None, "is_admin": admin}
+                "public_url": config.public_url() or None, "is_admin": admin, "org_usable": self.org_allowed(uid)}
 
     def _values(self, a: ApprovalChannel, body: dict) -> tuple[str, str, dict]:
         """Validate, check with the platform (502 CHANNEL_API_FAILED) -> (encrypted secrets, hint, {name, team_id})."""

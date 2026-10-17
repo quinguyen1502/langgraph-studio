@@ -50,7 +50,7 @@ function PlatformCard({ k, data, conns, slots, onSlots, reload, initialScope }: 
               {conns.filter(c => c.scope === s).map(c => <ConnectionItem key={c.id} c={c} k={k} publicUrl={data.public_url} onChange={reload} />)}
               {s === 'org' && !data.is_admin
                 ? !has('org') && <p className="text-sm text-muted-foreground">{t('settings.orgAskAdmin')}</p>
-                : <AddConnection k={k} scope={s} onChange={reload} />}
+                : <AddConnection k={k} scope={s} onChange={reload} collapsed={has(s)} />}
             </TabsContent>)}
           </Tabs>
           <Separator />

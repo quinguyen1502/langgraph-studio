@@ -262,7 +262,7 @@
     "APPROVAL_TOKEN_INVALID": "Invalid approval button.",
     "APPROVAL_TOKEN_EXPIRED": "This approval request has expired.",
     "APPROVAL_ALREADY_DECIDED": "This request was already answered.",
-    "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {{kind}} account in LangGraph Studio (Approval channels) to approve.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {{kind}} account in LangGraph Studio (Settings → My accounts) to approve.",
     "APPROVAL_FORBIDDEN": "You are not allowed to approve this run."
   },
   "lang": {

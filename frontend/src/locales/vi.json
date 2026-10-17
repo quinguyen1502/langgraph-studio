@@ -262,7 +262,7 @@
     "APPROVAL_TOKEN_INVALID": "Nút phê duyệt không hợp lệ.",
     "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn.",
     "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời.",
-    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong LangGraph Studio (Kênh phê duyệt) để phê duyệt.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong LangGraph Studio (Cài đặt → Tài khoản của tôi) để phê duyệt.",
     "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này."
   },
   "lang": {

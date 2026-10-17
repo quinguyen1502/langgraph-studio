@@ -87,10 +87,11 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
 }
 
 /** New connection of one platform in one scope (the tab it sits in): optional name + secrets. */
-export function AddConnection({ k, scope, onChange }: { k: ChannelKind; scope: 'user' | 'org'; onChange: () => void }) {
-  const { t } = useTranslation(); const [name, setName] = useState(''); const [vals, setVals] = useState<Vals>({})
+export function AddConnection({ k, scope, onChange, collapsed = false }: { k: ChannelKind; scope: 'user' | 'org'; onChange: () => void; collapsed?: boolean }) {
+  const { t } = useTranslation(); const [name, setName] = useState(''); const [vals, setVals] = useState<Vals>({}); const [open, setOpen] = useState(!collapsed)
   const { run, alerts, busy } = useAction(() => { setVals({}); setName(''); onChange() })
   const idp = `add-${k.kind}-${scope}`
+  if (!open) return <Button variant="outline" size="sm" className="w-full border-dashed" id={`${idp}-open`} onClick={() => setOpen(true)}><Plus />{t('approvals.add')}</Button>
   return <div className="space-y-3 rounded-lg border border-dashed p-4" data-testid={idp}>
     <div className="flex items-center gap-2 text-sm font-medium"><Plus className="size-4" />{t('approvals.add')}</div>
     <div className="space-y-1.5"><Label htmlFor={`${idp}-name`}>{t('approvals.name')}<span className="text-muted-foreground"> · {t('approvals.optional')}</span></Label>

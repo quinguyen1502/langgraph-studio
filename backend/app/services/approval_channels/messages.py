@@ -16,7 +16,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "code": "LangGraph Studio verification code: {code}\nIt expires in {minutes} min. If you did not ask for it, ignore this message.",
         "APPROVAL_TOKEN_INVALID": "Invalid approval button", "APPROVAL_TOKEN_EXPIRED": "This approval request has expired",
         "APPROVAL_ALREADY_DECIDED": "This request was already answered",
-        "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {kind} account in LangGraph Studio (Approval channels) to approve",
+        "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {kind} account in LangGraph Studio (Settings → My accounts) to approve",
         "APPROVAL_FORBIDDEN": "You are not allowed to approve this run",
     },
     "vi": {
@@ -28,7 +28,7 @@ TEXTS: dict[str, dict[str, str]] = {
         "code": "Mã xác minh LangGraph Studio: {code}\nMã hết hạn sau {minutes} phút. Nếu bạn không yêu cầu, hãy bỏ qua tin nhắn này.",
         "APPROVAL_TOKEN_INVALID": "Nút phê duyệt không hợp lệ", "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn",
         "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời",
-        "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {kind} trong LangGraph Studio (Kênh phê duyệt) để phê duyệt",
+        "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {kind} trong LangGraph Studio (Cài đặt → Tài khoản của tôi) để phê duyệt",
         "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này",
     },
 }

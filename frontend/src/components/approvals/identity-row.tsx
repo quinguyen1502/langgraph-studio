@@ -43,7 +43,7 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
     <div className="flex gap-2">
       <Input id={idp} className="font-mono" value={ext} placeholder={t(`approvals.identityPh.${kind}`)} onChange={e => setExt(e.target.value)} />
       <Button size="sm" variant={changed ? 'default' : 'outline'} id={`${idp}-link`} disabled={busy || !changed && (slot.verified || !ext.trim())}
-        onClick={linkAndSend}><Send />{ext.trim() ? t('approvals.linkSend') : t('approvals.unlink')}</Button>
+        onClick={linkAndSend}><Send />{ext.trim() || !slot.external_id ? t('approvals.linkSend') : t('approvals.unlink')}</Button>
     </div>
     <p className="text-xs text-muted-foreground">{t(`approvals.identityHow.${kind}`)}</p>
     {slot.external_id && !slot.verified && !changed && <div className="space-y-1.5">

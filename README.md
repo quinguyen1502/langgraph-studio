@@ -359,7 +359,8 @@ Mã hết hạn sau `STUDIO_IDENTITY_CODE_TTL` (600 s), tối đa `STUDIO_IDENTI
 **Giới hạn tần suất callback.** Endpoint công khai bị giới hạn theo IP (`STUDIO_CALLBACK_RATE_LIMIT_IP`, 60) và theo kết nối / workspace
 (`STUDIO_CALLBACK_RATE_LIMIT_CHANNEL`, 300) trong cửa sổ `STUDIO_CALLBACK_RATE_WINDOW` (60 s); vượt quá → `429 RATE_LIMITED`. Sau reverse
 proxy, đặt `STUDIO_TRUSTED_PROXIES` (danh sách CIDR của proxy): `X-Forwarded-For` được đọc từ phải sang trái, bỏ qua các hop tin cậy,
-và chỉ khi peer trực tiếp là proxy tin cậy (Compose mặc định là các dải private vì nginx của `web` đứng trước `api`). `STUDIO_TRUST_PROXY=1`
+và chỉ khi peer trực tiếp là proxy tin cậy (Compose mặc định là các dải private vì nginx của `web` đứng trước `api`; nginx này là edge nên
+ghi đè `X-Forwarded-For` bằng IP nó thấy. Có load balancer phía trước: đổi sang `$proxy_add_x_forwarded_for` và thu hẹp danh sách CIDR). `STUDIO_TRUST_PROXY=1`
 (cũ) vẫn dùng được, tương đương tin đúng một hop.
 
 **Tài khoản theo workspace.** Liên kết Slack được lưu theo (workspace, member ID): cùng một member ID ở workspace khác cần xác minh riêng.

@@ -42,7 +42,7 @@ export function CommandPalette() {
         {grouped(cmds).map(([g, items]) => <CommandGroup key={g} heading={t(`palette.groups.${g}`)}>
           {items.map(c => { const I = c.icon; const k = keyOf(c.shortcut)
             return <CommandItem key={c.id} value={searchValue(c)} disabled={c.disabled} onSelect={() => exec(c)} data-testid="palette-item" data-id={c.id}>
-              {I && <I />}<span className="truncate">{c.label}</span>{c.hint && <span className="truncate text-xs text-muted-foreground">{c.hint}</span>}
+              {I ? <I /> : <span className="size-4 shrink-0" aria-hidden="true" />}<span className="truncate">{c.label}</span>{c.hint && <span className="truncate text-xs text-muted-foreground">{c.hint}</span>}
               {k && <span className="ml-auto"><Kbd combo={k} /></span>}
             </CommandItem> })}
         </CommandGroup>)}

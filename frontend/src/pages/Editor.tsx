@@ -344,7 +344,7 @@ function Studio() {
       <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
       <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
       <Separator orientation="vertical" className="h-6!" />
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 h-8" aria-label={t('editor.nameLabel')} />
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-44 h-8" aria-label={t('editor.nameLabel')} />
       {edit && savedSnap.current !== null && snap() !== savedSnap.current && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
@@ -359,9 +359,9 @@ function Studio() {
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
         <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
       {editable && <div className="flex items-center" role="group" aria-label={t('layout.group')}>
-        <Tip tip={t('layout.tip')}><Button variant="outline" size="sm" id="layout-btn" className="rounded-r-none" onClick={() => tidy()}><Network className={layoutDir === 'TB' ? 'rotate-90' : undefined} />{t('layout.button')}</Button></Tip>
-        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" id="layout-dir" className="rounded-l-none border-l-0 px-1.5" aria-label={t('layout.direction')}><ChevronDown /></Button></DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+        <Tip tip={t('layout.tip')}><Button variant="outline" size="icon-sm" id="layout-btn" className="rounded-r-none" aria-label={t('layout.button')} onClick={() => tidy()}><Network className={layoutDir === 'TB' ? 'rotate-90' : undefined} /></Button></Tip>
+        <DropdownMenu><DropdownMenuTrigger asChild><Button variant="outline" size="sm" id="layout-dir" className="h-7 rounded-l-none border-l-0 px-1" aria-label={t('layout.direction')}><ChevronDown /></Button></DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-44">
             <DropdownMenuItem id="layout-lr" onSelect={() => tidy('LR')}><ArrowRight />{t('layout.lr')}{layoutDir === 'LR' && <Check className="ml-auto" />}</DropdownMenuItem>
             <DropdownMenuItem id="layout-tb" onSelect={() => tidy('TB')}><ArrowDown />{t('layout.tb')}{layoutDir === 'TB' && <Check className="ml-auto" />}</DropdownMenuItem>
           </DropdownMenuContent></DropdownMenu></div>}

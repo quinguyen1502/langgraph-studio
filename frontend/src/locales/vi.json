@@ -1010,7 +1010,7 @@
   "layout": {
     "group": "Bố cục",
     "button": "Sắp xếp",
-    "tip": "Tự động sắp xếp node (Shift+L)",
+    "tip": "Tự sắp xếp bố cục (Shift+L)",
     "direction": "Hướng bố cục",
     "lr": "Trái sang phải",
     "tb": "Trên xuống dưới"

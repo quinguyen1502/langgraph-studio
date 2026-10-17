@@ -52,6 +52,7 @@ REQ-0012 asked for RBAC and workflow sharing, with an open question about SSO. T
 `AUTH_ACCOUNT_DISABLED`, `PERMISSION_DENIED`, `USER_NOT_FOUND`, `USER_ROLE_INVALID`, `USER_LAST_ADMIN`, `USER_SELF_CHANGE`, `SHARE_USER_NOT_FOUND`, `SHARE_ROLE_INVALID`, `SHARE_OWNER`, `SHARE_NOT_FOUND`, `SLACK_OAUTH_NOT_CONFIGURED`, `SLACK_OAUTH_STATE_INVALID`, `SLACK_OAUTH_FAILED`: in the catalog, `docs/api-errors.md` and en/vi.
 
 ## Consequences / open
+- Resolved by TASK-0029 / DEC-0024: teams, ownership transfer, audit log, user deletion and the org-resource run-time policy (items below kept for history).
 - No groups or teams, no ownership transfer, and no audit log of role and share changes.
 - An org-scope resource (approval channel, MCP server) is still usable by every active account, viewers included, when a workflow they may run references it.
 - Users cannot be deleted from the UI, only deactivated (their workflows and runs stay).

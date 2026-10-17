@@ -152,6 +152,17 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
   Thẻ Slack trong Cài đặt → Kênh phê duyệt hiện nút **Add to Slack** (cá nhân, hoặc tổ chức cho admin); dán bot token vẫn dùng được.
 - Thiết kế: DEC-0023.
 
+## Nhóm, chuyển quyền sở hữu, nhật ký & xoá người dùng (TASK-0029)
+- Cài đặt → **Nhóm** (admin): tạo nhóm, thêm thành viên. Trong hộp **Chia sẻ** chọn *Nhóm* để chia sẻ workflow với cả nhóm (xem / chỉnh sửa);
+  quyền hiệu lực là quyền cao nhất giữa chia sẻ trực tiếp và các nhóm.
+- **Chuyển quyền sở hữu** (chủ sở hữu hoặc admin, trong hộp Chia sẻ): người nhận phải là editor/admin. Credential, kho tri thức, máy chủ MCP
+  mà người nhận không dùng được có thể gán lại sang tài nguyên của họ, hoặc giữ và được **đánh dấu** cần sửa.
+- Cài đặt → **Hoạt động** (admin): nhật ký đổi vai trò, kích hoạt, chia sẻ, nhóm, chuyển quyền, xoá tài khoản, chính sách; lọc theo loại, thời gian, từ khoá.
+- **Xoá người dùng** (Cài đặt → Người dùng): *Ẩn danh hoá* (giữ lịch sử chạy) hoặc *Xoá* (xoá cả lần chạy); workflow họ sở hữu phải chuyển cho người khác trước.
+- **Tài nguyên tổ chức khi chạy**: admin chọn vai trò được dùng kênh phê duyệt và máy chủ MCP *Toàn tổ chức* (mặc định editor + admin).
+- Subgraph: lỗi kiểm tra ghi `Cha › Node con`; xoá workflow đang được dùng làm subgraph sẽ bị chặn kèm danh sách (có *Vẫn xoá*); danh sách phiên bản báo khi subgraph đã đổi.
+- Ngoài phạm vi: Slack Enterprise Grid (cài đặt toàn Grid). Thiết kế: DEC-0024.
+
 ## Kho tri thức & node Retriever (TASK-0012)
 - Cài đặt → **Kho tri thức**: tạo kho, tải `.txt` / `.md` / `.pdf` (≤ 10 MB), xem số đoạn, thử tìm kiếm, đổi model/khoá, lập chỉ mục lại.
 - Embedding: credential OpenAI(-compatible) của kho → `OPENAI_API_KEY` → mock offline cố định (`mock:512`, không cần khoá). Mặc định

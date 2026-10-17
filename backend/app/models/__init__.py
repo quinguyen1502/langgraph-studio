@@ -5,5 +5,6 @@ from .workflow import Workflow
 from .run import Run
 from .credential import Credential
 from .workflow_token import WorkflowToken
+from .workflow_version import WorkflowVersion
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion"]

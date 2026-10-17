@@ -238,7 +238,8 @@
     "RUN_RESPONSE_INVALID": "Phản hồi phải là văn bản (tối đa {{max}} ký tự)",
     "TRIGGER_TOKEN_INVALID": "Token workflow bị thiếu, không hợp lệ hoặc đã thu hồi",
     "TOKEN_NOT_FOUND": "Không tìm thấy token",
-    "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai"
+    "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
+    "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại."
   },
   "lang": {
     "en": "English",
@@ -293,5 +294,31 @@
     "create": "Tạo token",
     "example": "Ví dụ",
     "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả."
+  },
+  "versions": {
+    "button": "Phiên bản",
+    "title": "Lịch sử phiên bản",
+    "desc": "Mỗi lần lưu có thay đổi sẽ tạo một phiên bản. So sánh hai phiên bản bất kỳ, hoặc khôi phục phiên bản cũ thành phiên bản mới.",
+    "current": "hiện tại",
+    "nodes_one": "{{count}} nút",
+    "nodes_other": "{{count}} nút",
+    "restore": "Khôi phục",
+    "confirm": "Khôi phục v{{n}}?",
+    "restoredFrom": "Khôi phục từ v{{n}}",
+    "initial": "Phiên bản đầu tiên",
+    "compare": "So sánh",
+    "identical": "Không có khác biệt.",
+    "renamed": "Đổi tên",
+    "added": "thêm",
+    "removed": "xoá",
+    "changed": "sửa",
+    "moved": "di chuyển",
+    "nodesTitle": "Nút",
+    "edgesTitle": "Cạnh",
+    "stateTitle": "State",
+    "restored": "Đã khôi phục v{{n}} thành phiên bản mới.",
+    "unsaved": "chưa lưu",
+    "runVersion": "Chạy phiên bản v{{n}}",
+    "runUnsaved": "Chạy với thay đổi chưa lưu"
   }
 }

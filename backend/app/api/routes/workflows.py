@@ -28,3 +28,16 @@ def runs(wid: str, user=Depends(current_user), svc=Depends(run_service)): return
 
 @router.post("/validate", dependencies=[Depends(limit_body)])
 def validate_wf(body: WorkflowIn, user=Depends(current_user)): return {"errors": validate(body.as_dict())}
+
+# ---- versions (TASK-0008) ----
+@router.get("/workflows/{wid}/versions")
+def list_versions(wid: str, user=Depends(current_user), svc=Depends(workflow_service)): return svc.list_versions(wid, user["id"])
+
+@router.get("/workflows/{wid}/versions/diff")
+def diff_versions(wid: str, a: int, b: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.diff_versions(wid, a, b, user["id"])
+
+@router.get("/workflows/{wid}/versions/{n}")
+def get_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.get_version(wid, n, user["id"])
+
+@router.post("/workflows/{wid}/versions/{n}/restore")
+def restore_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.restore_version(wid, n, user["id"])

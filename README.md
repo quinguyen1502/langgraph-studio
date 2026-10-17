@@ -215,3 +215,19 @@ curl -X POST http://localhost:8080/api/hooks/workflows/<wid>/runs \
   - Khi có `REDIS_URL`, hàng đợi là Redis nên có thể chạy worker riêng bằng `python -m app.worker`.
   - Compose có sẵn service `worker`; mở rộng bằng `docker compose up --scale worker=3`.
 - **Chưa hỗ trợ**: lịch chạy định kỳ (cron), xem DEC-0014.
+
+### Phiên bản workflow (TASK-0008)
+
+- **Tạo phiên bản**: mỗi lần lưu có thay đổi (lưu, đổi tên, nhân bản, import) sẽ tạo một phiên bản bất biến, ghi kèm tác giả và thời điểm. Lưu mà không thay đổi gì thì không tạo phiên bản mới. Workflow có sẵn trước khi nâng cấp trở thành **v1**.
+- **Xem lịch sử**: bấm **Phiên bản** trên thanh công cụ.
+  - Danh sách: vN, tác giả, thời gian, số nút.
+  - So sánh hai phiên bản bất kỳ: nút, cạnh và state được thêm, xoá, sửa hoặc di chuyển, kèm before/after.
+  - **Khôi phục**: có bước xác nhận. Phiên bản cũ được chép thành một **phiên bản mới nhất** nên lịch sử không bị ghi đè; tên hiện tại được giữ lại.
+- **Tab Lịch sử**: mỗi run có nhãn `vN` cho phiên bản đã chạy. Nếu chạy với thay đổi chưa lưu, nhãn là **chưa lưu**. Việc chỉ kéo nút sang chỗ khác không tính là thay đổi.
+- **API**:
+  - `GET /api/workflows/{wid}/versions`
+  - `GET …/versions/{n}`
+  - `GET …/versions/diff?a=1&b=2`
+  - `POST …/versions/{n}/restore`
+  - Lỗi `404 VERSION_NOT_FOUND`.
+- Xem DEC-0015.

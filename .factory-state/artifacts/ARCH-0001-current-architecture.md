@@ -54,6 +54,7 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 - Telemetry (`services/telemetry.py`, DEC-0012): one OTel trace per run (root `run` + one span per node), exported over OTLP (`OTEL_*`) and/or to LangSmith (`LANGSMITH_API_KEY` + `LANGSMITH_TRACING`); no-op otherwise. Final WS event `run_summary` {metrics, trace_id, trace_url}.
 - Human-in-the-loop (TASK-0006, DEC-0013): node type `human` pauses a run (status `waiting`, checkpoint in `runs.checkpoint`). Resume over WS `{resume_run_id, response}` (owner only); `GET /api/runs/pending`.
 - API triggers (TASK-0007, DEC-0014): per-workflow tokens (`workflow_tokens`), `POST /api/hooks/workflows/{wid}/runs` (async/sync, `callback_url`), `JobQueue` (memory or Redis list) + `RunWorker` (in the API process and/or `python -m app.worker`); `runs.source` ui|api.
+- Workflow versions (TASK-0008, DEC-0015): `workflow_versions` (immutable snapshot per changing save, author + timestamp); restore = new latest version; `runs.workflow_version` records the version that ran (NULL = unsaved edits).
 - Run control: `POST /api/runs/{id}/cancel` (TASK-0009, works across API workers when Redis is configured)
 - RunBus (`services/run_bus.py`): `InMemoryRunBus` (default) or `RedisRunBus` (`REDIS_URL`): run registry, cancel flags, event fan-out on `run:{id}:events` (DEC-0011)
 - Subprocess contract: `runner.py inspect|run <repo> <file:var>` emitting JSON lines

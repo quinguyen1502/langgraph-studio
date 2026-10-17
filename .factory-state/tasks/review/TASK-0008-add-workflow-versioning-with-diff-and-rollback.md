@@ -5,12 +5,12 @@
 - Project: langgraph-studio
 - Task ID: TASK-0008
 - Previous ID: TASK-0006 (renumbered 2026-10-16, DEC-0007)
-- Status: backlog
-- Owner:
+- Status: review
+- Owner: Grok Bot (agent)
 - Created: 2026-10-16
 - Updated: 2026-10-16
 - Requirement IDs: REQ-0005
-- Design IDs:
+- Design IDs: DEC-0015
 - Architecture IDs: ARCH-0001
 
 ## Objective
@@ -65,13 +65,24 @@ Implement REQ-0005: Add workflow versioning with diff and rollback.
 
 ## Assumptions
 
-- Integration branch is `main` (see DISC-0001).
+- Phase 2 integrates into `develop`; stacked on TASK-0007 (PR #14).
 
 ## Open Questions
 
 - None
 
+## Delivered
+
+- `workflow_versions` + `runs.workflow_version` (migration `0006_workflow_versions`, backfills v1).
+- A version on every changing save, with author and timestamp. List, get, diff and restore endpoints; restore creates a new latest version.
+- Runs record the version that executed; history shows `vN` or "unsaved".
+- UI: a "Versions" dialog (list, compare A→B, restore with confirm). New error code `VERSION_NOT_FOUND` (catalog, docs, en/vi).
+- Tests: `tests/test_versions.py`, `e2e/versions.spec.ts`.
+- Docs: DEC-0015, ARCH-0001, backend-architecture, README, roadmap, REV-0012, QA-0012.
+
 ## Activity Log
+
+- 2026-10-16: Implemented on `factory/task-0008-add-workflow-versioning-with-diff-and-rollback` (stacked on TASK-0007); moved to review.
 
 - 2026-10-16: Renumbered TASK-0006 -> TASK-0008 per owner re-plan (DEC-0007).
 - 2026-10-16: Created task during Factory import/onboarding.

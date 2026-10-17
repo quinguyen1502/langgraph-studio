@@ -84,5 +84,6 @@
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |
 | `TOKEN_NOT_FOUND` | 404 | Token not found |
 | `CALLBACK_URL_INVALID` | 400 | callback_url must be a public http(s) URL |
+| `VERSION_NOT_FOUND` | 404 | Workflow version not found |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

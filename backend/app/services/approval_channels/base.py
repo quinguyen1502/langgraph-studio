@@ -39,6 +39,7 @@ class ApprovalChannel:
     patterns: dict[str, str] = {}           # field -> regex it must match
     identity_pattern: str = r".+"           # shape of a platform user id
     hint_field: str = ""                    # which secret the masked hint shows
+    shared_callback: bool = False           # one callback URL for every connection, routed by route_key() (Slack)
     transport: Optional[httpx.BaseTransport] = None  # tests plug in httpx.MockTransport
 
     # ---- configuration ----
@@ -55,6 +56,15 @@ class ApprovalChannel:
         return out
 
     def valid_identity(self, external_id: str) -> bool: return bool(re.fullmatch(self.identity_pattern, external_id))
+
+    def describe(self, secrets: dict) -> dict:
+        """Check the credentials with the platform and name the account behind them: {"name", "team_id"}.
+        Raises CHANNEL_API_FAILED when the platform refuses them."""
+        return {"name": None, "team_id": None}
+
+    def route_key(self, body: bytes) -> Optional[str]:
+        """The account (team_id) an unauthenticated callback claims to come from, for the shared callback URL."""
+        return None
 
     def register(self, secrets: dict, callback_url: str) -> dict:
         """Point the platform at our callback URL when its API allows it. Default: manual setup, nothing to do."""

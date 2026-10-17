@@ -410,7 +410,7 @@
     "optional": "optional",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
-      "slack": "Create a Slack app with a bot token (chat:write) and turn on Interactivity with the callback URL below.",
+      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
       "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL)."
     },
     "field": {
@@ -495,6 +495,8 @@
     "scopeHelp": "Personal connections are only usable on your own workflows; organization ones are set up by an admin.",
     "scopeHelpAdmin": "As an admin you can add organization connections that every user can pick on a Human node.",
     "orgReadOnly": "Managed by an admin. You can pick it on your Human nodes.",
-    "replaceSecrets": "Replace secrets"
+    "replaceSecrets": "Replace secrets",
+    "sharedUrl": "Request URL (all workspaces)",
+    "sharedHelp": "One Interactivity URL for every Slack workspace; requests are routed by the workspace ID ({{team}}) and checked with this app's signing secret."
   }
 }

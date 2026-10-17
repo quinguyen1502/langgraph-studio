@@ -25,6 +25,10 @@ class TelegramChannel(ApprovalChannel):
         if not data.get("ok"): raise AppError("CHANNEL_API_FAILED", kind=self.label, reason=str(data.get("description") or "not ok")[:200])
         return data.get("result")
 
+    def describe(self, secrets):
+        me = self._api(secrets, "getMe", {}) or {}
+        return {"name": f"@{me['username']}" if me.get("username") else None, "team_id": str(me["id"]) if me.get("id") else None}
+
     def register(self, secrets, callback_url):
         self._api(secrets, "setWebhook", {"url": callback_url, "secret_token": secrets["webhook_secret"], "allowed_updates": ["callback_query"]})
         return {"registered": True, "manual": False}

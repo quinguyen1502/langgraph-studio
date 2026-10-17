@@ -410,7 +410,7 @@
     "optional": "không bắt buộc",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
-      "slack": "Tạo một Slack app có bot token (chat:write) và bật Interactivity với URL callback bên dưới.",
+      "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",
       "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai)."
     },
     "field": {
@@ -495,6 +495,8 @@
     "scopeHelp": "Kết nối cá nhân chỉ dùng được trên workflow của bạn; kết nối toàn tổ chức do admin thiết lập.",
     "scopeHelpAdmin": "Là admin, bạn có thể thêm kết nối toàn tổ chức mà mọi người dùng đều chọn được trên node Human.",
     "orgReadOnly": "Do admin quản lý. Bạn có thể chọn nó trên node Human của mình.",
-    "replaceSecrets": "Thay khoá bí mật"
+    "replaceSecrets": "Thay khoá bí mật",
+    "sharedUrl": "Request URL (mọi workspace)",
+    "sharedHelp": "Một URL Interactivity cho mọi workspace Slack; yêu cầu được định tuyến theo ID workspace ({{team}}) và kiểm tra bằng signing secret của app."
   }
 }

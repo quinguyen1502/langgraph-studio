@@ -48,6 +48,7 @@ function ChannelCard({ c, k, publicUrl, onChange }: { c: Channel; k: ChannelKind
   const { t } = useTranslation(); const [vals, setVals] = useState<Record<string, string>>({}); const [edit, setEdit] = useState(false)
   const { run, alerts } = useAction(() => { setVals({}); onChange() })
   const url = c.callback_url || location.origin + c.callback_path
+  const shared = c.shared_callback_path ? (c.shared_callback_url || location.origin + c.shared_callback_path) : null
   return <div className="space-y-3 rounded-lg border p-4" data-testid={`channel-${c.kind}-${c.scope}`} data-channel-id={c.id}>
     <div className="flex flex-wrap items-center gap-2">
       <span className="font-medium">{t(`approvals.kind.${c.kind}`)}</span>
@@ -55,7 +56,10 @@ function ChannelCard({ c, k, publicUrl, onChange }: { c: Channel; k: ChannelKind
       <Badge variant={c.scope === 'org' ? 'default' : 'secondary'}>{c.scope === 'org' ? <Building2 /> : <User />}{t(`approvals.scope.${c.scope}`)}</Badge>
       <Badge variant="outline" className="font-mono">{c.hint}</Badge>
     </div>
-    <CopyField id={`ch-${c.id}-url`} label={t('approvals.callbackUrl')} value={url} />
+    {shared ? <>
+      <CopyField id={`ch-${c.id}-shared`} label={t('approvals.sharedUrl')} value={shared} />
+      <p className="text-xs text-muted-foreground">{t('approvals.sharedHelp', { team: c.team_id })}</p></>
+      : <CopyField id={`ch-${c.id}-url`} label={t('approvals.callbackUrl')} value={url} />}
     {!publicUrl && <p className="text-xs text-muted-foreground">{t('approvals.publicUrlMissing')}</p>}
     {!c.editable && <p className="text-xs text-muted-foreground">{t('approvals.orgReadOnly')}</p>}
     {edit && <SecretFields k={k} vals={vals} setVals={setVals} idp={`ch-${c.id}`} placeholder={t('approvals.keepSecret')} />}

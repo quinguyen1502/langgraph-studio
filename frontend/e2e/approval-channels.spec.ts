@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto'
 import { test, expect, type Page } from '@playwright/test'
 // TASK-0022: connect Slack, link my Slack account, pick the channel on a Human node, see the request in the audit log.
 // Slack/Telegram are the fake APIs of backend/tests/fixtures/mock_chat_api.py (CHAT port), which record every message,
@@ -41,7 +42,8 @@ test('approval channels: org connection, verified account, Human node, request, 
   await dlg.locator('#add-slack-bot_token').fill('xoxb-1111-2222-e2etoken'); await save.click()
   const card = dlg.locator('[data-testid=channel-slack-org]')
   await expect(card).toContainText('••••oken'); await expect(card).toContainText('Toàn tổ chức'); await expect(card).toContainText('Acme')
-  await expect(card.locator('input[readonly]')).toHaveValue(/\/api\/approvals\/callback\/slack\/[0-9a-f]{12}$/)
+  await expect(card.locator('input[readonly]')).toHaveValue(/\/api\/approvals\/callback\/slack$/)  // shared URL, routed by team_id
+  await expect(card).toContainText('(2222)')  // workspace id read with auth.test
   const cid = await card.getAttribute('data-channel-id')
   // my accounts: link -> the bot DMs a code -> wrong code refused -> right code verifies
   await dlg.locator('#approvals-tab-accounts').click()
@@ -70,5 +72,15 @@ test('approval channels: org connection, verified account, Human node, request, 
   await page.locator('#user-menu').click(); await page.locator('#approval-channels-item').click(); await dlg.locator('#approvals-tab-audit').click()
   const row = dlg.locator('[data-testid=audit-row]', { hasText: WF.name }).first()
   await expect(row).toContainText('Đã gửi')
-  expect((await sent(page, 'chat.postMessage', b => b.channel === 'C0E2E')).blocks[1].elements.map((e: any) => e.action_id)).toEqual(['approve', 'reject'])
+  const post = await sent(page, 'chat.postMessage', b => b.channel === 'C0E2E')
+  expect(post.blocks[1].elements.map((e: any) => e.action_id)).toEqual(['approve', 'reject'])
+  // Slack calls the shared URL when U0E2EADMIN (verified above, the run owner) presses Approve
+  const body = new URLSearchParams({ payload: JSON.stringify({ type: 'block_actions', team: { id: '2222' }, user: { id: 'U0E2EADMIN' }, actions: [{ action_id: 'approve', value: post.blocks[1].elements[0].value }] }) }).toString()
+  const ts = String(Math.floor(Date.now() / 1000)), sig = 'v0=' + createHmac('sha256', '0123456789abcdef0123456789abcdef').update(`v0:${ts}:${body}`).digest('hex')
+  const res = await page.request.post('/api/approvals/callback/slack', { data: body, headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Slack-Request-Timestamp': ts, 'X-Slack-Signature': sig } })
+  expect((await res.json()).data).toEqual({ outcome: 'approved' })
+  await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}/runs`, { headers: auth })).json()).data[0].status, { timeout: 30_000 }).toBe('ok')
+  expect((await sent(page, 'chat.update', b => b.channel === 'C0E2E')).text).toContain('admin@example.com')
+  await page.keyboard.press('Escape'); await page.locator('#user-menu').click(); await page.locator('#approval-channels-item').click(); await dlg.locator('#approvals-tab-audit').click()
+  await expect(dlg.locator('[data-testid=audit-row]', { hasText: WF.name }).first()).toContainText('Đã duyệt')
 })

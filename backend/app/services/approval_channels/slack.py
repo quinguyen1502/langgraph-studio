@@ -16,6 +16,7 @@ class SlackChannel(ApprovalChannel):
     patterns = {"bot_token": r"xoxb-[\w-]{8,}", "signing_secret": r"[0-9a-f]{16,128}"}
     identity_pattern = r"[UW][A-Z0-9]{2,20}"
     hint_field = "bot_token"
+    shared_callback = True  # one Request URL for every workspace: /api/approvals/callback/slack, routed by team.id
 
     def _api(self, secrets: dict, method: str, payload: dict) -> dict:
         _, data = self.call("POST", f"{config.slack_api_url()}/{method}", json=payload,
@@ -31,6 +32,20 @@ class SlackChannel(ApprovalChannel):
                     {"type": "button", "action_id": "approve", "style": "primary", "text": {"type": "plain_text", "text": "Approve"}, "value": msg.approve_token},
                     {"type": "button", "action_id": "reject", "style": "danger", "text": {"type": "plain_text", "text": "Reject"}, "value": msg.reject_token}]}]
 
+    def describe(self, secrets):
+        d = self._api(secrets, "auth.test", {})
+        return {"name": d.get("team") or None, "team_id": d.get("team_id") or None}
+
+    @staticmethod
+    def _payload(body: bytes) -> dict:
+        try: p = json.loads(parse_qs(body.decode()).get("payload", ["{}"])[0])
+        except (ValueError, UnicodeDecodeError): return {}
+        return p if isinstance(p, dict) else {}
+
+    def route_key(self, body):
+        team = self._payload(body).get("team") or {}
+        return str(team.get("id")) if isinstance(team, dict) and team.get("id") else None
+
     def send_request(self, secrets, target, msg):
         data = self._api(secrets, "chat.postMessage", {"channel": target, "text": msg.title, "blocks": self._blocks(msg)})
         return {"channel": data.get("channel") or target, "ts": data["ts"]}
@@ -43,8 +58,7 @@ class SlackChannel(ApprovalChannel):
         if not (fresh and hmac.compare_digest(mine, sig)): raise AppError("CHANNEL_SIGNATURE_INVALID")
 
     def handle_callback(self, body) -> Optional[Callback]:
-        try: p = json.loads(parse_qs(body.decode()).get("payload", ["{}"])[0])
-        except (ValueError, UnicodeDecodeError): return None
+        p = self._payload(body)
         acts = p.get("actions") or []
         if p.get("type") != "block_actions" or not acts or acts[0].get("action_id") not in ("approve", "reject"): return None
         return Callback(str(acts[0].get("value") or ""), str((p.get("user") or {}).get("id") or ""), {"response_url": p.get("response_url")})

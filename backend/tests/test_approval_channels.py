@@ -15,9 +15,12 @@ TG = {"bot_token": "123456:AAbbCCddEEffGGhhIIjjKKll", "webhook_secret": "tg-secr
 
 class FakeApi:
     """Records every call to the Slack/Telegram APIs and answers like them."""
-    def __init__(self): self.calls: list[tuple[str, dict]] = []
+    def __init__(self): self.calls: list[tuple[str, dict]] = []; self.auth: list[str] = []
     def __call__(self, req: httpx.Request) -> httpx.Response:
-        body = json.loads(req.content or b"{}"); path = req.url.path; self.calls.append((str(req.url), body))
+        body = json.loads(req.content or b"{}"); path = req.url.path; self.calls.append((str(req.url), body)); self.auth.append(req.headers.get("Authorization", ""))
+        if path.endswith("auth.test"):  # bot tokens here look like xoxb-1111-<TEAM>-...
+            team = req.headers["Authorization"].split("-")[2]; return httpx.Response(200, json={"ok": True, "team": f"Team {team}", "team_id": team})
+        if path.endswith("getMe"): return httpx.Response(200, json={"ok": True, "result": {"id": 123456, "is_bot": True, "username": "studio_bot"}})
         if path.endswith("chat.postMessage"): return httpx.Response(200, json={"ok": True, "channel": body["channel"], "ts": f"{time.time():.6f}"})
         if path.endswith("sendMessage"): return httpx.Response(200, json={"ok": True, "result": {"message_id": len(self.calls), "chat": {"id": int(body["chat_id"])}}})
         if "fail" in json.dumps(body): return httpx.Response(200, json={"ok": False, "error": "channel_not_found"})
@@ -67,13 +70,14 @@ def start_waiting(c, owner, wid):
     assert evs[-1]["status"] == "waiting"; return evs[0]["run_id"]
 
 def slack_post(c, cid, payload, secret=SIGNING, ts=None):
+    """cid None = the shared Slack URL (routed by payload team.id)."""
     body = urlencode({"payload": json.dumps(payload)}).encode(); ts = str(int(ts or time.time()))
     sig = "v0=" + hmac.new(secret.encode(), f"v0:{ts}:".encode() + body, hashlib.sha256).hexdigest()
-    return c.post(f"/api/approvals/callback/slack/{cid}", content=body, headers={"Content-Type": "application/x-www-form-urlencoded",
+    return c.post("/api/approvals/callback/slack" + (f"/{cid}" if cid else ""), content=body, headers={"Content-Type": "application/x-www-form-urlencoded",
                                                                               "X-Slack-Request-Timestamp": ts, "X-Slack-Signature": sig})
 
-def press(token, uid, action="approve"):
-    return {"type": "block_actions", "user": {"id": uid}, "response_url": "https://hooks.slack.com/actions/T1/1/x",
+def press(token, uid, action="approve", team="2222"):
+    return {"type": "block_actions", "user": {"id": uid}, "team": {"id": team}, "response_url": "https://hooks.slack.com/actions/T1/1/x",
             "actions": [{"action_id": action, "value": token}]}
 
 def connect(c, u, kind, scope="user", **extra):
@@ -151,6 +155,28 @@ def test_org_channels_are_admin_managed_and_usable_by_everyone(c, api, monkeypat
     from app.api.deps import get_db
     UserRepository(get_db()).set_admin(adm["id"], False)
     assert c.delete(f"/api/approvals/channels/{org['id']}", headers=H(adm["token"])).json()["error"]["code"] == "CHANNEL_ADMIN_REQUIRED"
+
+
+def test_several_slack_workspaces_per_owner_routed_by_team_id(c, api):
+    o = user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"; sec_b = "b" * 32
+    ta, tb = f"TA{uuid.uuid4().hex[:6].upper()}", f"TB{uuid.uuid4().hex[:6].upper()}"
+    a = connect(c, o, "slack", bot_token=f"xoxb-1111-{ta}-abcdefgh")
+    b = connect(c, o, "slack", bot_token=f"xoxb-1111-{tb}-abcdefgh", signing_secret=sec_b)
+    assert a["id"] != b["id"] and (a["team_id"], a["name"], b["team_id"]) == (ta, f"Team {ta}", tb)
+    assert a["shared_callback_path"] == "/api/approvals/callback/slack"
+    again = connect(c, o, "slack", bot_token=f"xoxb-1111-{tb}-zzzzzzzz", signing_secret=sec_b)
+    assert again["id"] == b["id"] and again["hint"] == "••••zzzz"  # same workspace: replaced, not duplicated
+    assert len([x for x in c.get("/api/approvals/channels", headers=H(o["token"])).json()["data"]["channels"] if x["kind"] == "slack"]) == 2
+    link(c, api, o, "slack", ua, own_channel=False)
+    wid = workflow(c, o, {"channel_id": b["id"], "channel": "slack", "target": "C0B"}); rid = start_waiting(c, o, wid)
+    approve = until(lambda: [p for p in api.requests() if p["channel"] == "C0B"])[-1]["blocks"][1]["elements"][0]["value"]
+    assert slack_post(c, None, press(approve, ua, team="T0NOPE"), secret=sec_b).status_code == 401  # unknown workspace
+    assert slack_post(c, None, press(approve, ua, team=tb), secret=SIGNING).status_code == 401      # A's secret for B's team
+    assert slack_post(c, None, press(approve, ua, team=ta)).json()["data"]["code"] == "APPROVAL_TOKEN_INVALID"  # sent via B, not A
+    assert slack_post(c, None, press(approve, ua, team=tb), secret=sec_b).json()["data"] == {"outcome": "approved"}
+    assert until(lambda: run_row(c, o, wid, rid)["status"] == "ok")
+    upd = api.named("chat.update")[-1]; assert upd["channel"] == "C0B"
+    assert [h for (u, _), h in zip(api.calls, api.auth) if u.endswith("chat.update")][-1] == f"Bearer xoxb-1111-{tb}-zzzzzzzz"  # B's (new) token
 
 
 def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):

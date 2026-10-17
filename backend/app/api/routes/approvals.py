@@ -1,9 +1,11 @@
 """Approval through external channels (TASK-0022, DEC-0019).
 
 User (JWT): channel connections (personal; org-wide ones need an admin), own channel identities (link, one-time code, verify), audit log.
-Platforms (no JWT; verified by signature / secret header): POST /api/approvals/callback/{kind}/{channel_id}.
+Platforms (no JWT; verified by signature / secret header): POST /api/approvals/callback/{kind}/{channel_id}, or the
+shared POST /api/approvals/callback/slack routed by team_id.
 """
 import asyncio
+from typing import Optional
 from fastapi import APIRouter, Body, Depends, Request
 from ..deps import approval_service, channel_service, current_user, identity_service
 
@@ -41,9 +43,19 @@ def verify_identity(kind: str, body=Body(None), user=Depends(current_user), svc=
 def audit(user=Depends(current_user), svc=Depends(approval_service)): return svc.audit_log(user["id"])
 
 
+async def _callback(kind: str, cid: Optional[str], request: Request, svc):
+    body = await request.body()
+    return await asyncio.to_thread(svc.handle_callback, kind, cid, dict(request.headers), body)
+
+
+@router.post("/callback/{kind}")
+async def shared_callback(kind: str, request: Request, svc=Depends(approval_service)):
+    """One URL for every connection of the kind (Slack: routed by the payload's team.id, then the signature)."""
+    return await _callback(kind, None, request, svc)
+
+
 @router.post("/callback/{kind}/{cid}")
 async def callback(kind: str, cid: str, request: Request, svc=Depends(approval_service)):
     """Slack interactivity / Telegram webhook. Refusals (expired, not allowed, ...) are answered in the channel and
     return 200 so the platform does not retry; only an unauthenticated request gets 401."""
-    body = await request.body()
-    return await asyncio.to_thread(svc.handle_callback, kind, cid, dict(request.headers), body)
+    return await _callback(kind, cid, request, svc)

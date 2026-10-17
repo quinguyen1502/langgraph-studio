@@ -97,14 +97,33 @@ class ApprovalService:
         return r
 
     # ---- platform callback ----
-    def handle_callback(self, kind: str, cid: str, headers: dict, body: bytes) -> dict:
-        a = self.adapter(kind); c = self.repo.channel(cid)
-        if c is None or c.kind != kind: raise AppError("CHANNEL_NOT_FOUND")
-        sec = self._secrets(c)
-        a.verify(sec, {k.lower(): v for k, v in headers.items()}, body)  # 401 CHANNEL_SIGNATURE_INVALID
-        cb = a.handle_callback(body)
+    def _connection(self, a: ApprovalChannel, cid: Optional[str], headers: dict, body: bytes, cb) -> tuple:
+        """The connection a callback authenticates against -> (row, secrets). Per-connection URL: that row. Shared URL
+        (cid None): the rows of the claimed account (Slack team_id) whose secret verifies the signature; when several
+        do (the same app connected twice), the one the button's request was sent through."""
+        if cid is not None:
+            c = self.repo.channel(cid)
+            if c is None or c.kind != a.kind: raise AppError("CHANNEL_NOT_FOUND")
+            sec = self._secrets(c); a.verify(sec, headers, body); return c, sec  # 401 CHANNEL_SIGNATURE_INVALID
+        team = a.route_key(body) if a.shared_callback else None
+        rows = self.repo.channels_by_team(a.kind, team) if team else []  # unknown team: same 401 as a bad signature
+        ok = []
+        for c in rows:
+            sec = self._secrets(c)
+            try: a.verify(sec, headers, body); ok.append((c, sec))
+            except AppError: continue
+        if not ok: raise AppError("CHANNEL_SIGNATURE_INVALID")
+        want = (cb.token.split(".") + ["", ""])[1] if cb else ""
+        req = self.repo.request(want) if want else None
+        return next(((c, sec) for c, sec in ok if req is not None and c.id == req.channel_id), ok[0])
+
+    def handle_callback(self, kind: str, cid: Optional[str], headers: dict, body: bytes) -> dict:
+        """cid None = the shared callback URL of the kind (Slack: routed by team_id)."""
+        a = self.adapter(kind); headers = {k.lower(): v for k, v in headers.items()}
+        cb = a.handle_callback(body)  # parsing only; nothing is trusted before the signature check below
+        c, sec = self._connection(a, cid, headers, body, cb)
         if cb is None: return {"outcome": "ignored"}
-        code, r, decision = self.decide(kind, cid, cb.token, cb.external_user)
+        code, r, decision = self.decide(kind, c.id, cb.token, cb.external_user)
         if code:
             a.acknowledge(sec, cb, CATALOG[code][1].format(kind=a.label), accepted=False)
             return {"outcome": "refused", "code": code}

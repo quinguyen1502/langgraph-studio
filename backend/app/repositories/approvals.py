@@ -19,10 +19,16 @@ class ApprovalRepository:
     def channel(self, cid: str) -> Optional[ApprovalChannel]:
         with self.db.session() as s: return s.get(ApprovalChannel, cid)
 
-    def find_channel(self, owner: str, kind: str, scope: str) -> Optional[ApprovalChannel]:
+    def find_channel(self, owner: str, kind: str, scope: str, team_id: Optional[str] = None, any_team: bool = True) -> Optional[ApprovalChannel]:
+        """The owner's oldest connection of this kind and scope; with any_team=False only the one for this account."""
         with self.db.session() as s:
-            return s.scalars(select(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind, ApprovalChannel.scope == scope)
-                             .order_by(ApprovalChannel.created)).first()
+            q = select(ApprovalChannel).where(ApprovalChannel.owner == owner, ApprovalChannel.kind == kind, ApprovalChannel.scope == scope)
+            if not any_team: q = q.where(ApprovalChannel.team_id == team_id if team_id else ApprovalChannel.team_id.is_(None))
+            return s.scalars(q.order_by(ApprovalChannel.created)).first()
+
+    def channels_by_team(self, kind: str, team_id: str) -> list[ApprovalChannel]:
+        with self.db.session() as s:
+            return list(s.scalars(select(ApprovalChannel).where(ApprovalChannel.kind == kind, ApprovalChannel.team_id == team_id).order_by(ApprovalChannel.created)))
 
     def org_channel(self, kind: str) -> Optional[ApprovalChannel]:
         with self.db.session() as s:

@@ -123,7 +123,18 @@ GitHub Actions: `.github/workflows/ci.yml` (pytest Python 3.12; npm ci + build t
 - **Subgraph**: `workflow_id` của một workflow đã lưu (của bạn). Workflow con được nhúng inline: node bên trong hiện trong trace dạng
   `Subgraph › node` (id `sub/node`), dừng ở Human, checkpoint và khôi phục như node thường. State dùng chung theo tên trường; vòng tham chiếu,
   workflow không tồn tại / import, lồng quá 5 cấp đều bị báo lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`). Thiết kế: DEC-0020.
+- **MCP tool** (TASK-0013): `server_id`, `tool`, `arguments` (object; chuỗi là template, đúng `{{state.x}}` thì giữ kiểu), `output_field`.
 - **Retriever** (TASK-0012): `knowledge_base_id`, `query` (template), `top_k` (1–20), `output_field` → list `{text, score, filename, …}`.
+
+## Máy chủ MCP & node MCP tool (TASK-0013)
+- Cài đặt → **Máy chủ MCP**: thêm máy chủ Streamable HTTP (URL + header bí mật) hoặc stdio (lệnh + tham số + biến môi trường bí mật), **Tìm công cụ**,
+  xem danh sách công cụ. Phạm vi *Cá nhân* (chỉ bạn) hoặc *Tổ chức* (admin quản lý, mọi người dùng). Không có máy chủ dựng sẵn.
+- Secret được mã hoá (khoá Fernet như credential), API chỉ trả tên + giá trị che. Node MCP tool chọn máy chủ, công cụ và nhập tham số theo schema của công cụ.
+- **stdio** tắt mặc định: `STUDIO_MCP_STDIO=1` để admin đăng ký. Tiến trình chạy trên máy/container API với môi trường sạch (không kế thừa `JWT_SECRET`,
+  `DATABASE_URL`…), thư mục home tạm rỗng, timeout `STUDIO_MCP_TIMEOUT` (30 s) và bị kill cả process group; ngoài ra **không** cô lập thêm → chỉ thêm lệnh tin cậy,
+  hoặc chạy máy chủ MCP trong container riêng qua HTTP.
+- **HTTP**: URL phải là địa chỉ công khai (chống SSRF, kết nối ghim vào IP đã kiểm tra) trừ khi `STUDIO_MCP_ALLOW_PRIVATE=1` (vd. sidecar trong compose).
+- Thiết kế: DEC-0022.
 
 ## Kho tri thức & node Retriever (TASK-0012)
 - Cài đặt → **Kho tri thức**: tạo kho, tải `.txt` / `.md` / `.pdf` (≤ 10 MB), xem số đoạn, thử tìm kiếm, đổi model/khoá, lập chỉ mục lại.

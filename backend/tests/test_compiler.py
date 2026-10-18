@@ -4,8 +4,11 @@ import tempfile
 os.environ["STUDIO_DB"] = tempfile.mktemp(suffix=".db")
 import pytest
 from fastapi.testclient import TestClient
-from app.compiler import validate, compile_workflow, run_stream, ValidationError
-from app.example import EXAMPLE
+from app.engine.validator import validate
+from app.engine.compiler import compile_workflow
+from app.engine.runtime import run_stream
+from app.engine.errors import ValidationError
+from app.engine.examples import EXAMPLE
 from app.main import app
 
 def test_example_valid():
@@ -35,7 +38,7 @@ def test_stream_events():
 
 def test_ws_run_and_history():
     c = TestClient(app)
-    tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["token"]
+    tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
     with c.websocket_connect(f"/ws/run?token={tok}") as ws:
         ws.send_json({"workflow_id": "example", "input": {"message": "đơn C300 đâu rồi"}})
         evs = []
@@ -46,4 +49,4 @@ def test_ws_run_and_history():
     assert evs[-1]["type"] == "run_finished"
     assert "C300" in evs[-1]["state"]["tool_result"]
     import time; time.sleep(0.3)
-    assert len(c.get("/api/workflows/example/runs", headers={"Authorization": f"Bearer {tok}"}).json()) >= 1
+    assert len(c.get("/api/workflows/example/runs", headers={"Authorization": f"Bearer {tok}"}).json()["data"]) >= 1

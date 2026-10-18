@@ -1,0 +1,140 @@
+# Full stack: postgres + redis + api + web (TASK-0009). Usage: cp .env.example .env && docker compose up --build
+# UI: http://localhost:${WEB_PORT:-8080}  (demo login admin@example.com / admin123)
+name: langgraph-studio
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg17  # Postgres 17 + pgvector (TASK-0012, DEC-0021): same major version, existing volumes keep working
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-studio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-studio}
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes: [redisdata:/data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    environment: &api-env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-studio}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-studio}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET in .env}
+      STUDIO_SECRET_KEY: ${STUDIO_SECRET_KEY:-}
+      STUDIO_ENV: ${STUDIO_ENV:-dev}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_BASE_URL: ${OPENAI_BASE_URL:-}
+      STUDIO_MCP_STDIO: ${STUDIO_MCP_STDIO:-0}                  # TASK-0013: 1 = admins may register stdio MCP servers (processes in this container)
+      STUDIO_MCP_ALLOW_PRIVATE: ${STUDIO_MCP_ALLOW_PRIVATE:-0}  # 1 = HTTP MCP servers on private addresses (e.g. a sidecar)
+      STUDIO_MCP_TIMEOUT: ${STUDIO_MCP_TIMEOUT:-30}
+      STUDIO_RUN_TIMEOUT: ${STUDIO_RUN_TIMEOUT:-120}
+      # approval channels (TASK-0022): public https URL for Slack/Telegram callbacks, org-channel admins, callback limits.
+      # STUDIO_TRUSTED_PROXIES: CIDRs of proxies whose X-Forwarded-For hops are skipped (right to left). The default covers
+      # the Compose network (the `web` nginx); add your load balancer's range. STUDIO_TRUST_PROXY=1 is the old one-hop alias.
+      STUDIO_PUBLIC_URL: ${STUDIO_PUBLIC_URL:-}
+      STUDIO_APPROVAL_TTL: ${STUDIO_APPROVAL_TTL:-86400}
+      STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:-}
+      # RBAC (TASK-0014): role of new accounts; "Add to Slack" app credentials (empty = paste bot tokens only)
+      STUDIO_DEFAULT_ROLE: ${STUDIO_DEFAULT_ROLE:-editor}
+      SLACK_CLIENT_ID: ${SLACK_CLIENT_ID:-}
+      SLACK_CLIENT_SECRET: ${SLACK_CLIENT_SECRET:-}
+      SLACK_SIGNING_SECRET: ${SLACK_SIGNING_SECRET:-}
+      STUDIO_TRUSTED_PROXIES: ${STUDIO_TRUSTED_PROXIES:-172.16.0.0/12,10.0.0.0/8,192.168.0.0/16}
+      STUDIO_CALLBACK_RATE_LIMIT_IP: ${STUDIO_CALLBACK_RATE_LIMIT_IP:-60}
+      STUDIO_CALLBACK_RATE_LIMIT_CHANNEL: ${STUDIO_CALLBACK_RATE_LIMIT_CHANNEL:-300}
+      # tracing (TASK-0010): empty = no-op. With `--profile tracing` set
+      # OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 and STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-langgraph-studio}
+      STUDIO_TRACE_URL: ${STUDIO_TRACE_URL:-}
+      LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
+      LANGSMITH_TRACING: ${LANGSMITH_TRACING:-}
+      LANGSMITH_PROJECT: ${LANGSMITH_PROJECT:-}
+      LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
+      # API-triggered runs (TASK-0007) are executed by the `worker` service through the Redis queue
+      STUDIO_WORKER: "0"
+      # Repo import (TASK-0015) is experimental and off by default. Do not set STUDIO_IMPORT_RUNTIME here:
+      # the code picks Docker only while the flag is on. The socket mount below is root-equivalent.
+      STUDIO_ENABLE_IMPORT: ${STUDIO_ENABLE_IMPORT:-0}
+      STUDIO_IMPORT_DIR: /imports
+      STUDIO_IMPORT_HOST_DIR: ${STUDIO_IMPORT_HOST_DIR:-}
+      STUDIO_IMPORT_IMAGE: ${STUDIO_IMPORT_IMAGE:-python:3.12-slim}
+      STUDIO_IMPORT_MEMORY: ${STUDIO_IMPORT_MEMORY:-1g}
+      STUDIO_IMPORT_CPUS: ${STUDIO_IMPORT_CPUS:-1}
+      STUDIO_IMPORT_MAX_AGE_HOURS: ${STUDIO_IMPORT_MAX_AGE_HOURS:-72}
+      STUDIO_IMPORT_NETWORK: ${STUDIO_IMPORT_NETWORK:-bridge}
+    # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
+    # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
+    extra_hosts: &host-gw ["host.docker.internal:host-gateway"]
+    volumes: &import-volumes
+      - apidata:/data  # generated secret.key when STUDIO_SECRET_KEY is empty
+      # Same directory the daemon bind-mounts into the sandbox. Export STUDIO_IMPORT_HOST_DIR
+      # as this path on the host (absolute) or translation is skipped and docker-from-compose fails.
+      - ${STUDIO_IMPORT_HOST_DIR:-./.imports}:/imports
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add: &import-groups
+      - "${STUDIO_DOCKER_GID:-10001}"
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Executes queued API/webhook runs (TASK-0007). Scale with `docker compose up --scale worker=3`.
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.worker"]
+    environment:
+      <<: *api-env
+      STUDIO_WORKER: "1"
+    extra_hosts: *host-gw
+    volumes: *import-volumes
+    group_add: *import-groups
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    depends_on:
+      api: { condition: service_healthy }  # api runs the migrations first
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on:
+      api: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Optional trace viewer: `docker compose --profile tracing up`. Jaeger receives OTLP directly (4317 gRPC / 4318 HTTP).
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    profiles: [tracing]
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports: ["${JAEGER_UI_PORT:-16686}:16686"]
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:14269/ >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  redisdata:
+  apidata:

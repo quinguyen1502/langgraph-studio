@@ -10,29 +10,35 @@ Statements marked `Approved` are owner decisions. `Preferred`, `Proposed`, and `
 
 ### One-Line Description
 
-- Unknown
+- Internal drag-and-drop builder that designs, compiles, runs and imports LangGraph workflows from a browser.
 
 ### Problem Statement
 
-Unknown
+Building and debugging LangGraph agents currently requires writing Python by hand; the team wants a visual, internal tool to design graphs, run them with live per-node feedback, and inspect existing LangGraph repositories, both for internal use and for learning LangGraph concepts.
 
 ### Intended Outcome
 
-Unknown
+Team members can sign in, visually compose a workflow (Start, LLM, Tool/API, Condition, End), run it with live per-node status over WebSocket, review run history, and import an existing LangGraph repo to visualise and run its original graph.
 
 ### Starter Preset
 
-- None [Input aid; not an architectural decision]
+- Web App [Input aid; not an architectural decision]
 
 ## Vision
 
 ### Goals
 
-- Unknown
+- Visual design of LangGraph StateGraphs without hand-written boilerplate
+- Deterministic offline demo (mock LLM) so the tool works without API keys
+- Live per-node execution feedback and persisted run history
+- Import and visualise existing LangGraph repos and run their original code
+- Serve as a learning aid for LangGraph concepts
 
 ### Non-Goals
 
-- Unknown
+- Public multi-tenant SaaS
+- Replacing the official LangGraph Platform / Studio for production deployments
+- Editing imported repo source code from the canvas
 
 ### Success Metrics
 
@@ -42,31 +48,71 @@ Unknown
 
 ### Primary Users
 
-- Unknown
+- Internal developers and learners (Vietnamese-speaking team) building or studying LangGraph agents; the project owner as administrator.
 
 ## Scope
 
 ### MVP Scope
 
-- Unknown
+- Implemented (observed in repository at commit 2c2d401):
+- React Flow canvas with drag-drop palette (Start, LLM, Tool/API, Condition, End), connect/delete, config panel, state schema editor
+- Tailwind CSS v4 + shadcn/ui UI, dark mode toggle
+- FastAPI backend: workflow JSON {nodes, edges, state} CRUD in SQLite, graph validation, compiler to langgraph StateGraph (add_node/add_edge/add_conditional_edges on state-field value vs edge labels)
+- LLM node (OpenAI-compatible via OPENAI_API_KEY, deterministic mock otherwise), Tool node (HTTP request or registered Python function, example lookup_order)
+- WebSocket run streaming with per-node started/finished, duration and state delta; run history persisted
+- Email/password auth (PBKDF2 hashing, JWT), register/login/me, per-user workflow ownership, seeded demo user
+- Workflow list page (search, create, rename, duplicate, delete with confirm), login/register pages, react-router guards
+- Import LangGraph repo (GitHub URL or zip): per-import venv, langgraph.json / StateGraph scan, subprocess inspection via get_graph(xray), conversion to read-only Code nodes with dagre auto-layout, run of original graph in subprocess with streamed events and clear missing-key errors
+- Seeded customer-support example workflow; pytest suite (19 tests) and npm build
 
 ### Post-MVP Scope
 
-- Unknown
+- Real LLM provider configuration (OpenAI, Anthropic, others) with per-workflow credentials
+- Human-in-the-loop (interrupts, approval nodes, resume)
+- API / webhook triggers for workflows
+- Workflow versioning and diff/rollback
+- Subgraphs and parallel branches (fan-out/fan-in) in the builder
+- RAG nodes (retriever / vector store)
+- MCP tool integration
+- Postgres + Redis + Docker Compose deployment
+- Container-sandboxed repo imports
+- Observability (tracing, LangSmith/OpenTelemetry, metrics)
+- RBAC and workflow sharing
 
 ### Out Of Scope
 
-- Unknown
+- Public internet exposure without hardening
+- Billing / multi-tenant isolation
+- Mobile apps
 
 ## Roadmap
 
 ### P0
 
-- Unknown
+- Implemented (observed in repository at commit 2c2d401):
+- React Flow canvas with drag-drop palette (Start, LLM, Tool/API, Condition, End), connect/delete, config panel, state schema editor
+- Tailwind CSS v4 + shadcn/ui UI, dark mode toggle
+- FastAPI backend: workflow JSON {nodes, edges, state} CRUD in SQLite, graph validation, compiler to langgraph StateGraph (add_node/add_edge/add_conditional_edges on state-field value vs edge labels)
+- LLM node (OpenAI-compatible via OPENAI_API_KEY, deterministic mock otherwise), Tool node (HTTP request or registered Python function, example lookup_order)
+- WebSocket run streaming with per-node started/finished, duration and state delta; run history persisted
+- Email/password auth (PBKDF2 hashing, JWT), register/login/me, per-user workflow ownership, seeded demo user
+- Workflow list page (search, create, rename, duplicate, delete with confirm), login/register pages, react-router guards
+- Import LangGraph repo (GitHub URL or zip): per-import venv, langgraph.json / StateGraph scan, subprocess inspection via get_graph(xray), conversion to read-only Code nodes with dagre auto-layout, run of original graph in subprocess with streamed events and clear missing-key errors
+- Seeded customer-support example workflow; pytest suite (19 tests) and npm build
 
 ### P1
 
-- Unknown
+- Real LLM provider configuration (OpenAI, Anthropic, others) with per-workflow credentials
+- Human-in-the-loop (interrupts, approval nodes, resume)
+- API / webhook triggers for workflows
+- Workflow versioning and diff/rollback
+- Subgraphs and parallel branches (fan-out/fan-in) in the builder
+- RAG nodes (retriever / vector store)
+- MCP tool integration
+- Postgres + Redis + Docker Compose deployment
+- Container-sandboxed repo imports
+- Observability (tracing, LangSmith/OpenTelemetry, metrics)
+- RBAC and workflow sharing
 
 ### P2
 
@@ -74,7 +120,11 @@ Unknown
 
 ## Core User Flows
 
-- Unknown
+- 1. Sign in (or register) -> workflow list
+- 2. Create / open workflow -> drag nodes, connect, configure, edit state schema -> Save
+- 3. Run with JSON input -> live node highlighting and logs -> run saved to history
+- 4. Import repo (URL or zip) -> progress log -> pick graph -> imported read-only workflow -> run original graph
+- 5. Rename / duplicate / delete workflows; logout
 
 ### Required Flow States
 
@@ -84,7 +134,16 @@ Unknown
 
 ### Candidate MVP Requirements
 
-- Unknown
+- [Proposed] Implemented (observed in repository at commit 2c2d401):
+- [Proposed] React Flow canvas with drag-drop palette (Start, LLM, Tool/API, Condition, End), connect/delete, config panel, state schema editor
+- [Proposed] Tailwind CSS v4 + shadcn/ui UI, dark mode toggle
+- [Proposed] FastAPI backend: workflow JSON {nodes, edges, state} CRUD in SQLite, graph validation, compiler to langgraph StateGraph (add_node/add_edge/add_conditional_edges on state-field value vs edge labels)
+- [Proposed] LLM node (OpenAI-compatible via OPENAI_API_KEY, deterministic mock otherwise), Tool node (HTTP request or registered Python function, example lookup_order)
+- [Proposed] WebSocket run streaming with per-node started/finished, duration and state delta; run history persisted
+- [Proposed] Email/password auth (PBKDF2 hashing, JWT), register/login/me, per-user workflow ownership, seeded demo user
+- [Proposed] Workflow list page (search, create, rename, duplicate, delete with confirm), login/register pages, react-router guards
+- [Proposed] Import LangGraph repo (GitHub URL or zip): per-import venv, langgraph.json / StateGraph scan, subprocess inspection via get_graph(xray), conversion to read-only Code nodes with dagre auto-layout, run of original graph in subprocess with streamed events and clear missing-key errors
+- [Proposed] Seeded customer-support example workflow; pytest suite (19 tests) and npm build
 
 ### Acceptance Criteria
 
@@ -118,37 +177,43 @@ Unknown
 
 ### Technology Stack
 
-- Frontend: Unknown [Unknown]; Factory automation: specification only
+- Frontend: React + TypeScript (Vite) with @xyflow/react, Tailwind CSS v4, shadcn/ui [Preferred]; Factory automation: specification only
 - Mobile: Unknown [Unknown]; Factory automation: specification only
-- Backend: Unknown [Unknown]; Factory automation: specification only
-- Database: Unknown [Unknown]; Factory automation: specification only
-- Infrastructure: Unknown [Unknown]; Factory automation: specification only
-- Ci Cd: Unknown [Unknown]; Factory automation: specification only
-- Deployment: Unknown [Unknown]; Factory automation: specification only
-- Testing: Unknown [Unknown]; Factory automation: specification only
+- Backend: FastAPI (Python 3.13) + langgraph [Preferred]; Factory automation: specification only
+- Database: SQLite (MVP); PostgreSQL + Redis on roadmap [Preferred]; Factory automation: specification only
+- Infrastructure: Local dev script (dev.sh); Docker Compose on roadmap [Proposed]; Factory automation: specification only
+- Ci Cd: GitHub Actions [Proposed]; Factory automation: configuration
+- Deployment: Internal host (undecided) [Unknown]; Factory automation: specification only
+- Testing: pytest (backend), tsc + vite build (frontend); Playwright screenshots [Preferred]; Factory automation: specification only
 
 ### Expected Commands
 
-- Install: Unknown
-- Run: Unknown
-- Test: Unknown
-- Build: Unknown
+- Install: ./dev.sh (creates backend/.venv and runs npm install on first run) [Expected]
+- Run: ./dev.sh (backend :8000, frontend :5173) [Expected]
+- Test: cd backend && .venv/bin/python -m pytest -q [Expected]
+- Build: cd frontend && npm run build [Expected]
 - Lint: Unknown
-- Typecheck: Unknown
+- Typecheck: cd frontend && npx tsc -b [Expected]
 - Format: Unknown
-- Migration: Unknown
+- Migration: none; SQLite schema created/migrated on startup in backend/app/main.py [Expected]
 
 ### Constraints
 
-- Unknown
+- Internal use only; single SQLite file for MVP
+- Must run offline in mock mode without API keys
+- Imported repo code is arbitrary and must only run in a subprocess with its own venv (not the server process)
+- UI copy primarily Vietnamese
 
 ### Integrations
 
-- Unknown
+- OpenAI-compatible chat completions API (optional, via OPENAI_API_KEY / OPENAI_BASE_URL)
+- GitHub (public clone) for repo import
+- uv / pip for per-import virtualenvs
 
 ### Architecture And Compatibility Insights
 
-- No deterministic compatibility insights for the current selections.
+- [Info] **Frontend/API boundary inferred:** Separate frontend and backend technologies imply at least two runtime boundaries.
+  - Recommendation: Record API style, authentication ownership, and local development orchestration.
 
 ### Explicit Technical Decisions
 
@@ -207,7 +272,16 @@ Unknown
 
 ### Suggested Tasks
 
-- Unknown
+- [Proposed] Implemented (observed in repository at commit 2c2d401):
+- [Proposed] React Flow canvas with drag-drop palette (Start, LLM, Tool/API, Condition, End), connect/delete, config panel, state schema editor
+- [Proposed] Tailwind CSS v4 + shadcn/ui UI, dark mode toggle
+- [Proposed] FastAPI backend: workflow JSON {nodes, edges, state} CRUD in SQLite, graph validation, compiler to langgraph StateGraph (add_node/add_edge/add_conditional_edges on state-field value vs edge labels)
+- [Proposed] LLM node (OpenAI-compatible via OPENAI_API_KEY, deterministic mock otherwise), Tool node (HTTP request or registered Python function, example lookup_order)
+- [Proposed] WebSocket run streaming with per-node started/finished, duration and state delta; run history persisted
+- [Proposed] Email/password auth (PBKDF2 hashing, JWT), register/login/me, per-user workflow ownership, seeded demo user
+- [Proposed] Workflow list page (search, create, rename, duplicate, delete with confirm), login/register pages, react-router guards
+- [Proposed] Import LangGraph repo (GitHub URL or zip): per-import venv, langgraph.json / StateGraph scan, subprocess inspection via get_graph(xray), conversion to read-only Code nodes with dagre auto-layout, run of original graph in subprocess with streamed events and clear missing-key errors
+- [Proposed] Seeded customer-support example workflow; pytest suite (19 tests) and npm build
 
 ## Decision And Confidence Summary
 
@@ -217,14 +291,14 @@ Unknown
 
 ### Items Requiring Attention
 
-- Frontend: Unknown [Unknown]
+- Frontend: React + TypeScript (Vite) with @xyflow/react, Tailwind CSS v4, shadcn/ui [Preferred]
 - Mobile: Unknown [Unknown]
-- Backend: Unknown [Unknown]
-- Database: Unknown [Unknown]
-- Infrastructure: Unknown [Unknown]
-- Ci Cd: Unknown [Unknown]
-- Deployment: Unknown [Unknown]
-- Testing: Unknown [Unknown]
+- Backend: FastAPI (Python 3.13) + langgraph [Preferred]
+- Database: SQLite (MVP); PostgreSQL + Redis on roadmap [Preferred]
+- Infrastructure: Local dev script (dev.sh); Docker Compose on roadmap [Proposed]
+- Ci Cd: GitHub Actions [Proposed]
+- Deployment: Internal host (undecided) [Unknown]
+- Testing: pytest (backend), tsc + vite build (frontend); Playwright screenshots [Preferred]
 
 ### Evidence State
 

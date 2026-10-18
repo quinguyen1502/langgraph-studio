@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0009
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -68,7 +68,11 @@ Imported repository code (install, inspect, run) executes inside an isolated con
 
 ## Open Questions
 
-- Container runtime available on the target host (Docker, gVisor, Firecracker)?
+- Closed 2026-10-18. The owner accepted Docker (OCI `runc`, including Docker Desktop) as the runtime. gVisor and Firecracker stay out of scope.
+
+## Owner Acceptance
+
+- 2026-10-18: Owner approved the behaviour shipped in TASK-0015 (PR #33). Accepted residual risk: with `STUDIO_ENABLE_IMPORT` off, an already imported graph runs in the host subprocess; install always uses network `bridge`; a run defaults to `bridge`.
 
 ## Related Artifacts
 

@@ -2,9 +2,10 @@
 # Khởi động backend (FastAPI :8000) + frontend (Vite :5173)
 set -e
 cd "$(dirname "$0")"
-if [ ! -d backend/.venv ]; then
-  python3 -m venv backend/.venv
-  backend/.venv/bin/pip install -q -r backend/requirements.txt
+# Cài lại khi venv thiếu hoặc chưa có package (một venv rỗng làm uvicorn/pytest không chạy được)
+if [ ! -x backend/.venv/bin/uvicorn ]; then
+  [ -x backend/.venv/bin/python ] || python3 -m venv backend/.venv
+  backend/.venv/bin/pip install -q --prefer-binary -e "backend[dev]"
 fi
 [ -d frontend/node_modules ] || (cd frontend && npm install)
 (cd backend && exec .venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir app) &

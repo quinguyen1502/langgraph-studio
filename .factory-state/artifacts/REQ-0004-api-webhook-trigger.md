@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0004
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -75,3 +75,4 @@ External systems can start a workflow run with JSON input and receive results sy
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`
+- Delivered by `.factory-state/tasks/done/TASK-0007-trigger-workflows-via-rest-api-and-webhooks.md`, merged to `develop`.

@@ -182,20 +182,20 @@ Team members can sign in, visually compose a workflow (Start, LLM, Tool/API, Con
 - Backend: FastAPI (Python 3.13) + langgraph [Preferred]; Factory automation: specification only
 - Database: SQLite (MVP); PostgreSQL + Redis on roadmap [Preferred]; Factory automation: specification only
 - Infrastructure: Local dev script (dev.sh); Docker Compose on roadmap [Proposed]; Factory automation: specification only
-- Ci Cd: GitHub Actions [Proposed]; Factory automation: configuration
+- Ci Cd: GitHub Actions [Approved]; Factory automation: configuration
 - Deployment: Internal host (undecided) [Unknown]; Factory automation: specification only
 - Testing: pytest (backend), tsc + vite build (frontend); Playwright screenshots [Preferred]; Factory automation: specification only
 
 ### Expected Commands
 
-- Install: ./dev.sh (creates backend/.venv and runs npm install on first run) [Expected]
+- Install: ./dev.sh (first run: creates backend/.venv, pip install -e "backend[dev]", npm install) [Expected]
 - Run: ./dev.sh (backend :8000, frontend :5173) [Expected]
 - Test: cd backend && .venv/bin/python -m pytest -q [Expected]
 - Build: cd frontend && npm run build [Expected]
 - Lint: Unknown
 - Typecheck: cd frontend && npx tsc -b [Expected]
 - Format: Unknown
-- Migration: none; SQLite schema created/migrated on startup in backend/app/main.py [Expected]
+- Migration: Alembic (`backend/app/migrations`), applied on startup (DEC-0009) [Observed]
 
 ### Constraints
 
@@ -287,7 +287,7 @@ Team members can sign in, visually compose a workflow (Start, LLM, Tool/API, Con
 
 ### Owner-Confirmed Technology
 
-- None yet
+- Ci Cd: GitHub Actions
 
 ### Items Requiring Attention
 
@@ -296,7 +296,6 @@ Team members can sign in, visually compose a workflow (Start, LLM, Tool/API, Con
 - Backend: FastAPI (Python 3.13) + langgraph [Preferred]
 - Database: SQLite (MVP); PostgreSQL + Redis on roadmap [Preferred]
 - Infrastructure: Local dev script (dev.sh); Docker Compose on roadmap [Proposed]
-- Ci Cd: GitHub Actions [Proposed]
 - Deployment: Internal host (undecided) [Unknown]
 - Testing: pytest (backend), tsc + vite build (frontend); Playwright screenshots [Preferred]
 

@@ -1,0 +1,23 @@
+from typing import Optional
+from sqlalchemy import Boolean, Float, Text, true
+from sqlalchemy.orm import Mapped, mapped_column
+from .base import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    email: Mapped[Optional[str]] = mapped_column(Text, unique=True)
+    password: Mapped[Optional[str]] = mapped_column(Text)  # "pbkdf2_sha256$iter$salt$hash"
+    created: Mapped[Optional[float]] = mapped_column(Float)
+    # notification preferences (TASK-0021)
+    notify_in_app: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    notify_email: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    lang: Mapped[Optional[str]] = mapped_column(Text)  # en | vi: chat messages (approval requests, codes); NULL = en
+    # RBAC (TASK-0014): global role (core.permissions.ROLES) and whether the account may sign in
+    role: Mapped[str] = mapped_column(Text, default="editor", server_default="editor")
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+
+    @property
+    def is_admin(self) -> bool:  # replaces the users.is_admin column of TASK-0022 (migration 0021)
+        return self.role == "admin"

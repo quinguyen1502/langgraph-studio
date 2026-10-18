@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0002
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -77,3 +77,4 @@ LLM nodes can call real providers (OpenAI, Anthropic, OpenAI-compatible) using c
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`
+- Delivered by `.factory-state/tasks/done/TASK-0005-configure-real-llm-providers-with-per-workflow-credentials.md`, merged to `develop`.

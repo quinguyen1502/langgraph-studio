@@ -15,7 +15,9 @@ __pycache__/
 *.db
 *.db-wal
 *.db-shm
+*.migrate.lock
 backend/imports/
+.imports/
 # env/secrets
 .env
 .env.*
@@ -23,3 +25,8 @@ backend/imports/
 # misc
 .DS_Store
 *.log
+*.egg-info/
+frontend/test-results/
+frontend/playwright-report/
+backend/.venv
+.coverage

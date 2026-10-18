@@ -1,0 +1,95 @@
+import { Sparkles } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { NodeInput } from '@/components/node-input'
+import { NodeRuntime } from '@/components/node-runtime'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { api } from '@/lib/api'
+import { useTranslation } from 'react-i18next'
+import { HumanApprovalSettings } from '@/components/human-approval-settings'
+import { CredentialsDialog, type Credential } from '@/components/credentials-dialog'
+import { TextButton } from '@/components/text-link'
+import { ModelPicker } from '@/components/model-picker'
+import { SubgraphSettings } from '@/components/subgraph-settings'
+import { RetrieverSettings } from '@/components/retriever-settings'
+import { McpSettings } from '@/components/mcp-settings'
+import { TemplateEditor } from '@/components/template-editor'
+import { META, RUNTIME } from './meta'
+import { Sel, F } from './parts'
+import { useStudioCtx } from './studio-context'
+
+/** Right panel: config of the selected node or edge (TASK-0040). */
+export function EditorConfig() {
+  const { t } = useTranslation()
+  const { setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
+  const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
+  return <aside className="h-full bg-muted/30 min-h-0">
+      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
+        <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
+        {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
+        {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
+        {selEdge && <div className="space-y-3">
+          <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
+          <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
+        </div>}
+        {selNode && selNode.type !== 'note' && <div className="space-y-3">
+          <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
+            <div><div className="font-medium">{META[selNode.type!].label}</div><div className="text-[11px] text-muted-foreground font-mono">{selNode.id}</div></div></div>
+          <F label={t('field.label')}><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>
+          {selNode.type === 'llm' && <>
+            <F label={t('editor.credential')}><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
+              <SelectTrigger className="w-full" id="llm-credential"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">{t('editor.credentialDefault')}</SelectItem>
+                {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select>
+              {!creds.length && <p className="text-[11px] text-muted-foreground" id="llm-no-credential">{t('editor.credentialNone')} <CredentialsDialog onChanged={() => { api<Credential[]>('/api/credentials').then(setCreds).catch(() => {}) }} trigger={<TextButton id="llm-add-credential">{t('editor.credentialAdd')}</TextButton>} /></p>}</F>
+            <F label={t('field.model')}><ModelPicker credentialId={d.credential_id || undefined} value={d.model || ''} onChange={v => upd('model', v)} placeholder={providers.find(p => p.id === creds.find(c => c.id === d.credential_id)?.provider)?.default_model || 'gpt-4o-mini'} /></F>
+            <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={7} id="llm-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'human' && <>
+            <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={4} id="human-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+            <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
+          </>}
+          {selNode.type === 'tool' && <>
+            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem></SelectContent></Select></F>
+            {d.mode === 'http' ? <>
+              <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
+              <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>
+              <F label={t('field.bodyTemplate')}><TemplateEditor {...tpl} rows={4} id="http-body" value={d.body || ''} onChange={v => upd('body', v)} /></F>
+            </> : <F label={t('field.function')}><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'code' && <>
+            <div className="flex flex-wrap gap-1">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />{t('editor.looksLlm')}</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">{t('editor.readOnly')}</Badge></div>
+            <F label={t('field.nodeName')}><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
+            <F label={t('field.reference')}><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
+            <F label={t('field.source')}><pre className="h-72 w-full overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
+          </>}
+          {selNode.type === 'retriever' && <>
+            <RetrieverSettings kb={d.knowledge_base_id} topK={d.top_k} onKb={v => upd('knowledge_base_id', v)} onTopK={v => upd('top_k', v)} />
+            <F label={t('field.queryTemplate', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={3} id="retriever-query" value={d.query || ''} onChange={v => upd('query', v)} /></F>
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'mcp' && <>
+            <McpSettings server={d.server_id} tool={d.tool} args={d.arguments} fields={state} readOnly={!edit} onChange={p => mark(selNode.id, p)} />
+            <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+          </>}
+          {selNode.type === 'subgraph' && <SubgraphSettings wid={wid} value={d.workflow_id} onChange={v => upd('workflow_id', v)} />}
+          {selNode.type === 'join' && <p className="text-[11px] text-muted-foreground" id="join-hint">{t('editor.joinHint')}</p>}
+          {selNode.type === 'condition' && <>
+            <F label={t('editor.condField')}><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
+            <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
+            <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
+          </>}
+          {RUNTIME.has(selNode.type || '') && <>
+            <NodeInput fields={fieldNames} value={d.input_fields} onChange={input_fields => setRuntime({ input_fields })} />
+            <NodeRuntime data={d} onChange={setRuntime} />
+          </>}
+        </div>}
+      </div></fieldset></ScrollArea>
+    </aside>
+}

@@ -1,0 +1,113 @@
+schema_version: 1
+run_id: 20261016T141053964710Z
+status: passed
+profile: full
+updated_at: '2026-10-16T14:10:53.964710+00:00'
+source_sha256: f3a6ec66a482cf0712883b4907abee73ae5b86e01c59ac2098231ca595b12ed0
+inputs:
+  backend/pyproject.toml: 7adab9eaacf11e8b460e30f63b13bede34fa0ece31697ce96d1354474cd135cd
+  backend/requirements.txt: 09e2aa2a5d945e66ea7ea0f2e346f1c1ef1cdb6b0f8eeac1e08e26d201c5a31d
+  backend/app/__init__.py: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  backend/app/auth.py: 7e7b0d55a567f2e0054365a85eb2fe42ddb41fdd21131fb78961ff0315610f64
+  backend/app/compiler.py: f394b33b0a5b463988b849c0348b6ad3e7c77bbc26eb582b8aa42a742bf542ba
+  backend/app/example.py: 0633501f2c7f5d6d7023b53108ac9bf688ec13bcbae5ba64af38a0b85e89bb7b
+  backend/app/importer.py: 01e7f944c09fa6cd212cbdac139eabb06e2c077d0de8c7150a2e7877eb8b7cf1
+  backend/app/limits.py: b3a2b1e6395b85b857071c3fb5700bf4cb602608ebe3198a6e0711683106fc70
+  backend/app/main.py: 8c25845518fb81acbff4ea3ca9a46239a475b8fe8e86182fe79a67d2f7a11c7d
+  backend/app/sandbox/runner.py: b894cf2a4f3bd62aaacb117813ef53fa7759e79d93f16a4641943b9266a3d7ba
+  backend/tests/conftest.py: c09b31937b342f67fbb09165be24b9ee4d9226ca393a2791c4f436553d790c8c
+  backend/tests/test_auth.py: 5ab0e6d058d5c7ff44985f2c908cc948b601205f682097106a8c5fbebe1c2a47
+  backend/tests/test_auth_hardening.py: 206975498ae09c7373a2267ee16aea7824d0bfdc2ae97309e56f471d959e00e6
+  backend/tests/test_compiler.py: 717dda51f97de988b81bf2d1d23521ecf744443be581b0c9fe063b5c509e7bd3
+  backend/tests/test_core_hardening.py: eb5963fefeb5bab14b89a9265ccebb55abde271f88f04edc6ec55aead5d01f72
+  backend/tests/test_import.py: c6a55a8f237ec8b7748ecaf249db9267b22ce5843205315e0786ad4bc6209edb
+  backend/tests/test_trace_events.py: dc1a44e186f6bf771300d4970abf42bbe01a52a3148247146e4e90b2ee517f16
+  backend/tests/fixtures/cond_repo/langgraph.json: fee54807032c11b46c90853185ea6fee5cd34bde6b2a779891c3940991eb8bd8
+  backend/tests/fixtures/cond_repo/app/graph.py: 5586d33afe6c27fa988e9f47744d87c61edb390096e1e39df7c4a11bd761e277
+  backend/tests/fixtures/scan_repo/agent.py: ab7f98657cdf8afd404f85688aa237fd6f5ce0ededbdee4886309f0e10c03762
+  frontend/.oxlintrc.json: b4d344818a1e1bf43997e4744a9153c8eef770c98b58229cd86363dabb85ded4
+  frontend/components.json: d0ada54e59710099b766eae59a1a35d31b717a6ec43d73a8814de1815ddc1749
+  frontend/index.html: c489ca10e39dee2c944678c7cbe29c05c1464f0d3ad331829be0616dfe292ada
+  frontend/package-lock.json: abb245160af13694841b09c19134dff89486f11bfb9d8d6a17ae5d22283b2581
+  frontend/package.json: 3de110f2e7106a45421d5658cd039c0289cbba918543bf19d8f30645e886e27b
+  frontend/playwright.config.ts: 1c2a83a54a8ddba31feddb4e9cfcae7b19ca6d1f83eb2397a6c0614d57a17f55
+  frontend/tsconfig.app.json: dafb22557d072c4aae47900ed6e04fd0c0289035683b32a4414a02a27b8ed1cc
+  frontend/tsconfig.json: 770b4140bbb581e2dfd9ea9946ffc9c75a1d86ba7d2db5f77c83e37cbdf9d808
+  frontend/tsconfig.node.json: d366cc0827139db39c61815f22491bbfda56c654354a42ad7795143d314e45e8
+  frontend/vite.config.ts: cacc72159a3c027a811e28c9dfd012cd084f38f8f119eaccf5f664d2bdf478e3
+  frontend/e2e/runtime.spec.ts: ea4a53bb0d56ae075e63ac284ed248669642b1971c396388b5583cd4169c3073
+  frontend/e2e/screenshots.spec.ts: 7d7fe044b015d1bbbe7a58a360ad014aac3dffbdfb05f91713c48a84dc4836fe
+  frontend/e2e/studio.spec.ts: 55d35ffbd3db2c9dc4f25b47e4154fc96d0ce8d74e9c12b787ed5f2370d9c0bd
+  frontend/e2e/trace.spec.ts: 2721b1e3fe03da738010aa6b36b9e6622581f7f966348acb1c438f292db8a805
+  frontend/src/App.tsx: d0c1d9e6df80850d264bb1f019da12eaad4fbeccbdf69f72b1affe30dd7f4d4e
+  frontend/src/main.tsx: 6e9e5807fcbd48b75a96db5cbef36c996262196be42e6d4760dc86babbe61ad2
+  frontend/src/components/import-dialog.tsx: 32d0f8c90bb31397310a97c25895628185e41f58fd69f8c3d3c15e9ff2aea8c3
+  frontend/src/components/json-view.tsx: 0f3973f644312f073ce1e92d6a691388cc157bdc9160a03b83f06559231091fd
+  frontend/src/components/run-trace.tsx: 7e1d08c3d956e75c0804c6f43203209ddda0b7ea903f0bdb6d767df54f2356de
+  frontend/src/components/user-menu.tsx: 0c2d1cefa5698a5eafc6a7680fce99dfbf380fd762786c2686b29e5f1d24e943
+  frontend/src/components/ui/alert.tsx: f253568242c1c69b343f12474002fdbe229f603158171c59e21c491ab79f2e6e
+  frontend/src/components/ui/avatar.tsx: 53d3950f6ac2d1cf2340218631482d0c876c43a25757a416afc0c96c92b4555b
+  frontend/src/components/ui/badge.tsx: 1179f1de013860205f2539adc81e87d2f06250996d13d3a1a2f36f367a38f8f9
+  frontend/src/components/ui/button.tsx: 08e5f87833c5db8436e89337ebde0f776bcdbf649d3de69fb89be6441ca2e366
+  frontend/src/components/ui/card.tsx: 8ad3a18d36bda0598dc0e9aa96ea22854944d5443ee4946f1d173815e115375f
+  frontend/src/components/ui/collapsible.tsx: c6598e5584f4258b5d9fefadbc5ad6a66888ad58729f4b634a0bb2d9c513188b
+  frontend/src/components/ui/dialog.tsx: 7dbb00eeb1b68a7403c6a326904aa5d1e0d40edbea6f34c8460aadc48c8b56b1
+  frontend/src/components/ui/dropdown-menu.tsx: 1b9c748a8ea8c2890124f316e3edf840153ef43f6df76b3ff1878d8fd37f9685
+  frontend/src/components/ui/input.tsx: 75418e030b2a54dd017ac0f4588db4bbdbabca7525e88bbc9d84cb3e18bcb905
+  frontend/src/components/ui/label.tsx: 344bde38b8531615dbf8e14af3895517c24d8ef6ce56ddeda7e2e6fe4b5d0c00
+  frontend/src/components/ui/scroll-area.tsx: 9c6cff5fff536a8d042f956df6fb6f128970bcbac2115482989288292464e4ca
+  frontend/src/components/ui/select.tsx: d0ea3b62332be501636ac37920eb457afa5201e57a9f090eb1fc8effe14d7fc3
+  frontend/src/components/ui/separator.tsx: b5b5460e5337c2d5f361c1512001615b2e5eacb38c7449a4418bb9ddb47c4bba
+  frontend/src/components/ui/switch.tsx: 33647da0cc420551224ecf63921f9cad51fd681d69657af12eb26700a07231cb
+  frontend/src/components/ui/table.tsx: 749b0501e97591f8d7c9ef81366d636e4b47857a15a28e6cf3b87841232e74bf
+  frontend/src/components/ui/tabs.tsx: b977274550595594055d850a16775c75761765e1cd76b4827e101c2f432762df
+  frontend/src/components/ui/textarea.tsx: 82601c91ffc6c727d924162c78d7cb853114bcced4e2eb922a68ca12d4239c0f
+  frontend/src/components/ui/tooltip.tsx: fc4380a53b7c847ff3d692c320f8d889eaaf3d6878dcba1da926ec4ab3a7c037
+  frontend/src/lib/api.ts: b5494d425e864244c914f34b4d6d5a0c60be4a049b8ecffc3e4448ebe8a8b674
+  frontend/src/lib/theme.tsx: 29b6cd11c45bd6a715bfc54f30aa333d0d784ee81637559b43c33e691eefbeda
+  frontend/src/lib/trace.ts: 9902981e30fcf003485ca55947106f4e5aae63fbe74aadf06bf10d12957da66e
+  frontend/src/lib/utils.ts: 14300d758170c270c75b057f38fedb3793a5920ea872f0477e29fb131185e8a7
+  frontend/src/pages/Auth.tsx: acca49eed6f1301641a950cfd0463f0d2d673aea17add3ac075b6b2e3f8b61ca
+  frontend/src/pages/Editor.tsx: 0ba6de00f7bebbfcbe16aeee9297c0b83b34840360ec02c96f85f97c7860c36f
+  frontend/src/pages/Workflows.tsx: 011bb5fe0826fce9213cc22614d46eab06cab54fd108e0be7a317af7b3329f8a
+  frontend/test-results/.last-run.json: 91d1c43004802cd49950d78eb11c8fa7d05da8ffffe219a8b13b2f561bc00903
+results:
+- check_id: python:backend:test
+  kind: test
+  working_dir: backend
+  argv:
+  - .venv/bin/python
+  - -m
+  - pytest
+  source: backend/pyproject.toml
+  status: passed
+  returncode: 0
+  started_at: '2026-10-16T14:10:38.442746+00:00'
+  duration_seconds: 10.777
+  output_sha256: 6e40276878152fbe7d364fe8cb2c3de152f1e487863c4e47da02934d1d50b22e
+- check_id: node:frontend:build
+  kind: build
+  working_dir: frontend
+  argv:
+  - /usr/bin/npm
+  - run
+  - build
+  source: frontend/package.json
+  status: passed
+  returncode: 0
+  started_at: '2026-10-16T14:10:49.220082+00:00'
+  duration_seconds: 4.281
+  output_sha256: 62c232eae5102e681c52e7f53572b60e20ffce0d8cb9aa740521af2ffce24952
+- check_id: node:frontend:lint
+  kind: lint
+  working_dir: frontend
+  argv:
+  - /usr/bin/npm
+  - run
+  - lint
+  source: frontend/package.json
+  status: passed
+  returncode: 0
+  started_at: '2026-10-16T14:10:53.501578+00:00'
+  duration_seconds: 0.463
+  output_sha256: 85a7f400bede262a573aeaa2ba7f00365eaf139904f22471d0ca1023816ed8f8

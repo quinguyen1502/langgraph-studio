@@ -1,0 +1,181 @@
+"""FastAPI dependency wiring: one Database per process, services built per request (cheap)."""
+from functools import lru_cache
+from fastapi import Depends, Request
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from ..core import config
+from ..core.errors import AppError
+from ..services.notification_hub import NotificationHub, make_notification_hub
+from ..models.database import Database
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, CredentialRepository as _Creds
+from ..services.audit_service import AuditService
+from ..services.policy_service import PolicyService
+from ..services.team_service import TeamService
+from ..services.ownership_service import OwnershipService
+from ..core import permissions as P
+from ..services.access import AccessService
+from ..services.share_service import ShareService
+from ..services.user_service import UserService
+from ..services.template_service import TemplateService
+from ..services.slack_oauth import SlackOAuthService
+from ..services.mcp_service import McpService
+from ..services.knowledge_service import KnowledgeService
+from ..services.approval_service import ApprovalService
+from ..services.identity_service import IdentityService
+from ..services.channel_service import ChannelService
+from ..services.approval_channels import ADAPTERS
+from ..services.auth_service import AuthService
+from ..services.credential_service import CredentialService
+from ..services.import_service import ImportService
+from ..services.run_bus import RunBus, make_run_bus
+from ..services.job_queue import JobQueue, make_job_queue
+from ..services.run_service import RunService
+from ..services.run_worker import RunWorker
+from ..services.delivery_service import DeliveryService
+from ..services.notification_service import NotificationService
+from ..services.rate_limit import RateLimiter, make_rate_limiter
+from ..services.trigger_service import TriggerService
+from ..services.telemetry import Telemetry
+from ..services.workflow_service import WorkflowService
+
+
+@lru_cache
+def get_db() -> Database:
+    return Database()
+
+
+@lru_cache
+def get_run_bus() -> RunBus:
+    return make_run_bus(config.REDIS_URL)  # Redis when REDIS_URL is set, else in-memory
+
+
+@lru_cache
+def get_job_queue() -> JobQueue:
+    return make_job_queue(config.REDIS_URL)  # Redis list when REDIS_URL is set, else in-process
+
+
+@lru_cache
+def run_worker() -> RunWorker:
+    return RunWorker(get_job_queue(), run_service, delivery_service)
+
+
+@lru_cache
+def get_rate_limiter() -> RateLimiter:
+    return make_rate_limiter(config.REDIS_URL)  # shared via Redis, else per process
+
+
+def delivery_service() -> DeliveryService:
+    db = get_db(); return DeliveryService(WebhookDeliveryRepository(db), WorkflowRepository(db), get_job_queue(), trigger_service().signing_secrets,
+                                          access=access_service())
+
+
+@lru_cache
+def get_notification_hub() -> NotificationHub:
+    return make_notification_hub(config.REDIS_URL)  # Redis pub/sub when REDIS_URL is set, else in-process (TASK-0021)
+
+
+def notification_service() -> NotificationService:
+    db = get_db(); return NotificationService(NotificationRepository(db), UserRepository(db), WorkflowRepository(db), hub=get_notification_hub())
+
+
+def trigger_service() -> TriggerService:
+    db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue(), get_rate_limiter(),
+                                         access=access_service())
+
+
+@lru_cache
+def get_telemetry() -> Telemetry:
+    return Telemetry()  # exporters from OTEL_* / LANGSMITH_* env; no-op when none
+
+
+def workflow_service() -> WorkflowService:
+    db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
+                                          access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db),
+                                          teams=TeamRepository(db), audit=audit_service())
+
+def template_service() -> TemplateService:
+    return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service())
+
+def access_service() -> AccessService:
+    db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db), TeamRepository(db))
+
+def audit_service() -> AuditService:
+    db = get_db(); return AuditService(AuditRepository(db), UserRepository(db), access_service())
+
+def policy_service() -> PolicyService:
+    return PolicyService(SettingsRepository(get_db()), access_service(), audit_service())
+
+def team_service() -> TeamService:
+    db = get_db(); return TeamService(TeamRepository(db), UserRepository(db), access_service(), audit_service())
+
+def ownership_service() -> OwnershipService:
+    db = get_db()
+    return OwnershipService(WorkflowRepository(db), UserRepository(db), access_service(), WorkflowShareRepository(db), _Creds(db),
+                            KnowledgeRepository(db), McpServerRepository(db), audit_service(), workflow_service())
+
+def user_service() -> UserService:
+    db = get_db()
+    return UserService(UserRepository(db), access_service(), audit_service(), UserDataRepository(db), ownership_service(), WorkflowRepository(db))
+
+def share_service() -> ShareService:
+    db = get_db(); return ShareService(WorkflowShareRepository(db), UserRepository(db), access_service(), TeamRepository(db), audit_service())
+
+def auth_service() -> AuthService:
+    return AuthService(UserRepository(get_db()), workflow_service())
+
+def run_service() -> RunService:
+    db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
+                      knowledge=knowledge_service(), mcp=mcp_service(), access=access_service(),
+                      policy=policy_service())
+
+def channel_service() -> ChannelService:
+    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed)
+
+def approval_service() -> ApprovalService:
+    db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
+                                         limiter=get_rate_limiter())
+
+def slack_oauth_service() -> SlackOAuthService:
+    return SlackOAuthService(channel_service(), access_service())
+
+def credential_service() -> CredentialService:
+    return CredentialService(CredentialRepository(get_db()))
+
+def knowledge_service() -> KnowledgeService:
+    return KnowledgeService(KnowledgeRepository(get_db()), credential_service())
+
+def mcp_service() -> McpService:
+    db = get_db(); users = UserRepository(db)
+    return McpService(McpServerRepository(db), lambda uid: bool((u := users.get_by_id(uid)) and u.active and P.can(u.role, P.ORG_MANAGE)),
+                      policy_service().org_allowed)
+
+def import_service() -> ImportService:
+    return ImportService(workflow_service())
+
+
+bearer = HTTPBearer(auto_error=False)
+
+def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
+    """The signed-in, active user with role and permissions (database-checked per request, TASK-0014)."""
+    return AuthService(UserRepository(get_db())).current(cred.credentials if cred else None)
+
+
+def ws_user(token: str | None) -> dict:
+    """WebSocket variant of current_user (token from the query string)."""
+    return AuthService(UserRepository(get_db())).current(token)
+
+
+def need(permission: str):
+    """Route dependency: the current user if their role grants `permission`, else PERMISSION_DENIED."""
+    def dep(user: dict = Depends(current_user)) -> dict:
+        if permission not in user["permissions"]: raise AppError("PERMISSION_DENIED", permission=permission)
+        return user
+    return dep
+
+
+async def limit_body(request: Request):
+    n = int(request.headers.get("content-length") or 0)
+    if n > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
+
+
+def identity_service() -> IdentityService:
+    ch = channel_service(); return IdentityService(ch.repo, ch.users, ch)

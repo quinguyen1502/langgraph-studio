@@ -63,6 +63,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "CALLBACK_URL_INVALID": (400, "callback_url must be a public http(s) URL"),
     "NODE_FAILED": (500, "Node failed"),
     "HTTP_TOOL_URL_BLOCKED": (400, "HTTP Tool node {node}: the URL must be a public http(s) address"),
+    "TEMPLATE_REF_INVALID": (400, "Template error: {reason}"),
     # approval channels (TASK-0022)
     "CHANNEL_KIND_UNSUPPORTED": (400, "Unsupported approval channel: {kind}"),
     "CHANNEL_CONFIG_INVALID": (400, "Channel setting {field} is missing or invalid"),

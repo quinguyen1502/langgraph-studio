@@ -109,4 +109,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Sign-in hardening
 
-- TASK-0045 Sign-in lockout, password reset links, HttpOnly session cookie, no demo account in production (REQ-0032, DEC-0035, Implemented 2026-10-18): **done**. REV-0043, QA-0043. Not merged.
+- TASK-0045 Sign-in lockout, password reset links, HttpOnly session cookie, no demo account in production (REQ-0032, DEC-0035, Implemented 2026-10-18): **done**. REV-0043, QA-0043. Merged (PR #49).
+
+## Scheduled runs
+
+- TASK-0046 Cron schedules for workflow runs (REQ-0033, DEC-0036, Implemented 2026-10-19): **done**. REV-0044, QA-0044. Not merged.

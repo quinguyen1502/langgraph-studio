@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Link } from 'react-router-dom'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
+import { SchedulesDialog } from '@/components/schedules-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
@@ -30,7 +31,7 @@ const isMacPlatform = isMac()
 /** Top bar: name, run controls, undo/redo, the ⋯ menu, dialogs, and account controls (TASK-0040). */
 export function EditorHeader() {
   const { t } = useTranslation()
-  const { name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo } = useStudioCtx()
+  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo } = useStudioCtx()
   // ⋯ tooltip: hidden while the menu is open and until the pointer leaves after closing it
   const [moreOpen, setMoreOpen] = useState(false); const [moreTip, setMoreTip] = useState(false); const moreTipBlock = useRef(false)
   return <header className="h-14 shrink-0 grid grid-cols-[minmax(min-content,1fr)_minmax(0,auto)_minmax(min-content,1fr)] items-center border-b px-4">
@@ -76,6 +77,7 @@ export function EditorHeader() {
       {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={isDirty} open={dlg === 'template'} onOpenChange={v => setDlg(v ? 'template' : null)} />}
       <VersionsDialog wid={wid} isDirty={isDirty} open={dlg === 'versions'} onOpenChange={v => setDlg(v ? 'versions' : null)} onRestored={wf => { load(wf); setErrors([]) }} />
       {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
+      {access === 'owner' && <SchedulesDialog wid={wid} open={dlg === 'schedules'} onOpenChange={v => setDlg(v ? 'schedules' : null)} defaultInput={input} />}
       <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
         <DialogContent className="flex max-h-[85vh] w-full min-w-0 flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader className="shrink-0 pr-8"><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>

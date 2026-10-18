@@ -256,6 +256,10 @@ POST /api/workflows/{wid}/versions/{n}/restore
 
 `STUDIO_VERSION_KEEP=N` giữ N phiên bản mới nhất. Phiên bản mà một run đã dùng không bao giờ bị xoá. Thiếu phiên bản thì `404 VERSION_NOT_FOUND`.
 
+### Lịch chạy
+
+**⋯ → Lịch chạy** trong editor (chủ workflow) chạy workflow theo lịch cron: năm trường `phút giờ ngày-trong-tháng tháng thứ`, hỗ trợ `*`, khoảng, danh sách, bước nhảy, tên tháng và tên thứ, cùng `@hourly` / `@daily` / `@weekly` / `@monthly` / `@yearly`. Khi đặt cả hai trường ngày, một ngày khớp nếu khớp một trong hai. Mỗi lịch có múi giờ IANA (mặc định theo trình duyệt) và input JSON cho run. Giờ bị bỏ qua khi chuyển DST sẽ chạy trễ một tiếng; giờ bị lặp chỉ chạy một lần. Dialog hiện các lần chạy tiếp theo ngay khi gõ. Run chạy dưới tên người tạo lịch, đi qua cùng hàng đợi job với run từ API, và hiện trong History với nhãn **Lịch**. Lần chạy bị lỡ khi không có worker nào chạy sẽ chạy một lần khi worker lên lại. Nhiều process API cũng không chạy trùng một lần. Lịch tự tắt khi người tạo mất quyền quản lý workflow, và bị xoá vào lần đến hạn kế tiếp sau khi workflow bị xoá. Tối đa 20 lịch cho mỗi workflow. API: `GET|POST /api/workflows/{wid}/schedules`, `PATCH|DELETE …/schedules/{sid}`, `POST /api/schedules/preview`.
+
 ## Kho tri thức, MCP, và quyền
 
 **Cài đặt → Kho tri thức** tạo kho và nhận `.txt`, `.md`, `.pdf` tối đa 10 MB. Có thể tìm, đổi model hoặc credential, và lập chỉ mục lại. Embedding dùng credential của kho, rồi `OPENAI_API_KEY`, rồi mock offline cố định (`mock:512`). Model OpenAI mặc định là `text-embedding-3-small`. Postgres của Compose là `pgvector/pgvector:pg17` và tìm bằng SQL. Postgres thường và SQLite lưu JSON rồi tính cosine trong Python. Mã lỗi là `KB_*` trong `docs/api-errors.md`.

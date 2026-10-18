@@ -7,7 +7,7 @@ from ..core import config, security
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, CredentialRepository as _Creds
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.policy_service import PolicyService
 from ..services.team_service import TeamService
@@ -35,6 +35,7 @@ from ..services.delivery_service import DeliveryService
 from ..services.notification_service import NotificationService
 from ..services.rate_limit import RateLimiter, make_rate_limiter
 from ..services.trigger_service import TriggerService
+from ..services.schedule_service import ScheduleService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 
@@ -56,7 +57,7 @@ def get_job_queue() -> JobQueue:
 
 @lru_cache
 def run_worker() -> RunWorker:
-    return RunWorker(get_job_queue(), run_service, delivery_service)
+    return RunWorker(get_job_queue(), run_service, delivery_service, schedule_service)
 
 
 @lru_cache
@@ -76,6 +77,10 @@ def get_notification_hub() -> NotificationHub:
 
 def notification_service() -> NotificationService:
     db = get_db(); return NotificationService(NotificationRepository(db), UserRepository(db), WorkflowRepository(db), hub=get_notification_hub())
+
+
+def schedule_service() -> ScheduleService:
+    db = get_db(); return ScheduleService(ScheduleRepository(db), WorkflowRepository(db), RunRepository(db), get_job_queue(), access=access_service())
 
 
 def trigger_service() -> TriggerService:

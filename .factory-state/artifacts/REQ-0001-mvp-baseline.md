@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-19
 - Source: project-specs.md (MVP Scope)
 
 ## Summary
@@ -76,7 +76,7 @@ Provide the internal MVP that the owner requested and that now exists in the rep
 
 ## Open Questions
 
-- Should the demo user be removed or disabled outside local development?
+- Resolved 2026-10-19: yes. The demo account is created only outside production, and in production one that still has the demo password is deactivated at start-up (TASK-0045, DEC-0035, PR #49). Until that PR merges, `develop` still seeds it everywhere.
 
 ## Related Artifacts
 

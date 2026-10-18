@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-18
+- Updated: 2026-10-19
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -67,7 +67,7 @@ Workflows can pause at an approval/input node, persist state, and resume after a
 
 ## Open Questions
 
-- Who may approve: owner only or any authenticated user?
+- Resolved: in the studio, the run owner only (DEC-0013). Through an approval channel (Slack, Telegram, WhatsApp buttons, or e-mail / Teams links), the run owner or a user listed in the Human node's approvers (DEC-0019, DEC-0037). Never any authenticated user.
 
 ## Related Artifacts
 

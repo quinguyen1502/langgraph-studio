@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-18
+- Updated: 2026-10-19
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -69,8 +69,8 @@ LLM nodes can call real providers (OpenAI, Anthropic, OpenAI-compatible) using c
 
 ## Open Questions
 
-- Credential scope: per user, per workflow, or global admin?
-- Which providers are required first?
+- Resolved 2026-10-16 (DEC-0006, delivered by TASK-0005): credentials belong to a user and are chosen per LLM node, so each workflow picks its own; a shared workflow runs with its owner's credentials (DEC-0023). No global admin credential besides the `OPENAI_API_KEY` fallback.
+- Resolved: OpenAI and OpenAI-compatible base URLs, and Anthropic, first (DEC-0006); the provider registry later added Ollama, LM Studio, OpenRouter and generic OpenAI-compatible servers (DEC-0032, TASK-0030).
 
 ## Related Artifacts
 

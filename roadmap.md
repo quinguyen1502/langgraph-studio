@@ -26,7 +26,7 @@ Status as of 2026-10-17: all Phase 1 work is in `develop` (it was the base of th
 
 ## Phase 2 — Usable
 
-Status for all Phase 2–4 tasks: backlog.
+Phase 2, Phase 3, and Phase 4 are done and merged into `develop`.
 
 - TASK-0006 Human-in-the-loop (REQ-0003): **done** — merged into `develop` 2026-10-17
 - TASK-0007 API / webhook trigger (REQ-0004): **done** — merged into `develop` 2026-10-17
@@ -48,7 +48,7 @@ Status for all Phase 2–4 tasks: backlog.
 
 ## Phase 4 — Last
 
-- TASK-0015 Repo import hardening + container sandbox (REQ-0009). The existing import feature is **experimental**; TASK-0015 puts it behind `STUDIO_ENABLE_IMPORT` (default off in UI and API). Not changed yet.
+- TASK-0015 Repo import hardening + container sandbox (REQ-0009). **done** — merged into `develop` 2026-10-18 (PR #33). The import feature stays **experimental**; `STUDIO_ENABLE_IMPORT` defaults off. Docker sandbox when the flag is on. REQ-0009 stays Proposed.
 
 ## Phase 5 — Editor UX
 

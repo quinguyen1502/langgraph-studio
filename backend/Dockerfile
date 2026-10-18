@@ -2,9 +2,16 @@
 FROM python:3.12-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=1 \
     STUDIO_IMPORT_DIR=/data/imports STUDIO_SECRET_KEY_FILE=/data/secret.key STUDIO_DB=/data/studio.db
-# git + uv are used by "Import LangGraph repo" (clone + per-import venv)
-RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \
-    && rm -rf /var/lib/apt/lists/* && pip install uv
+# git clones on the host (this image). The Docker CLI talks to a mounted socket when import is enabled;
+# this image does not run a daemon. uv remains for the subprocess escape hatch.
+RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && arch="$(dpkg --print-architecture)" \
+    && case "$arch" in amd64) darch=x86_64 ;; arm64) darch=aarch64 ;; *) echo "unsupported $arch" >&2; exit 1 ;; esac \
+    && curl -fsSL "https://download.docker.com/linux/static/stable/${darch}/docker-27.5.1.tgz" \
+       | tar -xz -C /usr/local/bin --strip-components=1 docker/docker \
+    && chmod 755 /usr/local/bin/docker \
+    && pip install uv
 WORKDIR /app
 COPY pyproject.toml ./
 COPY app ./app

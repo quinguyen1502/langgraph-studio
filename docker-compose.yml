@@ -68,10 +68,27 @@ services:
       LANGSMITH_ENDPOINT: ${LANGSMITH_ENDPOINT:-}
       # API-triggered runs (TASK-0007) are executed by the `worker` service through the Redis queue
       STUDIO_WORKER: "0"
+      # Repo import (TASK-0015) is experimental and off by default. Do not set STUDIO_IMPORT_RUNTIME here:
+      # the code picks Docker only while the flag is on. The socket mount below is root-equivalent.
+      STUDIO_ENABLE_IMPORT: ${STUDIO_ENABLE_IMPORT:-0}
+      STUDIO_IMPORT_DIR: /imports
+      STUDIO_IMPORT_HOST_DIR: ${STUDIO_IMPORT_HOST_DIR:-}
+      STUDIO_IMPORT_IMAGE: ${STUDIO_IMPORT_IMAGE:-python:3.12-slim}
+      STUDIO_IMPORT_MEMORY: ${STUDIO_IMPORT_MEMORY:-1g}
+      STUDIO_IMPORT_CPUS: ${STUDIO_IMPORT_CPUS:-1}
+      STUDIO_IMPORT_MAX_AGE_HOURS: ${STUDIO_IMPORT_MAX_AGE_HOURS:-72}
+      STUDIO_IMPORT_NETWORK: ${STUDIO_IMPORT_NETWORK:-bridge}
     # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
     # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
     extra_hosts: &host-gw ["host.docker.internal:host-gateway"]
-    volumes: [apidata:/data]  # import venvs + generated secret.key when STUDIO_SECRET_KEY is empty
+    volumes: &import-volumes
+      - apidata:/data  # generated secret.key when STUDIO_SECRET_KEY is empty
+      # Same directory the daemon bind-mounts into the sandbox. Export STUDIO_IMPORT_HOST_DIR
+      # as this path on the host (absolute) or translation is skipped and docker-from-compose fails.
+      - ${STUDIO_IMPORT_HOST_DIR:-./.imports}:/imports
+      - /var/run/docker.sock:/var/run/docker.sock
+    group_add: &import-groups
+      - "${STUDIO_DOCKER_GID:-10001}"
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -85,7 +102,8 @@ services:
       <<: *api-env
       STUDIO_WORKER: "1"
     extra_hosts: *host-gw
-    volumes: [apidata:/data]
+    volumes: *import-volumes
+    group_add: *import-groups
     healthcheck:
       test: ["CMD", "python", "-c", "import os; os.kill(1, 0)"]
       interval: 10s

@@ -301,6 +301,7 @@
     "IMPORT_INVALID": "Import failed: {{reason}}",
     "IMPORT_JOB_NOT_FOUND": "Import job not found",
     "IMPORT_NOT_READY": "Import job is not ready or the graph is invalid",
+    "IMPORT_DISABLED": "Repo import is disabled (set STUDIO_ENABLE_IMPORT=1 to enable this experimental feature)",
     "RUN_NOT_WAITING": "This run is not waiting for a response",
     "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)",
     "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",

@@ -115,6 +115,7 @@
 | `IMPORT_INVALID` | 400 | Import failed: {reason} |
 | `IMPORT_JOB_NOT_FOUND` | 404 | Import job not found |
 | `IMPORT_NOT_READY` | 400 | Import job is not ready or the graph is invalid |
+| `IMPORT_DISABLED` | 404 | Repo import is disabled (set STUDIO_ENABLE_IMPORT=1 to enable this experimental feature) |
 | `AUTH_ACCOUNT_DISABLED` | 403 | This account has been deactivated |
 | `PERMISSION_DENIED` | 403 | Your role does not allow this ({permission}) |
 | `USER_NOT_FOUND` | 404 | User not found |

@@ -27,7 +27,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
     ann = {f["name"]: annotation(f) for f in wf.get("state", [])}
     State = TypedDict("State", ann, total=False)  # type: ignore
     g = StateGraph(State)
-    nodes = {n["id"]: n for n in wf["nodes"]}
+    nodes = {n["id"]: n for n in wf["nodes"] if n.get("type") != "note"}  # notes are canvas comments (REQ-0025)
     joins = {nid for nid, n in nodes.items() if n["type"] == "join"}
     for nid, n in nodes.items():
         fn = node_fn(n, resolve, usage, resume, effects, ports)
@@ -41,7 +41,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
             kw["input_schema"] = schema
         g.add_node(nid, fn, **kw)
     for nid, n in nodes.items():
-        out = [e for e in wf["edges"] if e["source"] == nid]
+        out = [e for e in wf["edges"] if e["source"] == nid and e["target"] in nodes]
         if nid in entries or (not entries and n["type"] == "start"):
             g.add_edge(START, nid)
         if n["type"] == "end":
@@ -65,6 +65,6 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
                 if e["target"] not in joins: g.add_edge(nid, e["target"])  # several edges = parallel branches (TASK-0011)
     for j in joins:  # fan-in: the Join runs once, after every incoming branch finished
         if j in entries: continue
-        g.add_edge([e["source"] for e in wf["edges"] if e["target"] == j], j)
+        g.add_edge([e["source"] for e in wf["edges"] if e["target"] == j and e["source"] in nodes], j)
     cache = InMemoryCache() if needs_cache(list(nodes.values())) else None
     return g.compile(checkpointer=checkpointer, **({} if cache is None else {"cache": cache}))

@@ -7,7 +7,7 @@ from .templating import VAR_RE
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
 
 
@@ -45,6 +45,10 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
         if t not in TYPES:
             errs.append(f"Node {nid}: invalid type '{t}'")
+        if t == "note":  # a comment on the canvas: no edges, and it is not part of the run (REQ-0025)
+            if any(e["source"] == nid or e["target"] == nid for e in edges):
+                errs.append(f"Note {nid} ({d.get('label') or nid}) cannot be connected")
+            continue
         if t != "end" and not out.get(nid):
             errs.append(f"Node {nid} ({d.get('label', t)}) has no outgoing edge")
         if t == "end" and out.get(nid):
@@ -122,5 +126,6 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if x in seen: continue
             seen.add(x); stack += [e["target"] for e in out.get(x, [])]
         for n in nodes:
+            if n.get("type") == "note": continue
             if n["id"] not in seen: errs.append(f"Node {n['id']} is not reachable from Start")
     return errs

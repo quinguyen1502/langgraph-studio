@@ -1,10 +1,10 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, ControlButton, MiniMap, Handle, Position, addEdge,
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, StepForward, FastForward, Crosshair } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, StickyNote, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, StepForward, FastForward, Crosshair } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -135,7 +135,7 @@ function StudioNode({ data, type, selected }: NodeProps) {
       <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
       <div className="flex-1 min-w-0">
         <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</div>
-        <div className="text-sm font-medium truncate ">{d.label}</div>
+        <div className="text-sm font-medium truncate">{d.label}</div>
         {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" className="h-4 px-1 text-[9px] gap-0.5"><Sparkles className="size-2.5" />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
       </div>
     </div>
@@ -145,11 +145,31 @@ function StudioNode({ data, type, selected }: NodeProps) {
     {type !== 'end' && <Handle type="source" position={Position.Right} />}
   </div>
 }
+/** A sticky is canvas text, not a graph node. `editable` follows the workflow, not the canvas lock. */
+const CanvasEdit = createContext(false)
+function Sticky({ id, data, selected }: NodeProps) {
+  const { t } = useTranslation()
+  const edit = useContext(CanvasEdit)
+  const { setNodes } = useReactFlow()
+  const box = useRef<HTMLTextAreaElement>(null)
+  const text = String((data as any).text || '')
+  useEffect(() => { if (selected && edit) box.current?.focus() }, [selected, edit])
+  return <div className={cn('w-52 rounded-sm border border-node-note/50 bg-node-note-muted text-card-foreground shadow-md', selected && 'ring-2 ring-node-note')}>
+    <div className="h-2 rounded-t-sm bg-node-note/70" />
+    <div className="px-3 py-2">
+      {selected && edit
+        ? <Textarea ref={box} id="note-text" rows={5} value={text} placeholder={t('editor.notePlaceholder')}
+            onChange={e => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, text: e.target.value } } : n))}
+            className="nodrag nowheel min-h-24 resize-none border-0 bg-transparent p-0 shadow-none ring-0 focus-visible:border-transparent focus-visible:ring-0 dark:bg-transparent md:text-sm" />
+        : <div className={cn('min-h-24 whitespace-pre-wrap break-words text-sm', text.trim() ? '' : 'text-muted-foreground')}>{text.trim() ? text : t('editor.notePlaceholder')}</div>}
+    </div>
+  </div>
+}
 /** Where registry actions appear in the editor's ⋯ menu (others stay keyboard/palette only), with stable ids for tests. */
 const MENU_OF: Record<string, 'arrange' | 'help' | undefined> = { layout: 'arrange', fitView: 'arrange', cheatsheet: 'help' }
 const MENU_IDS: Record<string, string> = { layout: 'layout-btn', fitView: 'fit-btn', cheatsheet: 'shortcuts-btn' }
 const ACTION_ICONS: Record<string, LucideIcon> = { layout: Network, fitView: Maximize, cheatsheet: Keyboard, save: Save, run: Play, stop: Square, undo: Undo2, redo: Redo2, delete: Trash2, copy: Copy, cut: Scissors, paste: ClipboardPaste, duplicate: CopyPlus, selectAll: BoxSelect, zoomIn: ZoomIn, zoomOut: ZoomOut }
-const nodeTypes = Object.fromEntries([...TYPES, 'code'].map(t => [t, StudioNode]))
+const nodeTypes = { ...Object.fromEntries([...TYPES, 'code'].map(t => [t, StudioNode])), note: Sticky }
 
 function Tip({ tip, children }: { tip: string; children: React.ReactElement }) {
   return <Tooltip><TooltipTrigger asChild>{children}</TooltipTrigger><TooltipContent>{tip}</TooltipContent></Tooltip>
@@ -182,6 +202,13 @@ function NodeMenu({ id, type, edges, insert, onCopy, onCut, onDuplicate, onDelet
   const locked = PROTECTED.has(type ?? '')
   const ins = edges.filter(e => e.target === id).length
   const outs = edges.filter(e => e.source === id).length
+  if (type === 'note') return <>
+    <ContextMenuItem id="copy-node" onSelect={onCopy}><Copy />{t('editor.copyNode')}</ContextMenuItem>
+    <ContextMenuItem id="cut-node" onSelect={onCut}><Scissors />{t('editor.cutNode')}</ContextMenuItem>
+    <ContextMenuItem id="duplicate-node" onSelect={onDuplicate}><CopyPlus />{t('clipboard.duplicate')}</ContextMenuItem>
+    <ContextMenuSeparator />
+    <ContextMenuItem id="delete-note" variant="destructive" onSelect={onDelete}><Trash2 />{t('editor.deleteNote')}</ContextMenuItem>
+  </>
   return <>
     {type !== 'start' && ins <= 1 && <InsertMenu id="before" label={t('editor.insertBefore')} icon={ArrowLeft} onPick={tp => insert(tp, { dir: 'before', anchor: id })} />}
     {type !== 'end' && outs <= 1 && <InsertMenu id="after" label={t('editor.insertAfter')} icon={ArrowRight} onPick={tp => insert(tp, { dir: 'after', anchor: id })} />}
@@ -374,12 +401,18 @@ function Studio() {
       data: { ...DEFAULTS[type], ...(type === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) } }])
     if (select) setSel({ kind: 'node', id })
   }
+  const addNote = (pos: { x: number; y: number }) => {
+    const id = `note_${Date.now().toString(36)}${idc.current++}`
+    setNodes(ns => [...ns.map(n => n.selected ? { ...n, selected: false } : n),
+      { id, type: 'note', position: pos, selected: true, connectable: false, data: { text: '' } }])
+    setSel({ kind: 'node', id })
+  }
   const off: Record<string, boolean> = { save: !edit, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
     ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
   const paletteRef = useRef<Record<string, () => void>>({})
   // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
   const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
-  const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string }>(null)
+  const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string } | { kind: 'pane'; at: { x: number; y: number } }>(null)
   const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
   const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
   const menuExtras: PaletteCommand[] = [
@@ -398,9 +431,9 @@ function Studio() {
     ...SHORTCUTS.filter(x => handlers[x.id] && x.id !== 'escape').map(x => ({ id: `action:${x.id}`, group: 'actions' as const, label: t(`shortcuts.actions.${x.id}`), shortcut: x.id, disabled: off[x.id],
       icon: ACTION_ICONS[x.id], menu: MENU_OF[x.id], elementId: MENU_IDS[x.id], run: () => { handlers[x.id]() } })),
     ...menuExtras,
-    ...(editable ? TYPES.filter(x => x !== 'start' && x !== 'end').map(x => ({ id: `add:${x}`, group: 'add' as const, label: t('palette.addNode', { type: META[x].label }), hint: t(`nodes.${x}`), icon: META[x].icon, keywords: [x],
+    ...(editable ? INSERTABLE.map(x => ({ id: `add:${x}`, group: 'add' as const, label: t('palette.addNode', { type: META[x].label }), hint: t(`nodes.${x}`), icon: META[x].icon, keywords: [x],
       run: () => { const c = rf.screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 }); addNode(x, freeSpot(c, nodes.map(n => n.position)), true) } })) : []),
-    ...nodes.map(n => ({ id: `node:${n.id}`, group: 'nodes' as const, label: String((n.data as any)?.label || n.id), hint: `${META[n.type!]?.label ?? n.type} · ${n.id}`, icon: META[n.type!]?.icon, keywords: [n.id, n.type!],
+    ...nodes.filter(n => n.type !== 'note').map(n => ({ id: `node:${n.id}`, group: 'nodes' as const, label: String((n.data as any)?.label || n.id), hint: `${META[n.type!]?.label ?? n.type} · ${n.id}`, icon: META[n.type!]?.icon, keywords: [n.id, n.type!],
       run: () => { setNodes(ns => ns.map(x => ({ ...x, selected: x.id === n.id }))); setSel({ kind: 'node', id: n.id }); rf.fitView({ nodes: [{ id: n.id }], duration: 300, maxZoom: 1.2 }) } })),
   ]
   paletteCmds.forEach(c => { paletteRef.current[c.id] = c.run })
@@ -419,7 +452,10 @@ function Studio() {
   const continueRun = () => { if (trace.paused?.runId) stream({ resume_run_id: trace.paused.runId }, true) }
   const hlSpan = traceSel ? trace.spans.find(x => x.key === traceSel)?.node : undefined
   const hlNode = hlSpan ? canvasId(hlSpan) : undefined
-  const nodesView = useMemo(() => hlNode ? nodes.map(n => n.id === hlNode ? { ...n, data: { ...n.data, _hl: true } } : n) : nodes, [nodes, hlNode])
+  const nodesView = useMemo(() => nodes.map(n => {
+    const base = n.type === 'note' ? { ...n, connectable: false } : n
+    return hlNode && base.id === hlNode ? { ...base, data: { ...base.data, _hl: true } } : base
+  }), [nodes, hlNode])
   const onNodeClick = (id: string) => {
     setSel({ kind: 'node', id })
     const spans = trace.spans.filter(x => canvasId(x.node) === id)
@@ -482,7 +518,7 @@ function Studio() {
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}{t('editor.step')}</Button></Tip>}
-      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode}><Crosshair />{t('editor.runTo')}</Button></Tip>}
+      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair />{t('editor.runTo')}</Button></Tip>}
       {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button size="sm" variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
@@ -561,13 +597,14 @@ function Studio() {
     <ContextMenuTrigger asChild>
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
       {clipNote && <div role="status" id="clip-notice" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-1.5 text-sm">{clipNote}</div>}
+      <CanvasEdit.Provider value={editable}>
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={edit && !canvasLock ? onConnect : undefined} nodesConnectable={edit && !canvasLock} nodesDraggable={edit && !canvasLock} edgesReconnectable={edit && !canvasLock} elementsSelectable
         onNodeClick={(_, n) => onNodeClick(n.id)}
         onNodeContextMenu={(e, n) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'node', id: n.id }); onNodeClick(n.id) }}
         onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })}
         onEdgeContextMenu={(e, ed) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'edge', id: ed.id }); setSel({ kind: 'edge', id: ed.id }) }}
-        onPaneContextMenu={e => { e.preventDefault(); e.stopPropagation() }}
+        onPaneContextMenu={e => { if (!editable) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'pane', at: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }) }) }}
         onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
         <Background /><Controls showInteractive={false}>
           <ControlButton onClick={() => setCanvasLock(v => !v)} aria-label={t(canvasLock ? 'editor.unlockCanvas' : 'editor.lockCanvas')} title={t(canvasLock ? 'editor.unlockCanvas' : 'editor.lockCanvas')}>
@@ -575,9 +612,11 @@ function Studio() {
           </ControlButton>
         </Controls><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
+      </CanvasEdit.Provider>
     </main>
     </ContextMenuTrigger>
     <ContextMenuContent>
+      {ctx?.kind === 'pane' && <ContextMenuItem id="add-note" onSelect={() => addNote(ctx.at)}><StickyNote />{t('editor.addNote')}</ContextMenuItem>}
       {ctx?.kind === 'node' && <NodeMenu id={ctx.id} type={nodes.find(n => n.id === ctx.id)?.type} edges={edges} insert={insertAround}
         onCopy={() => { const c = copySelection(nodes, edges, [ctx.id]); if (!c) return; clipMem.current = c; pasteN.current = 0; clipStore.write(c); note(t('clipboard.copied', { count: c.nodes.length })) }}
         onCut={() => { const c = copySelection(nodes, edges, [ctx.id]); if (!c) return; clipMem.current = c; pasteN.current = 0; clipStore.write(c); removeIds(c.nodes.map(n => n.id)); note(t('clipboard.cut', { count: c.nodes.length })) }}
@@ -595,11 +634,12 @@ function Studio() {
       <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 w-[318px]">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
+        {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
           <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
         </div>}
-        {selNode && <div className="space-y-3">
+        {selNode && selNode.type !== 'note' && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
             <div><div className="font-medium">{META[selNode.type!].label}</div><div className="text-[11px] text-muted-foreground font-mono">{selNode.id}</div></div></div>
           <F label={t('field.label')}><Input value={d.label || ''} onChange={e => upd('label', e.target.value)} /></F>

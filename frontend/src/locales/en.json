@@ -114,6 +114,8 @@
     "edgeLabel": "Label (matches the Condition field value)",
     "deleteEdge": "Delete edge",
     "deleteNode": "Delete node",
+    "addNote": "Add note",
+    "deleteNote": "Delete note",
     "insertBefore": "Insert before",
     "insertAfter": "Insert after",
     "insertHere": "Insert node",
@@ -189,6 +191,8 @@
     "moreTip": "More actions (layout, versions, share, API…)",
     "lockCanvas": "Lock the canvas",
     "unlockCanvas": "Unlock the canvas",
+    "notePlaceholder": "Write a note…",
+    "noteHint": "Edit the text on the note.",
     "deleteWorkflow": "Delete workflow"
   },
   "nodes": {

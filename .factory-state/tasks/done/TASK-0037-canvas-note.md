@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0037
-- Status: todo
+- Status: done
 - Phase: canvas note
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-18
@@ -21,7 +21,7 @@ Add a non-executable note block to the flowchart.
 
 ### In Scope
 
-- A `note` node in the palette and the command palette, with text on the block and in the config panel
+- A sticky on the canvas, added by right-clicking the chart, with the text edited on the sticky
 - Validator, compiler, and Arrange ignoring the note as an executable node
 - `--node-note`, `--node-note-foreground`, and `--node-note-muted` in light and dark
 
@@ -55,11 +55,11 @@ Add a non-executable note block to the flowchart.
 ## Implementation Notes
 
 - Store the body on `data.text`. Empty text is valid and shows the placeholder.
-- Do not add the note to `INSERTABLE`. Do add it where free nodes are created (the side palette and `add:` command-palette entries).
+- Do not add the note to the palette, `INSERTABLE`, or `add:` command-palette entries. Add it from the canvas context menu at the click position.
 - Draw no handles, so a note cannot be connected. A pasted edge that touches a note still fails validation and the message names the note.
 - Skip note nodes in `compile_workflow` before `add_node`. Do not give them an outgoing-edge error.
 - `layoutGraph` returns notes at their current positions and lays out the other nodes. A note sitting far from the graph must not change the anchor of Arrange.
-- Add the three note tokens in `frontend/src/index.css` for `:root` and `.dark`, and map them in `@theme inline`. Use them from `META` only.
+- Add the three note tokens in `frontend/src/index.css` for `:root` and `.dark`, and map them in `@theme inline`. The sticky uses them on the paper. Graph nodes keep using `META`.
 - Canvas delete stays `removeIds`. Do not use `ConfirmDeleteDialog`.
 - Strings in `frontend/src/locales/en.json` and `vi.json` with the same keys.
 
@@ -98,8 +98,13 @@ Add a non-executable note block to the flowchart.
 ## Activity Log
 
 - 2026-10-18: Owner asked for the task. REQ-0025 approved. Task filed in `todo`. Not started.
+- 2026-10-18: Owner asked to implement. Branch `factory/task-0037-canvas-note` from `develop` (`831ad6e`). Task moved to `doing`. `factory ready` still does not exit 0 on this machine; the owner asked for the task anyway. No packages installed.
+- 2026-10-18: Implemented in the working tree. Not committed. No pull request. Local checks: pytest 43 passed (`test_canvas_note`, `test_layers`, `test_api_envelope`, `test_core_hardening`, `test_compiler`); `npx tsc -b`; vitest layout 4 passed; `git diff --check`.
+- 2026-10-18: Owner asked for a sticky added by right-click on the canvas, not a graph node in the palette. The chart UI follows that. The saved document still carries the sticky so a run can ignore it. Browser check: right-click adds it, palette and command palette do not, text survives save and reload, Arrange leaves it, delete does not ask for a name.
+- 2026-10-18: Owner asked to finish the remaining steps. REV-0036 has no blocking findings. QA-0036 passed. Task set to done. Draft PR [#40](https://github.com/quinguyen1502/langgraph-studio/pull/40) into `develop`, then marked Ready. Not merged.
 
 ## Handoff Notes
 
-- Next skill is `task-start` after the owner says to start. Do not implement from this file alone.
-- Do not stack this branch on TASK-0036.
+- Ready PR #40 into `develop`: https://github.com/quinguyen1502/langgraph-studio/pull/40
+- Do not merge until the owner asks.
+- Do not stack another task on this branch.

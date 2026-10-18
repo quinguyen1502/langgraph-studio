@@ -50,7 +50,7 @@ Chưa có khoá tài khoản sau nhiều lần đăng nhập sai, và chưa có 
 
 `Ctrl/⌘+C`, `Ctrl/⌘+X`, `Ctrl/⌘+V`, `Ctrl/⌘+D` sao chép, cắt, dán, nhân bản. Start và End không bao giờ được sao chép. Chỉ cạnh nối giữa các node đang chọn đi cùng. Node dán ra có id mới. Bộ nhớ là `localStorage` (`langgraph-studio/nodes` v1), nên dán sang workflow khác trong cùng trình duyệt được. Credential bạn không có quyền dùng sẽ bị bỏ trống khi dán.
 
-**Sắp xếp** hoặc `Shift+L` xếp graph bằng dagre theo kích thước thật của node. Mũi tên bên cạnh chọn trái sang phải hoặc trên xuống dưới. Góc trên-trái của graph giữ nguyên. Một lần sắp xếp là một bước hoàn tác.
+**Sắp xếp** hoặc `Shift+L` xếp graph bằng dagre theo kích thước thật của node. Mũi tên bên cạnh chọn trái sang phải hoặc trên xuống dưới. Góc trên-trái của graph giữ nguyên. Một lần sắp xếp là một bước hoàn tác. Chuột phải trên canvas và chọn **Thêm ghi chú** để đặt một mảnh giấy. Nó được lưu cùng workflow, Sắp xếp không đổi vị trí của nó, và lần chạy không thực thi nó.
 
 **Workflow mới** mở thư viện mẫu: graph trống, bốn mẫu sẵn (Chatbot, RAG Q&A, Approval flow, Router), và mẫu của bạn hoặc của tổ chức. Mỗi mẫu có ảnh xem trước. **Lưu thành mẫu** chép bản đã lưu. Phạm vi toàn tổ chức cần `org.manage`. Xuất và nhập dùng `*.template.json` (`{"format": "langgraph-studio/template", "version": 1, ...}`). Mẫu không chứa credential, kho tri thức, máy chủ MCP, kênh phê duyệt, liên kết subgraph, header, hay API key. Các trường đó được làm trống. Xoá mẫu phải gõ đúng tên.
 

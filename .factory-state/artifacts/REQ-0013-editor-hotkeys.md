@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0013
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Source: owner request 2026-10-17 (Phase 5: Editor UX)
 
 ## Summary
@@ -62,3 +62,7 @@ Keyboard shortcuts for the workflow editor and a cheatsheet dialog that lists th
 ## Open Questions
 
 - None yet
+
+## Related Artifacts
+
+- Delivered by `.factory-state/tasks/done/TASK-0023-editor-hotkeys-and-shortcut-cheatsheet.md`, merged to `develop`.

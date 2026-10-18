@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0015
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Source: owner request 2026-10-17 (Phase 5: Editor UX)
 
 ## Summary
@@ -63,3 +63,7 @@ Starter workflow templates, save a workflow as a template, and import/export tem
 ## Open Questions
 
 - None yet
+
+## Related Artifacts
+
+- Delivered by `.factory-state/tasks/done/TASK-0025-workflow-template-library.md`, merged to `develop`.

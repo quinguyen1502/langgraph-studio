@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0007
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -72,3 +72,4 @@ Users can attach documents to a knowledge base and use a Retriever node that wri
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`
+- Delivered by `.factory-state/tasks/done/TASK-0012-add-rag-retriever-node.md`, merged to `develop`.

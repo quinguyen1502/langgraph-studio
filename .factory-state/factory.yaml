@@ -7,7 +7,7 @@ enabled_tools:
 default_refiner: null
 refinement_timeout_seconds: 300
 factory_link_mode: copy
-integration_branch: main
+integration_branch: develop
 storage_backend: folder
 storage_dsn: null
 budget_enforcement: warn

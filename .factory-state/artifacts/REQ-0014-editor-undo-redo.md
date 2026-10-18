@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0014
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Source: owner request 2026-10-17 (Phase 5: Editor UX)
 
 ## Summary
@@ -61,3 +61,7 @@ An editor history stack so node/edge/config changes can be undone and redone.
 ## Open Questions
 
 - None yet
+
+## Related Artifacts
+
+- Delivered by `.factory-state/tasks/done/TASK-0024-editor-undo-and-redo-history.md`, merged to `develop`.

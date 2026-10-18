@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0017
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent, approved by the owner 2026-10-17
 
 ## Summary
@@ -59,3 +59,7 @@ One-click automatic layout of the graph (left-to-right or top-to-bottom).
 ## Open Questions
 
 - None yet
+
+## Related Artifacts
+
+- Delivered by `.factory-state/tasks/done/TASK-0027-auto-layout-for-the-workflow-canvas.md`, merged to `develop`.

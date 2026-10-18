@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0006
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -74,3 +74,4 @@ Builder supports embedding a saved workflow as a subgraph node and fan-out/fan-i
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`
+- Delivered by `.factory-state/tasks/done/TASK-0011-support-subgraphs-and-parallel-branches-in-the-builder.md`, merged to `develop`.

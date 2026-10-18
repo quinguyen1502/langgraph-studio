@@ -43,10 +43,10 @@ export function CredentialsDialog({ trigger, onChanged }: { trigger?: React.Reac
   const keptKey = !!editing?.hint && !clearKey  // editing: an empty key field keeps the stored secret
   const keyMissing = !!p?.key_required && !key.trim() && !keptKey
   const load = () => api<Credential[]>('/api/credentials').then(setItems)
+  const reset = () => { setEditing(null); setClearKey(false); setName(''); setKey(''); setBaseUrl(''); setHeaders({}); setTest({}); setErr('') }
   useEffect(() => { if (open) load(); else reset() }, [open])
   const pick = (v: string) => { setProvider(v); setKey(''); setBaseUrl(''); setHeaders({}); setTest({}); setErr('') }  // never carry a key to another provider
   const form = () => ({ api_key: key, base_url: baseUrl || null, headers, ...(editing && !clearKey ? { credential_id: editing.id } : {}) })
-  const reset = () => { setEditing(null); setClearKey(false); setName(''); setKey(''); setBaseUrl(''); setHeaders({}); setTest({}); setErr('') }
   const startEdit = (c: Credential) => { reset(); setEditing(c); setName(c.name); setProvider(c.provider); setBaseUrl(c.base_url || ''); setHeaders(c.headers || {}) }
   const submit = async () => {
     setErr('')

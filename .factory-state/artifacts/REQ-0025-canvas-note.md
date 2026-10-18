@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0025
-- Status: Approved
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-18
 - Updated: 2026-10-18

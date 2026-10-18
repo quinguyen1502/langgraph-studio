@@ -8,7 +8,7 @@ test('save, run, delete with the keyboard; typing is safe; cheat sheet lists eve
   await page.goto(`/workflows/${wid}`); await expect(page.locator('.react-flow__node')).toHaveCount(3)
   // Mod+S saves from inside the name field (no browser dialog)
   const renamed = `Keys renamed ${Date.now()}`
-  await page.locator('header input').first().fill(renamed); await page.keyboard.press('Control+s')
+  await page.locator('header input').first().fill(renamed); await page.keyboard.press('ControlOrMeta+s')
   await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}`, { headers: H })).json()).data.name).toBe(renamed)
   // Delete inside a text field edits text, not the graph
   await page.locator('.react-flow__node[data-id="reply"]').click()
@@ -21,12 +21,12 @@ test('save, run, delete with the keyboard; typing is safe; cheat sheet lists eve
   await expect(page.locator('.react-flow__node[data-id="reply"]')).toHaveCount(0)
   await expect(page.locator('.react-flow__edge')).toHaveCount(0)
   // Mod+Enter runs (start → end directly is invalid without edges; the run still starts and reports)
-  await page.locator('.react-flow__pane').click(); await page.keyboard.press('Control+Enter')
+  await page.locator('.react-flow__pane').click(); await page.keyboard.press('ControlOrMeta+Enter')
   await expect(page.locator('[role=tab][id$="-trigger-logs"]')).toHaveAttribute('data-state', 'active')
   // ? opens the cheat sheet
   await page.locator('.react-flow__pane').click(); await page.keyboard.press('Shift+?')
   const sheet = page.locator('#shortcut-cheatsheet'); await expect(sheet).toBeVisible()
   await expect(sheet.getByTestId('shortcut-row')).toHaveCount(18)
-  await expect(sheet).toContainText('Ctrl'); await expect(sheet).toContainText('Lưu workflow')
+  await expect(sheet).toContainText(/Ctrl|⌘/); await expect(sheet).toContainText('Lưu workflow')
   await page.keyboard.press('Escape'); await expect(sheet).toHaveCount(0)
 })

@@ -509,7 +509,7 @@ function Studio() {
 
   return <EditorLayout className="text-foreground text-sm"
     /* Top bar */
-    header={<header className="h-14 shrink-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b px-4">
+    header={<header className="h-14 shrink-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center border-b px-4">
       <div className="flex min-w-0 items-center gap-2">
         <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
         <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
@@ -544,7 +544,7 @@ function Studio() {
         </DropdownMenuContent>
       </DropdownMenu>
       </div>
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex min-w-0 items-center justify-end gap-2">
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       {wid && <ShareDialog workflowId={wid} open={dlg === 'share'} onOpenChange={v => setDlg(v ? 'share' : null)} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
       {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={isDirty} open={dlg === 'template'} onOpenChange={v => setDlg(v ? 'template' : null)} />}
@@ -557,8 +557,12 @@ function Studio() {
         </DialogContent>
       </Dialog>
       {delWf.dialog}
+      {/* the right column is never narrower than its icons, so it cannot cover the centre actions; the info badges
+          take what is left and clip (TASK-0039) */}
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden [contain:inline-size]" id="header-info">
       {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
       <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
+      </div>
       <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>}

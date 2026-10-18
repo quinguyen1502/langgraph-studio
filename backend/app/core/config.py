@@ -97,6 +97,14 @@ def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WIND
 def mcp_stdio_enabled() -> bool: return os.environ.get("STUDIO_MCP_STDIO") == "1"  # stdio servers run processes on the API host: off by default
 def mcp_allow_private() -> bool: return os.environ.get("STUDIO_MCP_ALLOW_PRIVATE") == "1"  # HTTP servers on private/loopback addresses
 def mcp_timeout() -> float: return max(1.0, float(os.environ.get("STUDIO_MCP_TIMEOUT", 30)))  # per MCP session (s)
+# --- TASK-0039: HTTP Tool nodes, CORS ---
+def http_tool_allow_private() -> bool: return os.environ.get("STUDIO_HTTP_TOOL_ALLOW_PRIVATE") == "1"  # HTTP Tool nodes may call private/loopback addresses
+def http_tool_timeout() -> float: return max(1.0, float(os.environ.get("STUDIO_HTTP_TOOL_TIMEOUT", 30)))  # per request (s)
+def cors_origins() -> list[str]:
+    """STUDIO_CORS_ORIGINS (comma-separated); unset: "*" in development, none in production (the UI is same-origin)."""
+    raw = os.environ.get("STUDIO_CORS_ORIGINS")
+    if raw is None: return [] if IS_PROD else ["*"]
+    return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
 # --- TASK-0015: repo import is experimental and off until STUDIO_ENABLE_IMPORT=1 ---
 def import_enabled() -> bool: return os.environ.get("STUDIO_ENABLE_IMPORT") == "1"
 def import_runtime() -> str:

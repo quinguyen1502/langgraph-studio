@@ -1,9 +1,9 @@
 /** Settings (/settings/:section): left navigation, one URL per section. New sections (credentials, API tokens)
- *  only need an entry in SECTIONS. */
+ *  need an entry in SECTIONS (sections.ts) and in COMPONENTS. */
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Database, Users, UsersRound, History, MessageSquareShare, Plug, ScrollText, UserCheck, Workflow, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Workflow } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/lib/theme'
@@ -18,25 +18,19 @@ import { UsersSection } from './UsersSection'
 import { TeamsSection } from './TeamsSection'
 import { ActivitySection } from './ActivitySection'
 import { can, useMe } from '@/lib/rbac'
+import { SECTIONS, type SectionId } from './sections'
 
-type Section = { id: string; icon: LucideIcon; Component: ComponentType; permission?: string }
-export const SECTIONS: Section[] = [
-  { id: 'channels', icon: MessageSquareShare, Component: ChannelsSection },
-  { id: 'accounts', icon: UserCheck, Component: AccountsSection },
-  { id: 'audit', icon: ScrollText, Component: AuditSection },
-  { id: 'knowledge', icon: Database, Component: KnowledgeSection },
-  { id: 'mcp', icon: Plug, Component: McpSection },
-  { id: 'users', icon: Users, Component: UsersSection, permission: 'users.manage' },
-  { id: 'teams', icon: UsersRound, Component: TeamsSection, permission: 'users.manage' },
-  { id: 'activity', icon: History, Component: ActivitySection, permission: 'users.manage' },
-]
+const COMPONENTS: Record<SectionId, ComponentType> = {
+  channels: ChannelsSection, accounts: AccountsSection, audit: AuditSection, knowledge: KnowledgeSection,
+  mcp: McpSection, users: UsersSection, teams: TeamsSection, activity: ActivitySection,
+}
 
 export function SettingsPage() {
   const { t } = useTranslation(); const { section } = useParams(); const me = useMe()
   const visible = SECTIONS.filter(s => !s.permission || can(me, s.permission))
   const current = SECTIONS.find(s => s.id === section)
   if (!current) return <Navigate to={`/settings/${SECTIONS[0].id}`} replace />
-  const { Component } = current
+  const Component = COMPONENTS[current.id]
   return <div className="min-h-dvh bg-background">
     <header className="flex h-14 items-center gap-3 border-b px-6">
       <Link to="/workflows" className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Workflow className="size-4" /></div>LangGraph Studio</Link>

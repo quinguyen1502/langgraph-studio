@@ -54,7 +54,8 @@ class DictLedger:
 
 
 # ---------- (a) idempotency keys + ledger ----------
-def test_http_tool_node_sends_stable_idempotency_key():
+def test_http_tool_node_sends_stable_idempotency_key(monkeypatch):
+    monkeypatch.setenv("STUDIO_HTTP_TOOL_ALLOW_PRIVATE", "1")  # the receiver is on 127.0.0.1 (TASK-0039 guard)
     seen = []
     class Hd(http.server.BaseHTTPRequestHandler):
         def do_POST(self):

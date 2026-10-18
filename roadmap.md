@@ -93,4 +93,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Editor panels
 
-- TASK-0038 Drag to resize the palette, the config panel, and the run panel (REQ-0026, Implemented 2026-10-18): **done**. REV-0037, QA-0037. Not merged.
+- TASK-0038 Drag to resize the palette, the config panel, and the run panel (REQ-0026, Implemented 2026-10-18): **done** — PR [#41](https://github.com/quinguyen1502/langgraph-studio/pull/41) merged into `develop` 2026-10-18. REV-0037, QA-0037.
+
+## Review hardening
+
+- TASK-0039 Fixes from the 2026-10-18 project review: HTTP Tool SSRF guard, Condition matching, macOS Playwright, editor header at 1280px, records, CORS, log redaction, lazy routes (REQ-0027, Implemented 2026-10-18): **done** — PR [#42](https://github.com/quinguyen1502/langgraph-studio/pull/42) merged into `develop` 2026-10-18. REV-0038, QA-0038.

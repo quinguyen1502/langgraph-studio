@@ -22,7 +22,7 @@ test('human node: wait, pending list, approve, complete', async ({ page }) => {
   await page.locator('.react-flow__node[data-id="ask"]').click()
   await expect(page.locator('#human-prompt')).toHaveValue('Approve refund for {{state.message}}?')
   await page.getByRole('tab', { name: 'Input' }).first().click()
-  await page.locator('[role=tabpanel] textarea').first().fill('{"message": "order A100"}')
+  await page.locator('#run-input').fill('{"message": "order A100"}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
   await expect(page.locator('#human-question')).toHaveText('Approve refund for order A100?')

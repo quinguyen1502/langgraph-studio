@@ -11,7 +11,7 @@ import { grouped, onPaletteRequest, searchValue, usePaletteCommands, type Palett
 import { can, loadMe, type Me } from '@/lib/rbac'
 import { SHORTCUTS } from '@/lib/shortcuts'
 import { useShortcuts } from '@/lib/use-shortcuts'
-import { SECTIONS } from '@/pages/settings/SettingsPage'
+import { SECTIONS } from '@/pages/settings/sections'
 
 type W = { id: string; name: string }
 

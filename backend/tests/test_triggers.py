@@ -118,15 +118,15 @@ def test_result_is_scoped_to_the_token(c):
     assert c.get(f"/api/hooks/workflows/{owid}/runs/{rid}", headers=H(osecret)).json()["error"]["code"] == "RUN_NOT_FOUND"
 
 
-def test_cancel_queued_run_is_skipped():
-    """Without the worker running, a queued run can be cancelled and the worker then skips it."""
+def test_cancel_queued_run_is_skipped(c):
+    """Without the worker running, a queued run can be cancelled and the worker then skips it.
+    Uses the module client: a second TestClient would start the shared worker on another event loop (TASK-0039)."""
     import asyncio
     from app.api.deps import run_service, trigger_service
     from app.services.run_worker import RunWorker
     q = InMemoryJobQueue(); trig = trigger_service(); trig.jobs = q
-    with TestClient(app) as cl:
-        tok = user(cl); wid = example(cl, tok); secret = token_for(cl, tok, wid)["token"]
-        uid = cl.get("/api/me", headers=H(tok)).json()["data"]["id"]
+    tok = user(c); wid = example(c, tok); secret = token_for(c, tok, wid)["token"]
+    uid = c.get("/api/me", headers=H(tok)).json()["data"]["id"]
     t = trig.authenticate(wid, secret); rid = trig.start(t, {"message": "x"}, None)
     run_service().cancel(rid, uid)
     assert asyncio.run(RunWorker(q, run_service).run_job(q.dequeue(1))) is None

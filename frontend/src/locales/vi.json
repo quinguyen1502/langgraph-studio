@@ -333,6 +333,7 @@
     "RUN_NOT_FOUND": "Không tìm thấy run, run đã kết thúc hoặc không thuộc về bạn",
     "RUN_NODE_NOT_REACHED": "Run chạy xong mà không tới node '{{node}}'",
     "NODE_FAILED": "Node bị lỗi",
+    "HTTP_TOOL_URL_BLOCKED": "Node HTTP Tool {{node}}: URL phải là địa chỉ http(s) công khai",
     "CREDENTIAL_NOT_FOUND": "Credential không tồn tại hoặc không thuộc về bạn",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Provider không hỗ trợ: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key trống",

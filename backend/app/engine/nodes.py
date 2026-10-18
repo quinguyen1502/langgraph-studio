@@ -1,7 +1,10 @@
 """Node executors: build the LangGraph node function for each node type."""
 from __future__ import annotations
 from typing import Any, Callable, Dict, Optional
+from urllib.parse import unquote, urlsplit
 import httpx
+from ..core import config
+from ..core.net import pinned_request, public_address
 from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, TokenBuffer, call_llm
@@ -19,6 +22,20 @@ def token_stream(nid: str) -> Optional[TokenBuffer]:
     try: from langgraph.config import get_stream_writer; write = get_stream_writer()
     except Exception: return None
     return TokenBuffer(lambda delta: write({"node": nid, "delta": delta}))
+
+
+def http_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], extra: Dict[str, str]) -> Any:
+    """HTTP Tool request (TASK-0039, REQ-0027): public http(s) addresses only unless STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1.
+    The host is resolved once and the request connects to that checked IP; redirects are never followed."""
+    url, ip = public_address(render(d.get("url", ""), state), config.http_tool_allow_private(), "HTTP_TOOL_URL_BLOCKED", node=nid)
+    target, headers, ext = pinned_request(url, ip)
+    u = urlsplit(url); auth = (unquote(u.username), unquote(u.password or "")) if u.username else None  # user:pass@ in the URL
+    body = render(d.get("body", ""), state)
+    with httpx.Client(timeout=config.http_tool_timeout(), follow_redirects=False) as c:
+        r = c.send(c.build_request(d.get("method", "GET"), target, content=body.encode() if body else None,
+                                   headers={"Content-Type": "application/json", **extra, **headers}, extensions=ext), auth=auth)
+    try: return r.json()
+    except Exception: return r.text
 
 
 def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Optional[UsageSink] = None,
@@ -49,12 +66,7 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
     elif t == "tool":
         def fn(state):
             if d.get("mode") == "http":
-                body = render(d.get("body", ""), state)
-                r = httpx.request(d.get("method", "GET"), render(d["url"], state),
-                                  content=body.encode() if body else None,
-                                  headers={"Content-Type": "application/json", **(effects.headers(node["id"]) if effects else {})}, timeout=30)
-                try: res = r.json()
-                except Exception: res = r.text
+                res = http_call(node["id"], d, state, effects.headers(node["id"]) if effects else {})
             else:
                 res = call_tool(TOOLS[d["function"]], state, effects.key(node["id"]) if effects else None)
             return {d["output_field"]: res}

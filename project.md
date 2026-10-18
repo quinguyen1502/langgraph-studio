@@ -23,38 +23,41 @@ langgraph-studio
   - `engine/` validator, StateGraph compiler, nodes, LLM/tools, runtime streaming, limits, repo import + `sandbox/runner.py`
   - `core/` config (env vars), security (hashing, JWT), domain errors; `schemas/` Pydantic DTOs
 - `backend/tests/` — pytest suite
+- `frontend/e2e/` — Playwright specs (own API on :8100 and Vite on :5190); `frontend/src/lib/__tests__/` — vitest
 
 ## Constraints
 
-- Internal use; SQLite for MVP; must run offline in mock mode
-- Imported code only runs in a subprocess with its own venv
+- Internal use; must run offline in mock mode; SQLite by default, PostgreSQL + Redis through `DATABASE_URL` / `REDIS_URL` (REQ-0008)
+- Repo import is experimental and off by default (`STUDIO_ENABLE_IMPORT`); imported code runs in a Docker sandbox (REQ-0009)
+- Outbound HTTP (webhooks, MCP, HTTP Tool nodes) goes through the shared SSRF guard in `backend/app/core/net.py` (REQ-0027)
 - UI: shadcn/ui components and theme tokens only, no hard-coded colours (DEC-0008, `docs/ui-conventions.md`)
 
 ## Declared Technology Direction
 
 - Frontend: React + TypeScript (Vite), @xyflow/react, Tailwind CSS v4, shadcn/ui (Preferred, DEC-0001; observed in `frontend/package.json`)
 - Mobile: none
-- Backend: FastAPI + langgraph, Python 3.13 (Preferred; observed in `backend/requirements.txt`)
-- Database: SQLite (Preferred; observed); PostgreSQL + Redis proposed (REQ-0008)
-- Infrastructure: `dev.sh` local script (observed); Docker Compose proposed
+- Backend: FastAPI + langgraph, Python >= 3.12 (Preferred; `backend/pyproject.toml`; CI uses 3.12)
+- Database: SQLite default, PostgreSQL 17 + Redis 7 (observed: `docker-compose.yml`, CI job `backend-postgres`)
+- Infrastructure: `dev.sh` local script and Docker Compose (observed)
 - Ci Cd: GitHub Actions (Approved, DEC-0001; `.github/workflows/ci.yml` + `factory-verify.yml`)
-- Deployment: Unknown
-- Testing: pytest, tsc/vite build, Playwright screenshots (Preferred; observed)
+- Deployment: Docker Compose (nginx UI + API + worker); no hosted target
+- Testing: pytest, vitest, tsc/vite build, oxlint, Playwright e2e (observed; e2e is not on CI)
 
 ## Technology Discovery
 
-- Install: `./dev.sh` first run (creates `backend/.venv`, `pip install -e "backend[dev]"`, `npm install`); Factory: `factory deps apply --allow-network`
+- Install: `./dev.sh` (creates or repairs `backend/.venv`: `pip install --prefer-binary -e "backend[dev]"`, then `npm install`); Factory: `factory deps apply --allow-network`
 - Run: `./dev.sh` (observed: backend :8000, frontend :5173)
-- Test: `cd backend && .venv/bin/python -m pytest -q` (observed: 19 passed, 2026-10-16)
+- Test: `cd backend && .venv/bin/python -m pytest -q` (observed: 324 passed, 10 skipped without Postgres/Redis, 2026-10-18); `cd frontend && npm test` (vitest); `cd frontend && npm run e2e` (Playwright; `PW_CHROME`, `E2E_UVICORN`)
 - Build: `cd frontend && npm run build` (observed: passes)
-- Lint: `cd frontend && npm run lint` (oxlint; observed passing via `factory verify run`)
+- Lint: `cd frontend && npm run lint` (oxlint; exits 0 with React hook warnings, see REQ-0027)
 - Typecheck: `cd frontend && npx tsc -b` (observed, part of build)
 - Format: Unknown
-- Migration: none (schema created/migrated at startup)
+- Migration: Alembic (`backend/app/migrations/versions`, applied at startup under a file or advisory lock)
 
 ## Assumptions
 
 - Stack choices are Preferred by owner decision (DEC-0001); CI is Approved.
+- The integration branch is `develop` (DEC-0033). GitHub Actions does not run while the account's billing blocks it (owner decision, 2026-10-18); local checks are the evidence.
 
 ## Open Questions
 

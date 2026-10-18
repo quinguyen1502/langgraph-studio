@@ -11,7 +11,7 @@ from ..core.errors import AppError
 from ..engine import mcp_client
 from ..models import McpServer
 from ..repositories import McpServerRepository
-from .webhooks import pinned_request, public_address
+from ..core.net import pinned_request, public_address
 
 TRANSPORTS = ("stdio", "http")
 SCOPES = ("user", "org")

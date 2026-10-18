@@ -6,6 +6,7 @@ import { Building2, ChevronDown, CircleCheck, CircleDashed, SearchX, User } from
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -92,6 +93,7 @@ export function ChannelsSection() {
         options: [all(t('settings.filter.anyScope')), ...SCOPES.map(s => ({ value: s, label: t(`approvals.scope.${s}`) }))] },
     ]} />
     {(err || slotErr) && <ErrorAlert>{err || slotErr}</ErrorAlert>}
+    {!data && !err && <div className="space-y-3" aria-busy="true"><span className="sr-only">{t('common.loading')}</span>{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-28 w-full" />)}</div>}
     {data && !cards.length && <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed p-10 text-sm text-muted-foreground" id="channels-none">
       <SearchX className="size-6" />{t('settings.noMatch')}</div>}
     {data && cards.map(({ k, conns }) => <PlatformCard key={k.kind} k={k} data={data} conns={conns} reload={reload}

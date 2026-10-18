@@ -17,6 +17,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
    | `success` / `success-foreground` | done, ok, passed |
    | `warning` / `warning-foreground` | running, pending, changed |
    | `info` / `info-foreground` | neutral highlights, such as JSON numbers |
+   | `syntax-key` / `syntax-string` | JSON editor keys and strings. Numbers stay on `info`, booleans on `warning`, null and punctuation on `muted-foreground`. |
    | `destructive` | errors (shadcn built-in) |
 
 5. **Node types each have a colour token** (DEC-0008 addendum). Each type has three tokens: `--node-<type>` (accent), `--node-<type>-foreground` (text on a solid accent) and `--node-<type>-muted` (subtle background, the accent at 12% in light and 18% in dark). Types are `start`, `llm`, `tool`, `condition`, `end` and `code`.

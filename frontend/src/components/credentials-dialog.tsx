@@ -31,7 +31,7 @@ const run = async (set: (s: Status) => void, fn: () => Promise<ProbeResult>) => 
   try { set({ ok: await fn() }) } catch (e: any) { set({ err: e.message }) }
 }
 
-export function CredentialsDialog() {
+export function CredentialsDialog({ trigger, onChanged }: { trigger?: React.ReactElement; onChanged?: () => void } = {}) {
   const { t } = useTranslation(); const [open, setOpen] = useState(false)
   const providers = useProviders()
   const [items, setItems] = useState<Credential[]>([])
@@ -60,8 +60,8 @@ export function CredentialsDialog() {
   const del = (c: Credential) => confirmDel.ask({ title: t('creds.deleteTitle', { name: c.name }), name: c.name, description: t('creds.deleteBody'),
     onConfirm: async () => { await api(`/api/credentials/${c.id}`, { method: 'DELETE' }); load() } })
   const label = (id: string) => t(`creds.providers.${id}`, { defaultValue: providers.find(x => x.id === id)?.label ?? id })
-  return <Dialog open={open} onOpenChange={setOpen}>
-    <DialogTrigger asChild><Button variant="outline" id="creds-btn"><KeyRound />{t('creds.button')}</Button></DialogTrigger>
+  return <Dialog open={open} onOpenChange={o => { setOpen(o); if (!o) onChanged?.() }}>
+    <DialogTrigger asChild>{trigger ?? <Button variant="outline" id="creds-btn"><KeyRound />{t('creds.button')}</Button>}</DialogTrigger>
     <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto [&>*]:min-w-0">
       <DialogHeader><DialogTitle>{t('creds.title')}</DialogTitle>
         <DialogDescription className="flex items-center gap-1"><Lock className="size-3" />{t('creds.desc')}</DialogDescription></DialogHeader>

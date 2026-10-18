@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { TextLink } from '@/components/text-link'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MessageSquareShare, TriangleAlert } from 'lucide-react'
@@ -29,9 +29,9 @@ export function HumanApprovalSettings({ value, channels, onChange }: { value?: A
         <SelectContent><SelectItem value="none">{t('approvals.node.studioOnly')}</SelectItem>
           {missing && <SelectItem value="missing" disabled>{t(`approvals.kind.${v.channel}`)} · {t('approvals.notConnected')}</SelectItem>}
           {list.map(c => <SelectItem key={c.id} value={c.id}>{channelLabel(t, c)}</SelectItem>)}</SelectContent></Select>
-      {!list.length && <p className="text-xs text-muted-foreground" id="approval-no-channels">{t('approvals.node.connectFirst')} <Link to="/settings/channels" className="underline underline-offset-2">{t('settings.open')}</Link></p>}</div>
+      {!list.length && <p className="text-xs text-muted-foreground" id="approval-no-channels">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels" id="approval-open-channels">{t('approvals.node.addChannel')}</TextLink></p>}</div>
     {v.channel && <>
-      {missing && <Alert variant="warning" id="approval-not-connected"><TriangleAlert /><AlertDescription className="text-xs">{t('approvals.node.connectFirst')} <Link to="/settings/channels" className="underline underline-offset-2">{t('settings.open')}</Link></AlertDescription></Alert>}
+      {missing && <Alert variant="warning" id="approval-not-connected"><TriangleAlert /><AlertDescription className="text-xs">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels">{t('approvals.node.addChannel')}</TextLink></AlertDescription></Alert>}
       <div className="space-y-1.5"><Label htmlFor="approval-target" className="text-xs text-muted-foreground">{t(`approvals.node.target.${v.channel}`)}</Label>
         <Input id="approval-target" className="font-mono text-xs" value={v.target || ''} placeholder={t(`approvals.node.targetPh.${v.channel}`)} onChange={e => set({ target: e.target.value })} /></div>
       <div className="space-y-1.5"><Label htmlFor="approval-approvers" className="text-xs text-muted-foreground">{t('approvals.node.approvers')}</Label>

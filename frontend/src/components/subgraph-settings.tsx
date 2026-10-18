@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
+import { TextLink } from '@/components/text-link'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -21,6 +22,7 @@ export function SubgraphSettings({ wid, value, onChange }: { wid?: string; value
         <SelectContent>{(items || []).map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}</SelectContent>
       </Select></div>
     {missing && <p className="text-[11px] text-destructive">{t('editor.subgraphMissing')}</p>}
+    {items && !items.length && <p className="text-[11px] text-muted-foreground" id="subgraph-none">{t('editor.subgraphNone')} <TextLink to="/workflows" id="subgraph-create">{t('editor.subgraphCreate')}</TextLink></p>}
     <p className="text-[11px] text-muted-foreground">{t('editor.subgraphHint')}</p>
     {value && !missing && <Button variant="outline" size="sm" asChild><Link to={`/workflows/${value}`} id="subgraph-open"><ExternalLink />{t('editor.subgraphOpen')}</Link></Button>}
   </div>

@@ -64,6 +64,8 @@
     --color-warning-foreground: var(--warning-foreground);
     --color-info: var(--info);
     --color-info-foreground: var(--info-foreground);
+    --color-syntax-key: var(--syntax-key);
+    --color-syntax-string: var(--syntax-string);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
     --color-muted-foreground: var(--muted-foreground);
@@ -144,6 +146,8 @@
     --warning-foreground: oklch(0.985 0 0);
     --info: oklch(0.588 0.158 241.966);
     --info-foreground: oklch(0.985 0 0);
+    --syntax-key: oklch(0.52 0.16 290);
+    --syntax-string: oklch(0.48 0.12 155);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.708 0 0);
@@ -218,6 +222,8 @@
     --warning-foreground: oklch(0.145 0 0);
     --info: oklch(0.685 0.169 237.323);
     --info-foreground: oklch(0.145 0 0);
+    --syntax-key: oklch(0.78 0.14 290);
+    --syntax-string: oklch(0.8 0.13 155);
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.556 0 0);

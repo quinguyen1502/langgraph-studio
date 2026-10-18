@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Download, FilePlus2, Loader2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -52,7 +53,7 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
             {busy === 'blank' ? <Loader2 className="animate-spin" /> : <FilePlus2 className="size-6" />}
             <span className="font-medium text-foreground">{t('templates.blank')}</span><span>{t('templates.blankHint')}</span>
           </button>
-          {items === null && !err && <div className="flex items-center justify-center p-6 text-muted-foreground"><Loader2 className="animate-spin" /></div>}
+          {items === null && !err && Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="min-h-40" aria-busy={i === 0 || undefined} />)}
           {items?.map(tp => (
             <div key={tp.id} data-testid="tpl-card" data-id={tp.id} className="group relative flex flex-col gap-2 rounded-lg border bg-card p-3 text-card-foreground">
               <button type="button" className="flex flex-col gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md" disabled={!!busy}

@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -141,6 +142,7 @@ export function KnowledgeSection() {
         <div className="flex gap-2"><Button size="sm" disabled={create.busy} id="kb-create" onClick={() => create.run(() => api('/api/knowledge-bases', { method: 'POST', json: { ...form, credential_id: form.credential_id || null } }), '')}>{t('kb.create')}</Button>
           <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>{t('common.cancel')}</Button></div></CardContent></Card>
       : <Button size="sm" onClick={() => setAdding(true)} id="kb-add"><Plus />{t('kb.new')}</Button>}
+    {items === null && !err && <div className="space-y-3" aria-busy="true"><span className="sr-only">{t('common.loading')}</span>{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>}
     {items && !items.length && !adding && <p className="text-sm text-muted-foreground" id="kb-none">{t('kb.none')}</p>}
     {items?.map((kb, i) => <KbCard key={kb.id} kb={kb} creds={creds} reload={load} defaultOpen={i === 0} />)}
   </div>

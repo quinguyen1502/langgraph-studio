@@ -1,14 +1,17 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position, addEdge,
+  ReactFlow, ReactFlowProvider, Background, Controls, ControlButton, MiniMap, Handle, Position, addEdge,
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { JsonEditor } from '@/components/json-editor'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -46,7 +49,8 @@ import { HumanApprovalSettings } from '@/components/human-approval-settings'
 import type { Channels } from '@/lib/approvals'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
-import type { Credential } from '@/components/credentials-dialog'
+import { CredentialsDialog, type Credential } from '@/components/credentials-dialog'
+import { TextButton } from '@/components/text-link'
 import { ModelPicker } from '@/components/model-picker'
 import { useProviders } from '@/lib/providers'
 import { RunTrace } from '@/components/run-trace'
@@ -57,7 +61,7 @@ import { McpSettings } from '@/components/mcp-settings'
 import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
 import { useShortcuts } from '@/lib/use-shortcuts'
 import { useGraphHistory } from '@/lib/use-graph-history'
-import { PROTECTED, removeElements, selectionIds } from '@/lib/graph-ops'
+import { PROTECTED, removeElements, selectionIds, spliceNode } from '@/lib/graph-ops'
 
 type Field = { name: string; type: string; reducer?: string }
 type LogItem = { type: string; node?: string; label?: string; duration_ms?: number; delta?: any; state?: any; errors?: string[]; error?: any }
@@ -77,6 +81,7 @@ META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
 const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'human', 'join', 'subgraph', 'end']
+const INSERTABLE = TYPES.filter(t => t !== 'start' && t !== 'end')
 const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human'])
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
@@ -98,6 +103,16 @@ const DEFAULTS: Record<string, any> = {
   join: { label: 'Join' }, subgraph: { label: 'Subgraph', workflow_id: '' }, // response (text, or approved / rejected) goes to output_field
 }
 
+const LOCK_CLOSED = 'M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0 8 0 4.571 3.429 4.571 7.619v3.048H3.048A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047zm4.724-13.866H7.467V7.619c0-2.59 2.133-4.724 4.723-4.724 2.591 0 4.724 2.133 4.724 4.724v3.048z'
+const LOCK_OPEN = 'M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0c-4.114 1.828-1.37 2.133.305 2.438 1.676.305 4.42 2.59 4.42 5.181v3.048H3.047A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047z'
+
+/** Filled React Flow lock mark. Control CSS clamps every svg to 12×12, which squashes the stock 25×32 viewBox, so the mark sits in a square. */
+function CanvasLockIcon({ locked }: { locked: boolean }) {
+  return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+    <path transform="translate(3.5 0)" d={locked ? LOCK_CLOSED : LOCK_OPEN} />
+  </svg>
+}
+
 function StatusBadge({ s }: { s?: string }) {
   const { t } = useTranslation()
   if (s === 'running') return <Badge variant="warning" className="gap-1"><Loader2 className="size-3 animate-spin" />{t('status.running')}</Badge>
@@ -110,11 +125,11 @@ function StatusBadge({ s }: { s?: string }) {
 
 function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
-  return <div className={cn(type === 'code' && 'border-node-code/60 border-dashed', 'relative rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
-    selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
-    d._status === 'done' && 'border-success', d._status === 'waiting' && 'border-node-human ring-4 ring-node-human/30', d._status === 'error' && 'border-destructive')}>
-    <span aria-hidden className={cn('absolute inset-y-0 left-0 w-1 rounded-l-xl', m.accent)} />
+  return <div className="relative">
     {type !== 'start' && <Handle type="target" position={Position.Left} />}
+    <div className={cn(type === 'code' && 'border-node-code/60 border-dashed', 'rounded-xl border bg-card text-card-foreground shadow-sm px-3 py-2 min-w-44 transition-all',
+      selected && 'ring-2 ring-ring', d._hl && 'ring-4 ring-primary/40 shadow-md', d._status === 'running' && 'border-warning ring-4 ring-warning/30',
+      d._status === 'done' && 'border-success', d._status === 'waiting' && 'border-node-human ring-4 ring-node-human/30', d._status === 'error' && 'border-destructive')}>
     <div className="flex items-center gap-2">
       <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
       <div className="flex-1 min-w-0">
@@ -125,6 +140,7 @@ function StudioNode({ data, type, selected }: NodeProps) {
     </div>
     {(d._status || d._dur != null) && <div className="mt-2 flex items-center justify-between gap-2">
       <StatusBadge s={d._status} />{d._dur != null && <span className="text-[10px] text-muted-foreground">{d._dur} ms</span>}</div>}
+    </div>
     {type !== 'end' && <Handle type="source" position={Position.Right} />}
   </div>
 }
@@ -146,6 +162,52 @@ function Sel({ value, onChange, opts, ph }: { value?: string; onChange: (v: stri
     </Select>
 }
 const F = ({ label, children }: { label: string; children: React.ReactNode }) => <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">{label}</Label>{children}</div>
+
+function InsertMenu({ id, label, icon: Icon, onPick }: { id: string; label: string; icon: LucideIcon; onPick: (type: string) => void }) {
+  return <ContextMenuSub>
+    <ContextMenuSubTrigger id={`${id}-insert`}><Icon />{label}</ContextMenuSubTrigger>
+    <ContextMenuSubContent>
+      {INSERTABLE.map(type => { const I = META[type].icon; return <ContextMenuItem key={type} id={`${id}-insert-${type}`} onSelect={() => onPick(type)}><I />{META[type].label}</ContextMenuItem> })}
+    </ContextMenuSubContent>
+  </ContextMenuSub>
+}
+
+function NodeMenu({ id, type, edges, insert, onCopy, onCut, onDuplicate, onDelete }: {
+  id: string; type?: string; edges: Edge[]
+  insert: (type: string, where: { dir: 'before' | 'after'; anchor: string }) => void
+  onCopy: () => void; onCut: () => void; onDuplicate: () => void; onDelete: () => void
+}) {
+  const { t } = useTranslation()
+  const locked = PROTECTED.has(type ?? '')
+  const ins = edges.filter(e => e.target === id).length
+  const outs = edges.filter(e => e.source === id).length
+  return <>
+    {type !== 'start' && ins <= 1 && <InsertMenu id="before" label={t('editor.insertBefore')} icon={ArrowLeft} onPick={tp => insert(tp, { dir: 'before', anchor: id })} />}
+    {type !== 'end' && outs <= 1 && <InsertMenu id="after" label={t('editor.insertAfter')} icon={ArrowRight} onPick={tp => insert(tp, { dir: 'after', anchor: id })} />}
+    {!locked && <>
+      <ContextMenuSeparator />
+      <ContextMenuItem id="copy-node" onSelect={onCopy}><Copy />{t('editor.copyNode')}</ContextMenuItem>
+      <ContextMenuItem id="cut-node" onSelect={onCut}><Scissors />{t('editor.cutNode')}</ContextMenuItem>
+      <ContextMenuItem id="duplicate-node" onSelect={onDuplicate}><CopyPlus />{t('clipboard.duplicate')}</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuItem id="delete-node" variant="destructive" onSelect={onDelete}><Trash2 />{t('editor.deleteNode')}</ContextMenuItem>
+    </>}
+  </>
+}
+
+function EditorSkeleton() {
+  const { t } = useTranslation()
+  return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background" aria-busy="true">
+    <span className="sr-only">{t('common.loading')}</span>
+    <header className="col-span-3 flex items-center gap-3 border-b px-4">
+      <Skeleton className="size-8" /><Skeleton className="h-5 w-40" /><Skeleton className="h-8 w-72" /><Skeleton className="ml-auto h-8 w-28" />
+    </header>
+    <aside className="space-y-2 border-r p-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}</aside>
+    <main className="p-8"><Skeleton className="h-16 w-56 rounded-xl" /></main>
+    <aside className="space-y-2 border-l p-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-full" /><Skeleton className="h-24 w-full" /></aside>
+    <section className="col-span-3 space-y-2 border-t p-3"><Skeleton className="h-8 w-48" /><Skeleton className="h-40 w-full" /></section>
+  </div>
+}
 
 export function EditorPage() { return <ReactFlowProvider><Studio /></ReactFlowProvider> }
 
@@ -295,6 +357,16 @@ function Studio() {
   }
   useShortcuts(handlers)
   // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
+  const freshNode = (type: string) => ({
+    id: `${type}_${Date.now().toString(36)}${idc.current++}`, type, position: { x: 0, y: 0 }, selected: true,
+    data: { ...DEFAULTS[type], ...(type === 'llm' ? { prompt: i18n.t('samples.prompt', { var: '{{state.message}}' }) } : {}) },
+  })
+  const insertAround = (type: string, where: { dir: 'before' | 'after'; anchor: string } | { dir: 'edge'; edgeId: string }) => {
+    const r = spliceNode(nodes, edges, freshNode(type), where)
+    setNodes(r.nodes); setEdges(styleEdges(r.edges))
+    const added = r.nodes.find(n => !nodes.some(x => x.id === n.id))
+    if (added) setSel({ kind: 'node', id: added.id })
+  }
   const addNode = (type: string, pos: { x: number; y: number }, select = false) => {
     const id = `${type}_${Date.now().toString(36)}${idc.current++}`
     setNodes(ns => [...(select ? ns.map(n => n.selected ? { ...n, selected: false } : n) : ns), { id, type, position: pos, selected: select,
@@ -306,6 +378,7 @@ function Studio() {
   const paletteRef = useRef<Record<string, () => void>>({})
   // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
   const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
+  const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string }>(null)
   const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
   const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
   const menuExtras: PaletteCommand[] = [
@@ -364,6 +437,12 @@ function Studio() {
   }))
   const d: any = selNode?.data || {}
   const fieldNames = state.map(f => f.name)
+  const [canvasLock, setCanvasLock] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [moreTip, setMoreTip] = useState(false)
+  const moreTipBlock = useRef(false)
+
+  if (!wid && id && !loadErr) return <EditorSkeleton />
 
   if (loadErr) return <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4 text-foreground">
     <div className="max-w-sm text-center space-y-3 rounded-xl border bg-card p-8 shadow-sm" id="editor-not-found">
@@ -376,11 +455,13 @@ function Studio() {
 
   return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
     {/* Top bar */}
-    <header className="col-span-3 flex items-center gap-3 border-b px-4">
-      <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
-      <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
-      <Separator orientation="vertical" className="h-6!" />
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-44 h-8" aria-label={t('editor.nameLabel')} />
+    <header className="col-span-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b px-4">
+      <div className="flex min-w-0 items-center gap-2">
+        <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
+        <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
+      </div>
+      <div className="flex items-center gap-2">
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-44" aria-label={t('editor.nameLabel')} />
       {edit && savedSnap.current !== null && snap() !== savedSnap.current && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
@@ -390,8 +471,11 @@ function Studio() {
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
         <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}
-      <DropdownMenu>
-        <Tip tip={t('editor.moreTip')}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="more-btn" aria-label={t('editor.more')}><MoreHorizontal /></Button></DropdownMenuTrigger></Tip>
+      <DropdownMenu open={moreOpen} onOpenChange={o => { setMoreOpen(o); if (o) setMoreTip(false); else moreTipBlock.current = true }}>
+        <Tooltip open={!moreOpen && moreTip} onOpenChange={o => { if (moreTipBlock.current || moreOpen) { setMoreTip(false); return } setMoreTip(o) }}>
+          <TooltipTrigger asChild onPointerLeave={() => { moreTipBlock.current = false; setMoreTip(false) }}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="more-btn" aria-label={t('editor.more')}><MoreHorizontal /></Button></DropdownMenuTrigger></TooltipTrigger>
+          <TooltipContent>{t('editor.moreTip')}</TooltipContent>
+        </Tooltip>
         <DropdownMenuContent align="start" className="min-w-64" id="more-menu">
           {menuSections(paletteCmds).map(([sec, items], k) => <Fragment key={sec}>{k > 0 && <DropdownMenuSeparator />}
             {items.map(c => { const I = c.icon; const combo = c.shortcut ? SHORTCUTS.find(x => x.id === c.shortcut)?.keys[0] : undefined
@@ -402,21 +486,23 @@ function Studio() {
               </DropdownMenuItem> })}</Fragment>)}
         </DropdownMenuContent>
       </DropdownMenu>
+      </div>
+      <div className="flex items-center justify-end gap-2">
       <ShortcutCheatsheet open={cheat} onOpenChange={setCheat} />
       {wid && <ShareDialog workflowId={wid} open={dlg === 'share'} onOpenChange={v => setDlg(v ? 'share' : null)} onTransferred={(o, f) => { setErrors(f.length ? [t('transfer.done', { email: o }), ...f.map(i => t('transfer.flaggedLine', { node: i.node, kind: t(`transfer.kinds.${i.kind}`), name: i.name ?? i.id }))] : [t('transfer.done', { email: o })]); setTab('input'); api(`/api/workflows/${wid}`).then(load).catch(() => {}) }} />}
       {edit && <SaveTemplateDialog wid={wid} defaultName={name} isDirty={isDirty} open={dlg === 'template'} onOpenChange={v => setDlg(v ? 'template' : null)} />}
       <VersionsDialog wid={wid} isDirty={isDirty} open={dlg === 'versions'} onOpenChange={v => setDlg(v ? 'versions' : null)} onRestored={wf => { load(wf); setErrors([]) }} />
       {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
       <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
-        <DialogContent className="sm:max-w-2xl"><DialogHeader><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
-          <ScrollArea className="h-96 rounded-md border bg-muted/40"><pre className="p-3 text-xs">{JSON.stringify(toJSON(), null, 2)}</pre></ScrollArea>
+        <DialogContent className="flex max-h-[85vh] w-full min-w-0 flex-col overflow-hidden sm:max-w-2xl">
+          <DialogHeader className="shrink-0 pr-8"><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>
+          <JsonEditor readOnly value={JSON.stringify(toJSON(), null, 2)} className="h-[min(28rem,60vh)]" />
         </DialogContent>
       </Dialog>
       {delWf.dialog}
-      <div className="ml-auto flex items-center gap-2">
-        {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
-        <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
-        <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
+      {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
+      <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
+      <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>
 
@@ -454,14 +540,38 @@ function Studio() {
     </aside>
 
     {/* Canvas */}
+    <ContextMenu>
+    <ContextMenuTrigger asChild>
     <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
       {clipNote && <div role="status" id="clip-notice" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-1.5 text-sm">{clipNote}</div>}
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
-        colorMode={dark ? 'dark' : 'light'} onConnect={edit ? onConnect : undefined} nodesConnectable={edit} nodesDraggable={edit} edgesReconnectable={edit} onNodeClick={(_, n) => onNodeClick(n.id)}
-        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })} onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
-        <Background /><Controls /><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
+        colorMode={dark ? 'dark' : 'light'} onConnect={edit && !canvasLock ? onConnect : undefined} nodesConnectable={edit && !canvasLock} nodesDraggable={edit && !canvasLock} edgesReconnectable={edit && !canvasLock} elementsSelectable
+        onNodeClick={(_, n) => onNodeClick(n.id)}
+        onNodeContextMenu={(e, n) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'node', id: n.id }); onNodeClick(n.id) }}
+        onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })}
+        onEdgeContextMenu={(e, ed) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'edge', id: ed.id }); setSel({ kind: 'edge', id: ed.id }) }}
+        onPaneContextMenu={e => { e.preventDefault(); e.stopPropagation() }}
+        onPaneClick={() => setSel(null)} deleteKeyCode={null} fitView>
+        <Background /><Controls showInteractive={false}>
+          <ControlButton onClick={() => setCanvasLock(v => !v)} aria-label={t(canvasLock ? 'editor.unlockCanvas' : 'editor.lockCanvas')} title={t(canvasLock ? 'editor.unlockCanvas' : 'editor.lockCanvas')}>
+            <CanvasLockIcon locked={canvasLock} />
+          </ControlButton>
+        </Controls><MiniMap pannable zoomable className="[&>svg]:h-20 [&>svg]:w-28" />
       </ReactFlow>
     </main>
+    </ContextMenuTrigger>
+    <ContextMenuContent>
+      {ctx?.kind === 'node' && <NodeMenu id={ctx.id} type={nodes.find(n => n.id === ctx.id)?.type} edges={edges} insert={insertAround}
+        onCopy={() => { const c = copySelection(nodes, edges, [ctx.id]); if (!c) return; clipMem.current = c; pasteN.current = 0; clipStore.write(c); note(t('clipboard.copied', { count: c.nodes.length })) }}
+        onCut={() => { const c = copySelection(nodes, edges, [ctx.id]); if (!c) return; clipMem.current = c; pasteN.current = 0; clipStore.write(c); removeIds(c.nodes.map(n => n.id)); note(t('clipboard.cut', { count: c.nodes.length })) }}
+        onDuplicate={() => { const c = copySelection(nodes, edges, [ctx.id]); if (c) insert(c, 1) }} onDelete={() => removeIds([ctx.id])} />}
+      {ctx?.kind === 'edge' && <>
+        <InsertMenu id="edge" label={t('editor.insertHere')} icon={Plus} onPick={type => ctx && insertAround(type, { dir: 'edge', edgeId: ctx.id })} />
+        <ContextMenuSeparator />
+        <ContextMenuItem id="delete-edge" variant="destructive" onSelect={() => ctx && removeIds([], [ctx.id])}><Trash2 />{t('editor.deleteEdge')}</ContextMenuItem>
+      </>}
+    </ContextMenuContent>
+    </ContextMenu>
 
     {/* Right config */}
     <aside className="border-l bg-muted/30 min-h-0">
@@ -471,7 +581,6 @@ function Studio() {
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
           <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
-          <Button variant="destructive" size="sm" id="delete-edge" onClick={() => removeIds([], [selEdge.id])}><Trash2 />{t('editor.deleteEdge')}</Button>
         </div>}
         {selNode && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
@@ -481,7 +590,8 @@ function Studio() {
             <F label={t('editor.credential')}><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
               <SelectTrigger className="w-full" id="llm-credential"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="none">{t('editor.credentialDefault')}</SelectItem>
-                {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select></F>
+                {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select>
+              {!creds.length && <p className="text-[11px] text-muted-foreground" id="llm-no-credential">{t('editor.credentialNone')} <CredentialsDialog onChanged={() => { api<Credential[]>('/api/credentials').then(setCreds).catch(() => {}) }} trigger={<TextButton id="llm-add-credential">{t('editor.credentialAdd')}</TextButton>} /></p>}</F>
             <F label={t('field.model')}><ModelPicker credentialId={d.credential_id || undefined} value={d.model || ''} onChange={v => upd('model', v)} placeholder={providers.find(p => p.id === creds.find(c => c.id === d.credential_id)?.provider)?.default_model || 'gpt-4o-mini'} /></F>
             <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
@@ -523,9 +633,6 @@ function Studio() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {!source && !PROTECTED.has(selNode.type!) && <div className="flex gap-2">
-            <Button variant="outline" size="sm" id="duplicate-node" onClick={() => { const c = copySelection(nodes, edges, [selNode.id]); if (c) insert(c, 1) }}><CopyPlus />{t('clipboard.duplicate')}</Button>
-            <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button></div>}
           {RUNTIME.has(selNode.type || '') && <NodeRuntime data={d} onChange={setRuntime} />}
         </div>}
       </div></fieldset></ScrollArea>
@@ -540,7 +647,7 @@ function Studio() {
           {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
-          <Textarea id="run-input" className="font-mono text-xs flex-1 resize-none h-full" value={input} onChange={e => setInput(e.target.value)} />
+          <JsonEditor id="run-input" value={input} onChange={setInput} className="h-full min-h-0 flex-1" />
           {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>

@@ -14,3 +14,12 @@ class UserOut(BaseModel):
 class TokenOut(BaseModel):
     token: str
     user: UserOut
+
+
+class ResetRequest(BaseModel):  # TASK-0045
+    email: str
+
+
+class ResetConfirm(BaseModel):
+    token: str
+    password: str

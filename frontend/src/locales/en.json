@@ -17,7 +17,8 @@
     "expand": "Expand",
     "items": "{{count}} items",
     "keys": "{{count}} keys",
-    "newWorkflow": "New workflow"
+    "newWorkflow": "New workflow",
+    "copy": "Copy"
   },
   "status": {
     "ok": "ok",
@@ -47,7 +48,10 @@
     "login": "Sign in",
     "register": "Sign up",
     "noAccount": "No account yet? ",
-    "haveAccount": "Already have an account? "
+    "haveAccount": "Already have an account? ",
+    "loginPlain": "Use the e-mail and password of your account",
+    "forgot": "Forgot password?",
+    "resetDone": "Password changed. Sign in with the new password."
   },
   "list": {
     "count": "{{count}} workflows",
@@ -318,6 +322,9 @@
     "AUTH_PASSWORD_TOO_SHORT": "Password must be at least {{min}} characters",
     "AUTH_PASSWORD_TOO_LONG": "Password must be at most {{max}} characters",
     "AUTH_PASSWORD_WEAK": "Password must contain both letters and digits",
+    "AUTH_LOCKED": "Too many failed sign-ins. Try again in {{minutes}} min",
+    "AUTH_CSRF": "Missing X-Requested-With header",
+    "PASSWORD_RESET_INVALID": "This reset link is invalid or has expired",
     "WORKFLOW_NOT_FOUND": "Workflow not found",
     "WORKFLOW_FORBIDDEN": "You do not have access to this workflow",
     "WORKFLOW_NAME_REQUIRED": "Workflow name is required",
@@ -851,7 +858,11 @@
     "reassign_other": "Owns {{count}} workflows: new owner's email",
     "reassignHelp": "An editor or admin. References they cannot use are flagged in each workflow.",
     "deleted_one": "{{email}} removed; {{count}} workflow reassigned ({{flagged}} flagged reference(s)).",
-    "deleted_other": "{{email}} removed; {{count}} workflows reassigned ({{flagged}} flagged reference(s))."
+    "deleted_other": "{{email}} removed; {{count}} workflows reassigned ({{flagged}} flagged reference(s)).",
+    "resetFor": "Make a password reset link for {{email}}",
+    "resetTitle": "Reset link for {{email}}",
+    "resetIntro": "Send this link to the user. It works once, for {{minutes}} minutes, and signs out their other sessions.",
+    "resetLink": "Reset link"
   },
   "share": {
     "button": "Share",
@@ -1139,5 +1150,17 @@
       "join": "join a list with this text",
       "truncate": "cut to this many characters"
     }
+  },
+  "reset": {
+    "forgotTitle": "Reset your password",
+    "forgotHint": "Enter your e-mail. If it has an account, we send a link to choose a new password.",
+    "askAdmin": "Ask an administrator for a reset link (Settings → Users). This server does not send e-mail.",
+    "sent": "If an account exists for this e-mail, a reset link is on its way. Check your inbox.",
+    "send": "Send reset link",
+    "back": "Back to sign in",
+    "newTitle": "Choose a new password",
+    "newHint": "Other sessions of this account are signed out.",
+    "newPassword": "New password",
+    "save": "Save password"
   }
 }

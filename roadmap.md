@@ -105,4 +105,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 - TASK-0041 Template editor with state field chips for node message fields (REQ-0029, Implemented 2026-10-18), with the editor header overlap and `sm` button icon offset: **done**. REV-0040, QA-0040. Merged (PR #44).
 - TASK-0042 Commit `.claude/launch.json` (backend and frontend dev servers for the Claude app preview): **done**. Merged (PR #45).
 - TASK-0043 Template insert menu focus and vendor chunks (REQ-0030, Implemented 2026-10-18): **done**. REV-0041, QA-0041. Merged (PR #47).
-- TASK-0044 Template paths and filters (REQ-0031, DEC-0034, Implemented 2026-10-18): **done**. REV-0042, QA-0042. Not merged.
+- TASK-0044 Template paths and filters (REQ-0031, DEC-0034, Implemented 2026-10-18): **done**. REV-0042, QA-0042. Merged (PR #48).
+
+## Sign-in hardening
+
+- TASK-0045 Sign-in lockout, password reset links, HttpOnly session cookie, no demo account in production (REQ-0032, DEC-0035, Implemented 2026-10-18): **done**. REV-0043, QA-0043. Not merged.

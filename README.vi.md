@@ -16,7 +16,7 @@ Lần đầu script tạo `backend/.venv`, cài backend, và chạy `npm install
 
 - UI: http://localhost:5173 (Vite chuyển `/api` và `/ws` sang backend)
 - API: http://localhost:8000/docs
-- Tài khoản demo, tự seed khi khởi động: `admin@example.com` / `admin123`
+- Tài khoản demo, tự seed khi khởi động (trừ production): `admin@example.com` / `admin123`
 
 Muốn model thật, mở **Credentials** trên trang danh sách workflow và thêm provider. Node không chọn credential và không có `OPENAI_API_KEY` thì dùng mock offline, kết quả xác định. Lỗi provider (401, timeout, …) thành event `error` của node, không làm sập server.
 
@@ -24,13 +24,17 @@ Muốn model thật, mở **Credentials** trên trang danh sách workflow và th
 
 ## Tài khoản
 
-Mật khẩu hash bằng PBKDF2-SHA256 (200 nghìn vòng, salt riêng). Đăng nhập trả JWT HS256, hạn 24 giờ (`JWT_TTL_SECONDS`, mặc định 86400). Đặt `JWT_SECRET` khi chạy chung hoặc production. Giá trị còn là placeholder thì backend ghi cảnh báo. `STUDIO_ENV=production` thì từ chối khởi động. `STUDIO_CORS_ORIGINS` (phân tách bằng dấu phẩy) liệt kê các origin trình duyệt được gọi API. Khi chưa đặt, môi trường dev cho phép `*`, production không cho origin nào, vì UI chạy cùng origin. URL WebSocket mang `?token=`; log của uvicorn ghi thành `token=***`.
+Mật khẩu hash bằng PBKDF2-SHA256 (200 nghìn vòng, salt riêng). Đăng nhập trả JWT HS256, hạn 24 giờ (`JWT_TTL_SECONDS`, mặc định 86400). Đặt `JWT_SECRET` khi chạy chung hoặc production. Giá trị còn là placeholder thì backend ghi cảnh báo. `STUDIO_ENV=production` thì từ chối khởi động. `STUDIO_CORS_ORIGINS` (phân tách bằng dấu phẩy) liệt kê các origin trình duyệt được gọi API. Khi chưa đặt, môi trường dev cho phép `*`, production không cho origin nào, vì UI chạy cùng origin. Trình duyệt giữ phiên trong cookie HttpOnly (`studio_session`, `SameSite=Lax`; `Secure` khi production, hoặc đặt `STUDIO_COOKIE_SECURE`), nên script trên trang không đọc được. Các thao tác ghi dựa vào cookie phải gửi `X-Requested-With: studio`, và `lib/api.ts` đã gửi sẵn. Socket từ UI dùng cùng cookie và phải đến từ đúng host của server. API client vẫn có thể truyền `?token=`; log của uvicorn ghi thành `token=***`.
 
 Đăng ký: mật khẩu 8–128 ký tự, có ít nhất một chữ và một số. Mật khẩu demo `admin123` không bị quy tắc này. Email được cắt khoảng trắng và đưa về chữ thường. Đăng nhập sai luôn báo email hoặc mật khẩu không đúng.
 
-API workflow và run cần `Authorization: Bearer <token>`. Socket chạy là `ws://…/ws/run?token=<token>`. Token hết hạn hoặc không hợp lệ thì UI tự đăng xuất và về `/login?expired=1&next=…`. Tài khoản mới được tặng một bản workflow ví dụ. Workflow thuộc về người tạo.
+Đăng nhập và đăng ký vẫn trả `token` và `expires_at` trong body. API client gửi `Authorization: Bearer <token>` (không cần header CSRF) và mở socket bằng `ws://…/ws/run?token=<token>`. `POST /api/auth/logout` xoá cookie. Token hết hạn hoặc không hợp lệ thì UI tự đăng xuất và về `/login?expired=1&next=…`. Tài khoản mới được tặng một bản workflow ví dụ. Workflow thuộc về người tạo.
 
-Chưa có khoá tài khoản sau nhiều lần đăng nhập sai, và chưa có đặt lại mật khẩu.
+Sai mật khẩu 5 lần trong 15 phút thì e-mail đó bị khoá 15 phút, kể cả khi nhập đúng mật khẩu (`AUTH_LOCKED`; `STUDIO_LOGIN_MAX_FAILURES`, `STUDIO_LOGIN_WINDOW`, `STUDIO_LOGIN_LOCK`). E-mail không tồn tại cũng bị đếm như vậy, nên việc bị khoá không cho biết tài khoản có tồn tại hay không.
+
+Để đặt lại mật khẩu, admin mở **Settings → Users**, tạo link một lần (biểu tượng chìa khoá) rồi gửi cho người dùng. Khi đã đặt `SMTP_HOST` và `STUDIO_PUBLIC_URL`, nút **Quên mật khẩu?** ở trang đăng nhập sẽ gửi link qua e-mail; nút này trả lời giống nhau với mọi địa chỉ. Link dùng được một lần, trong `STUDIO_PASSWORD_RESET_TTL` giây (mặc định 3600). Đặt mật khẩu mới sẽ đăng xuất mọi phiên cũ của tài khoản và gỡ khoá.
+
+Khi production (`STUDIO_ENV=production`), tài khoản demo không được tạo. Nếu tài khoản này đã có sẵn và còn dùng mật khẩu demo, nó bị vô hiệu hoá lúc khởi động; dùng `STUDIO_ADMIN_EMAILS` để có admin đầu tiên.
 
 ## Trình soạn thảo
 

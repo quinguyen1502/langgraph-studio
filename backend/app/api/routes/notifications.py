@@ -27,9 +27,9 @@ def read_one(nid: str, user=Depends(current_user), svc=Depends(notification_serv
 
 @ws_router.websocket("/ws/notifications")
 async def ws_notifications(ws: WebSocket):
-    """Connect with ?token=JWT. Server pushes {"type": "notification", notification, unread} for each new in-app
+    """Connect with the session cookie (same origin) or ?token=JWT. Server pushes {"type": "notification", notification, unread} for each new in-app
     notification of this user (and {"type": "ready"} once subscribed). Clients keep polling when the socket is down."""
-    try: uid = ws_user(ws.query_params.get("token") or "")["id"]
+    try: uid = ws_user(ws)["id"]
     except AppError: await ws.close(code=4401); return
     await ws.accept()
     async with get_notification_hub().subscribe(uid) as feed:

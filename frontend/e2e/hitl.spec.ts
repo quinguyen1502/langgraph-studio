@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0006: a run pauses at a Human node, shows up as pending, and resumes from the panel.
 const APPROVAL = {
   name: `Approval e2e ${Date.now()}`, state: [{ name: 'message', type: 'string' }, { name: 'decision', type: 'string' }],
@@ -12,7 +13,7 @@ const APPROVAL = {
 async function login(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  return page.evaluate(() => localStorage.getItem('token'))
+  return apiToken(page)
 }
 
 test('human node: wait, pending list, approve, complete', async ({ page }) => {

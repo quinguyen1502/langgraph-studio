@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 import http from 'node:http'
 import type { AddressInfo } from 'node:net'
 // TASK-0020: notification bell for waiting runs; webhook delivery log with backoff, redelivery; signing-secret rotation.
@@ -12,7 +13,7 @@ const APPROVAL = {
 async function login(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page)}` }
 }
 
 test('notification bell: waiting run appears, opens the run, marks read', async ({ page }) => {

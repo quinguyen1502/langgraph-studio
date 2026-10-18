@@ -1,5 +1,6 @@
 import { createHmac } from 'crypto'
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0022: connect Slack, link my Slack account, pick the channel on a Human node, see the request in the audit log.
 // Slack/Telegram are the fake APIs of backend/tests/fixtures/mock_chat_api.py (CHAT port), which record every message,
 // so the test reads the verification code the "bot" sent and the approval request it posted.
@@ -19,7 +20,7 @@ async function sent(page: Page, method: string, match: (b: any) => boolean) {
 async function login(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  return page.evaluate(() => localStorage.getItem('token'))
+  return apiToken(page)
 }
 
 test('approval channels: org connection, verified account, Human node, request, audit', async ({ page }) => {

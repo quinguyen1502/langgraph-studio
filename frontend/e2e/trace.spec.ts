@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 
 async function loginAdmin(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
@@ -42,7 +43,7 @@ test('trace timeline: rows, detail tabs, diff, canvas sync, raw toggle, history 
 
 test('trace timeline: loop iterations (#2, #3) and node error highlighted', async ({ page }) => {
   await loginAdmin(page)
-  const token = await page.evaluate(() => localStorage.getItem('token'))
+  const token = await apiToken(page)
   const r = await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: LOOP })
   await page.goto(`/workflows/${(await r.json()).data.id}`)
   await page.locator('#run-btn').click()

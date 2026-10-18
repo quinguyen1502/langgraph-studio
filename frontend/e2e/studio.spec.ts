@@ -1,5 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { confirmDelete } from './confirm'
+import { signIn } from './helpers'
 
 const uid = () => Math.random().toString(36).slice(2, 8)
 async function register(page: Page, email: string, pw = 'goodpass1') {
@@ -14,10 +15,6 @@ async function login(page: Page, email: string, pw: string) {
   await page.getByLabel('Email').fill(email)
   await page.getByLabel('Mật khẩu', { exact: true }).fill(pw)
   await page.getByLabel('Mật khẩu', { exact: true }).press('Enter')
-}
-const fakeExpiredJwt = () => {
-  const b = (o: object) => Buffer.from(JSON.stringify(o)).toString('base64url')
-  return `${b({ alg: 'HS256', typ: 'JWT' })}.${b({ sub: 'x', email: 'x@example.com', exp: 1 })}.sig`
 }
 
 test('register → logout → login → list → open example → run → done', async ({ page }) => {
@@ -42,7 +39,7 @@ test('register → logout → login → list → open example → run → done',
 test('wrong password shows a generic error', async ({ page }) => {
   const email = `e2e-${uid()}@example.com`
   await register(page, email)
-  await page.evaluate(() => localStorage.clear())
+  await page.evaluate(() => localStorage.clear()); await page.context().clearCookies()  // sign out: the session is a cookie (TASK-0045)
   // the app may itself redirect to /login once the token is gone (a header poll gets 401), racing this goto
   await page.goto('/login').catch(() => {}); await expect(page).toHaveURL(/\/login/); await page.waitForLoadState()
   await login(page, email, 'wrongpass1')
@@ -56,14 +53,14 @@ test('wrong password shows a generic error', async ({ page }) => {
 test('expired token redirects to login with notice and returns to original page', async ({ page }) => {
   await page.goto('/login'); await login(page, 'admin@example.com', 'admin123')
   await expect(page).toHaveURL(/\/workflows$/); await page.waitForLoadState("networkidle") // list + pending-runs requests done before the token is swapped
-  await page.evaluate(t => localStorage.setItem('token', t), fakeExpiredJwt())
+  await page.evaluate(() => localStorage.setItem('session_exp', String(Math.floor(Date.now() / 1000) - 60)))  // the session ran out
   await page.goto('/workflows/example')
   await expect(page).toHaveURL(/\/login\?expired=1&next=%2Fworkflows%2Fexample/)
   await expect(page.locator('#expired-notice')).toBeVisible()
   await login(page, 'admin@example.com', 'admin123')
   await expect(page).toHaveURL(/\/workflows\/example$/)
   // server-side rejection (bad signature, not expired client-side) also redirects
-  await page.evaluate(() => { const b = (o: object) => btoa(JSON.stringify(o)); localStorage.setItem('token', `${b({ alg: 'HS256' })}.${b({ sub: 'x', email: 'x', exp: 9999999999 })}.bad`) })
+  await page.context().addCookies([{ name: 'studio_session', value: 'not.a.jwt', domain: new URL(page.url()).hostname, path: '/' }])  // the page thinks it is signed in
   await page.goto('/workflows').catch(() => {}) // app redirects mid-navigation on 401
   await expect(page).toHaveURL(/\/login\?expired=1/)
   await expect(page.locator('#expired-notice')).toBeVisible()
@@ -121,9 +118,9 @@ test('list: rename / duplicate / delete with confirm, edge cases, not-found', as
 test('100+ workflows render and filter quickly', async ({ page, request }) => {
   const email = `e2e-${uid()}@example.com`
   const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } })
-  const { token, user } = (await r.json()).data
+  const { token } = (await r.json()).data
   await Promise.all(Array.from({ length: 110 }, (_, i) => request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: { name: `Bulk ${String(i).padStart(3, '0')}`, nodes: [], edges: [] } })))
-  await page.goto('/login'); await page.evaluate(([t, u]) => { localStorage.setItem('token', t); localStorage.setItem('user', JSON.stringify(u)) }, [token, user] as const)
+  await page.goto('/login'); await signIn(page, email, 'goodpass1')
   await page.goto('/workflows')
   await expect(page.locator('tbody tr')).toHaveCount(111)
   const t0 = Date.now(); await page.locator('#wf-search').fill('Bulk 10')

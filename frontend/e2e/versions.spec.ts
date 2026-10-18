@@ -1,9 +1,10 @@
 import { test, expect } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0008: save creates versions, diff two versions, restore an old one, history shows the version that ran.
 test('versions: save, diff, restore, run tagged with version', async ({ page }) => {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  const H = { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  const H = { Authorization: `Bearer ${await apiToken(page)}` }
   const wid = (await (await page.request.post('/api/workflows/example/duplicate', { headers: H })).json()).data.id
   try {
     await page.goto(`/workflows/${wid}`)

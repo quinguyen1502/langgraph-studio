@@ -17,7 +17,8 @@
     "expand": "Mở rộng",
     "items": "{{count}} phần tử",
     "keys": "{{count}} khoá",
-    "newWorkflow": "Workflow mới"
+    "newWorkflow": "Workflow mới",
+    "copy": "Sao chép"
   },
   "status": {
     "ok": "ok",
@@ -47,7 +48,10 @@
     "login": "Đăng nhập",
     "register": "Đăng ký",
     "noAccount": "Chưa có tài khoản? ",
-    "haveAccount": "Đã có tài khoản? "
+    "haveAccount": "Đã có tài khoản? ",
+    "loginPlain": "Dùng e-mail và mật khẩu tài khoản của bạn",
+    "forgot": "Quên mật khẩu?",
+    "resetDone": "Đã đổi mật khẩu. Đăng nhập bằng mật khẩu mới."
   },
   "list": {
     "count": "{{count}} workflow của bạn",
@@ -318,6 +322,9 @@
     "AUTH_PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất {{min}} ký tự",
     "AUTH_PASSWORD_TOO_LONG": "Mật khẩu tối đa {{max}} ký tự",
     "AUTH_PASSWORD_WEAK": "Mật khẩu phải có cả chữ và số",
+    "AUTH_LOCKED": "Đăng nhập sai quá nhiều lần. Thử lại sau {{minutes}} phút",
+    "AUTH_CSRF": "Thiếu header X-Requested-With",
+    "PASSWORD_RESET_INVALID": "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
     "WORKFLOW_NOT_FOUND": "Không tìm thấy workflow",
     "WORKFLOW_FORBIDDEN": "Không có quyền với workflow này",
     "WORKFLOW_NAME_REQUIRED": "Tên workflow không được để trống",
@@ -851,7 +858,11 @@
     "reassign_other": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
     "reassignHelp": "Người chỉnh sửa hoặc quản trị viên. Tham chiếu họ không dùng được sẽ được đánh dấu trong từng workflow.",
     "deleted_one": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
-    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu)."
+    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
+    "resetFor": "Tạo link đặt lại mật khẩu cho {{email}}",
+    "resetTitle": "Link đặt lại cho {{email}}",
+    "resetIntro": "Gửi link này cho người dùng. Link dùng được một lần trong {{minutes}} phút và đăng xuất các phiên khác của họ.",
+    "resetLink": "Link đặt lại"
   },
   "share": {
     "button": "Chia sẻ",
@@ -1139,5 +1150,17 @@
       "join": "nối list bằng text này",
       "truncate": "cắt còn ngần này ký tự"
     }
+  },
+  "reset": {
+    "forgotTitle": "Đặt lại mật khẩu",
+    "forgotHint": "Nhập e-mail. Nếu e-mail có tài khoản, chúng tôi gửi link để chọn mật khẩu mới.",
+    "askAdmin": "Hãy nhờ quản trị viên tạo link đặt lại (Settings → Users). Máy chủ này không gửi e-mail.",
+    "sent": "Nếu e-mail này có tài khoản, link đặt lại đang được gửi. Hãy kiểm tra hộp thư.",
+    "send": "Gửi link đặt lại",
+    "back": "Quay lại đăng nhập",
+    "newTitle": "Chọn mật khẩu mới",
+    "newHint": "Các phiên khác của tài khoản này sẽ bị đăng xuất.",
+    "newPassword": "Mật khẩu mới",
+    "save": "Lưu mật khẩu"
   }
 }

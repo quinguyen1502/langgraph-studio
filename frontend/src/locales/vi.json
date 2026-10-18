@@ -94,6 +94,8 @@
     "cancelTip": "Dừng run (huỷ giữa các bước)",
     "jsonTip": "Xem JSON",
     "jsonDesc": "Định dạng gửi lên backend.",
+    "foldLine": "Gấp dòng",
+    "unfoldLine": "Mở dòng",
     "importedTip": "Chạy code gốc trong venv riêng (subprocess). {{src}} · {{ref}}",
     "imported": "Repo import",
     "palette": "Node palette",

@@ -94,6 +94,8 @@
     "cancelTip": "Stop the run (cancels between steps)",
     "jsonTip": "View JSON",
     "jsonDesc": "Format sent to the backend.",
+    "foldLine": "Fold line",
+    "unfoldLine": "Unfold line",
     "importedTip": "Runs the original code in its own venv (subprocess). {{src}} · {{ref}}",
     "imported": "Imported repo",
     "palette": "Node palette",

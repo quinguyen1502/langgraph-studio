@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { NodeInput } from '@/components/node-input'
 import { NodeRuntime } from '@/components/node-runtime'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -633,7 +634,10 @@ function Studio() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
-          {RUNTIME.has(selNode.type || '') && <NodeRuntime data={d} onChange={setRuntime} />}
+          {RUNTIME.has(selNode.type || '') && <>
+            <NodeInput fields={fieldNames} value={d.input_fields} onChange={input_fields => setRuntime({ input_fields })} />
+            <NodeRuntime data={d} onChange={setRuntime} />
+          </>}
         </div>}
       </div></fieldset></ScrollArea>
     </aside>

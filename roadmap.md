@@ -78,3 +78,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 - TASK-0033 Align requirement status and the integration branch (REQ-0021, Implemented 2026-10-18): **done** — PR [#36](https://github.com/quinguyen1502/langgraph-studio/pull/36). DEC-0033 supersedes DEC-0002. REV-0032, QA-0032.
 - TASK-0034 JSON fold tooltip and `spliceNode` tests (REQ-0022, Implemented 2026-10-18): **done** — PR [#37](https://github.com/quinguyen1502/langgraph-studio/pull/37). REV-0033, QA-0033.
+
+## Node input
+
+- TASK-0035 Per-node input fields (REQ-0023, Implemented 2026-10-18): **done** — PR [#38](https://github.com/quinguyen1502/langgraph-studio/pull/38). REV-0034, QA-0034.

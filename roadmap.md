@@ -26,7 +26,7 @@ Status as of 2026-10-17: all Phase 1 work is in `develop` (it was the base of th
 
 ## Phase 2 — Usable
 
-Phase 2 and Phase 3 are done and merged into `develop`. Phase 4 (TASK-0015) is in progress on `factory/task-0015-run-repo-imports-inside-a-container-sandbox`.
+Phase 2 and Phase 3 are done and merged into `develop`. Phase 4 (TASK-0015) is in review on `factory/task-0015-run-repo-imports-inside-a-container-sandbox`.
 
 - TASK-0006 Human-in-the-loop (REQ-0003): **done** — merged into `develop` 2026-10-17
 - TASK-0007 API / webhook trigger (REQ-0004): **done** — merged into `develop` 2026-10-17
@@ -48,7 +48,7 @@ Phase 2 and Phase 3 are done and merged into `develop`. Phase 4 (TASK-0015) is i
 
 ## Phase 4 — Last
 
-- TASK-0015 Repo import hardening + container sandbox (REQ-0009). The existing import feature is **experimental**; `STUDIO_ENABLE_IMPORT` defaults off in the UI and the API. In progress: Docker sandbox on the task branch. Not done.
+- TASK-0015 Repo import hardening + container sandbox (REQ-0009). The existing import feature is **experimental**; `STUDIO_ENABLE_IMPORT` defaults off in the UI and the API. In review: Docker sandbox on the task branch. Not done.
 
 ## Phase 5 — Editor UX
 

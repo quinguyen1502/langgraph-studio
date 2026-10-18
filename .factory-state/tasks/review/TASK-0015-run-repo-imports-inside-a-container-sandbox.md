@@ -5,10 +5,10 @@
 - Project: langgraph-studio
 - Task ID: TASK-0015
 - Previous ID: TASK-0004 (renumbered 2026-10-16, DEC-0007)
-- Status: doing
+- Status: review
 - Owner:
 - Created: 2026-10-16
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Requirement IDs: REQ-0009
 - Design IDs:
 - Architecture IDs: ARCH-0001
@@ -83,8 +83,9 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 - 2026-10-17: Implementation landed on this branch. Runtime is Docker when `STUDIO_ENABLE_IMPORT=1`. `STUDIO_IMPORT_RUNTIME=subprocess` remains for tests and machines without Docker. gVisor and Firecracker stay out of scope. Task stays in doing.
 - 2026-10-18: Validation. `backend/.venv` is Python 3.14 without pytest, so the suite ran with `/tmp/lgs-qa-venv` (Python 3.12): 276 passed, 10 skipped. `cd frontend && npm run build` passed. UI: with the flag unset, `#import-btn` is absent (desktop and 390px) and `POST /api/import` is 404 `IMPORT_DISABLED`; with `STUDIO_ENABLE_IMPORT=1` the button opens the URL and zip tabs. Task stays in doing.
 - 2026-10-18: Live Docker check on Docker Desktop (`python:3.12-slim`, CLI not on PATH; used `/Applications/Docker.app/Contents/Resources/bin/docker`). `new-langgraph-project` imported and ran in the container: nodes `__start__`, `call_model`, `__end__`, state `output from call_model. Configured with studio`. A probe could write inside the job dir and could not read a host sentinel or `JWT_SECRET` / `STUDIO_DB`. A 30s sleep was killed and reported `Sandbox stopped (time limit (12s)).`. Fix: `run_imported` uses `lexists` because the venv python is a symlink to the image interpreter. The API also uses Docker Desktop's bundled CLI when `docker` is not on `PATH`. Task stays in doing.
+- 2026-10-18: Moved doing -> review. Backend suite after the symlink and Docker CLI fixes: 278 passed, 10 skipped (`/tmp/lgs-qa-venv`, Python 3.12). `cd frontend && npm run build` passed before those backend-only fixes and the frontend did not change after it. Live Docker import passed. Review and QA artifacts are not written yet. Task is not done.
 
 ## Handoff Notes
 
-- Branch `factory/task-0015-run-repo-imports-inside-a-container-sandbox` holds the implementation. Pytest, the frontend build, and a live Docker import of `new-langgraph-project` passed on 2026-10-18.
+- Branch `factory/task-0015-run-repo-imports-inside-a-container-sandbox` is in review. One Draft PR targets `develop`. Do not merge, do not mark this task done, and do not write REV/QA until the owner asks.
 - `frontend/package-lock.json` dev-metadata stays in `stash@{0}` (created on `develop`). Do not pop that stash onto this branch.

@@ -39,11 +39,14 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
    - Informational or success notices keep the default variant.
    - `--warning` / `--warning-foreground` are shadcn-style CSS variables (light and dark in `index.css`), registered as `--color-warning*` in `@theme`. Never use raw palette colours.
 
+9. **Template fields use `TemplateEditor`** (TASK-0041). Any node field that the backend renders with `{{state.field}}` (`engine/templating.py`) uses `components/template-editor.tsx`, not an Input or Textarea. It shows references as tags, marks fields missing from the state schema, suggests fields after `{{`, and has an insert-field menu. Pass `readOnly` for viewers: CodeMirror ignores a disabled `fieldset`.
+
 ## Review checklist
 
 - [ ] No custom widget where shadcn has a component.
 - [ ] This command finds no hard-coded colours:
   `rg -n "(text|bg|border|ring)-(red|emerald|green|amber|yellow|orange|sky|blue|violet|purple|teal|zinc|gray|slate)-[0-9]|text-white|bg-white" frontend/src --glob '!components/ui/**'`
 - [ ] Every new delete/remove/revoke/unlink goes through `ConfirmDeleteDialog` (type the name; UI-only, the API stays a plain DELETE).
+- [ ] Node fields rendered as `{{state.field}}` templates use `TemplateEditor`.
 - [ ] Warning/alert icons: destructive for danger, `variant="warning"` / `text-warning` for cautions; none left in the neutral default colour.
 - [ ] Screenshots are taken in both light and dark mode for UI changes.

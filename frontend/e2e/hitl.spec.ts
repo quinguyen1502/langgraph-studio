@@ -20,7 +20,7 @@ test('human node: wait, pending list, approve, complete', async ({ page }) => {
   const wid = (await (await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: APPROVAL })).json()).data.id
   await page.goto(`/workflows/${wid}`)
   await page.locator('.react-flow__node[data-id="ask"]').click()
-  await expect(page.locator('#human-prompt')).toHaveValue('Approve refund for {{state.message}}?')
+  await expect(page.locator('#human-prompt')).toHaveText('Approve refund for message?'); await expect(page.locator('#human-prompt .template-tag[data-field="message"]')).toBeVisible()
   await page.getByRole('tab', { name: 'Input' }).first().click()
   await page.locator('#run-input').fill('{"message": "order A100"}')
   await page.locator('#run-btn').click()

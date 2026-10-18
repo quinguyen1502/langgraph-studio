@@ -5,15 +5,15 @@ import { Link } from 'react-router-dom'
 import { ExternalLink, RefreshCw } from 'lucide-react'
 import { TextButton, TextLink } from '@/components/text-link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { TemplateEditor, type TemplateField } from '@/components/template-editor'
 import { api } from '@/lib/api'
 import type { McpList, McpServer } from '@/lib/mcp'
 
-type Props = { server?: string; tool?: string; args?: Record<string, any>; onChange: (patch: Record<string, any>) => void }
+type Props = { server?: string; tool?: string; args?: Record<string, any>; fields: TemplateField[]; readOnly?: boolean; onChange: (patch: Record<string, any>) => void }
 
-export function McpSettings({ server, tool, args = {}, onChange }: Props) {
+export function McpSettings({ server, tool, args = {}, fields, readOnly, onChange }: Props) {
   const { t } = useTranslation(); const [items, setItems] = useState<McpServer[] | null>(null); const [err, setErr] = useState('')
   useEffect(() => { api<McpList>('/api/mcp/servers').then(d => setItems(d.servers)).catch(() => setItems([])) }, [])
   const s = items?.find(x => x.id === server)
@@ -46,8 +46,8 @@ export function McpSettings({ server, tool, args = {}, onChange }: Props) {
       <p className="text-xs font-medium">{t('editor.mcpArgs')}</p>
       {props.map(([name, p]) => <div key={name} className="space-y-1">
         <Label className="text-xs text-muted-foreground" htmlFor={`mcp-arg-${name}`}>{name}{req.includes(name) && ' *'} <span className="font-mono text-[10px]">{p.type}</span></Label>
-        <Input id={`mcp-arg-${name}`} className="font-mono text-xs" value={asText(args[name])} placeholder={p.description || '{{state.field}}'}
-          onChange={e => onChange({ arguments: { ...args, [name]: e.target.value } })} />
+        <TemplateEditor singleLine id={`mcp-arg-${name}`} fields={fields} readOnly={readOnly} value={asText(args[name])} placeholder={p.description || '{{state.field}}'}
+          onChange={v => onChange({ arguments: { ...args, [name]: v } })} />
       </div>)}
       <p className="text-[11px] text-muted-foreground">{t('editor.mcpArgsHint', { field: '{{state.field}}' })}</p>
     </div>}

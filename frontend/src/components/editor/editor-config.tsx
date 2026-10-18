@@ -1,6 +1,5 @@
 import { Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { NodeInput } from '@/components/node-input'
 import { NodeRuntime } from '@/components/node-runtime'
@@ -16,6 +15,7 @@ import { ModelPicker } from '@/components/model-picker'
 import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
+import { TemplateEditor } from '@/components/template-editor'
 import { META, RUNTIME } from './meta'
 import { Sel, F } from './parts'
 import { useStudioCtx } from './studio-context'
@@ -23,7 +23,8 @@ import { useStudioCtx } from './studio-context'
 /** Right panel: config of the selected node or edge (TASK-0040). */
 export function EditorConfig() {
   const { t } = useTranslation()
-  const { setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames } = useStudioCtx()
+  const { setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
+  const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
@@ -44,11 +45,11 @@ export function EditorConfig() {
                 {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select>
               {!creds.length && <p className="text-[11px] text-muted-foreground" id="llm-no-credential">{t('editor.credentialNone')} <CredentialsDialog onChanged={() => { api<Credential[]>('/api/credentials').then(setCreds).catch(() => {}) }} trigger={<TextButton id="llm-add-credential">{t('editor.credentialAdd')}</TextButton>} /></p>}</F>
             <F label={t('field.model')}><ModelPicker credentialId={d.credential_id || undefined} value={d.model || ''} onChange={v => upd('model', v)} placeholder={providers.find(p => p.id === creds.find(c => c.id === d.credential_id)?.provider)?.default_model || 'gpt-4o-mini'} /></F>
-            <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><Textarea rows={7} className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
+            <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={7} id="llm-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'human' && <>
-            <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><Textarea rows={4} id="human-prompt" className="font-mono text-xs" value={d.prompt} onChange={e => upd('prompt', e.target.value)} /></F>
+            <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={4} id="human-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
             <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
           </>}
@@ -57,8 +58,8 @@ export function EditorConfig() {
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem></SelectContent></Select></F>
             {d.mode === 'http' ? <>
               <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
-              <F label={t('field.url')}><Input value={d.url} onChange={e => upd('url', e.target.value)} placeholder="https://…" /></F>
-              <F label={t('field.bodyTemplate')}><Textarea rows={4} className="font-mono text-xs" value={d.body} onChange={e => upd('body', e.target.value)} /></F>
+              <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>
+              <F label={t('field.bodyTemplate')}><TemplateEditor {...tpl} rows={4} id="http-body" value={d.body || ''} onChange={v => upd('body', v)} /></F>
             </> : <F label={t('field.function')}><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
@@ -70,11 +71,11 @@ export function EditorConfig() {
           </>}
           {selNode.type === 'retriever' && <>
             <RetrieverSettings kb={d.knowledge_base_id} topK={d.top_k} onKb={v => upd('knowledge_base_id', v)} onTopK={v => upd('top_k', v)} />
-            <F label={t('field.queryTemplate', { field: '{{state.field}}' })}><Textarea rows={3} id="retriever-query" className="font-mono text-xs" value={d.query} onChange={e => upd('query', e.target.value)} /></F>
+            <F label={t('field.queryTemplate', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={3} id="retriever-query" value={d.query || ''} onChange={v => upd('query', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'mcp' && <>
-            <McpSettings server={d.server_id} tool={d.tool} args={d.arguments} onChange={p => mark(selNode.id, p)} />
+            <McpSettings server={d.server_id} tool={d.tool} args={d.arguments} fields={state} readOnly={!edit} onChange={p => mark(selNode.id, p)} />
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'subgraph' && <SubgraphSettings wid={wid} value={d.workflow_id} onChange={v => upd('workflow_id', v)} />}

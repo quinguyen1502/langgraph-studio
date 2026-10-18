@@ -1117,5 +1117,12 @@
       "workflows": "Mở workflow",
       "navigation": "Đi tới"
     }
+  },
+  "template": {
+    "insert": "Chèn trường state",
+    "noFields": "State schema chưa có trường nào",
+    "placeholder": "Gõ {{open}} để chèn trường state",
+    "tagTitle": "Trường state {{field}}",
+    "unknownTitle": "{{field}} không có trong state schema"
   }
 }

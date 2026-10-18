@@ -6,7 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { LayoutList, Plus, Settings, Workflow as WorkflowIcon } from 'lucide-react'
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Kbd } from '@/components/shortcut-cheatsheet'
-import { api, tokenValid } from '@/lib/api'
+import { api, signedIn } from '@/lib/api'
 import { grouped, onPaletteRequest, searchValue, usePaletteCommands, type PaletteCommand } from '@/lib/palette'
 import { can, loadMe, type Me } from '@/lib/rbac'
 import { SHORTCUTS } from '@/lib/shortcuts'
@@ -20,7 +20,7 @@ export function CommandPalette() {
   const { t } = useTranslation(); const nav = useNavigate(); const loc = useLocation(); const [me, setMe] = useState<Me | null>(null)
   const [open, setOpen] = useState(false); const [wfs, setWfs] = useState<W[]>([])
   const page = usePaletteCommands()
-  useShortcuts({ palette: () => { if (!tokenValid() || loc.pathname === '/login' || loc.pathname === '/register') return false; setOpen(true) } })
+  useShortcuts({ palette: () => { if (!signedIn() || loc.pathname === '/login' || loc.pathname === '/register') return false; setOpen(true) } })
   useEffect(() => { if (open) { api<W[]>('/api/workflows').then(setWfs).catch(() => setWfs([])); loadMe().then(setMe).catch(() => setMe(null)) } }, [open])  // mounted outside the routes: load on open
   useOnChange(loc.pathname, () => setOpen(false))  // navigating closes the palette
   useEffect(() => onPaletteRequest(() => setOpen(true)), [])

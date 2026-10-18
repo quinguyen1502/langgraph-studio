@@ -1,5 +1,6 @@
 // Captures docs/screenshots for TASK-0003 states. Run: SHOTS=1 npm run e2e -- screenshots
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken, signIn } from './helpers'
 test.skip(!process.env.SHOTS, 'set SHOTS=1 to capture screenshots')
 const out = (n: string) => `../docs/screenshots/${n}.png`
 test.use({ viewport: { width: 1280, height: 800 } })
@@ -14,10 +15,10 @@ test('capture auth and list states', async ({ page, request }) => {
   await page.goto('/register'); await page.getByLabel('Email').fill(email)
   await page.getByLabel('Mật khẩu', { exact: true }).fill('abcdefg'); await page.getByLabel('Xác nhận mật khẩu').fill('abcdefx')
   await page.screenshot({ path: out('auth-register-password-rules') })
-  const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } }); const { token, user } = (await r.json()).data
+  const r = await request.post('/api/auth/register', { data: { email, password: 'goodpass1' } }); const { token } = (await r.json()).data
   const H = { Authorization: `Bearer ${token}` }
   for (const w of (await (await request.get('/api/workflows', { headers: H })).json()).data) await request.delete(`/api/workflows/${w.id}?force=true`, { headers: H })
-  await page.evaluate(([t, u]) => { localStorage.setItem('token', t); localStorage.setItem('user', JSON.stringify(u)) }, [token, user] as const)
+  await signIn(page, email, 'goodpass1')
   await page.goto('/workflows'); await expect(page.locator('#wf-empty')).toBeVisible(); await page.screenshot({ path: out('list-empty-state') })
   await request.post('/api/workflows', { headers: H, data: { name: 'A very long workflow name that keeps going to show truncation in the list view without breaking the table layout at all', nodes: [], edges: [] } })
   await request.post('/api/workflows', { headers: H, data: { name: 'Support triage', nodes: [], edges: [] } })
@@ -48,7 +49,7 @@ test.describe('trace', () => {
     await page.getByRole('button', { name: /dark mode/i }).click(); await page.waitForTimeout(400); await page.mouse.move(5, 5)
     await page.screenshot({ path: out('trace-dark') })
     await page.getByRole('button', { name: /light mode|dark mode/i }).click()
-    const token = await page.evaluate(() => localStorage.getItem('token'))
+    const token = await apiToken(page)
     const loop = {
       name: 'Loop demo (recursion limit)', state: [{ name: 'message', type: 'string' }, { name: 'intent', type: 'string' }],
       nodes: [{ id: 's', type: 'start', position: { x: 40, y: 150 }, data: { label: 'Start' } },
@@ -71,7 +72,7 @@ test.describe('node colors', () => {
   test('capture node-type colours light/dark', async ({ page }) => {
     await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
     await expect(page).toHaveURL(/\/workflows$/)
-    const token = await page.evaluate(() => localStorage.getItem('token'))
+    const token = await apiToken(page)
     const n = (id: string, type: string, x: number, y: number, data: object) => ({ id, type, position: { x, y }, data })
     const wf = { name: 'All node types', state: [{ name: 'message', type: 'string' }, { name: 'intent', type: 'string' }],
       nodes: [n('start', 'start', 40, 200, { label: 'Start' }), n('llm', 'llm', 280, 200, { label: 'Classify', model: 'gpt-4o-mini', prompt: '{{state.message}}', output_field: 'intent' }),
@@ -92,7 +93,7 @@ test.describe('node colors', () => {
 async function admin(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  return page.evaluate(() => localStorage.getItem('token'))
+  return apiToken(page)
 }
 const slow = (n: number, name: string) => {
   const ids = ['s', ...Array.from({ length: n }, (_, i) => `wait${i + 1}`), 'e']

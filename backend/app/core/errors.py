@@ -25,6 +25,9 @@ CATALOG: dict[str, tuple[int, str]] = {
     "AUTH_PASSWORD_TOO_SHORT": (400, "Password must be at least {min} characters"),
     "AUTH_PASSWORD_TOO_LONG": (400, "Password must be at most {max} characters"),
     "AUTH_PASSWORD_WEAK": (400, "Password must contain both letters and digits"),
+    "AUTH_LOCKED": (429, "Too many failed sign-ins. Try again in {minutes} min"),
+    "AUTH_CSRF": (403, "Missing X-Requested-With header"),
+    "PASSWORD_RESET_INVALID": (400, "This reset link is invalid or has expired"),
     # workflows
     "WORKFLOW_NOT_FOUND": (404, "Workflow not found"),
     "WORKFLOW_FORBIDDEN": (403, "You do not have access to this workflow"),

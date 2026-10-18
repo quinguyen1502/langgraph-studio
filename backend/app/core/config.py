@@ -58,6 +58,14 @@ def secret_grace() -> float: return max(0.0, float(os.environ.get("STUDIO_SECRET
 def job_visibility() -> int: return max(3, _int("STUDIO_JOB_VISIBILITY_TIMEOUT", 30))  # lease of a taken job
 def job_reap_every() -> float: return max(0.2, float(os.environ.get("STUDIO_JOB_REAP_EVERY", 15)))
 def public_url() -> str: return (os.environ.get("STUDIO_PUBLIC_URL") or "").rstrip("/")  # links in e-mails
+# --- TASK-0045: sign-in hardening ---
+def login_max_failures() -> int: return max(1, _int("STUDIO_LOGIN_MAX_FAILURES", 5))  # failed sign-ins per e-mail before a lockout
+def login_window() -> int: return max(1, _int("STUDIO_LOGIN_WINDOW", 15 * 60))  # s in which failures are counted
+def login_lock() -> int: return max(1, _int("STUDIO_LOGIN_LOCK", 15 * 60))  # s an e-mail stays locked
+def password_reset_ttl() -> int: return max(60, _int("STUDIO_PASSWORD_RESET_TTL", 3600))  # s a reset link works
+def cookie_secure() -> bool:  # the session cookie needs HTTPS; production defaults to on, STUDIO_COOKIE_SECURE=0 for plain-HTTP setups
+    return os.environ.get("STUDIO_COOKIE_SECURE", "1" if IS_PROD else "0").lower() in ("1", "true", "yes", "on")
+def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
     """SMTP settings for notification e-mail; None (no-op) when SMTP_HOST is unset."""
     host = os.environ.get("SMTP_HOST", "").strip()

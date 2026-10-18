@@ -1,32 +1,32 @@
-import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { Workflow, Loader2, AlertCircle, Clock, Check, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Workflow, Loader2, AlertCircle, Clock, CircleCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { api, scheduleExpiry, setSession } from '@/lib/api'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LanguageSwitcher } from '@/components/language-switcher'
+import { PasswordRules } from '@/components/password-rules'
+import { passwordOk } from '@/lib/password'
 
-const PW_RULES: [string, (p: string) => boolean][] = [
-  ['auth.ruleLength', p => p.length >= 8],
-  ['auth.ruleLetter', p => /[A-Za-z]/.test(p)],
-  ['auth.ruleDigit', p => /\d/.test(p)],
-]
 const safeNext = (n: string | null) => (n && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') && !n.startsWith('/register') ? n : '/workflows')
 
 export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
   const { t } = useTranslation(); const nav = useNavigate(); const isLogin = mode === 'login'
   const [params] = useSearchParams(); const expired = params.get('expired') === '1'; const next = safeNext(params.get('next'))
-  const [email, setEmail] = useState(isLogin ? 'admin@example.com' : '')
+  const reset = params.get('reset') === '1'  // back from a password reset (TASK-0045)
+  const [email, setEmail] = useState<string>(useLocation().state?.email || '')  // router state, not the URL
+  // the demo hint and e-mail exist only where the server seeds the demo account (not in production)
+  const [demo, setDemo] = useState(false)
+  useEffect(() => { if (isLogin) api<{ demo: boolean }>('/api/auth/options').then(o => { setDemo(o.demo); if (o.demo) setEmail(e => e || 'admin@example.com') }).catch(() => {}) }, [isLogin])
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [error, setError] = useState(''); const [busy, setBusy] = useState(false)
-  const pwOk = PW_RULES.every(([, f]) => f(password))
+  const pwOk = passwordOk(password)
   const mismatch = !isLogin && confirm.length > 0 && password !== confirm
   const canSubmit = !busy && email.trim() && password && (isLogin || (pwOk && confirm && !mismatch))
   const submit = async (e: React.FormEvent) => {
@@ -36,7 +36,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     setBusy(true)
     try {
       const r = await api(`/api/auth/${mode}`, { method: 'POST', json: { email, password } })
-      setSession(r.token, r.user); scheduleExpiry(); nav(next, { replace: true })
+      setSession(r); scheduleExpiry(); nav(next, { replace: true })
     } catch (err: any) { setError(err.message) } finally { setBusy(false) }
   }
   const other = isLogin ? '/register' : '/login'
@@ -46,16 +46,18 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
       <CardHeader className="text-center">
         <div className="mx-auto mb-2 rounded-lg bg-primary text-primary-foreground p-2 w-fit"><Workflow className="size-5" /></div>
         <CardTitle className="text-xl">{t(isLogin ? 'auth.loginTitle' : 'auth.registerTitle')}</CardTitle>
-        <CardDescription>{t(isLogin ? 'auth.loginHint' : 'auth.registerHint')}</CardDescription>
+        <CardDescription>{t(isLogin ? (demo ? 'auth.loginHint' : 'auth.loginPlain') : 'auth.registerHint')}</CardDescription>
       </CardHeader>
       <form onSubmit={submit} noValidate aria-busy={busy}>
         <CardContent className="space-y-4">
+          {reset && !error && <div id="reset-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><CircleCheck className="size-4 shrink-0 text-success" />{t('auth.resetDone')}</div>}
           {expired && !error && <div id="expired-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><Clock className="size-4 shrink-0 text-warning" />{t('auth.expired')}</div>}
           {error && <Alert variant="destructive" id="auth-error"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
           <div className="space-y-1.5"><Label htmlFor="email">{t('auth.email')}</Label><Input id="email" className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
           <div className="space-y-1.5"><Label htmlFor="password">{t('auth.password')}</Label>
             <Input id="password" className="h-10" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby={isLogin ? undefined : 'pw-rules'} />
-            {!isLogin && <ul id="pw-rules" className="mt-1.5 space-y-0.5 text-xs">{PW_RULES.map(([k, f]) => { const ok = f(password); return <li key={k} className={cn('flex items-center gap-1.5', ok ? 'text-success' : 'text-muted-foreground')}>{ok ? <Check className="size-3" /> : <X className="size-3" />}{t(k)}</li> })}</ul>}
+            {!isLogin && <PasswordRules id="pw-rules" password={password} />}
+            {isLogin && <div className="text-right"><Link to="/forgot-password" state={{ email }} id="forgot-link" className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">{t('auth.forgot')}</Link></div>}
           </div>
           {!isLogin && <div className="space-y-1.5"><Label htmlFor="confirm">{t('auth.confirm')}</Label>
             <Input id="confirm" className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />

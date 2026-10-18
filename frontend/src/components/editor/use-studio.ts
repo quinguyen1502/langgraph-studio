@@ -8,7 +8,7 @@ import { SHORTCUTS } from '@/lib/shortcuts'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
-import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
+import { api, wsUrl, sessionExpired, signedIn } from '@/lib/api'
 import i18n, { eventErrors } from '@/lib/i18n'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/lib/theme'
@@ -94,7 +94,7 @@ export function useStudio() {
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
   /** One socket path for new runs and for resuming a waiting run (the resumed events append to the same log). */
   const stream = (msg: any, resume = false) => {
-    if (!tokenValid()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
+    if (!signedIn()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
     setErrors([]); setTab('logs'); setRunning(true); setTraceSel(null)
     if (resume) setLog(l => l.filter(e => e.type !== 'run_summary'))
     else { setLog([]); setReplay(null); setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } }))) }

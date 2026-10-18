@@ -2,7 +2,7 @@
  *  one connection (config, Test connection, replace secrets, register, remove) and the add-connection form. */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, Copy, KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
+import { KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import type { Channel, ChannelKind } from '@/lib/approvals'
 import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import { useAction } from './use-action'
+import { CopyField } from '@/components/copy-field'
 
 export { ErrorAlert } from './error-alert'
 
@@ -26,13 +27,6 @@ function SecretFields({ k, vals, setVals, idp, placeholder }: { k: ChannelKind; 
       <Input id={`${idp}-${f}`} type="password" autoComplete="off" value={vals[f] || ''} placeholder={placeholder}
         onChange={e => setVals(v => ({ ...v, [f]: e.target.value }))} /></div>)}
   </div>
-}
-
-function CopyField({ id, label, value }: { id: string; label: string; value: string }) {
-  const { t } = useTranslation(); const [copied, setCopied] = useState(false)
-  return <div className="space-y-1.5"><Label htmlFor={id}>{label}</Label>
-    <div className="flex gap-2"><Input readOnly value={value} className="font-mono text-xs" id={id} />
-      <Button variant="outline" size="icon" aria-label={t('approvals.copy')} onClick={() => { navigator.clipboard?.writeText(value); setCopied(true); setTimeout(() => setCopied(false), 1500) }}>{copied ? <Check /> : <Copy />}</Button></div></div>
 }
 
 /** One connection: account, callback URL, Test connection; its owner (or an admin for org ones) can replace secrets, register, remove. */

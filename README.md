@@ -16,7 +16,7 @@ The first run creates `backend/.venv`, installs the backend, and runs `npm insta
 
 - UI: http://localhost:5173 (Vite proxies `/api` and `/ws` to the backend)
 - API docs: http://localhost:8000/docs
-- Demo account, seeded on startup: `admin@example.com` / `admin123`
+- Demo account, seeded on startup outside production: `admin@example.com` / `admin123`
 
 To use a real model, open **Credentials** on the workflow list and add a provider. A node with no credential and no `OPENAI_API_KEY` uses the deterministic offline mock. Provider failures (401, timeout, and so on) become a node `error` event. They do not crash the server.
 
@@ -24,13 +24,17 @@ To use a real model, open **Credentials** on the workflow list and add a provide
 
 ## Accounts
 
-Passwords are hashed with PBKDF2-SHA256 (200k rounds, a unique salt). Login returns an HS256 JWT that lasts 24 hours (`JWT_TTL_SECONDS`, default 86400). Set `JWT_SECRET` for any shared or production process. If that value is still the placeholder, the backend logs a warning. With `STUDIO_ENV=production` it refuses to start. `STUDIO_CORS_ORIGINS` (comma-separated) lists the browser origins allowed to call the API. When it is unset, development allows `*` and production allows none, because the UI is served from the same origin. WebSocket URLs carry `?token=`; uvicorn's log lines show it as `token=***`.
+Passwords are hashed with PBKDF2-SHA256 (200k rounds, a unique salt). Login returns an HS256 JWT that lasts 24 hours (`JWT_TTL_SECONDS`, default 86400). Set `JWT_SECRET` for any shared or production process. If that value is still the placeholder, the backend logs a warning. With `STUDIO_ENV=production` it refuses to start. `STUDIO_CORS_ORIGINS` (comma-separated) lists the browser origins allowed to call the API. When it is unset, development allows `*` and production allows none, because the UI is served from the same origin. The browser keeps the session in an HttpOnly cookie (`studio_session`, `SameSite=Lax`; `Secure` in production, or set `STUDIO_COOKIE_SECURE`), so page scripts cannot read it. Writes that rely on the cookie must send `X-Requested-With: studio`, which `lib/api.ts` does. Sockets from the UI use the same cookie and must come from the server's own host. API clients may still pass `?token=`; uvicorn's log lines show it as `token=***`.
 
 Registration requires a password of 8–128 characters with at least one letter and one digit. The seeded `admin123` password is exempt. Email is trimmed and lower-cased. A bad login always says the email or password is wrong.
 
-Send `Authorization: Bearer <token>` on workflow and run APIs. The run socket is `ws://…/ws/run?token=<token>`. An expired or invalid token signs the UI out and returns to `/login?expired=1&next=…`. A new account receives a copy of the example workflow. Workflows belong to the user who created them.
+Login and registration also return `token` and `expires_at` in the body. API clients send `Authorization: Bearer <token>`, which needs no CSRF header, and connect sockets with `ws://…/ws/run?token=<token>`. `POST /api/auth/logout` clears the cookie. An expired or invalid token signs the UI out and returns to `/login?expired=1&next=…`. A new account receives a copy of the example workflow. Workflows belong to the user who created them.
 
-There is no login lockout and no password reset.
+Five failed sign-ins within 15 minutes lock that e-mail for 15 minutes, even with the right password (`AUTH_LOCKED`; `STUDIO_LOGIN_MAX_FAILURES`, `STUDIO_LOGIN_WINDOW`, `STUDIO_LOGIN_LOCK`). Unknown addresses are counted the same way, so a lockout does not reveal whether an account exists.
+
+To reset a password, an admin opens **Settings → Users** and makes a one-time link (the key icon), then sends it to the user. With `SMTP_HOST` and `STUDIO_PUBLIC_URL` set, **Forgot password?** on the sign-in page e-mails the link instead, and it answers the same way for every address. A link works once, for `STUDIO_PASSWORD_RESET_TTL` seconds (default 3600). Setting a new password signs out every older session of that account and clears its lockout.
+
+In production (`STUDIO_ENV=production`) the demo account is not created. If it already exists with the demo password, it is deactivated at start-up; use `STUDIO_ADMIN_EMAILS` to bootstrap an admin.
 
 ## Editor
 

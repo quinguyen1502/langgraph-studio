@@ -1,12 +1,13 @@
 """FastAPI dependency wiring: one Database per process, services built per request (cheap)."""
 from functools import lru_cache
-from fastapi import Depends, Request
+from urllib.parse import urlparse
+from fastapi import Depends, Request, WebSocket
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from ..core import config
+from ..core import config, security
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, CredentialRepository as _Creds
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.policy_service import PolicyService
 from ..services.team_service import TeamService
@@ -120,7 +121,7 @@ def share_service() -> ShareService:
     db = get_db(); return ShareService(WorkflowShareRepository(db), UserRepository(db), access_service(), TeamRepository(db), audit_service())
 
 def auth_service() -> AuthService:
-    return AuthService(UserRepository(get_db()), workflow_service())
+    db = get_db(); return AuthService(UserRepository(db), workflow_service(), AuthSecurityRepository(db), audit=audit_service())
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
@@ -154,13 +155,28 @@ def import_service() -> ImportService:
 
 bearer = HTTPBearer(auto_error=False)
 
-def current_user(cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
-    """The signed-in, active user with role and permissions (database-checked per request, TASK-0014)."""
-    return AuthService(UserRepository(get_db())).current(cred.credentials if cred else None)
+UNSAFE = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 
 
-def ws_user(token: str | None) -> dict:
-    """WebSocket variant of current_user (token from the query string)."""
+def current_user(request: Request, cred: HTTPAuthorizationCredentials | None = Depends(bearer)) -> dict:
+    """The signed-in, active user with role and permissions (database-checked per request, TASK-0014).
+    A Bearer token wins; otherwise the session cookie (TASK-0045), whose writes must carry X-Requested-With (CSRF)."""
+    token = cred.credentials if cred else None
+    if token is None and (token := request.cookies.get(security.SESSION_COOKIE)):
+        if request.method in UNSAFE and request.headers.get(security.CSRF_HEADER) != security.CSRF_VALUE: raise AppError("AUTH_CSRF")
+    return AuthService(UserRepository(get_db())).current(token)
+
+
+def _same_origin(origin: str | None, host: str | None) -> bool:
+    """The page's host is the server's host (ports ignored: nginx forwards `$host` without one), or an allowed CORS origin."""
+    return not origin or urlparse(origin).hostname == (host or "").rsplit(":", 1)[0].strip("[]") or origin in config.cors_origins()
+
+
+def ws_user(ws: WebSocket) -> dict:
+    """WebSocket variant of current_user: ?token= (API clients), else the session cookie from a same-origin page."""
+    token = ws.query_params.get("token")
+    if not token and (token := ws.cookies.get(security.SESSION_COOKIE)):
+        if not _same_origin(ws.headers.get("origin"), ws.headers.get("host")): raise AppError("AUTH_CSRF")
     return AuthService(UserRepository(get_db())).current(token)
 
 

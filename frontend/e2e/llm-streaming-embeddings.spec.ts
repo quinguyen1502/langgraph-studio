@@ -1,11 +1,12 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0030 follow-up: live LLM text in the trace, Ollama embeddings for a knowledge base, credential edit in place.
 // Fake Ollama / OpenRouter live in backend/tests/fixtures/mock_chat_api.py (streamed chat with a delay per chunk).
 const CHAT = `http://127.0.0.1:${process.env.E2E_CHAT_PORT || 8111}`
 async function login(page: Page) {
   await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
   await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page)}` }
 }
 const n = (id: string, type: string, x: number, data: any = {}) => ({ id, type, position: { x, y: 120 }, data: { label: id, ...data } })
 

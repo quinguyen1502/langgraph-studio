@@ -88,9 +88,9 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 - 2026-10-18: Moved doing -> review. Backend suite after the symlink and Docker CLI fixes: 278 passed, 10 skipped (`/tmp/lgs-qa-venv`, Python 3.12). `cd frontend && npm run build` passed before those backend-only fixes and the frontend did not change after it. Live Docker import passed. Review and QA artifacts are not written yet. Task is not done.
 - 2026-10-18: Agent review REV-0029 (`approved for QA`, no blocking findings) and QA-0029 (`pass with follow-up`). Pytest and `npm run build` were re-run on `4d3813b`: 278 passed, 10 skipped, 97.65s; frontend build exit 0. Task stays in `review`. Not done. Owner review on PR #33 is still pending.
 - 2026-10-18: Owner said to merge. Moved review -> done. Review REV-0029 and QA-0029 are linked in Related Artifacts. REQ-0009 stays Proposed. PR #33 merges into `develop`.
+- 2026-10-18: Owner accepted REQ-0009 (Docker, residual risk included). QA-0029 outcome is pass. The lockfile stash was popped and discarded; the committed `frontend/package-lock.json` stayed.
 
 ## Handoff Notes
 
 - Task is done. Review: `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`. QA: `.factory-state/artifacts/QA-0029-task-0015-container-sandbox.md`.
-- REQ-0009 stays Proposed. gVisor and Firecracker stay out of scope.
-- `frontend/package-lock.json` dev-metadata stays in `stash@{0}` (created on `develop`). Do not pop that stash onto this branch.
+- REQ-0009 is Implemented. gVisor and Firecracker stay out of scope.

@@ -72,7 +72,7 @@ Developer validation recorded on the task is sufficient to enter QA, with the ga
 ## Required Follow-Up
 
 - None before QA. The non-blocking items above can stay as residual risk unless the owner wants a Compose profile for the socket, or wants runs to stay in Docker after the flag is turned off.
-- Do not mark REQ-0009 or DEC-0032 accepted from this review.
+- 2026-10-18: The owner accepted REQ-0009 (Docker, with the residual risk in QA-0029) and DEC-0032. This review did not make that acceptance.
 
 ## Review Decision
 

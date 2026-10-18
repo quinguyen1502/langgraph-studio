@@ -3,8 +3,9 @@
 ## Metadata
 
 - Decision ID: DEC-0032
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-10-17
+- Accepted: 2026-10-18 by the owner. An Ollama `bind_tools` test and the OpenAI picker label stay optional. They are not required for this acceptance.
 - Related: TASK-0030, TASK-0005, DEC-0009 (layers), DEC-0010 (envelope)
 
 ## Context

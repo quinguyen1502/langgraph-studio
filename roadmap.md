@@ -48,7 +48,7 @@ Phase 2, Phase 3, and Phase 4 are done and merged into `develop`.
 
 ## Phase 4 — Last
 
-- TASK-0015 Repo import hardening + container sandbox (REQ-0009). **done** — merged into `develop` 2026-10-18 (PR #33). The import feature stays **experimental**; `STUDIO_ENABLE_IMPORT` defaults off. Docker sandbox when the flag is on. REQ-0009 stays Proposed.
+- TASK-0015 Repo import hardening + container sandbox (REQ-0009). **done** — merged into `develop` 2026-10-18 (PR #33). The import feature stays **experimental**; `STUDIO_ENABLE_IMPORT` defaults off. Docker sandbox when the flag is on. REQ-0009 is Implemented (owner accepted Docker on 2026-10-18).
 
 ## Phase 5 — Editor UX
 
@@ -64,4 +64,4 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## LLM providers
 
-- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032): **done** — PR #32 merged into `develop` (migrations 0024_credential_headers, 0025_kb_dims).
+- TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032, Accepted 2026-10-18): **done** — PR #32 merged into `develop` (migrations 0024_credential_headers, 0025_kb_dims).

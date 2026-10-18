@@ -5,10 +5,10 @@
 - Project: langgraph-studio
 - QA ID: QA-0029
 - Task ID: TASK-0015
-- QA Owner: Grok (agent QA). Owner sign-off is still pending.
+- QA Owner: Grok (agent QA). Owner accepted the result on 2026-10-18.
 - Created: 2026-10-18
 - Updated: 2026-10-18
-- Outcome: pass with follow-up
+- Outcome: pass
 
 ## Validation Scope
 
@@ -75,9 +75,8 @@ Commit `4d3813b` on `factory/task-0015-run-repo-imports-inside-a-container-sandb
 
 ## Required Follow-Up
 
-- Owner review of PR #33. This QA does not mark the task done and does not merge.
-- Optional: Compose profile so the socket is absent when import is off; a live OOM; a paired event log; fix the stale subprocess sentence in the README checkpoint section.
+- None. On 2026-10-18 the owner merged PR #33 and accepted the residual risk in this report. The optional Compose socket profile, live OOM run, paired event log, and README checkpoint sentence are not required.
 
 ## QA Decision
 
-Conditionally passed with documented risk. Outcome for the task record: pass with follow-up. Not passed to done.
+Passed. The owner accepted the documented residual risk on 2026-10-18. TASK-0015 is done on `develop`.

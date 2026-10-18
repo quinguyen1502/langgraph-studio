@@ -7,7 +7,7 @@
 - Status: done
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Requirement IDs: (owner request 2026-10-17; extends TASK-0005)
 - Design IDs: DEC-0032
 - Architecture IDs: ARCH-0001
@@ -58,3 +58,4 @@ Let LLM nodes use local models (Ollama, LM Studio, any OpenAI-compatible server 
 ## Activity Log
 
 - 2026-10-17: Status set to done to match the done/ folder. Previous Status was `review`. Review REV-0028. QA QA-0028 (pass with follow-up). PR #32 was already merged.
+- 2026-10-18: Owner accepted DEC-0032. No further task.

@@ -84,8 +84,11 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 - 2026-10-18: Validation. `backend/.venv` is Python 3.14 without pytest, so the suite ran with `/tmp/lgs-qa-venv` (Python 3.12): 276 passed, 10 skipped. `cd frontend && npm run build` passed. UI: with the flag unset, `#import-btn` is absent (desktop and 390px) and `POST /api/import` is 404 `IMPORT_DISABLED`; with `STUDIO_ENABLE_IMPORT=1` the button opens the URL and zip tabs. Task stays in doing.
 - 2026-10-18: Live Docker check on Docker Desktop (`python:3.12-slim`, CLI not on PATH; used `/Applications/Docker.app/Contents/Resources/bin/docker`). `new-langgraph-project` imported and ran in the container: nodes `__start__`, `call_model`, `__end__`, state `output from call_model. Configured with studio`. A probe could write inside the job dir and could not read a host sentinel or `JWT_SECRET` / `STUDIO_DB`. A 30s sleep was killed and reported `Sandbox stopped (time limit (12s)).`. Fix: `run_imported` uses `lexists` because the venv python is a symlink to the image interpreter. The API also uses Docker Desktop's bundled CLI when `docker` is not on `PATH`. Task stays in doing.
 - 2026-10-18: Moved doing -> review. Backend suite after the symlink and Docker CLI fixes: 278 passed, 10 skipped (`/tmp/lgs-qa-venv`, Python 3.12). `cd frontend && npm run build` passed before those backend-only fixes and the frontend did not change after it. Live Docker import passed. Review and QA artifacts are not written yet. Task is not done.
+- 2026-10-18: Agent review REV-0029 (`approved for QA`, no blocking findings) and QA-0029 (`pass with follow-up`). Pytest and `npm run build` were re-run on `4d3813b`: 278 passed, 10 skipped, 97.65s; frontend build exit 0. Task stays in `review`. Not done. Owner review on PR #33 is still pending.
 
 ## Handoff Notes
 
-- Branch `factory/task-0015-run-repo-imports-inside-a-container-sandbox` is in review. One Draft PR targets `develop`. Do not merge, do not mark this task done, and do not write REV/QA until the owner asks.
+- Branch `factory/task-0015-run-repo-imports-inside-a-container-sandbox` is in review. Draft PR #33 targets `develop`.
+- Review: `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`. QA: `.factory-state/artifacts/QA-0029-task-0015-container-sandbox.md`.
+- Do not merge and do not mark this task done until the owner asks. REQ-0009 stays Proposed.
 - `frontend/package-lock.json` dev-metadata stays in `stash@{0}` (created on `develop`). Do not pop that stash onto this branch.

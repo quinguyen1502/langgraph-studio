@@ -27,6 +27,7 @@
     "running": "running",
     "done": "done",
     "waiting": "waiting",
+    "paused": "paused",
     "expired": "expired"
   },
   "auth": {
@@ -91,6 +92,13 @@
     "saveTip": "Save workflow",
     "run": "Run",
     "runTip": "Run the workflow with the current input",
+    "step": "Step",
+    "stepTip": "Run the next step, then pause",
+    "runTo": "Run to here",
+    "runToTip": "Run until {{node}} finishes, then pause",
+    "runToNeedNode": "Select a node to run until it finishes",
+    "continueRun": "Continue",
+    "continueTip": "Run the rest of this paused run",
     "cancelTip": "Stop the run (cancels between steps)",
     "jsonTip": "View JSON",
     "jsonDesc": "Format sent to the backend.",
@@ -224,6 +232,7 @@
     "usageDetail": "{{model}}: {{tin}} in / {{tout}} out tokens · {{cost}}",
     "estimated": "(estimated)",
     "waiting": "Waiting for a human",
+    "paused": "Paused after a step",
     "streaming": "Streaming from the model…"
   },
   "import": {
@@ -315,6 +324,7 @@
     "RUN_FAILED": "Run failed",
     "RUN_TIMEOUT": "Run exceeded the time limit ({{seconds}}s)",
     "RUN_NOT_FOUND": "Run not found, already finished or not yours",
+    "RUN_NODE_NOT_REACHED": "The run finished without reaching node '{{node}}'",
     "NODE_FAILED": "Node failed",
     "CREDENTIAL_NOT_FOUND": "Credential not found or not yours",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Unsupported provider: {{provider}}",

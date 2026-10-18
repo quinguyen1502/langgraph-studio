@@ -134,7 +134,9 @@ Nếu graph import không có checkpointer riêng, runner gắn một saver tron
 
 Tab Logs là một dòng cho mỗi bước node: trạng thái, tên, loại, thời lượng, thanh waterfall, và token khi model báo. Vòng lặp hiện `#2`, `#3`, …. Bấm dòng, hoặc bấm node trên canvas, để xem Input, Output, State diff, và Raw. **Raw events** là luồng gốc. History phát lại cùng timeline.
 
-**Cancel** gửi `{"type":"cancel"}`. Đóng tab cũng huỷ. Huỷ là hợp tác: dừng giữa các bước, nên lời gọi LLM hoặc HTTP đã gửi có thể chạy nốt. Trạng thái lưu là `ok`, `error`, `cancelled`, và `timeout`. Lỗi là một dòng. `sk-…`, `Bearer …`, và `api_key=…` bị che.
+**Một bước** chạy một superstep rồi dừng cùng run đó để xem kết quả. **Chạy tiếp** chạy nốt. Chọn một node rồi bấm **Chạy tới đây** để chạy đến khi node đó xong, rồi dừng. Nếu đường đi không tới node đó, run chạy hết và báo không tới. Lần dừng này có trạng thái `paused`, không phải chờ duyệt. Superstep chỉ có Start không tính là một bước.
+
+**Cancel** gửi `{"type":"cancel"}`. Đóng tab cũng huỷ. Huỷ là hợp tác: dừng giữa các bước, nên lời gọi LLM hoặc HTTP đã gửi có thể chạy nốt. Trạng thái lưu là `ok`, `error`, `cancelled`, `timeout`, và `paused`. Lỗi là một dòng. `sk-…`, `Bearer …`, và `api_key=…` bị che.
 
 | Biến | Mặc định | Ý nghĩa |
 | --- | --- | --- |

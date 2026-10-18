@@ -9,9 +9,11 @@ router = APIRouter()
 
 @router.websocket("/ws/run")
 async def ws_run(ws: WebSocket):
-    """Connect with ?token=JWT. Client sends {workflow_id, workflow?, input}; server streams events.
+    """Connect with ?token=JWT. Client sends {workflow_id, workflow?, input, steps?, until?}; server streams events.
+    steps: 1 pauses after one working superstep (status paused). until: a node id pauses after that node finishes.
+    Resume with {resume_run_id, steps?} or {resume_run_id, until?} and no response.
     While running, the client may send {"type": "cancel"}; closing the socket also cancels.
-    Final status: ok | error | cancelled | timeout (stored in run history)."""
+    Final status: ok | error | cancelled | timeout | waiting | paused (stored in run history)."""
     try:
         uid = ws_user(ws.query_params.get("token") or "")["id"]
     except AppError:

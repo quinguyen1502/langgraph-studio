@@ -44,6 +44,8 @@ class RunPlan:
     resumed_by: Optional[dict] = None  # {channel, user_id} when an approval channel answered (TASK-0022)
     ports: Optional[Ports] = None  # knowledge base / MCP services bound to the run's user (TASK-0012/0013)
     invalid: Optional[list] = None  # subgraph reference errors found while planning (TASK-0011), reported as WORKFLOW_INVALID
+    steps: Optional[int] = None  # stop after this many working supersteps (TASK-0036); None runs to the end
+    until: Optional[str] = None  # pause after this node finishes (TASK-0036); None runs to the end
 
     @property
     def imported(self) -> bool:
@@ -52,7 +54,7 @@ class RunPlan:
     def events(self) -> Iterator[dict]:
         if self.imported: return repo_import.run_imported(self.workflow, dict(self.input), resume=self.resume, checkpointing=self.checkpointing)
         if self.invalid: raise ValidationError(self.invalid)
-        return run_stream(self.workflow, self.input, self.resolve, self.resume, self.effects, ports=self.ports)
+        return run_stream(self.workflow, self.input, self.resolve, self.resume, self.effects, ports=self.ports, steps=self.steps, until=self.until)
 
 
 def error_event(error: dict, **extra) -> dict:
@@ -90,6 +92,22 @@ class _RunLedger:
 def _dumps(x) -> str: return json.dumps(x, ensure_ascii=False, default=str)
 
 
+def _parse_steps(req: dict) -> Optional[int]:
+    """One-step runs send steps: 1. Omit the field to run until the end."""
+    if "steps" not in req or req["steps"] is None: return None
+    raw = req["steps"]
+    if isinstance(raw, bool) or not isinstance(raw, int) or raw < 1: raise AppError("RUN_REQUEST_INVALID")
+    return raw
+
+
+def _parse_until(req: dict) -> Optional[str]:
+    """Run-to-node sends until: the node id to pause after. Omit the field to ignore it."""
+    if "until" not in req or req["until"] is None: return None
+    raw = req["until"]
+    if not isinstance(raw, str) or not raw: raise AppError("RUN_REQUEST_INVALID")
+    return raw
+
+
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
@@ -114,6 +132,9 @@ class RunService:
         row = self.runs.get(rid) if self.bus.owner(rid) is None else None  # not running here or elsewhere
         if row is not None and row.status == "queued" and row.owner == uid:  # API run not picked up yet: worker skips it
             return self.runs.set_status(rid, "cancelled")
+        if row is not None and row.status == "paused":
+            if row.owner != uid: raise AppError("RUN_NOT_FOUND")
+            return self._close_waiting(row, {"type": "run_cancelled", "ts": time.time(), "reason": "api"}, "cancelled", uid)
         if row is not None: return self.cancel_waiting(rid, uid)
         if self.bus.owner(rid) != uid: raise AppError("RUN_NOT_FOUND")  # unknown, finished or not yours
         self.bus.request_cancel(rid)
@@ -121,7 +142,8 @@ class RunService:
     # ---- planning / validation of the client request ----
     def plan(self, uid: str, req) -> RunPlan:
         if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
-        if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"))
+        steps = _parse_steps(req); until = _parse_until(req)
+        if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"), steps=steps, until=until)
         wid = req.get("workflow_id"); row = None
         if wid: row = self._workflow(wid, uid, P.RUN)
         elif self.access is not None: self.access.require(uid, P.WORKFLOWS_CREATE)  # ad-hoc graphs: viewers only run saved workflows
@@ -135,8 +157,10 @@ class RunService:
         version = self._version_of(wid, wf)
         res = row.owner if row is not None and row.owner else uid  # a saved workflow uses its owner's resources (DEC-0023)
         wf, invalid = self._expand(res, wid, wf)
+        if (steps is not None or until) and (wf.get("source") or {}).get("kind") == "langgraph_import":
+            raise AppError("RUN_REQUEST_INVALID")  # imported graphs stay full-run only (TASK-0036)
         return RunPlan(wid, wf, inp, self.credentials.resolver(res) if self.credentials else None, version=version, invalid=invalid,
-                       ports=self.ports(res, uid))
+                       ports=self.ports(res, uid), steps=steps, until=until)
 
     def _workflow(self, wid: str, uid: str, action: str = P.VIEW):
         if self.access is not None: return self.access.workflow(wid, uid, action)
@@ -205,7 +229,11 @@ class RunService:
         for r in stale: self._expire(r)
         return len(stale)
 
-    def plan_resume(self, uid: str, rid: str, response, via_channel: bool = False) -> RunPlan:
+    def plan_resume(self, uid: str, rid: str, response, via_channel: bool = False, steps: Optional[int] = None, until: Optional[str] = None) -> RunPlan:
+        row = self.runs.get(rid)
+        if row is not None and row.status == "paused" and not via_channel:
+            if row.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only, same as a human resume
+            return self._plan_paused(row, uid, steps, until)
         if isinstance(response, bool): response = "approved" if response else "rejected"
         if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
@@ -216,6 +244,18 @@ class RunService:
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
                        self.credentials.resolver(res) if self.credentials else None,
                        run_id=rid, previous=r, resume={**{k: cp[k] for k in RESUME_KEYS if k in cp}, "value": response}, source=r.source or "ui",
+                       version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(res, uid))
+
+    def _plan_paused(self, r: Run, uid: str, steps: Optional[int], until: Optional[str] = None) -> RunPlan:
+        """Continue a one-step pause (TASK-0036). No human response, and no approval notification."""
+        if not r.checkpoint: raise AppError("RUN_NOT_WAITING")
+        cp = json.loads(r.checkpoint)
+        resume = {k: cp[k] for k in RESUME_KEYS if k in cp}
+        if not (resume.get("node") or resume.get("nodes")): raise AppError("RUN_NOT_WAITING")
+        res = self.resources_of(r.workflow_id, uid)
+        return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
+                       self.credentials.resolver(res) if self.credentials else None,
+                       run_id=r.id, previous=r, resume=resume, source=r.source or "ui", steps=steps, until=until,
                        version=r.workflow_version, trace_parent=cp.get("trace"), ports=self.ports(res, uid))
 
     def plan_recover(self, r: Run, fence: Optional[int] = None, attempt: int = 2) -> RunPlan:
@@ -278,7 +318,7 @@ class RunService:
             if span is not None:
                 if checkpoint is not None: checkpoint = {**checkpoint, "trace": span.ref}
                 trace_id = self.telemetry.end_run(span, {**run_meta, "started": span.run["started"]}, metrics)
-            elif status != "waiting":
+            elif status not in ("waiting", "paused"):
                 trace_id = self.telemetry.record_run(run_meta, events if trace_events is None else trace_events, metrics, trace_parent)
         except Exception: trace_id = None  # tracing must never fail a run
         if trace_id is None and trace_parent: trace_id = trace_parent.get("trace_id")
@@ -298,7 +338,7 @@ class RunService:
         self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
                           final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source, workflow_version=version,
                           checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics), **({"fence": fence} if fence is not None else {}))
-        if self.ledger is not None and status != "waiting":
+        if self.ledger is not None and status not in ("waiting", "paused"):
             try: self.ledger.purge(rid)  # finished: the ledger only matters while the run can still be recovered
             except Exception: log.warning("purging the node ledger of run %s failed", rid)
         return {"metrics": {**metrics, "tokens": metrics["tokens_in"] + metrics["tokens_out"]}, "trace_id": trace_id, "trace_url": trace_url(trace_id)}
@@ -387,7 +427,8 @@ class RunService:
         try:
             if plan.recovered: first = {"type": "run_recovered", "run_id": rid, "ts": t0, "node": plan.resume["node"], "nodes": resume_nodes(plan.resume),
                                         "attempt": plan.attempt}
-            elif prev: first = {"type": "run_resumed", "run_id": rid, "ts": t0, "node": plan.resume["node"], "response": plan.resume["value"],
+            elif prev: first = {"type": "run_resumed", "run_id": rid, "ts": t0, "node": plan.resume["node"], "nodes": resume_nodes(plan.resume),
+                                **({"response": plan.resume["value"]} if "value" in plan.resume else {}),
                                 **({"by": plan.resumed_by} if plan.resumed_by else {})}
             else: first = {"type": "run_started", "run_id": rid, "ts": t0}
             await emit(first)
@@ -411,7 +452,9 @@ class RunService:
                     ev = _normalise(ev); ev["ts"] = time.time()
                     if ev["type"] == "run_finished": final = ev.get("state")
                     if ev["type"] == "error": status = "error"
-                    if ev["type"] == "run_waiting": status = "waiting"; checkpoint = {**ev.pop("checkpoint"), "workflow": plan.workflow}
+                    if ev["type"] in ("run_waiting", "run_paused"):
+                        status = "waiting" if ev["type"] == "run_waiting" else "paused"
+                        checkpoint = {**ev.pop("checkpoint"), "workflow": plan.workflow}
                     await emit(ev); continue
                 get.cancel()
                 if listener in done:

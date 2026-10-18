@@ -4,7 +4,7 @@ import {
   useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection, type NodeProps,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Plus, Trash2, Braces, Workflow, Loader2, CheckCircle2, XCircle, Code2, Sparkles, GitFork, ExternalLink, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, ArrowRight, ArrowDown, Check, MoreHorizontal, History, LayoutTemplate, Share2, Webhook, Search, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, StepForward, FastForward, Crosshair } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuSeparator, ContextMenuSub, ContextMenuSubContent, ContextMenuSubTrigger, ContextMenuTrigger } from '@/components/ui/context-menu'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -411,6 +411,12 @@ function Studio() {
 
   const trace = useMemo(() => buildTrace(log as any, nid => { const n = nodes.find(x => x.id === nid); return { label: (n?.data as any)?.label, type: n?.type } }), [log, nodes])
   const traceMeta = (t: string) => META[t] || META.code
+  const step = () => {
+    if (trace.paused?.runId) { stream({ resume_run_id: trace.paused.runId, steps: 1 }, true); return }
+    let inp: any; try { inp = JSON.parse(input) } catch { setErrors([t('editor.badInput')]); setTab('input'); return }
+    stream({ workflow_id: wid, workflow: toJSON(), input: inp, steps: 1 })
+  }
+  const continueRun = () => { if (trace.paused?.runId) stream({ resume_run_id: trace.paused.runId }, true) }
   const hlSpan = traceSel ? trace.spans.find(x => x.key === traceSel)?.node : undefined
   const hlNode = hlSpan ? canvasId(hlSpan) : undefined
   const nodesView = useMemo(() => hlNode ? nodes.map(n => n.id === hlNode ? { ...n, data: { ...n.data, _hl: true } } : n) : nodes, [nodes, hlNode])
@@ -437,6 +443,13 @@ function Studio() {
     return { ...n, data }
   }))
   const d: any = selNode?.data || {}
+  const runTo = () => {
+    if (!selNode) return
+    const until = selNode.id
+    if (trace.paused?.runId) { stream({ resume_run_id: trace.paused.runId, until }, true); return }
+    let inp: any; try { inp = JSON.parse(input) } catch { setErrors([t('editor.badInput')]); setTab('input'); return }
+    stream({ workflow_id: wid, workflow: toJSON(), input: inp, until })
+  }
   const fieldNames = state.map(f => f.name)
   const [canvasLock, setCanvasLock] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
@@ -468,6 +481,9 @@ function Studio() {
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
+      {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}{t('editor.step')}</Button></Tip>}
+      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode}><Crosshair />{t('editor.runTo')}</Button></Tip>}
+      {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button size="sm" variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
@@ -665,7 +681,7 @@ function Studio() {
             {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
             {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => openRun(h)}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' || h.status === 'expired' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' || h.status === 'expired' || h.status === 'paused' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}

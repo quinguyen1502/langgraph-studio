@@ -40,9 +40,13 @@ def check_input(wf: Dict[str, Any], inputs: Any) -> List[str]:
 
 
 def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume: Dict[str, Any] | None = None,
-               effects: Optional[Effects] = None, ports=None):
+               effects: Optional[Effects] = None, ports=None, steps: Optional[int] = None, until: Optional[str] = None):
     """Yield per-node events: started / finished(duration, input=state before, delta=output) / error. Sync generator.
     A Human node without a response yields `run_waiting` {node, prompt, checkpoint} and stops.
+    steps: stop after this many supersteps that contain a node other than Start or End, yielding `run_paused`
+    {node, nodes, state, checkpoint} before the next superstep starts (TASK-0036). None runs to the end.
+    A superstep that is only Start does not count, so the first step still reaches the first working node.
+    until: pause after this node has finished. If the run ends without it, yield RUN_NODE_NOT_REACHED.
     resume = {"node" | "nodes", "state", "counts"?, "value"?} continues at that node (or those parallel nodes) with the
     saved state: with "value" a paused Human node gets its response (TASK-0006); without it the run continues from a
     progress checkpoint (recovery of queue jobs, TASK-0020).
@@ -59,6 +63,8 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     app = compile_workflow(wf, resolve, lambda nid, u: usage.__setitem__(nid, merge_usage(usage.get(nid), u)),
                            entry=resume_nodes(resume) if resume else None, resume=held, effects=effects, checkpointer=InMemorySaver(), ports=ports)
     nodes = {n["id"]: n for n in wf["nodes"]}
+    if until is not None and until not in nodes:
+        raise ValidationError([f"Node '{until}' is not in the workflow"])
     if resume: inputs = dict(resume.get("state") or {})
     state = dict(inputs); cp_state, cp_counts = dict(state), dict(counts); first = True
 
@@ -69,8 +75,12 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         counts[nid] = counts.get(nid, 0) + 1
         return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
 
-    t0 = time.perf_counter(); pending: List[str] = []
+    t0 = time.perf_counter(); pending: List[str] = []; done_steps = 0; finished_ids: set[str] = set()
     cfg = {"recursion_limit": recursion_limit(), "configurable": {"thread_id": "run"}}
+
+    def counts_as_step(ids: List[str]) -> bool:
+        return any(nodes[n]["type"] not in ("start", "end") for n in ids)
+
     try:
         for mode, chunk in app.stream(inputs, cfg, stream_mode=["updates", "checkpoints", "custom"]):
             if mode == "custom":  # live LLM text (TASK-0030): sent to the client, never stored (node_finished has the result)
@@ -80,6 +90,12 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
             if mode == "checkpoints":  # superstep boundary: the nodes that run next, all inputs settled
                 nxt = [n for n in (chunk.get("next") or []) if n in nodes]
                 if not nxt: continue
+                if counts_as_step(pending): done_steps += 1  # the superstep that just finished
+                # pause before this superstep starts: step budget spent, or the chosen node just finished
+                if (steps is not None and done_steps >= steps) or (until is not None and until in pending):
+                    yield {"type": "run_paused", "node": nxt[0], "nodes": nxt, "state": cap_payload(dict(state)),
+                           "checkpoint": {"node": nxt[0], "nodes": nxt, "state": dict(state), "counts": dict(counts)}}
+                    return
                 cp_state, cp_counts = dict(state), dict(counts)
                 if not first and any(nodes[n]["type"] not in ("start", "end") for n in nxt):
                     yield {"type": "_checkpoint", "node": nxt[0], "nodes": nxt, "state": dict(state), "counts": dict(counts)}
@@ -93,6 +109,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
                 state = apply_delta(state, delta, wf.get("state") or [])
                 reused = effects is not None and nid in effects.reused
                 if reused: effects.reused.discard(nid)
+                finished_ids.add(nid)
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
                        "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
                        "input": cap_payload(before), "delta": cap_payload(delta),
@@ -108,6 +125,11 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
                "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
                "code": getattr(e, "code", "NODE_FAILED"), "errors": [safe_error(e)]}
+        return
+    if until and until not in finished_ids:
+        msg = f"The run finished without reaching node '{until}'"
+        yield {"type": "error", "node": until, "code": "RUN_NODE_NOT_REACHED", "errors": [msg],
+               "error": {"code": "RUN_NODE_NOT_REACHED", "message": msg, "details": {"node": until}}}
         return
     yield {"type": "run_finished", "state": state}
 

@@ -46,6 +46,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "RUN_FAILED": (500, "Run failed"),
     "RUN_TIMEOUT": (408, "Run exceeded the time limit ({seconds}s, STUDIO_RUN_TIMEOUT)"),
     "RUN_NOT_FOUND": (404, "Run not found, already finished or not yours"),
+    "RUN_NODE_NOT_REACHED": (400, "The run finished without reaching node '{node}'"),
     "RUN_NOT_WAITING": (409, "This run is not waiting for a response"),
     "RUN_RESPONSE_INVALID": (400, "The response must be text (max {max} characters)"),
     "TRIGGER_TOKEN_INVALID": (401, "Missing, invalid or revoked workflow token"),

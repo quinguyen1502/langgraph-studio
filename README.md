@@ -134,7 +134,9 @@ Checked before the sandbox work: `langchain-ai/new-langgraph-project` runs witho
 
 The Logs tab is one row per node step: status, name, kind, duration, a waterfall bar, and tokens when the model reports them. Loops show `#2`, `#3`, and so on. A row, or a node on the canvas, opens Input, Output, State diff, and Raw. **Raw events** is the original stream. History replays the same timeline.
 
-**Cancel** sends `{"type":"cancel"}`. Closing the tab also cancels. Cancel is cooperative: it stops between steps, so an LLM or HTTP call already in flight may finish. Stored statuses are `ok`, `error`, `cancelled`, and `timeout`. Errors are one line, with `sk-…`, `Bearer …`, and `api_key=…` redacted.
+**Step** runs one superstep and pauses that same run so you can inspect it. **Continue** runs the rest. Select a node and **Run to here** runs until that node finishes, then pauses. If the path never reaches it, the run finishes and reports that. The pause is status `paused`, not a human approval. A superstep that is only Start does not use up the step.
+
+**Cancel** sends `{"type":"cancel"}`. Closing the tab also cancels. Cancel is cooperative: it stops between steps, so an LLM or HTTP call already in flight may finish. Stored statuses are `ok`, `error`, `cancelled`, `timeout`, and `paused`. Errors are one line, with `sk-…`, `Bearer …`, and `api_key=…` redacted.
 
 | Variable | Default | Meaning |
 | --- | --- | --- |

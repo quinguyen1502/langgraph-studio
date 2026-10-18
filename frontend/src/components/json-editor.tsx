@@ -5,6 +5,7 @@ import { HighlightStyle, foldGutter, syntaxHighlighting } from '@codemirror/lang
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 import { cn } from '@/lib/utils'
+import i18n from '@/lib/i18n'
 
 const highlight = HighlightStyle.define([
   { tag: tags.propertyName, color: 'var(--syntax-key)' },
@@ -18,7 +19,7 @@ const highlight = HighlightStyle.define([
 /** Unicode fold marks sit on the em-box baseline, so the ink rides high. An icon centered in the line does not. */
 function foldIcon(open: boolean) {
   const span = document.createElement('span')
-  span.title = open ? 'Fold line' : 'Unfold line'
+  span.title = i18n.t(open ? 'editor.foldLine' : 'editor.unfoldLine')
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
   svg.setAttribute('viewBox', '0 0 24 24')
   svg.setAttribute('fill', 'none')

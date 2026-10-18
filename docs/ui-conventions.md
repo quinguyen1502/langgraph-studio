@@ -21,7 +21,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
    | `destructive` | errors (shadcn built-in) |
 
 5. **Node types each have a colour token** (DEC-0008 addendum). Each type has three tokens: `--node-<type>` (accent), `--node-<type>-foreground` (text on a solid accent) and `--node-<type>-muted` (subtle background, the accent at 12% in light and 18% in dark). Types are `start`, `llm`, `tool`, `condition`, `end` and `code`.
-   - Example classes: `bg-node-llm-muted text-node-llm` (icon chip), `bg-node-llm` (accent stripe), `border-node-code/60` (Code node border).
+   - Example classes: `bg-node-llm-muted text-node-llm` (icon chip), `border-node-code/60` (Code node border). The canvas does not draw a left accent bar.
    - Use them in the palette, canvas node cards, the config header and trace timeline icons. They come from one map (`META` in `Editor.tsx`), so don't copy the classes elsewhere.
    - Light values sit at about oklch L 0.5–0.64 so they contrast with white; dark values sit at about L 0.7–0.8, with dark foreground text.
    - Node-type colours mean *category*, not status. Status keeps using `success`/`warning`/`destructive`.

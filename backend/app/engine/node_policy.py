@@ -8,7 +8,7 @@ may finish later; the run does not wait for it.
 """
 from __future__ import annotations
 import contextvars, threading
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TypedDict
 from langgraph.errors import NodeTimeoutError
 from langgraph.types import CachePolicy, RetryPolicy
 from .errors import Interrupt
@@ -25,9 +25,18 @@ def _num(value: Any) -> Optional[float]:
     return float(value)
 
 
-def errors(nid: str, data: Dict[str, Any]) -> List[str]:
+def errors(nid: str, data: Dict[str, Any], fields: Optional[set] = None) -> List[str]:
     """Human-readable problems with this node's execution settings. Empty when unset or valid."""
     out: List[str] = []
+    names = data.get("input_fields")
+    if names not in (None, []):
+        if (not isinstance(names, list) or not all(isinstance(n, str) and n for n in names)
+                or len(names) != len(set(names))):
+            out.append(f"Node {nid}: input fields must be a list of state field names")
+        elif fields is not None:
+            unknown = [n for n in names if n not in fields]
+            if unknown:
+                out.append(f"Node {nid}: input field '{unknown[0]}' is not in the state")
     retry = data.get("retry")
     if retry not in (None, {}):
         if not isinstance(retry, dict):
@@ -51,6 +60,16 @@ def _retry_on(exc: Exception) -> bool:
     """LangGraph's default, except a Human pause is not a failed attempt."""
     if isinstance(exc, Interrupt): return False
     return bool(RetryPolicy().retry_on(exc))
+
+
+def input_schema(data: Dict[str, Any], ann: Dict[str, Any]):
+    """Typed dict of the fields this node may see, or None when it sees the whole state."""
+    names = data.get("input_fields")
+    if not isinstance(names, list) or not names:
+        return None
+    if any(not isinstance(name, str) or name not in ann for name in names):
+        return None
+    return TypedDict("NodeInput", {name: ann[name] for name in names}, total=False)  # type: ignore[misc]
 
 
 def add_node_kwargs(data: Dict[str, Any]) -> Dict[str, Any]:

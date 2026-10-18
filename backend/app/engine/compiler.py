@@ -4,7 +4,7 @@ from typing import Annotated, Any, Dict, Optional, TypedDict
 from langgraph.cache.memory import InMemoryCache
 from langgraph.graph import StateGraph, START, END
 from .errors import ValidationError
-from .node_policy import add_node_kwargs, limit, needs_cache
+from .node_policy import add_node_kwargs, input_schema, limit, needs_cache
 from .nodes import node_fn
 from .reducers import fn_of
 from .validator import validate
@@ -36,7 +36,10 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
         timeout = data.get("timeout")
         if isinstance(timeout, (int, float)) and not isinstance(timeout, bool):
             fn = limit(fn, float(timeout), nid)
-        g.add_node(nid, fn, **add_node_kwargs(data))
+        kw = add_node_kwargs(data)
+        if (schema := input_schema(data, ann)) is not None:
+            kw["input_schema"] = schema
+        g.add_node(nid, fn, **kw)
     for nid, n in nodes.items():
         out = [e for e in wf["edges"] if e["source"] == nid]
         if nid in entries or (not entries and n["type"] == "start"):

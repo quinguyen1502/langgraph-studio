@@ -77,6 +77,34 @@ def test_timeout_stops_the_attempt_and_retry_starts_another():
     assert elapsed < 0.8  # two capped attempts, not the 0.6s sleep twice
 
 
+_seen = {}
+
+@register_tool("input_seen")
+def _input_seen(state):
+    _seen["keys"] = sorted(state)
+    return "ok"
+
+
+def test_input_fields_must_name_state_fields():
+    assert validate(tool("lookup_order", input_fields=["message"])) == []
+    assert validate(tool("lookup_order", input_fields=[])) == []
+    for bad in (["missing"], "message", ["message", "message"]):
+        errs = validate(tool("lookup_order", input_fields=bad))
+        assert errs and all(e.startswith("Node t:") for e in errs if "input" in e)
+        assert any("input" in e for e in errs)
+
+
+def test_input_fields_hide_the_other_state_from_the_node():
+    graph = tool("input_seen", input_fields=["message"])
+    _seen.clear()
+    out = compile_workflow(graph).invoke({"message": "hi", "out": "old"})
+    assert _seen["keys"] == ["message"]
+    assert out["out"] == "ok" and out["message"] == "hi"
+    _seen.clear()
+    compile_workflow(tool("input_seen")).invoke({"message": "hi", "out": "old"})
+    assert _seen["keys"] == ["message", "out"]
+
+
 def test_retry_does_not_treat_a_human_pause_as_a_failure():
     w = wf([N("s", "start"), N("h", "human", prompt="ok?", output_field="out", retry={"max_attempts": 4, "initial_interval": 0.25}), N("e", "end")],
            [E("1", "s", "h"), E("2", "h", "e")])

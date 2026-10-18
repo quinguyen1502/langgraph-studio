@@ -56,6 +56,7 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
         <Button size="sm" variant="ghost" id={`${idp}-resend`} disabled={busy || !slot.available} onClick={() => call(`/api/approvals/identities/${kind}/send-code`, { method: 'POST', json: team })}><RotateCw />{t('approvals.resend')}</Button>
       </div>
       {kind === 'telegram' && <p className="text-xs text-muted-foreground">{t('approvals.telegramStart')}</p>}
+      {kind === 'whatsapp' && <p className="text-xs text-muted-foreground">{t('approvals.whatsappWindow')}</p>}
     </div>}
     {err && <ErrorAlert>{err}</ErrorAlert>}
     {confirmDel.dialog}

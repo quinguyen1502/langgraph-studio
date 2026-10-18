@@ -87,6 +87,7 @@ def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET"
 def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
 SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write"  # same as the manual setup (README)
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
+def whatsapp_api_url() -> str: return (os.environ.get("WHATSAPP_API_URL") or "https://graph.facebook.com/v21.0").rstrip("/")  # TASK-0047
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
 # --- TASK-0022 follow-up: identity verification codes sent by the bot ---
 def identity_code_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_IDENTITY_CODE_TTL", 600)))  # a code is valid (s)

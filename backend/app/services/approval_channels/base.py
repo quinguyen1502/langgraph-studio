@@ -3,7 +3,8 @@
 An adapter knows one messaging platform: how to post an approval request with two buttons, how to authenticate and
 parse the platform's callback, and how to edit the original message afterwards. Business rules (tokens, identity
 mapping, authorization, audit, resuming the run) live in ApprovalService, so a new channel (WhatsApp, Teams, e-mail)
-is one more subclass registered in `ADAPTERS`.
+is one more subclass registered in `ADAPTERS`. WhatsApp has buttons like Slack and Telegram; e-mail and Teams are link
+channels (`link_based`, TASK-0047).
 """
 from __future__ import annotations
 import re
@@ -45,6 +46,10 @@ class ApprovalChannel:
     per_team: bool = False                  # identities are per workspace (Slack user ids belong to one workspace)
     shared_callback: bool = False           # one callback URL for every connection, routed by route_key() (Slack)
     transport: Optional[httpx.BaseTransport] = None  # tests plug in httpx.MockTransport
+    # TASK-0047: a link channel (e-mail, Teams) has no buttons that call us back. Its message links to the studio's
+    # /approve page, where the signed-in studio user decides, so there is no chat identity to verify.
+    link_based: bool = False
+    target_required: bool = True            # False: the connection itself is the destination (a Teams webhook)
 
     # ---- configuration ----
     def prepare(self, values: dict) -> dict:
@@ -68,6 +73,10 @@ class ApprovalChannel:
 
     def route_key(self, body: bytes) -> Optional[str]:
         """The account (team_id) an unauthenticated callback claims to come from, for the shared callback URL."""
+        return None
+
+    def challenge(self, secrets: dict, query: dict) -> Optional[str]:
+        """Answer a platform's GET verification of the callback URL (WhatsApp); None: not supported."""
         return None
 
     def register(self, secrets: dict, callback_url: str) -> dict:

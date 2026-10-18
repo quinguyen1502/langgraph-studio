@@ -72,7 +72,8 @@ class ApprovalService:
         node = next((n for n in workflow.get("nodes") or [] if n.get("id") == ev.get("node")), None)
         cfg = ((node or {}).get("data") or {}).get("approval") or {}
         target = str(cfg.get("target") or "").strip()
-        if not (cfg.get("channel_id") or cfg.get("channel")) or not target: return  # this node does not use an external channel
+        kind = cfg.get("channel"); needs_target = self.adapters[kind].target_required if kind in self.adapters else True
+        if not (cfg.get("channel_id") or kind) or (needs_target and not target): return  # this node does not use an external channel
         job = lambda: self._request(rid, owner, wid, node, cfg, target, ev)  # noqa: E731
         threading.Thread(target=job, daemon=True).start() if self.background else job()
 
@@ -137,6 +138,13 @@ class ApprovalService:
         req = self.repo.request(want) if want else None
         return next(((c, sec) for c, sec in ok if req is not None and c.id == req.channel_id), ok[0])
 
+    def challenge(self, kind: str, cid: str, query: dict) -> str:
+        a = self.adapter(kind); c = self.repo.channel(cid)
+        if c is None or c.kind != a.kind: raise AppError("CHANNEL_NOT_FOUND")
+        answer = a.challenge(self._secrets(c), query)
+        if answer is None: raise AppError("CHANNEL_NOT_FOUND")
+        return answer
+
     def handle_callback(self, kind: str, cid: Optional[str], headers: dict, body: bytes) -> dict:
         """cid None = the shared callback URL of the kind (Slack: routed by team_id)."""
         a = self.adapter(kind); headers = {k.lower(): v for k, v in headers.items()}
@@ -171,6 +179,12 @@ class ApprovalService:
             if self.repo.decide(r.id, "expired"): self._audit(r.owner, kind, "expired", r)
             return refuse("APPROVAL_TOKEN_EXPIRED")
         if uid is None: return refuse("APPROVAL_IDENTITY_UNKNOWN")
+        return self._decide(r, decision, uid, kind, external)
+
+    def _decide(self, r: ApprovalRequest, decision: str, uid: str, kind: str, external: Optional[str]) -> tuple[Optional[str], Optional[ApprovalRequest], Optional[str]]:
+        """The checks after the presser is known: owner or listed approver, run still waiting, first answer wins."""
+        def refuse(code):
+            self._audit(r.owner, kind, "denied", r, code=code, actor=uid, external=external); return code, r, None
         if uid != r.owner and uid not in json.loads(r.approvers or "[]"): return refuse("APPROVAL_FORBIDDEN")
         run = self.runs.get(r.run_id)
         if run is None or run.status != "waiting":
@@ -180,6 +194,43 @@ class ApprovalService:
         if self.enqueue: self.enqueue({"kind": "resume", "run_id": r.run_id, "owner": r.owner, "response": decision,
                                        "workflow_id": r.workflow_id, "approval_id": r.id, "by": {"channel": kind, "user_id": uid}})
         return None, self.repo.request(r.id), decision
+
+    # ---- link channels: the studio's /approve page (TASK-0047) ----
+    def _link(self, token: str) -> tuple[ApprovalRequest, str]:
+        r, decision = self._parse(token)
+        if r is None or r.kind not in self.adapters or not self.adapters[r.kind].link_based: raise AppError("APPROVAL_TOKEN_INVALID")
+        return r, decision
+
+    def link_info(self, token: str, uid: str) -> dict:
+        """What the /approve page shows. Only the run owner and the listed approvers may see it."""
+        r, decision = self._link(token)
+        if uid != r.owner and uid not in json.loads(r.approvers or "[]"): raise AppError("APPROVAL_FORBIDDEN")
+        w = self.workflows.get(r.workflow_id) if r.workflow_id else None; who = self.users.get_by_id(r.decided_by) if r.decided_by else None
+        run = self.runs.get(r.run_id); events = json.loads(run.events or "[]") if run else []
+        ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), {})
+        return {"decision": decision, "status": r.status, "kind": r.kind, "workflow_id": r.workflow_id, "workflow_name": w.name if w else None,
+                "run_id": r.run_id, "node": r.node_id, "label": ev.get("label"), "prompt": ev.get("prompt"), "expires": r.expires,
+                "expired": r.status == "pending" and time.time() > r.expires,
+                "decided_by": who.email if who else None}
+
+    def decide_link(self, token: str, uid: str) -> dict:
+        """The signed-in studio user confirms the link's decision. Refusals raise the APPROVAL_* code."""
+        r, decision = self._link(token)
+        if r.status != "pending": code, done = "APPROVAL_ALREADY_DECIDED", None
+        elif time.time() > r.expires:
+            if self.repo.decide(r.id, "expired"): self._audit(r.owner, r.kind, "expired", r)
+            code, done = "APPROVAL_TOKEN_EXPIRED", None
+        else: code, done, decision = self._decide(r, decision, uid, r.kind, None)
+        if code:
+            if code in ("APPROVAL_ALREADY_DECIDED", "APPROVAL_TOKEN_EXPIRED"): self._audit(r.owner, r.kind, "denied", r, code=code, actor=uid)
+            raise AppError(code)
+        who = self.users.get_by_id(uid); lang = self._lang(r.owner); key = "approved_by" if decision == "approved" else "rejected_by"
+        c = self.repo.channel(r.channel_id)
+        if c is not None:
+            note = lambda: self._update(self.adapters[r.kind], self._secrets(c), done, text(lang, "at", text=text(lang, key, who=who.email if who else uid),  # noqa: E731
+                                                                                   when=time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime())))
+            threading.Thread(target=note, daemon=True).start() if self.background else note()
+        return {"decision": decision, "run_id": r.run_id, "workflow_id": r.workflow_id}
 
     def _update(self, a: ApprovalChannel, sec: dict, r: ApprovalRequest, text: str) -> None:
         if not r.message_ref: return

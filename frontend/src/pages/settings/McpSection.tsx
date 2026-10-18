@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -125,6 +126,7 @@ export function McpSection() {
         <div className="flex gap-2"><Button size="sm" disabled={create.busy} id="mcp-create" onClick={() => create.run(() => api('/api/mcp/servers', { method: 'POST', json: toBody(form) }), '')}>{t('mcp.create')}</Button>
           <Button size="sm" variant="ghost" onClick={() => setAdding(false)}>{t('common.cancel')}</Button></div></CardContent></Card>
       : <Button size="sm" onClick={() => setAdding(true)} id="mcp-add"><Plus />{t('mcp.new')}</Button>)}
+    {!data && !err && <div className="space-y-3" aria-busy="true"><span className="sr-only">{t('common.loading')}</span>{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-24 w-full" />)}</div>}
     {data && !data.servers.length && !adding && <p className="text-sm text-muted-foreground" id="mcp-none">{t('mcp.none')}</p>}
     {data?.servers.map((s, i) => <ServerCard key={s.id} s={s} data={data} reload={load} defaultOpen={i < 2} />)}
   </div>

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ExternalLink } from 'lucide-react'
+import { TextLink } from '@/components/text-link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,7 +22,7 @@ export function RetrieverSettings({ kb, topK, onKb, onTopK }: { kb?: string; top
         <SelectContent>{(items || []).map(k => <SelectItem key={k.id} value={k.id}>{k.name} · {t('kb.documents', { count: k.documents })}</SelectItem>)}</SelectContent>
       </Select></div>
     {missing && <p className="text-[11px] text-destructive">{t('editor.retrieverMissing')}</p>}
-    {items && !items.length && <p className="text-[11px] text-muted-foreground">{t('editor.retrieverNone')}</p>}
+    {items && !items.length && <p className="text-[11px] text-muted-foreground" id="retriever-none">{t('editor.retrieverNone')} <TextLink to="/settings/knowledge" id="retriever-create">{t('editor.retrieverCreate')}</TextLink></p>}
     <div className="space-y-1.5"><Label className="text-xs text-muted-foreground" htmlFor="retriever-topk">{t('editor.retrieverTopK')}</Label>
       <Input id="retriever-topk" type="number" min={1} max={20} value={topK ?? 4} onChange={e => onTopK(Math.max(1, Math.min(20, Number(e.target.value) || 1)))} /></div>
     <Button variant="outline" size="sm" asChild><Link to="/settings/knowledge" id="retriever-manage"><ExternalLink />{t('editor.retrieverManage')}</Link></Button>

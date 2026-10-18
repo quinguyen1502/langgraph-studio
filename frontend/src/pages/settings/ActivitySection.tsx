@@ -1,11 +1,12 @@
 /** Settings → Activity (TASK-0029, admins): audit log of roles, shares, teams, ownership, accounts and policy, with filters. */
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { FilterBar } from '@/components/settings/filter-bar'
 import { api } from '@/lib/api'
@@ -50,7 +51,9 @@ export function ActivitySection() {
           <TableCell className="max-w-56"><div className="truncate font-medium">{e.target ?? e.target_id}</div><div className="text-xs text-muted-foreground">{t(`activity.types.${e.target_type}`)}</div></TableCell>
           <TableCell className="pr-4 max-w-80 text-xs text-muted-foreground"><div className="line-clamp-2 break-words">{detailText(e)}</div></TableCell>
         </TableRow>)}
-        {!data && !err && <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground"><Loader2 className="mr-2 inline size-4 animate-spin" />{t('common.loading')}</TableCell></TableRow>}
+        {!data && !err && Array.from({ length: 6 }, (_, i) => <TableRow key={i} className="hover:bg-transparent" aria-busy={i === 0 || undefined}>
+          <TableCell colSpan={5} className="py-2 pl-4">{i === 0 && <span className="sr-only">{t('common.loading')}</span>}<Skeleton className="h-4 w-full" /></TableCell>
+        </TableRow>)}
         {data && !data.items.length && <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground" id="activity-empty">{t('activity.empty')}</TableCell></TableRow>}
       </TableBody></Table></Card>
     {data && data.total > LIMIT && <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">

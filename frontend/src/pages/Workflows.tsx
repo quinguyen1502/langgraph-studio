@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { PendingRuns } from '@/components/pending-runs'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -112,7 +113,13 @@ export function WorkflowsPage() {
                   </DropdownMenuContent></DropdownMenu>
               </TableCell>
             </TableRow>)}
-            {loading && <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="py-14 text-center text-muted-foreground"><Loader2 className="inline animate-spin mr-2 size-4" />{t('list.loadingList')}</TableCell></TableRow>}
+            {loading && Array.from({ length: 5 }, (_, i) => <TableRow key={i} className="hover:bg-transparent" aria-busy={i === 0 || undefined}>
+              <TableCell className="pl-4">{i === 0 && <span className="sr-only">{t('list.loadingList')}</span>}<Skeleton className="h-4 w-48" /><Skeleton className="mt-2 h-3 w-24" /></TableCell>
+              <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+              <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+              <TableCell><Skeleton className="size-8" /></TableCell>
+            </TableRow>)}
             {!loading && !loadErr && !items.length && empty(<FolderOpen className="size-5" />, t('list.emptyTitle'), <>{creates ? <>{t('list.emptyBody')} <Button size="sm" className="ml-2" onClick={create}><Plus />{t('common.newWorkflow')}</Button></> : t('list.emptyViewer')}</>, 'wf-empty')}
             {!loading && items.length > 0 && !shown.length && empty(<SearchX className="size-5" />, t('list.noResultsTitle'), <>{t('list.noResultsBody')} “<span className="font-medium text-foreground break-all">{q.trim()}</span>”. <Button size="sm" variant="outline" className="ml-2" onClick={() => setQ('')}>{t('list.clearSearch')}</Button></>, 'wf-no-results')}
           </TableBody>

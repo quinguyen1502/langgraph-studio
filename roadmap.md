@@ -69,3 +69,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Node execution settings
 
 - TASK-0031 Per-node retry, timeout, and cache (REQ-0019, Implemented 2026-10-18): **done** — PR [#34](https://github.com/quinguyen1502/langgraph-studio/pull/34). REV-0030, QA-0030.
+
+## Editor polish
+
+- TASK-0032 Editor polish and bilingual README (REQ-0020, Implemented 2026-10-18): **done** — PR [#35](https://github.com/quinguyen1502/langgraph-studio/pull/35). REV-0031, QA-0031.

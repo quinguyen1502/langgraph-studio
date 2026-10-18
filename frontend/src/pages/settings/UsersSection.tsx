@@ -1,12 +1,13 @@
 /** Settings → Users (TASK-0014, admins): every account with its role and status, and the roles matrix. */
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Check, Loader2, Minus, Trash2 } from 'lucide-react'
+import { AlertCircle, Check, Minus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
@@ -73,7 +74,7 @@ export function UsersSection() {
   }
   if (me && !can(me, 'users.manage')) return <Alert variant="warning" id="users-forbidden"><AlertCircle /><AlertDescription>{t('users.adminOnly')}</AlertDescription></Alert>
   if (!data) return err ? <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>
-    : <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t('common.loading')}</div>
+    : <div className="space-y-2" aria-busy="true"><span className="sr-only">{t('common.loading')}</span>{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
   return <div className="space-y-4">
     {notice && <Alert id="users-notice"><Check /><AlertDescription>{notice}</AlertDescription></Alert>}
     {err && <Alert variant="destructive" id="users-error"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}

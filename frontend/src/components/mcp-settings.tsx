@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { ExternalLink, RefreshCw } from 'lucide-react'
+import { TextButton, TextLink } from '@/components/text-link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -28,7 +29,7 @@ export function McpSettings({ server, tool, args = {}, onChange }: Props) {
         <SelectContent>{(items || []).map(x => <SelectItem key={x.id} value={x.id}>{x.name} · {x.transport}</SelectItem>)}</SelectContent>
       </Select></div>
     {server && items && !s && <p className="text-[11px] text-destructive">{t('editor.mcpMissing')}</p>}
-    {items && !items.length && <p className="text-[11px] text-muted-foreground">{t('editor.mcpNone')}</p>}
+    {items && !items.length && <p className="text-[11px] text-muted-foreground" id="mcp-none">{t('editor.mcpNone')} <TextLink to="/settings/mcp" id="mcp-create">{t('editor.mcpCreate')}</TextLink></p>}
     {s && <div className="space-y-1.5"><Label className="text-xs text-muted-foreground" htmlFor="mcp-tool">{t('editor.mcpTool')}</Label>
       <div className="flex gap-2">
         <Select value={tool || undefined} onValueChange={v => onChange({ tool: v, arguments: {} })}>
@@ -37,6 +38,7 @@ export function McpSettings({ server, tool, args = {}, onChange }: Props) {
         </Select>
         <Button variant="outline" size="icon" onClick={discover} aria-label={t('mcp.discover')} id="mcp-refresh"><RefreshCw /></Button>
       </div>
+      {!s.tools.length && <p className="text-[11px] text-muted-foreground">{t('editor.mcpNoTools')} <TextButton id="mcp-refresh-link" onClick={discover}>{t('editor.mcpRefresh')}</TextButton></p>}
       {def?.description && <p className="text-[11px] text-muted-foreground" id="mcp-tool-desc">{def.description}</p>}
     </div>}
     {err && <p className="text-[11px] text-destructive">{err}</p>}

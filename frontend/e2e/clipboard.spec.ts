@@ -25,8 +25,8 @@ test('copy, paste, duplicate, cut and paste into another workflow', async ({ pag
   await expect(nodes).toHaveCount(6); await expect(edges).toHaveCount(4)
   await page.keyboard.press('Control+z'); await expect(nodes).toHaveCount(4); await expect(edges).toHaveCount(3)
 
-  // inspector Duplicate button
-  await page.locator('.react-flow__pane').click(); await page.locator('.react-flow__node[data-id="fmt"]').click()
+  // right-click a node for Duplicate
+  await page.locator('.react-flow__pane').click(); await page.locator('.react-flow__node[data-id="fmt"]').click({ button: 'right' })
   await page.locator('#duplicate-node').click(); await expect(nodes).toHaveCount(5); await page.keyboard.press('Control+z')
 
   // cut two connected nodes, paste them into another workflow

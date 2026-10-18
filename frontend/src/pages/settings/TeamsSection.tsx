@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, Loader2, Plus, Trash2, UserPlus, Users } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -61,7 +62,7 @@ export function TeamsSection() {
     <div className="flex gap-2"><Input id="team-new-name" placeholder={t('teams.namePlaceholder')} aria-label={t('teams.name')} value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && name.trim() && create()} className="max-w-sm" />
       <Button id="team-create" onClick={create} disabled={!name.trim()}><Plus />{t('teams.create')}</Button></div>
     {err && <Alert variant="destructive"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
-    {!data ? <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" />{t('common.loading')}</div>
+    {!data ? <div className="grid gap-4 lg:grid-cols-2" aria-busy="true"><span className="sr-only">{t('common.loading')}</span>{Array.from({ length: 2 }, (_, i) => <Skeleton key={i} className="h-36 w-full" />)}</div>
       : !data.teams.length ? <div className="rounded-lg border border-dashed p-10 text-center text-sm text-muted-foreground" id="teams-empty">{t('teams.empty')}</div>
       : <div className="grid gap-4 lg:grid-cols-2">{data.teams.map(tm => <TeamCard key={tm.id} team={tm} onDelete={() => del(tm)} ask={confirmDel.ask}
           onChange={n => setData(d => d && { ...d, teams: d.teams.map(x => x.id === n.id ? n : x) })} />)}</div>}

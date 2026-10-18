@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { NodeRuntime } from '@/components/node-runtime'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -76,6 +77,7 @@ META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
 const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'human', 'join', 'subgraph', 'end']
+const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human'])
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
@@ -354,6 +356,12 @@ function Studio() {
   const selNode = sel?.kind === 'node' ? nodes.find(n => n.id === sel.id) : undefined
   const selEdge = sel?.kind === 'edge' ? edges.find(e => e.id === sel.id) : undefined
   const upd = (k: string, v: any) => selNode && mark(selNode.id, { [k]: v })
+  const setRuntime = (patch: Record<string, unknown>) => selNode && setNodes(ns => ns.map(n => {
+    if (n.id !== selNode.id) return n
+    const data = { ...n.data } as Record<string, unknown>
+    for (const [k, v] of Object.entries(patch)) { if (v === undefined) delete data[k]; else data[k] = v }
+    return { ...n, data }
+  }))
   const d: any = selNode?.data || {}
   const fieldNames = state.map(f => f.name)
 
@@ -518,6 +526,7 @@ function Studio() {
           {!source && !PROTECTED.has(selNode.type!) && <div className="flex gap-2">
             <Button variant="outline" size="sm" id="duplicate-node" onClick={() => { const c = copySelection(nodes, edges, [selNode.id]); if (c) insert(c, 1) }}><CopyPlus />{t('clipboard.duplicate')}</Button>
             <Button variant="destructive" size="sm" id="delete-node" onClick={() => removeIds([selNode.id])}><Trash2 />{t('editor.deleteNode')}</Button></div>}
+          {RUNTIME.has(selNode.type || '') && <NodeRuntime data={d} onChange={setRuntime} />}
         </div>}
       </div></fieldset></ScrollArea>
     </aside>

@@ -153,7 +153,12 @@ function Sticky({ id, data, selected }: NodeProps) {
   const { setNodes } = useReactFlow()
   const box = useRef<HTMLTextAreaElement>(null)
   const text = String((data as any).text || '')
-  useEffect(() => { if (selected && edit) box.current?.focus() }, [selected, edit])
+  useEffect(() => {
+    if (!selected || !edit) return
+    // Right-click selects the note while its menu is opening. Leave focus there.
+    if (document.querySelector('[data-slot="context-menu-content"]')) return
+    box.current?.focus()
+  }, [selected, edit])
   return <div className={cn('w-52 rounded-sm border border-node-note/50 bg-node-note-muted text-card-foreground shadow-md', selected && 'ring-2 ring-node-note')}>
     <div className="h-2 rounded-t-sm bg-node-note/70" />
     <div className="px-3 py-2">
@@ -601,7 +606,13 @@ function Studio() {
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
         colorMode={dark ? 'dark' : 'light'} onConnect={edit && !canvasLock ? onConnect : undefined} nodesConnectable={edit && !canvasLock} nodesDraggable={edit && !canvasLock} edgesReconnectable={edit && !canvasLock} elementsSelectable
         onNodeClick={(_, n) => onNodeClick(n.id)}
-        onNodeContextMenu={(e, n) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'node', id: n.id }); onNodeClick(n.id) }}
+        onNodeContextMenu={(e, n) => {
+          if (!edit || source) { e.preventDefault(); e.stopPropagation(); return }
+          setCtx({ kind: 'node', id: n.id })
+          setNodes(ns => ns.map(x => ({ ...x, selected: x.id === n.id })))
+          setEdges(es => es.some(ed => ed.selected) ? es.map(ed => ({ ...ed, selected: false })) : es)
+          onNodeClick(n.id)
+        }}
         onEdgeClick={(_, e) => setSel({ kind: 'edge', id: e.id })}
         onEdgeContextMenu={(e, ed) => { if (!edit || source) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'edge', id: ed.id }); setSel({ kind: 'edge', id: ed.id }) }}
         onPaneContextMenu={e => { if (!editable) { e.preventDefault(); e.stopPropagation(); return } setCtx({ kind: 'pane', at: rf.screenToFlowPosition({ x: e.clientX, y: e.clientY }) }) }}

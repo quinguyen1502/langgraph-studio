@@ -104,3 +104,4 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 - TASK-0040 Split `Editor.tsx` into `components/editor/` and clear the React hook oxlint warnings (REQ-0028, Implemented 2026-10-18): **done**. REV-0039, QA-0039. Merged (PR #43).
 - TASK-0041 Template editor with state field chips for node message fields (REQ-0029, Implemented 2026-10-18), with the editor header overlap and `sm` button icon offset: **done**. REV-0040, QA-0040. Merged (PR #44).
 - TASK-0042 Commit `.claude/launch.json` (backend and frontend dev servers for the Claude app preview): **done**.
+- TASK-0043 Template insert menu focus and vendor chunks (REQ-0030, Implemented 2026-10-18): **done**. REV-0041, QA-0041. Not merged.

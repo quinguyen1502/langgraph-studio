@@ -110,14 +110,15 @@ export function TemplateEditor({ value, onChange, fields, readOnly, singleLine, 
   ] }, [key, singleLine, placeholder, id])
   const insert = (name: string) => {
     const view = cm.current?.view; if (!view) return
-    view.dispatch(view.state.replaceSelection(stateRef(name)))
+    view.dispatch(view.state.replaceSelection(stateRef(name))); view.focus()  // focus moves now, not when the menu finishes closing
   }
   // The wrapper mirrors the shadcn Input/Textarea classes (including their dark: backgrounds) so it matches the inputs around it.
   return <div className={cn('relative min-w-0 rounded-lg border border-input bg-transparent py-1.5 pl-2.5 pr-8 text-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30',
     readOnly && 'cursor-not-allowed bg-input/50 opacity-50 dark:bg-input/80', className)}>
     <CodeMirror ref={cm} value={value} onChange={onChange} theme="none" editable={!readOnly} readOnly={!!readOnly} basicSetup={SETUP} extensions={extensions}
       minHeight={singleLine ? undefined : `${rows * 1.5}em`} maxHeight="20rem" />
-    {!readOnly && <DropdownMenu>
+    {/* not modal: a modal menu traps focus until it unmounts, so a key pressed right after picking would reach the canvas */}
+    {!readOnly && <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon-xs" className="absolute right-1 top-1 text-muted-foreground" aria-label={t('template.insert')} title={t('template.insert')}
           {...(id ? { id: `${id}-insert` } : {})}><Braces /></Button>

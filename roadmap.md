@@ -90,3 +90,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Canvas note
 
 - TASK-0037 Sticky note on the flowchart (REQ-0025, Approved 2026-10-18): **done** — Ready PR [#40](https://github.com/quinguyen1502/langgraph-studio/pull/40). REV-0036, QA-0036. Not merged. Independent of TASK-0036.
+
+## Editor panels
+
+- TASK-0038 Drag to resize the palette, the config panel, and the run panel (REQ-0026, Approved 2026-10-18): **todo**. Not started.

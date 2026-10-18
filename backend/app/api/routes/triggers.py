@@ -1,6 +1,7 @@
 """API / webhook triggers (TASK-0007).
 
-Owner (JWT): manage per-workflow tokens under /api/workflows/{wid}/tokens.
+Owner (JWT): manage per-workflow tokens under /api/workflows/{wid}/tokens and cron schedules (TASK-0046) under
+/api/workflows/{wid}/schedules; POST /api/schedules/preview lists the next times of an expression.
 External callers (workflow token, `Authorization: Bearer wft_…` or `X-Workflow-Token`):
   POST /api/hooks/workflows/{wid}/runs  {input, mode: async|sync, callback_url?}
   GET  /api/hooks/workflows/{wid}/runs/{run_id}
@@ -10,8 +11,8 @@ import asyncio
 from fastapi import APIRouter, Depends, Header, Request
 from ...core import config
 from ...schemas.envelope import EnvelopeResponse
-from ...schemas.trigger import TokenIn, TriggerIn
-from ..deps import current_user, delivery_service, trigger_service
+from ...schemas.trigger import ScheduleIn, SchedulePatch, SchedulePreview, TokenIn, TriggerIn
+from ..deps import current_user, delivery_service, schedule_service, trigger_service
 
 router = APIRouter(prefix="/api", tags=["triggers"])
 
@@ -61,3 +62,22 @@ def poll_url(request: Request, wid: str, rid: str) -> str:
 @router.get("/hooks/workflows/{wid}/runs/{run_id}")
 def run_status(wid: str, run_id: str, token: Optional[str] = Depends(workflow_token), svc=Depends(trigger_service)):
     return svc.result(svc.authenticate(wid, token), run_id)
+
+
+# ---- cron schedules (TASK-0046) ----
+@router.get("/workflows/{wid}/schedules")
+def list_schedules(wid: str, user=Depends(current_user), svc=Depends(schedule_service)): return svc.list(wid, user["id"])
+
+@router.post("/workflows/{wid}/schedules")
+def create_schedule(wid: str, body: ScheduleIn, user=Depends(current_user), svc=Depends(schedule_service)):
+    return svc.create(wid, user["id"], body.name, body.cron, body.timezone, body.input, body.enabled)
+
+@router.patch("/workflows/{wid}/schedules/{sid}")
+def update_schedule(wid: str, sid: str, body: SchedulePatch, user=Depends(current_user), svc=Depends(schedule_service)):
+    return svc.update(wid, sid, user["id"], **body.model_dump())
+
+@router.delete("/workflows/{wid}/schedules/{sid}")
+def delete_schedule(wid: str, sid: str, user=Depends(current_user), svc=Depends(schedule_service)): return svc.delete(wid, sid, user["id"])
+
+@router.post("/schedules/preview")
+def preview_schedule(body: SchedulePreview, user=Depends(current_user), svc=Depends(schedule_service)): return svc.preview(body.cron, body.timezone)

@@ -356,6 +356,9 @@
     "RUN_RESPONSE_INVALID": "Phản hồi phải là văn bản (tối đa {{max}} ký tự)",
     "TRIGGER_TOKEN_INVALID": "Token workflow bị thiếu, không hợp lệ hoặc đã thu hồi",
     "TOKEN_NOT_FOUND": "Không tìm thấy token",
+    "SCHEDULE_NOT_FOUND": "Không tìm thấy lịch chạy",
+    "SCHEDULE_CRON_INVALID": "Lịch chạy: {{reason}}",
+    "SCHEDULE_LIMIT": "Một workflow có tối đa {{max}} lịch chạy",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
@@ -1147,5 +1150,44 @@
     "newHint": "Các phiên khác của tài khoản này sẽ bị đăng xuất.",
     "newPassword": "Mật khẩu mới",
     "save": "Lưu mật khẩu"
+  },
+  "schedules": {
+    "button": "Lịch chạy",
+    "title": "Lịch chạy",
+    "desc": "Chạy workflow này theo lịch. Run được bắt đầu dưới tên bạn, dùng credential của bạn, và hiện trong History.",
+    "badge": "Lịch",
+    "empty": "Chưa có lịch chạy nào.",
+    "add": "Lịch mới",
+    "name": "Tên",
+    "defaultName": "Lịch chạy",
+    "preset": "Lặp lại",
+    "cron": "Cron (phút giờ ngày tháng thứ)",
+    "timezone": "Múi giờ",
+    "preview": "Lần tới: {{times}}",
+    "input": "Input của run (JSON)",
+    "create": "Thêm lịch",
+    "enabledFor": "Chạy {{name}} theo lịch",
+    "next": "Lần tới {{when}} ({{tz}})",
+    "off": "Tắt",
+    "last": "lần chạy trước {{when}}",
+    "stopped": "Đã dừng",
+    "deleteFor": "Xoá lịch {{name}}",
+    "deleteTitle": "Xoá lịch {{name}}?",
+    "deleteBody": "Các run đã chạy vẫn được giữ.",
+    "badJson": "Input của run không phải JSON hợp lệ.",
+    "help": "Lần chạy bị lỡ khi server tắt sẽ chạy một lần khi server lên lại. Preset dày nhất là 15 phút một lần; biểu thức cron nào cũng được.",
+    "notes": {
+      "access": "Đã dừng: bạn không còn quản lý workflow này.",
+      "invalid": "Đã dừng: biểu thức không còn thời điểm tiếp theo."
+    },
+    "presets": {
+      "0 * * * *": "Mỗi giờ",
+      "*/15 * * * *": "Mỗi 15 phút",
+      "0 9 * * *": "Mỗi ngày lúc 09:00",
+      "0 9 * * 1-5": "Ngày thường lúc 09:00",
+      "0 9 * * 1": "Thứ Hai lúc 09:00",
+      "0 0 1 * *": "Ngày đầu tháng",
+      "custom": "Tuỳ chỉnh"
+    }
   }
 }

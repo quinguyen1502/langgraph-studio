@@ -246,6 +246,10 @@ POST /api/workflows/{wid}/versions/{n}/restore
 
 `STUDIO_VERSION_KEEP=N` keeps the newest N versions. A version that a run used is never deleted. `404 VERSION_NOT_FOUND` is the missing-version error.
 
+### Schedules
+
+**⋯ → Schedules** in the editor (workflow owner) runs the workflow on a cron timetable: five fields `minute hour day-of-month month day-of-week` with `*`, ranges, lists, steps, month and weekday names, and `@hourly` / `@daily` / `@weekly` / `@monthly` / `@yearly`. When both day fields are set, a day matches if either does. Each schedule has an IANA time zone (default: the browser's) and a JSON run input. A wall-clock time skipped by a DST change runs an hour later; a repeated one runs once. The dialog shows the next times as you type. Runs start as the schedule's creator, go through the same job queue as API runs, and appear in History with a **Schedule** badge. A time missed while no worker was running fires once when one comes back. Several API processes never fire the same time twice. A schedule turns itself off if its creator loses the right to manage the workflow, and is removed the next time it is due after its workflow was deleted. Up to 20 per workflow. API: `GET|POST /api/workflows/{wid}/schedules`, `PATCH|DELETE …/schedules/{sid}`, `POST /api/schedules/preview`.
+
 ## Knowledge, MCP, and access
 
 **Settings → Knowledge** creates a base and accepts `.txt`, `.md`, and `.pdf` up to 10 MB. You can search, change the model or credential, and re-index. Embeddings use the base's credential, then `OPENAI_API_KEY`, then a fixed offline mock (`mock:512`). The default OpenAI model is `text-embedding-3-small`. Compose Postgres is `pgvector/pgvector:pg17` and searches in SQL. Plain Postgres and SQLite store JSON and score cosine similarity in Python. Codes are `KB_*` in `docs/api-errors.md`.

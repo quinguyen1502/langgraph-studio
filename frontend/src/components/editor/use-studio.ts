@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { addEdge, useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection } from '@xyflow/react'
-import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, Search } from 'lucide-react'
+import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, Search } from 'lucide-react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { freeSpot, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
@@ -201,7 +201,7 @@ export function useStudio() {
     ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
   const paletteRef = useRef<Record<string, () => void>>({})
   // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
-  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
+  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'schedules' | 'template' | 'json'>(null)
   const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string } | { kind: 'pane'; at: { x: number; y: number } }>(null)
   const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
   const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
@@ -212,6 +212,7 @@ export function useStudio() {
     { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !edit || !wid, run: () => setDlg('template') },
     { id: 'action:share', group: 'actions', label: t('share.button'), icon: Share2, menu: 'workflow', elementId: 'share-btn', disabled: !wid, run: () => setDlg('share') },
     { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
+    { id: 'action:schedules', group: 'actions', label: t('schedules.button'), icon: CalendarClock, menu: 'workflow', elementId: 'schedules-btn', disabled: !wid || access !== 'owner', run: () => setDlg('schedules') },
     { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
     { id: 'action:openPalette', group: 'actions', label: t('palette.title'), icon: Search, shortcut: 'palette', menu: 'help', elementId: 'palette-btn', run: openPalette },
     { id: 'action:deleteWorkflow', group: 'actions', label: t('editor.deleteWorkflow'), icon: Trash2, menu: 'danger', destructive: true, elementId: 'delete-wf-btn',

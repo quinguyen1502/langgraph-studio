@@ -42,6 +42,7 @@ export function EditorRunPanel() {
               <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
               <span className="font-mono text-muted-foreground">{h.id}</span>
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}
+              {h.source === 'schedule' && <Badge variant="outline" data-testid="history-source">{t('schedules.badge')}</Badge>}
               <Tip tip={h.version ? t('versions.runVersion', { n: h.version }) : t('versions.runUnsaved')}>
                 <Badge variant="secondary" data-testid="history-version">{h.version ? `v${h.version}` : t('versions.unsaved')}</Badge></Tip>
               <span className="truncate">{JSON.stringify(h.input)}</span>

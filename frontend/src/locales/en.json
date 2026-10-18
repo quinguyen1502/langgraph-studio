@@ -356,6 +356,9 @@
     "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)",
     "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",
     "TOKEN_NOT_FOUND": "Token not found",
+    "SCHEDULE_NOT_FOUND": "Schedule not found",
+    "SCHEDULE_CRON_INVALID": "Schedule: {{reason}}",
+    "SCHEDULE_LIMIT": "A workflow can have at most {{max}} schedules",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
@@ -1147,5 +1150,44 @@
     "newHint": "Other sessions of this account are signed out.",
     "newPassword": "New password",
     "save": "Save password"
+  },
+  "schedules": {
+    "button": "Schedules",
+    "title": "Schedules",
+    "desc": "Run this workflow on a timetable. Runs start as you, with your credentials, and show in History.",
+    "badge": "Schedule",
+    "empty": "No schedules yet.",
+    "add": "New schedule",
+    "name": "Name",
+    "defaultName": "Schedule",
+    "preset": "Repeat",
+    "cron": "Cron (minute hour day month weekday)",
+    "timezone": "Time zone",
+    "preview": "Next: {{times}}",
+    "input": "Run input (JSON)",
+    "create": "Add schedule",
+    "enabledFor": "Run {{name}} on schedule",
+    "next": "Next {{when}} ({{tz}})",
+    "off": "Off",
+    "last": "last run {{when}}",
+    "stopped": "Stopped",
+    "deleteFor": "Delete schedule {{name}}",
+    "deleteTitle": "Delete schedule {{name}}?",
+    "deleteBody": "Runs already started are kept.",
+    "badJson": "The run input is not valid JSON.",
+    "help": "A time missed while the server was down runs once when it comes back. Every 15 minutes is the most frequent preset; any cron expression works.",
+    "notes": {
+      "access": "Stopped: you no longer manage this workflow.",
+      "invalid": "Stopped: the expression has no next time."
+    },
+    "presets": {
+      "0 * * * *": "Every hour",
+      "*/15 * * * *": "Every 15 minutes",
+      "0 9 * * *": "Every day at 09:00",
+      "0 9 * * 1-5": "Weekdays at 09:00",
+      "0 9 * * 1": "Mondays at 09:00",
+      "0 0 1 * *": "First day of the month",
+      "custom": "Custom"
+    }
   }
 }

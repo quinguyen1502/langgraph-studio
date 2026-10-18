@@ -17,5 +17,6 @@ from .audit import AuditRepository, SettingsRepository
 from .user_data import UserDataRepository
 from .templates import TemplateRepository
 from .auth_security import AuthSecurityRepository
+from .schedules import ScheduleRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository", "TemplateRepository", "AuthSecurityRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository", "TemplateRepository", "AuthSecurityRepository", "ScheduleRepository"]

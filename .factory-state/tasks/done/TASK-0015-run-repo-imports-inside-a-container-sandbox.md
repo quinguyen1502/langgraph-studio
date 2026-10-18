@@ -5,7 +5,7 @@
 - Project: langgraph-studio
 - Task ID: TASK-0015
 - Previous ID: TASK-0004 (renumbered 2026-10-16, DEC-0007)
-- Status: review
+- Status: done
 - Owner:
 - Created: 2026-10-16
 - Updated: 2026-10-18
@@ -39,6 +39,8 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 - Requirement: `.factory-state/artifacts/REQ-0009-sandboxed-imports.md`
 - Architecture: `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - Discovery: `.factory-state/artifacts/DISC-0001-project-context.md`
+- Review: `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`
+- QA: `.factory-state/artifacts/QA-0029-task-0015-container-sandbox.md`
 
 ## Expected Outputs
 
@@ -85,10 +87,10 @@ Phase 4 (last). Harden the experimental repo-import feature and run it in a cont
 - 2026-10-18: Live Docker check on Docker Desktop (`python:3.12-slim`, CLI not on PATH; used `/Applications/Docker.app/Contents/Resources/bin/docker`). `new-langgraph-project` imported and ran in the container: nodes `__start__`, `call_model`, `__end__`, state `output from call_model. Configured with studio`. A probe could write inside the job dir and could not read a host sentinel or `JWT_SECRET` / `STUDIO_DB`. A 30s sleep was killed and reported `Sandbox stopped (time limit (12s)).`. Fix: `run_imported` uses `lexists` because the venv python is a symlink to the image interpreter. The API also uses Docker Desktop's bundled CLI when `docker` is not on `PATH`. Task stays in doing.
 - 2026-10-18: Moved doing -> review. Backend suite after the symlink and Docker CLI fixes: 278 passed, 10 skipped (`/tmp/lgs-qa-venv`, Python 3.12). `cd frontend && npm run build` passed before those backend-only fixes and the frontend did not change after it. Live Docker import passed. Review and QA artifacts are not written yet. Task is not done.
 - 2026-10-18: Agent review REV-0029 (`approved for QA`, no blocking findings) and QA-0029 (`pass with follow-up`). Pytest and `npm run build` were re-run on `4d3813b`: 278 passed, 10 skipped, 97.65s; frontend build exit 0. Task stays in `review`. Not done. Owner review on PR #33 is still pending.
+- 2026-10-18: Owner said to merge. Moved review -> done. Review REV-0029 and QA-0029 are linked in Related Artifacts. REQ-0009 stays Proposed. PR #33 merges into `develop`.
 
 ## Handoff Notes
 
-- Branch `factory/task-0015-run-repo-imports-inside-a-container-sandbox` is in review. Draft PR #33 targets `develop`.
-- Review: `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`. QA: `.factory-state/artifacts/QA-0029-task-0015-container-sandbox.md`.
-- Do not merge and do not mark this task done until the owner asks. REQ-0009 stays Proposed.
+- Task is done. Review: `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`. QA: `.factory-state/artifacts/QA-0029-task-0015-container-sandbox.md`.
+- REQ-0009 stays Proposed. gVisor and Firecracker stay out of scope.
 - `frontend/package-lock.json` dev-metadata stays in `stash@{0}` (created on `develop`). Do not pop that stash onto this branch.

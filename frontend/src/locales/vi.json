@@ -334,6 +334,7 @@
     "RUN_NODE_NOT_REACHED": "Run chạy xong mà không tới node '{{node}}'",
     "NODE_FAILED": "Node bị lỗi",
     "HTTP_TOOL_URL_BLOCKED": "Node HTTP Tool {{node}}: URL phải là địa chỉ http(s) công khai",
+    "TEMPLATE_REF_INVALID": "Lỗi template: {{reason}}",
     "CREDENTIAL_NOT_FOUND": "Credential không tồn tại hoặc không thuộc về bạn",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Provider không hỗ trợ: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key trống",
@@ -1123,6 +1124,20 @@
     "noFields": "State schema chưa có trường nào",
     "placeholder": "Gõ {{open}} để chèn trường state",
     "tagTitle": "Trường state {{field}}",
-    "unknownTitle": "{{field}} không có trong state schema"
+    "unknownTitle": "{{field}} không có trong state schema",
+    "badFilter": "Filter không tồn tại hoặc sai tham số: {{filter}}",
+    "editHint": "Double-click để sửa",
+    "filters": {
+      "upper": "CHỮ HOA",
+      "lower": "chữ thường",
+      "trim": "bỏ khoảng trắng hai đầu",
+      "json": "dạng JSON",
+      "length": "số phần tử hoặc ký tự",
+      "first": "phần tử đầu",
+      "last": "phần tử cuối",
+      "default": "dùng text này khi rỗng",
+      "join": "nối list bằng text này",
+      "truncate": "cắt còn ngần này ký tự"
+    }
   }
 }

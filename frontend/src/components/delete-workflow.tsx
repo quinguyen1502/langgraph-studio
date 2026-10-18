@@ -3,7 +3,7 @@
 import { useTranslation } from 'react-i18next'
 import { AlertCircle } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 
 type Dep = { id: string | null; name: string | null }

@@ -1,5 +1,5 @@
 /** Editor "Save as template" (TASK-0025): copies the saved workflow, minus credentials / resource refs / secrets (server-side sanitiser). */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle2, LayoutTemplate, Loader2, TriangleAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import { can, useMe } from '@/lib/rbac'
+import { useLoadWhen } from '@/lib/use-when'
 
 export function SaveTemplateDialog(props: { wid?: string | null; defaultName: string; isDirty: () => boolean; open?: boolean; onOpenChange?: (v: boolean) => void }) {
   const { wid, defaultName, isDirty } = props
@@ -20,7 +21,7 @@ export function SaveTemplateDialog(props: { wid?: string | null; defaultName: st
   const [open, setOpen, controlled] = useOpenState(props.open, props.onOpenChange); const [dirty, setDirty] = useState(false)
   const [name, setName] = useState(''); const [desc, setDesc] = useState(''); const [scope, setScope] = useState<'user' | 'org'>('user')
   const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [done, setDone] = useState('')
-  useEffect(() => { if (open) { setName(defaultName); setDesc(''); setScope('user'); setErr(''); setDone(''); setDirty(isDirty()) } }, [open])
+  useLoadWhen(open, () => { setName(defaultName); setDesc(''); setScope('user'); setErr(''); setDone(''); setDirty(isDirty()) })
   const save = async () => {
     if (!wid || !name.trim() || busy) return
     setBusy(true); setErr('')

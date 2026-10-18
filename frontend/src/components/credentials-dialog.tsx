@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { KeyRound, Pencil, Plus, Save, Trash2, AlertCircle, Lock, PlugZap, CircleCheck, Info, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { credentialModels, probeProvider, useProviders, type ProbeResult } from '@/lib/providers'
+import { useLoadWhen } from '@/lib/use-when'
 
 export type Credential = { id: string; name: string; provider: string; base_url: string | null; hint: string; headers?: Record<string, string>; created: number }
 type Status = { busy?: boolean; ok?: ProbeResult; err?: string }
@@ -44,7 +45,7 @@ export function CredentialsDialog({ trigger, onChanged }: { trigger?: React.Reac
   const keyMissing = !!p?.key_required && !key.trim() && !keptKey
   const load = () => api<Credential[]>('/api/credentials').then(setItems)
   const reset = () => { setEditing(null); setClearKey(false); setName(''); setKey(''); setBaseUrl(''); setHeaders({}); setTest({}); setErr('') }
-  useEffect(() => { if (open) load(); else reset() }, [open])
+  useLoadWhen(open, load); useLoadWhen(!open, reset)
   const pick = (v: string) => { setProvider(v); setKey(''); setBaseUrl(''); setHeaders({}); setTest({}); setErr('') }  // never carry a key to another provider
   const form = () => ({ api_key: key, base_url: baseUrl || null, headers, ...(editing && !clearKey ? { credential_id: editing.id } : {}) })
   const startEdit = (c: Credential) => { reset(); setEditing(c); setName(c.name); setProvider(c.provider); setBaseUrl(c.base_url || ''); setHeaders(c.headers || {}) }

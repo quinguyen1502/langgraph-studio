@@ -11,6 +11,7 @@ import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import i18n from '@/lib/i18n'
+import { useLoadWhen } from '@/lib/use-when'
 
 type Version = { version: number; name: string; created: number; author_email: string | null; note: string | null; node_count: number; current: boolean }
 type Child = { id: string; name: string; version: number; at: number }
@@ -56,11 +57,11 @@ export function VersionsDialog(props: { wid?: string; onRestored: (wf: any) => v
     setItems(p.items); setTotal(p.total); setChildren(p.children_changed || []); setB(String(p.items[0]?.version ?? '')); setA(String(p.items[1]?.version ?? p.items[0]?.version ?? ''))
   }).catch(e => setErr(e.message))
   const more = () => page(items.length).then(p => { setItems(xs => [...xs, ...p.items]); setTotal(p.total) }).catch(e => setErr(e.message))
-  useEffect(() => { if (open) { setErr(''); setNotice(''); setConfirm(null); setDiff(null); setDirty(!!isDirty?.()); load() } }, [open])
+  useLoadWhen(open, () => { setErr(''); setNotice(''); setConfirm(null); setDiff(null); setDirty(!!isDirty?.()); load() })
   useEffect(() => {
     if (!open || !a || !b) return
     api<Diff>(`/api/workflows/${wid}/versions/diff?a=${a}&b=${b}`).then(setDiff).catch(e => setErr(e.message))
-  }, [a, b, open])
+  }, [a, b, open, wid])
   const restore = async (n: number) => {
     setErr('')
     try {

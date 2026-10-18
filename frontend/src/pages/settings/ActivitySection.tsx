@@ -12,6 +12,7 @@ import { FilterBar } from '@/components/settings/filter-bar'
 import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import { can, useMe, type AuditItem, type AuditPage } from '@/lib/rbac'
+import { useOnChange } from '@/lib/use-when'
 
 const LIMIT = 25
 const CATS = ['user', 'share', 'team', 'workflow', 'policy']
@@ -25,7 +26,7 @@ export function ActivitySection() {
   const { t } = useTranslation(); const me = useMe()
   const [q, setQ] = useState(''); const [cat, setCat] = useState('all'); const [since, setSince] = useState('all'); const [offset, setOffset] = useState(0)
   const [data, setData] = useState<AuditPage | null>(null); const [err, setErr] = useState('')
-  useEffect(() => { setOffset(0) }, [q, cat, since])
+  useOnChange(`${q}\n${cat}\n${since}`, () => setOffset(0))  // a new filter starts at the first page
   useEffect(() => {
     if (!can(me, 'users.manage')) return
     const p = new URLSearchParams({ limit: String(LIMIT), offset: String(offset) })

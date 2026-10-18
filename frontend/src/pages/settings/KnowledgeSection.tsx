@@ -14,14 +14,16 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { ErrorAlert, useAction } from '@/components/approvals/channel-parts'
+import { ErrorAlert } from '@/components/approvals/channel-parts'
+import { useAction } from '@/components/approvals/use-action'
 import type { Credential } from '@/components/credentials-dialog'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import { ModelPicker } from '@/components/model-picker'
 import { testEmbedding, useProviders, type EmbeddingTest } from '@/lib/providers'
 import { KB_ACCEPT, fmtBytes, type KbHit, type KnowledgeBase } from '@/lib/knowledge'
 import { cn } from '@/lib/utils'
+import { useLoadWhen } from '@/lib/use-when'
 
 type Form = { name: string; description: string; model: string; credential_id: string }
 const toForm = (kb?: KnowledgeBase): Form => ({ name: kb?.name || '', description: kb?.description || '', model: kb?.model || 'text-embedding-3-small', credential_id: kb?.credential_id || '' })
@@ -61,7 +63,7 @@ function KbCard({ kb, creds, reload, defaultOpen }: { kb: KnowledgeBase; creds: 
   const load = () => api<KnowledgeBase>(`/api/knowledge-bases/${kb.id}`).then(setFull)
   const done = () => { load(); reload() }
   const act = useAction(done); const confirmDel = useConfirmDelete()
-  useEffect(() => { if (open) load() }, [open, kb.documents, kb.chunks])
+  useLoadWhen(open, load, `${kb.documents}:${kb.chunks}`)
   const upload = (f?: File) => { if (!f) return; const fd = new FormData(); fd.append('file', f)
     act.run(() => api(`/api/knowledge-bases/${kb.id}/documents`, { method: 'POST', body: fd }), r => t('kb.uploaded', { name: r.filename, chunks: r.chunks }))
     if (file.current) file.current.value = '' }

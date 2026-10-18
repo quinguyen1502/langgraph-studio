@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RefreshCw, Send } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
+import { useLoadWhen } from '@/lib/use-when'
 
 type Delivery = { id: string; run_id: string; url: string; status: 'pending' | 'retrying' | 'ok' | 'failed'; attempts: number
   response_code: number | null; latency_ms: number | null; last_error: string | null; next_attempt: number | null; created: number }
@@ -16,7 +17,7 @@ const when = (s: number) => new Date(s * 1000).toLocaleString(i18n.resolvedLangu
 export function DeliveriesList({ wid }: { wid?: string }) {
   const { t } = useTranslation(); const [items, setItems] = useState<Delivery[]>([]); const [err, setErr] = useState('')
   const load = () => wid && api<Delivery[]>(`/api/workflows/${wid}/deliveries`).then(setItems).catch(e => setErr(e.message))
-  useEffect(() => { load() }, [wid])
+  useLoadWhen(true, load, wid)
   const redeliver = async (id: string) => {
     try { await api(`/api/workflows/${wid}/deliveries/${id}/redeliver`, { method: 'POST' }); load() } catch (e: any) { setErr(e.message) }
   }

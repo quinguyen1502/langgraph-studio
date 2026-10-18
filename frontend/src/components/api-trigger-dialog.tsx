@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { AlertCircle, Check, Copy, Plus, RefreshCw, Trash2, Webhook } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -11,10 +11,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { DeliveriesList } from '@/components/deliveries-list'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
+import { useLoadWhen } from '@/lib/use-when'
 
 type Token = { id: string; name: string; prefix: string; created: number; last_used: number | null; revoked: number | null; token?: string; signing_secret?: string; signed?: boolean; grace_until?: number }
 const when = (s: number | null) => s ? new Date(s * 1000).toLocaleString(i18n.resolvedLanguage) : '—'
@@ -28,7 +29,7 @@ export function ApiTriggerDialog(props: { wid?: string; open?: boolean; onOpenCh
   const [items, setItems] = useState<Token[]>([]); const [name, setName] = useState(''); const [created, setCreated] = useState<Token | null>(null)
   const [err, setErr] = useState(''); const [copied, setCopied] = useState(false); const [showRevoked, setShowRevoked] = useState(false)
   const load = () => wid && api<Token[]>(`/api/workflows/${wid}/tokens`).then(setItems).catch(e => setErr(e.message))
-  useEffect(() => { if (open) { setCreated(null); setErr(''); load() } }, [open])
+  useLoadWhen(open, () => { setCreated(null); setErr(''); load() })
   const add = async () => {
     setErr('')
     try { const tk = await api<Token>(`/api/workflows/${wid}/tokens`, { method: 'POST', json: { name: name || 'API token' } }); setCreated(tk); setName(''); load() }

@@ -1,0 +1,48 @@
+import { Plus, Trash2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { useTranslation } from 'react-i18next'
+import { META, TYPES, REDUCERS } from './meta'
+import { useStudioCtx } from './studio-context'
+
+/** Left panel: node palette and the state schema (TASK-0040). */
+export function EditorPalette() {
+  const { t } = useTranslation()
+  const { state, setState, edit } = useStudioCtx()
+  return <aside className="h-full bg-muted/30 min-h-0">
+      <ScrollArea className="h-full"><div className="p-3 space-y-4">
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.palette')}</div>
+          <div className="space-y-2">{TYPES.map(t_ => { const m = META[t_]; const I = m.icon
+            return <Card key={t_} draggable={edit} onDragStart={e => { e.dataTransfer.setData('nodetype', t_); e.dataTransfer.effectAllowed = 'move' }}
+              className="flex-row items-center gap-3 p-2.5 cursor-grab hover:bg-accent transition-colors py-2.5">
+              <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
+              <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{t(`nodes.${t_}`)}</div></div>
+            </Card> })}</div>
+        </div>
+        <Separator />
+        <div>
+          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.stateSchema')}</div>
+          <div className="space-y-1.5">{state.map((f, i) => <div className="space-y-1" key={i}><div className="flex gap-1">
+            <Input className="h-8 flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+            <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v, reducer: REDUCERS[v]?.includes(x.reducer || '') ? x.reducer : undefined } : x))}>
+              <SelectTrigger size="sm" className="w-24"><SelectValue /></SelectTrigger>
+              <SelectContent>{['string', 'number', 'integer', 'boolean', 'object', 'list'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+            </Select>
+            <Button variant="ghost" size="icon" className="size-8" onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
+            </div>
+            {REDUCERS[f.type] && <Select value={f.reducer || 'replace'} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, reducer: v === 'replace' ? undefined : v } : x))}>
+              <SelectTrigger size="sm" className="w-full text-xs" id={`reducer-${f.name}`} aria-label={t('editor.reducer')}><SelectValue /></SelectTrigger>
+              <SelectContent>{REDUCERS[f.type].map(r => <SelectItem key={r} value={r}>{t(`editor.reducers.${r}`)}</SelectItem>)}</SelectContent>
+            </Select>}
+          </div>)}</div>
+          <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
+        </div>
+      </div></ScrollArea>
+    </aside>
+}

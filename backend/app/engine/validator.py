@@ -1,14 +1,39 @@
 """Static workflow validation: returns a list of human-readable errors (empty = valid)."""
 from __future__ import annotations
-import json
+
 from typing import Any, Dict, List
 from .node_policy import errors as policy_errors
-from .templating import VAR_RE
+from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
 TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
+
+
+def templates_of(t: Any, d: Dict[str, Any]) -> List[str]:
+    """The template texts a node renders at run time (engine/nodes.py)."""
+    if t in ("llm", "human"): return [d.get("prompt") or ""]
+    if t == "retriever": return [d.get("query") or ""]
+    if t == "tool" and d.get("mode") == "http": return [d.get("url") or "", d.get("body") or ""]
+    if t == "mcp": return _strings(d.get("arguments") or {})
+    return []
+
+
+def _strings(v: Any) -> List[str]:
+    if isinstance(v, str): return [v]
+    if isinstance(v, dict): return [s for x in v.values() for s in _strings(x)]
+    if isinstance(v, list): return [s for x in v for s in _strings(x)]
+    return []
+
+
+def template_errors(nid: str, t: Any, d: Dict[str, Any], fields: set) -> List[str]:
+    out = []
+    for text in templates_of(t, d):
+        for r in refs(text):
+            if fields and r.field not in fields: out.append(f"Node {nid}: variable state.{r.field} is not in the state")
+            out += [f"Node {nid}: {e} in {{{{state.{r.field}}}}}" for e in ref_errors(r)]
+    return list(dict.fromkeys(out))
 
 
 def validate(wf: Dict[str, Any]) -> List[str]:
@@ -73,14 +98,10 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if not d.get("knowledge_base_id"): errs.append(f"Retriever node {nid}: choose a knowledge base")
             k = d.get("top_k", 4)
             if not isinstance(k, int) or isinstance(k, bool) or not 1 <= k <= 20: errs.append(f"Retriever node {nid}: top_k must be 1-20")
-            for v in VAR_RE.findall(d.get("query", "")):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "mcp":
             if not d.get("server_id"): errs.append(f"MCP node {nid}: choose a server")
             if not d.get("tool"): errs.append(f"MCP node {nid}: choose a tool")
             if not isinstance(d.get("arguments", {}), dict): errs.append(f"MCP node {nid}: arguments must be an object")
-            for v in VAR_RE.findall(json.dumps(d.get("arguments") or {})):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")
         if t == "condition":
@@ -88,9 +109,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             labels = [e.get("label") for e in out.get(nid, [])]
             if any(not l for l in labels): errs.append(f"Node {nid}: every outgoing Condition edge needs a label")
             if len(set(labels)) != len(labels): errs.append(f"Node {nid}: duplicate labels")
-        if t == "llm":
-            for v in VAR_RE.findall(d.get("prompt", "")):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
+        errs += template_errors(nid, t, d, fields)
         errs += policy_errors(nid, d, fields)
     # parallel branches (several outgoing edges, no Condition) that write the same field need a reducer
     red = {f["name"]: reducer_of(f) for f in schema}

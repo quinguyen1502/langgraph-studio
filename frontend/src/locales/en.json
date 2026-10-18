@@ -1117,5 +1117,12 @@
       "workflows": "Open workflow",
       "navigation": "Go to"
     }
+  },
+  "template": {
+    "insert": "Insert state field",
+    "noFields": "No fields in the state schema",
+    "placeholder": "Type {{open}} to insert a state field",
+    "tagTitle": "State field {{field}}",
+    "unknownTitle": "{{field}} is not in the state schema"
   }
 }

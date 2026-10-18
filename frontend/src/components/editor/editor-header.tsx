@@ -33,20 +33,22 @@ export function EditorHeader() {
   const { name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo } = useStudioCtx()
   // ⋯ tooltip: hidden while the menu is open and until the pointer leaves after closing it
   const [moreOpen, setMoreOpen] = useState(false); const [moreTip, setMoreTip] = useState(false); const moreTipBlock = useRef(false)
-  return <header className="h-14 shrink-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(min-content,1fr)] items-center border-b px-4">
-      <div className="flex min-w-0 items-center gap-2">
+  return <header className="h-14 shrink-0 grid grid-cols-[minmax(min-content,1fr)_minmax(0,auto)_minmax(min-content,1fr)] items-center border-b px-4">
+      <div className="mr-3 flex min-w-0 items-center gap-2">
         <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
-        <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
+        {/* the product name hides when its column is too narrow instead of running under the name field */}
+        <div className="flex min-w-0 flex-1 items-center gap-2 font-semibold" id="header-brand"><div className="shrink-0 rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>
+          <div className="@container min-w-0 flex-1"><span className="hidden whitespace-nowrap @[8.5rem]:inline">LangGraph Studio</span></div></div>
       </div>
-      <div className="flex items-center gap-2">
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-44" aria-label={t('editor.nameLabel')} />
+      <div className="flex min-w-0 items-center gap-2">
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-28" aria-label={t('editor.nameLabel')} />
       {edit && isDirty() && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
       {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
-      {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}{t('editor.step')}</Button></Tip>}
-      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair />{t('editor.runTo')}</Button></Tip>}
+      {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}
+      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair /><span className="max-lg:sr-only">{t('editor.runTo')}</span></Button></Tip>}
       {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button size="sm" variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
       {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>

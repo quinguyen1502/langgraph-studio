@@ -35,7 +35,7 @@ test('MCP server: register, discover, run a tool node', async ({ page }) => {
   await expect(page.getByText('Gọi công cụ trên máy chủ MCP')).toBeVisible()
   await page.locator('.react-flow__node[data-id="m"]').click()
   await expect(page.locator('#mcp-server')).toContainText(name); await expect(page.locator('#mcp-tool')).toContainText('add')
-  await expect(page.locator('#mcp-arg-a')).toHaveValue('{{state.n}}'); await expect(page.locator('#mcp-tool-desc')).toContainText('Add two integers')
+  await expect(page.locator('#mcp-arg-a .template-tag[data-field="n"]')).toBeVisible(); await expect(page.locator('#mcp-tool-desc')).toContainText('Add two integers')
   await page.locator('#run-input').fill('{"message": "hi", "n": 40}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })

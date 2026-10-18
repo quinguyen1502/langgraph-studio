@@ -65,3 +65,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## LLM providers
 
 - TASK-0030 Local and routed LLM providers: Ollama, LM Studio, generic OpenAI-compatible (vLLM / llama.cpp / LocalAI), OpenRouter; provider registry, model list, test connection (DEC-0032, Accepted 2026-10-18): **done** — PR #32 merged into `develop` (migrations 0024_credential_headers, 0025_kb_dims).
+
+## Node execution settings
+
+- TASK-0031 Per-node retry, timeout, and cache (REQ-0019, Implemented 2026-10-18): **done** — PR [#34](https://github.com/quinguyen1502/langgraph-studio/pull/34). REV-0030, QA-0030.

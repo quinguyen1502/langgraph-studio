@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 from typing import Any, Dict, List
+from .node_policy import errors as policy_errors
 from .templating import VAR_RE
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
@@ -86,6 +87,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "llm":
             for v in VAR_RE.findall(d.get("prompt", "")):
                 if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
+        errs += policy_errors(nid, d)
     # parallel branches (several outgoing edges, no Condition) that write the same field need a reducer
     red = {f["name"]: reducer_of(f) for f in schema}
     for n in nodes:

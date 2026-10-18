@@ -11,7 +11,7 @@ class Run(Base):
     input: Mapped[Optional[str]] = mapped_column(Text)        # JSON
     events: Mapped[Optional[str]] = mapped_column(Text)       # JSON list
     final_state: Mapped[Optional[str]] = mapped_column(Text)  # JSON
-    status: Mapped[Optional[str]] = mapped_column(Text)       # ok | error | cancelled | timeout
+    status: Mapped[Optional[str]] = mapped_column(Text)       # ok | error | cancelled | timeout | waiting | paused
     started: Mapped[Optional[float]] = mapped_column(Float)
     ended: Mapped[Optional[float]] = mapped_column(Float)
     # per-run summary metrics (TASK-0010); NULL for runs recorded before 0003

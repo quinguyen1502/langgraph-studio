@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { AlertTriangle, Ban, CheckCircle2, Clock, Hand, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Ban, CheckCircle2, Clock, Hand, Pause, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -23,6 +23,7 @@ const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; cla
   : s === 'expired' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'timeout' ? <TimerOff className={cn('size-4 text-warning', className)} />
   : s === 'waiting' ? <Hand className={cn('size-4 text-node-human', className)} />
+  : s === 'paused' ? <Pause className={cn('size-4 text-muted-foreground', className)} />
   : s === 'idle' ? <Clock className={cn('size-4 text-muted-foreground', className)} />
   : <CheckCircle2 className={cn('size-4 text-success', className)} />
 

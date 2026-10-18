@@ -82,3 +82,11 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Node input
 
 - TASK-0035 Per-node input fields (REQ-0023, Implemented 2026-10-18): **done** — PR [#38](https://github.com/quinguyen1502/langgraph-studio/pull/38). REV-0034, QA-0034.
+
+## Run one step
+
+- TASK-0036 Run one superstep, or until a chosen node, then pause (REQ-0024, Approved 2026-10-18): **done** — Ready PR [#39](https://github.com/quinguyen1502/langgraph-studio/pull/39). REV-0035, QA-0035. Not merged. Independent of TASK-0037.
+
+## Canvas note
+
+- TASK-0037 Note block on the flowchart (REQ-0025, Approved 2026-10-18): **todo**. Not started. Independent of TASK-0036.

@@ -27,6 +27,7 @@
     "running": "đang chạy",
     "done": "xong",
     "waiting": "đang chờ",
+    "paused": "tạm dừng",
     "expired": "hết hạn"
   },
   "auth": {
@@ -91,6 +92,13 @@
     "saveTip": "Lưu workflow",
     "run": "Chạy",
     "runTip": "Chạy workflow với input hiện tại",
+    "step": "Một bước",
+    "stepTip": "Chạy một bước rồi dừng",
+    "runTo": "Chạy tới đây",
+    "runToTip": "Chạy tới khi {{node}} xong, rồi dừng",
+    "runToNeedNode": "Chọn một node để chạy tới khi node đó xong",
+    "continueRun": "Chạy tiếp",
+    "continueTip": "Chạy nốt run đang dừng",
     "cancelTip": "Dừng run (huỷ giữa các bước)",
     "jsonTip": "Xem JSON",
     "jsonDesc": "Định dạng gửi lên backend.",
@@ -224,6 +232,7 @@
     "usageDetail": "{{model}}: {{tin}} vào / {{tout}} ra token · {{cost}}",
     "estimated": "(ước tính)",
     "waiting": "Đang chờ người duyệt",
+    "paused": "Đã dừng sau một bước",
     "streaming": "Đang nhận từ model…"
   },
   "import": {
@@ -315,6 +324,7 @@
     "RUN_FAILED": "Run thất bại",
     "RUN_TIMEOUT": "Run vượt quá thời gian cho phép ({{seconds}}s)",
     "RUN_NOT_FOUND": "Không tìm thấy run, run đã kết thúc hoặc không thuộc về bạn",
+    "RUN_NODE_NOT_REACHED": "Run chạy xong mà không tới node '{{node}}'",
     "NODE_FAILED": "Node bị lỗi",
     "CREDENTIAL_NOT_FOUND": "Credential không tồn tại hoặc không thuộc về bạn",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Provider không hỗ trợ: {{provider}}",

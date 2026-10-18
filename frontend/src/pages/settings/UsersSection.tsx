@@ -16,13 +16,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import { can, useMe, type AdminUser, type Policy, type RoleMatrix } from '@/lib/rbac'
+import { useOnChange } from '@/lib/use-when'
 
 type Data = RoleMatrix & { users: AdminUser[] }
 
 /** Delete or anonymise an account (TASK-0029): owned workflows must go to another editor/admin first. */
 function DeleteUserDialog({ user, onClose, onDone }: { user: AdminUser | null; onClose: () => void; onDone: (msg: string) => void }) {
   const { t } = useTranslation(); const [mode, setMode] = useState('anonymize'); const [to, setTo] = useState('')
-  useEffect(() => { setMode('anonymize'); setTo('') }, [user])
+  useOnChange(user, () => { setMode('anonymize'); setTo('') })
   if (!user) return null
   const go = async () => {
     const r = await api<{ reassigned: string[]; flagged: any[] }>(`/api/admin/users/${user.id}`, { method: 'DELETE', json: { mode, reassign_to: to.trim() || null } })

@@ -1,33 +1,19 @@
-/** Building blocks of the approval-channel settings (TASK-0022): action feedback, secret fields, copyable URLs,
+/** Building blocks of the approval-channel settings (TASK-0022): secret fields, copyable URLs,
  *  one connection (config, Test connection, replace secrets, register, remove) and the add-connection form. */
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Check, Copy, KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Check, Copy, KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { Channel, ChannelKind } from '@/lib/approvals'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
+import { useAction } from './use-action'
 
-export function ErrorAlert({ children }: { children: ReactNode }) {
-  return <Alert variant="destructive"><AlertCircle /><AlertDescription>{children}</AlertDescription></Alert>
-}
+export { ErrorAlert } from './error-alert'
 
-/** Run an API call and show its error or a success note right where the button is. */
-export function useAction(onDone: () => void = () => {}) {
-  const [err, setErr] = useState(''); const [note, setNote] = useState(''); const [busy, setBusy] = useState(false)
-  const run = async (fn: () => Promise<unknown>, ok: string | ((r: any) => string)) => {
-    setErr(''); setNote(''); setBusy(true)
-    try { const r = await fn(); setNote(typeof ok === 'function' ? ok(r) : ok); onDone(); return true }
-    catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
-  }
-  const alerts = <>{err && <ErrorAlert>{err}</ErrorAlert>}
-    {note && <Alert><Check /><AlertDescription>{note}</AlertDescription></Alert>}</>
-  return { run, alerts, busy }
-}
 
 type Vals = Record<string, string>
 const filled = (k: ChannelKind, v: Vals) => k.fields.some(f => !k.optional.includes(f) && v[f]?.trim())

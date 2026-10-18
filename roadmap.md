@@ -98,3 +98,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Review hardening
 
 - TASK-0039 Fixes from the 2026-10-18 project review: HTTP Tool SSRF guard, Condition matching, macOS Playwright, editor header at 1280px, records, CORS, log redaction, lazy routes (REQ-0027, Implemented 2026-10-18): **done** — PR [#42](https://github.com/quinguyen1502/langgraph-studio/pull/42) merged into `develop` 2026-10-18. REV-0038, QA-0038.
+
+## Editor maintenance
+
+- TASK-0040 Split `Editor.tsx` into `components/editor/` and clear the React hook oxlint warnings (REQ-0028, Implemented 2026-10-18): **done**. REV-0039, QA-0039. Not merged.

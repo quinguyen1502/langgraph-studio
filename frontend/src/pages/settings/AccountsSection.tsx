@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { ErrorAlert } from '@/components/approvals/channel-parts'
-import { IdentityRow, slotKey, useSlots } from '@/components/approvals/identity-row'
+import { IdentityRow } from '@/components/approvals/identity-row'
+import { slotKey, useSlots } from '@/components/approvals/slots'
 
 /** My chat accounts across every platform / workspace. */
 export function AccountsSection() {

@@ -63,4 +63,5 @@ function Button({
   )
 }
 
+// oxlint-disable-next-line react/only-export-components -- shadcn exports its cva variants next to the component
 export { Button, buttonVariants }

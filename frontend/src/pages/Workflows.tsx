@@ -16,7 +16,7 @@ import { api } from '@/lib/api'
 import { fmtDate as fmt } from '@/lib/i18n'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { ThemeToggle } from '@/lib/theme'
+import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/user-menu'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
@@ -26,6 +26,7 @@ import { CredentialsDialog } from '@/components/credentials-dialog'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { can, canEdit, useMe, type Access } from '@/lib/rbac'
+import { useLoadWhen } from '@/lib/use-when'
 
 type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null; access: Access; mine: boolean; owner_email: string | null }
 
@@ -37,13 +38,13 @@ export function WorkflowsPage() {
   const [rename, setRename] = useState<W | null>(null); const [newName, setNewName] = useState(''); const [renameErr, setRenameErr] = useState('')
   const [busy, setBusy] = useState(false); const [gallery, setGallery] = useState(false)
   const [params, setParams] = useSearchParams()
-  useEffect(() => { if (params.get('new') === '1') { setGallery(true); setParams({}, { replace: true }) } }, [params])
+  useLoadWhen(params.get('new') === '1', () => { setGallery(true); setParams({}, { replace: true }) })  // ?new=1 opens the gallery once
   const me = useMe(); const [all, setAll] = useState(false)
   const [importsOn, setImportsOn] = useState(false)
   const creates = can(me, 'workflows.create')
   useEffect(() => { api<{ import_enabled?: boolean }>('/api/health').then(h => setImportsOn(!!h.import_enabled)).catch(() => setImportsOn(false)) }, [])
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
-  useEffect(() => { load() }, [all])
+  useLoadWhen(true, load, all)
   const flash = (m: string) => { setNotice(m); setTimeout(() => setNotice(''), 4000) }
   const create = async () => {
     setBusy(true)

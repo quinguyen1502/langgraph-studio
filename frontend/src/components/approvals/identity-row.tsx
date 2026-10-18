@@ -1,5 +1,5 @@
 /** My chat accounts (TASK-0022): one slot per platform / Slack workspace; link -> one-time code by DM -> verify. */
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { RotateCw, Send, ShieldCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -7,24 +7,18 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ErrorAlert } from '@/components/approvals/channel-parts'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
+import { useOnChange } from '@/lib/use-when'
+import type { Slot, Slots } from './slots'
 
-export type Slot = { kind: string; team_id: string | null; team_name: string | null; available: boolean; external_id: string | null; verified: boolean; code_pending: boolean; code_expires: number | null }
-export type Slots = { slots: Slot[] }
 
-export function useSlots() {
-  const [data, setData] = useState<Slots | null>(null); const [err, setErr] = useState('')
-  const load = useCallback(() => api<Slots>('/api/approvals/identities').then(d => { setData(d); setErr('') }).catch(e => setErr(e.message)), [])
-  useEffect(() => { load() }, [load])
-  return { slots: data?.slots ?? null, setData, load, err }
-}
 
 export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slots) => void }) {
   const { t } = useTranslation(); const { kind } = slot; const team = slot.team_id ? { team_id: slot.team_id } : {}
   const idp = `id-${kind}${slot.team_id ? `-${slot.team_id}` : ''}`
   const [ext, setExt] = useState(slot.external_id || ''); const [code, setCode] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
-  useEffect(() => { setExt(slot.external_id || '') }, [slot.external_id])
+  useOnChange(slot.external_id, v => setExt(v || ''))
   const call = async (path: string, init: Parameters<typeof api>[1]) => {
     setErr(''); setBusy(true)
     try { onChange(await api<Slots>(path, init)); return true } catch (e: any) { setErr(e.message); return false } finally { setBusy(false) }
@@ -67,5 +61,3 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
     {confirmDel.dialog}
   </div>
 }
-
-export const slotKey = (s: Slot) => `${s.kind}:${s.team_id || ''}`

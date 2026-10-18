@@ -47,13 +47,3 @@ export function ConfirmDeleteDialog({ open, onOpenChange, title, name, descripti
     </AlertDialogContent>
   </AlertDialog>
 }
-
-/** `const del = useConfirmDelete(); del.ask({...}); return <>{del.dialog}</>` — one dialog per screen, opened on demand. */
-export function useConfirmDelete() {
-  const [opts, setOpts] = useState<ConfirmDeleteOptions | null>(null)
-  return {
-    ask: (o: ConfirmDeleteOptions) => setOpts(o),
-    close: () => setOpts(null),
-    dialog: opts && <ConfirmDeleteDialog open onOpenChange={o => { if (!o) setOpts(null) }} {...opts} />,
-  }
-}

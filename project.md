@@ -17,6 +17,7 @@ langgraph-studio
 ## Modules
 
 - `frontend/` — React SPA: login/register, workflow list, editor (canvas, palette, config, run panel), import dialog
+  - the editor page (`pages/Editor.tsx`) is a shell; state and actions are in `components/editor/use-studio.ts`, the header and panels in `components/editor/` (TASK-0040)
 - `backend/app/` — layered FastAPI backend (DEC-0009, `docs/backend-architecture.md`):
   - `main.py` app factory; `api/` routers (REST + `/ws/run`), deps, error handlers
   - `services/` business rules; `repositories/` SQLAlchemy queries; `models/` ORM models + `Database`; `migrations/` Alembic

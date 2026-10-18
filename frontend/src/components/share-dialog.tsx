@@ -1,5 +1,5 @@
 /** Share a workflow (TASK-0014): owner or admin adds users by email as viewer (open, run) or editor (also edit). */
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Loader2, Share2, Trash2, UserPlus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -8,11 +8,12 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { useOpenState } from '@/lib/use-open-state'
 import { api } from '@/lib/api'
 import type { Issue, Shares, Teams } from '@/lib/rbac'
 import { TransferDialog } from '@/components/transfer-dialog'
+import { useLoadWhen } from '@/lib/use-when'
 
 export function ShareDialog(props: { workflowId: string; disabled?: boolean; onTransferred?: (owner: string, flagged: Issue[]) => void; open?: boolean; onOpenChange?: (v: boolean) => void }) {
   const { workflowId, disabled, onTransferred } = props
@@ -22,7 +23,7 @@ export function ShareDialog(props: { workflowId: string; disabled?: boolean; onT
   const [err, setErr] = useState(''); const [busy, setBusy] = useState(false)
   const [kind, setKind] = useState<'user' | 'team'>('user'); const [teams, setTeams] = useState<Teams['teams']>([]); const [team, setTeam] = useState('')
   const load = () => api<Shares>(`/api/workflows/${workflowId}/shares`).then(setData).catch(e => setErr(e.message))
-  useEffect(() => { if (open) { setErr(''); load(); api<Teams>('/api/teams').then(d => setTeams(d.teams)).catch(() => {}) } }, [open, workflowId])
+  useLoadWhen(open, () => { setErr(''); load(); api<Teams>('/api/teams').then(d => setTeams(d.teams)).catch(() => {}) }, workflowId)
   const run = async (f: () => Promise<any>) => { setBusy(true); setErr(''); try { await f() } catch (e: any) { setErr(e.message) } finally { setBusy(false) } }
   const add = () => run(async () => { setData(await api(`/api/workflows/${workflowId}/shares`, { method: 'PUT', json: { email: email.trim(), role } })); setEmail('') })
   const change = (em: string, r: string) => run(async () => setData(await api(`/api/workflows/${workflowId}/shares`, { method: 'PUT', json: { email: em, role: r } })))

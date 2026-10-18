@@ -22,14 +22,14 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
 
 5. **Node types each have a colour token** (DEC-0008 addendum). Each type has three tokens: `--node-<type>` (accent), `--node-<type>-foreground` (text on a solid accent) and `--node-<type>-muted` (subtle background, the accent at 12% in light and 18% in dark). Types are `start`, `llm`, `tool`, `condition`, `end` and `code`. A canvas sticky uses `--node-note`, `--node-note-foreground` and `--node-note-muted` on the paper itself. It is not a graph node and does not go through `META`.
    - Example classes: `bg-node-llm-muted text-node-llm` (icon chip), `border-node-code/60` (Code node border). The canvas does not draw a left accent bar.
-   - Use them in the palette, canvas node cards, the config header and trace timeline icons. They come from one map (`META` in `Editor.tsx`), so don't copy the classes elsewhere.
+   - Use them in the palette, canvas node cards, the config header and trace timeline icons. They come from one map (`META` in `components/editor/meta.ts`), so don't copy the classes elsewhere.
    - Light values sit at about oklch L 0.5–0.64 so they contrast with white; dark values sit at about L 0.7–0.8, with dark foreground text.
    - Node-type colours mean *category*, not status. Status keeps using `success`/`warning`/`destructive`.
 
 6. **Dark mode must work.** Use tokens only (never `dark:` colour overrides), and check that the screen looks right in both themes.
 
 7. **Every delete is confirmed by typing the item's name** (TASK-0029). This covers deleting, removing, revoking and unlinking anything: workflows, users, teams and members, shares, credentials, knowledge bases and documents, MCP servers, approval connections, API tokens, linked chat accounts.
-   - Use the one shared `ConfirmDeleteDialog` (`components/confirm-delete-dialog.tsx`: shadcn AlertDialog + Input), usually through `useConfirmDelete().ask({ title, name, description, children, onConfirm })`. Never `window.confirm`, and never a hand-made dialog.
+   - Use the one shared `ConfirmDeleteDialog` (`components/confirm-delete-dialog.tsx`: shadcn AlertDialog + Input), usually through `useConfirmDelete().ask({ title, name, description, children, onConfirm })` (`components/use-confirm-delete.tsx`). Never `window.confirm`, and never a hand-made dialog.
    - The destructive button stays disabled until the typed text matches `name` exactly. Consequences such as dependents, reassignment or mode go in the `children` slot. Strings live in en + vi.
    - The confirmation is UI-only, as on GitHub. The API stays a plain `DELETE` with no `confirm_name`, so API clients and scripts are unaffected (DEC-0025).
 

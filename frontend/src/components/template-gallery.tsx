@@ -1,5 +1,5 @@
 /** "New workflow" gallery (TASK-0025): blank canvas, built-in / personal / org templates, import & export of template files. */
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { AlertCircle, Download, FilePlus2, Loader2, Trash2, Upload } from 'lucide-react'
@@ -8,10 +8,11 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { TemplatePreview } from '@/components/template-preview'
 import { api } from '@/lib/api'
 import { download, readTemplateFile, type Template } from '@/lib/templates'
+import { useLoadWhen } from '@/lib/use-when'
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void; onBlank: () => Promise<void> | void }
 
@@ -22,7 +23,7 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
   const file = useRef<HTMLInputElement>(null)
   const confirmDel = useConfirmDelete()
   const load = () => api<Template[]>('/api/templates').then(setItems).catch(e => setErr(e.message))
-  useEffect(() => { if (open) { setErr(''); load() } }, [open])
+  useLoadWhen(open, () => { setErr(''); load() })
 
   const run = async (key: string, f: () => Promise<void>) => {
     setBusy(key); setErr('')

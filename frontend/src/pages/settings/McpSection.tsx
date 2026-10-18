@@ -14,12 +14,14 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { ErrorAlert, useAction } from '@/components/approvals/channel-parts'
-import { useConfirmDelete } from '@/components/confirm-delete-dialog'
+import { ErrorAlert } from '@/components/approvals/channel-parts'
+import { useAction } from '@/components/approvals/use-action'
+import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import i18n from '@/lib/i18n'
 import type { McpList, McpServer } from '@/lib/mcp'
 import { cn } from '@/lib/utils'
+import { useOnChange } from '@/lib/use-when'
 
 type Secret = { name: string; value: string; stored: boolean }
 type Form = { name: string; transport: 'stdio' | 'http'; scope: 'user' | 'org'; command: string; args: string; url: string; secrets: Secret[] }
@@ -70,7 +72,7 @@ function ServerFields({ form, set, idp, fixed, data }: { form: Form; set: (f: Fo
 function ServerCard({ s, data, reload, defaultOpen }: { s: McpServer; data: McpList; reload: () => void; defaultOpen: boolean }) {
   const { t } = useTranslation(); const [open, setOpen] = useState(defaultOpen); const [edit, setEdit] = useState(false); const [form, setForm] = useState(toForm(s))
   const act = useAction(reload); const confirmDel = useConfirmDelete()
-  useEffect(() => { setForm(toForm(s)) }, [s])
+  useOnChange(s, v => setForm(toForm(v)))
   return <Collapsible open={open} onOpenChange={setOpen} asChild>
     <Card data-testid={`mcp-card-${s.id}`} className="gap-4">
       <CardHeader>

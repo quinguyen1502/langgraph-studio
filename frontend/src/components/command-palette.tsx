@@ -12,6 +12,7 @@ import { can, loadMe, type Me } from '@/lib/rbac'
 import { SHORTCUTS } from '@/lib/shortcuts'
 import { useShortcuts } from '@/lib/use-shortcuts'
 import { SECTIONS } from '@/pages/settings/sections'
+import { useOnChange } from '@/lib/use-when'
 
 type W = { id: string; name: string }
 
@@ -21,7 +22,7 @@ export function CommandPalette() {
   const page = usePaletteCommands()
   useShortcuts({ palette: () => { if (!tokenValid() || loc.pathname === '/login' || loc.pathname === '/register') return false; setOpen(true) } })
   useEffect(() => { if (open) { api<W[]>('/api/workflows').then(setWfs).catch(() => setWfs([])); loadMe().then(setMe).catch(() => setMe(null)) } }, [open])  // mounted outside the routes: load on open
-  useEffect(() => { setOpen(false) }, [loc.pathname])
+  useOnChange(loc.pathname, () => setOpen(false))  // navigating closes the palette
   useEffect(() => onPaletteRequest(() => setOpen(true)), [])
 
   const current = loc.pathname.startsWith('/workflows/') ? loc.pathname.split('/')[2] : null

@@ -11,12 +11,14 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AddConnection, ConnectionItem, ErrorAlert } from '@/components/approvals/channel-parts'
-import { IdentityRow, slotKey, useSlots, type Slot, type Slots } from '@/components/approvals/identity-row'
+import { IdentityRow } from '@/components/approvals/identity-row'
+import { slotKey, useSlots, type Slot, type Slots } from '@/components/approvals/slots'
 import { AddToSlack, SlackOAuthNotice } from '@/components/approvals/add-to-slack'
 import { FilterBar } from '@/components/settings/filter-bar'
 import type { Channel, ChannelKind, Channels } from '@/lib/approvals'
 import { api } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { useOnChange } from '@/lib/use-when'
 
 type Scope = 'org' | 'user'
 const SCOPES: Scope[] = ['org', 'user']
@@ -28,7 +30,7 @@ function PlatformCard({ k, data, conns, slots, onSlots, reload, initialScope }: 
   const has = (s: Scope) => conns.some(c => c.scope === s)
   const [open, setOpen] = useState(true)
   const [tab, setTab] = useState<Scope>(initialScope || (has('org') && !has('user') ? 'org' : 'user'))
-  useEffect(() => { if (initialScope) setTab(initialScope) }, [initialScope])
+  useOnChange(initialScope, v => { if (v) setTab(v) })
   const connected = conns.length > 0
   return <Collapsible open={open} onOpenChange={setOpen} asChild>
     <Card data-testid={`channel-card-${k.kind}`} className="gap-4">

@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-18
+- Updated: 2026-10-19
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -68,7 +68,7 @@ External systems can start a workflow run with JSON input and receive results sy
 
 ## Open Questions
 
-- Is a cron/schedule trigger also needed?
+- Resolved 2026-10-19: yes. Cron schedules per workflow, fired by the run worker (TASK-0046, DEC-0036, PR #50).
 
 ## Related Artifacts
 

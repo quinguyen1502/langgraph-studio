@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-18
+- Updated: 2026-10-19
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -68,7 +68,7 @@ Replace SQLite with PostgreSQL, add Redis for run queue/pubsub, and provide Dock
 
 ## Open Questions
 
-- Keep SQLite as a supported dev mode?
+- Resolved 2026-10-16: yes. SQLite stays the development default; Postgres is used when `DATABASE_URL` is set, with the same Alembic revisions (DEC-0011).
 
 ## Related Artifacts
 

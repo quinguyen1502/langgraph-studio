@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Decision ID: DEC-0006
-- Status: Proposed (agent decision within TASK-0005; owner confirms in PR review)
+- Status: Accepted (TASK-0005 merged; recorded 2026-10-19 by TASK-0048)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
 - Updated: 2026-10-16

@@ -117,4 +117,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## More approval channels
 
-- TASK-0047 WhatsApp buttons, e-mail and Teams links to /approve (REQ-0034, DEC-0037, Implemented 2026-10-19): **done**. REV-0045, QA-0045. Not merged.
+- TASK-0047 WhatsApp buttons, e-mail and Teams links to /approve (REQ-0034, DEC-0037, Implemented 2026-10-19): **done**. REV-0045, QA-0045. Merged (PR #51).
+
+## Records
+
+- TASK-0048 Close the open questions of REQ-0001, 0002, 0003, 0004, 0008 and 0010; accept DEC-0006; DEC-0033 addendum on release merges to main: **done**. Merged (PR #52).

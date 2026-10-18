@@ -57,8 +57,12 @@
 | `auth.py` | `core/security.py` (+ `api/deps.current_user`) |
 | `compiler.py` | `engine/{errors,templating,tools,llm,validator,nodes,compiler,runtime}.py` |
 | `limits.py` | `engine/limits.py` (values in `core/config.py`) |
-| `importer.py`, `sandbox/runner.py` | `engine/repo_import.py`, `engine/sandbox/runner.py` |
+| `importer.py`, `sandbox/runner.py` | `engine/repo_import.py`, `engine/sandbox/runner.py`, `engine/sandbox/container.py` |
 | `example.py` | `engine/examples.py` |
+
+## Import sandbox (TASK-0015)
+
+`STUDIO_ENABLE_IMPORT` defaults off. `ImportService` then raises `IMPORT_DISABLED` (404) from `start`, `status` and `finalize`; `start_job` itself stays callable so tests can drive the engine directly. When the flag is `1`, `engine/sandbox/container.py` builds `docker run` for install, inspect and run (read-only root, the job directory only, a fresh env, memory/cpu/pid limits). `STUDIO_IMPORT_RUNTIME=subprocess` keeps the host subprocess. Git clone and zip extract stay on the host. Each job writes `job.json`; `finalize` calls `mark_kept` so cleanup does not delete a workspace a workflow still points at. The engine does not query the database.
 
 ## Credentials (TASK-0005, ported from PR #2: done)
 

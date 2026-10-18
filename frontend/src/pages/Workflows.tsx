@@ -38,7 +38,9 @@ export function WorkflowsPage() {
   const [params, setParams] = useSearchParams()
   useEffect(() => { if (params.get('new') === '1') { setGallery(true); setParams({}, { replace: true }) } }, [params])
   const me = useMe(); const [all, setAll] = useState(false)
+  const [importsOn, setImportsOn] = useState(false)
   const creates = can(me, 'workflows.create')
+  useEffect(() => { api<{ import_enabled?: boolean }>('/api/health').then(h => setImportsOn(!!h.import_enabled)).catch(() => setImportsOn(false)) }, [])
   const load = () => api<W[]>(`/api/workflows${all ? '?all=1' : ''}`).then(w => { setItems(w); setLoadErr('') }).catch(e => setLoadErr(e.message)).finally(() => setLoading(false))
   useEffect(() => { load() }, [all])
   const flash = (m: string) => { setNotice(m); setTimeout(() => setNotice(''), 4000) }
@@ -79,7 +81,7 @@ export function WorkflowsPage() {
             {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-1 top-1 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
           {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
           {can(me, 'resources.manage') && <CredentialsDialog />}
-          {creates && <ImportDialog />}
+          {creates && importsOn && <ImportDialog />}
           {creates && <Button onClick={() => setGallery(true)} id="new-wf"><Plus />{t('common.newWorkflow')}</Button>}
         </div>
       </div>

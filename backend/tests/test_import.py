@@ -1,5 +1,8 @@
 import io, os, tempfile, time, zipfile
 os.environ.setdefault("STUDIO_DB", tempfile.mktemp(suffix=".db"))
+# The API is off unless the flag is set. These tests keep the host subprocess; they do not need Docker.
+os.environ.setdefault("STUDIO_ENABLE_IMPORT", "1")
+os.environ.setdefault("STUDIO_IMPORT_RUNTIME", "subprocess")
 import pytest
 from fastapi.testclient import TestClient
 from app.engine import repo_import as importer

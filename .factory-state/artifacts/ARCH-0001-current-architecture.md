@@ -20,7 +20,7 @@ Inspected: `backend/app/**` (layered since TASK-0017, DEC-0009), `frontend/src/*
 - Backend FastAPI on :8000, layered (DEC-0009, `docs/backend-architecture.md`): `api` routers → `services` → `repositories` (SQLAlchemy 2.0 ORM) / `engine` (LangGraph); `core` config/security/errors; `schemas` DTOs. Workflow JSON `{nodes, edges, state}` stored in `workflows`, `runs`, `users` (SQLite default, `DATABASE_URL` for others).
 - `engine/validator.py` + `engine/compiler.py` validate the JSON and builds a `langgraph.StateGraph` (TypedDict from state schema; Condition nodes → `add_conditional_edges` keyed on edge labels).
 - Runs: WebSocket `/ws/run?token=` → worker thread executes `graph.stream(stream_mode="updates")` → per-node events (`node_started`, `node_finished{duration_ms, delta}`, `run_finished`, `error`) → stored in `runs`.
-- Imports: `engine/repo_import.py` clones/unzips into `backend/imports/<job>/`, creates a per-import venv with uv, and executes `engine/sandbox/runner.py` in a subprocess (inspect via `get_graph(xray=True)`; run via `astream(stream_mode=["debug","values"])`). Imported workflows carry server-side `source` metadata; runs always execute the original graph.
+- Imports (TASK-0015): `engine/repo_import.py` clones or unzips on the API host into `STUDIO_IMPORT_DIR` (default `~/.langgraph-studio/imports/<job>/`). With `STUDIO_ENABLE_IMPORT=1` the default runtime is Docker (`engine/sandbox/container.py`): install, inspect and run mount only that job directory. `STUDIO_IMPORT_RUNTIME=subprocess` keeps the host venv subprocess for tests. Imported workflows carry server-side `source` metadata; runs always execute the original graph. The flag defaults off (`IMPORT_DISABLED`).
 - Auth: PBKDF2-SHA256 password hashes, HS256 JWT (24h), bearer header for REST, query token for WebSocket.
 
 ## Layer Diagram (TASK-0017)
@@ -43,7 +43,7 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
   - Tradeoffs: extra infrastructure for MVP (tracked in REQ-0008)
 - Option: container sandbox for imports
   - Benefits: real isolation
-  - Tradeoffs: requires container runtime (tracked in REQ-0009)
+  - Tradeoffs: requires a container runtime (REQ-0009). TASK-0015 implements this with Docker. gVisor and Firecracker stay out of scope.
 
 ## Boundaries And Interfaces
 
@@ -64,13 +64,13 @@ Simplest stack satisfying the MVP brief (internal use + learning); SQLite and in
 
 ## Data Or State Considerations
 
-- Import jobs are in-memory (lost on restart); import directories persist on disk.
+- Import jobs persist as `job.json` in the job directory and reload on startup. An in-progress job whose pid is gone becomes an error. Finalized workspaces are kept; others are deleted after `STUDIO_IMPORT_MAX_AGE_HOURS`.
 - Database: SQLite file by default; Postgres via `DATABASE_URL` (psycopg 3), tested in CI (TASK-0009, DEC-0011).
 - `runs` has per-run summary metrics (`duration_ms`, `tokens_in`, `tokens_out`, `cost_usd`, `error_count`, `trace_id`; migration `0003_run_metrics`, TASK-0010).
 - Schema managed by Alembic (`backend/app/migrations`, `0001_initial` = MVP schema, adopts pre-Alembic files); `alembic upgrade head` runs at startup.
 
 ## Quality Attributes
 
-- Security: imported code is not sandboxed beyond subprocess/venv/env-trim/timeout (documented risk).
+- Security: with `STUDIO_ENABLE_IMPORT=1` and the Docker runtime, imported code runs in a read-only container that sees only its job directory and explicitly injected secrets. The subprocess runtime (`STUDIO_IMPORT_RUNTIME=subprocess`, also the default while the flag is off) is still only a venv plus env trim and a timeout. The Compose Docker socket is root-equivalent on the host.
 - Reliability: cooperative cancel + timeout per run (TASK-0004). WebSocket runs execute in the API process holding the socket; API-triggered runs go through the job queue to any worker (TASK-0007). Redis carries cancel signals, events and jobs between processes.
 - Deployment: `docker-compose.yml` (postgres, redis, api, web/nginx) with healthchecks and volumes (TASK-0009).

@@ -1,22 +1,35 @@
-"""Import LangGraph repos: clone/unzip -> per-import venv -> inspect graphs in subprocess -> workflow JSON.
-SECURITY: imported code is arbitrary. It is only ever executed in a subprocess using the import's own venv,
-with a reduced environment and a timeout. It is NOT sandboxed beyond that (same OS user, network access)."""
+"""Import LangGraph repos: clone/unzip -> per-import venv -> inspect graphs -> workflow JSON.
+
+SECURITY: imported code is arbitrary. With STUDIO_ENABLE_IMPORT=1 (the default runtime is
+Docker) install, inspect and run happen in a container that mounts only the import directory.
+STUDIO_IMPORT_RUNTIME=subprocess keeps the old host subprocess for tests. It is not a sandbox.
+"""
 from __future__ import annotations
 import json, os, re, shutil, subprocess, sys, threading, time, uuid, zipfile
 from typing import Any, Dict, List, Optional
 
-# Import workspaces live OUTSIDE the repository by default (keeps cloned repos/venvs out of git and tooling scans).
-# Override with STUDIO_IMPORT_DIR. Workflows imported earlier keep their absolute paths and still run.
-ROOT = os.path.expanduser(os.environ.get("STUDIO_IMPORT_DIR") or "~/.langgraph-studio/imports")
+from ..core import config
+from .sandbox import container
+from .sandbox.container import RUNNER_IN_CONTAINER
+
 RUNNER = os.path.join(os.path.dirname(__file__), "sandbox", "runner.py")
 INSPECT_TIMEOUT = int(os.environ.get("STUDIO_INSPECT_TIMEOUT", "120"))
 RUN_TIMEOUT = int(os.environ.get("STUDIO_RUN_TIMEOUT", "300"))
-INSTALL_TIMEOUT = 900
+INSTALL_TIMEOUT = int(os.environ.get("STUDIO_INSTALL_TIMEOUT", "900"))
 GH_RE = re.compile(r"^https://github\.com/[\w.-]+/[\w.-]+?(\.git)?/?$")
 JOBS: Dict[str, Dict[str, Any]] = {}
+_ACTIVE = ("queued", "fetching", "installing", "inspecting")
+_loaded = False
+_PERSIST = ("id", "owner", "kind", "url", "branch", "subdir", "dir", "status", "log", "graphs",
+            "error", "created", "required_env", "repo", "keep", "zip_path", "pid")
+
+
+def root() -> str:
+    return os.path.expanduser(os.environ.get("STUDIO_IMPORT_DIR") or "~/.langgraph-studio/imports")
 
 
 def sub_env() -> Dict[str, str]:
+    """Host environment for the subprocess runtime. The Docker runtime does not use this."""
     keep = {"PATH", "HOME", "LANG", "LC_ALL", "TMPDIR", "UV_CACHE_DIR"}
     env = {k: v for k, v in os.environ.items() if k in keep or k.endswith("_API_KEY") or k.startswith(("LANGSMITH_", "LANGCHAIN_", "OPENAI_"))}
     env.pop("JWT_SECRET", None); env["PYTHONUNBUFFERED"] = "1"; env["GIT_TERMINAL_PROMPT"] = "0"
@@ -31,11 +44,121 @@ def _log(job, msg):
     job["log"].append(f"[{time.strftime('%H:%M:%S')}] {msg}")
 
 
-def _sh(job, cmd, cwd=None, timeout=INSTALL_TIMEOUT):
+def _persist(job: dict) -> None:
+    path = os.path.join(job["dir"], "job.json")
+    tmp = path + ".tmp"
+    payload = {k: job.get(k) for k in _PERSIST}
+    with open(tmp, "w", encoding="utf-8") as fh:
+        json.dump(payload, fh)
+    os.replace(tmp, path)
+
+
+def _pid_alive(pid) -> bool:
+    if not pid: return False
+    try: os.kill(int(pid), 0)
+    except (OSError, ValueError): return False
+    return True
+
+
+def ensure_loaded() -> None:
+    """Load job.json files. An in-progress job whose process is gone becomes an error."""
+    global _loaded
+    if _loaded: return
+    _loaded = True
+    base = root()
+    if not os.path.isdir(base): return
+    for name in os.listdir(base):
+        path = os.path.join(base, name, "job.json")
+        if not os.path.isfile(path): continue
+        try: job = json.load(open(path, encoding="utf-8"))
+        except (OSError, ValueError): continue
+        if not isinstance(job, dict) or not job.get("id"): continue
+        if job.get("status") in _ACTIVE and not _pid_alive(job.get("pid")):
+            job["status"] = "error"
+            job["error"] = "Import interrupted by a restart"
+            try: _persist(job)
+            except OSError: pass
+        JOBS.setdefault(job["id"], job)
+
+
+def cleanup() -> None:
+    """Delete import directories that were never finalized and are older than the age limit."""
+    ensure_loaded()
+    age = config.import_max_age_s()
+    if age <= 0: return
+    base, now = root(), time.time()
+    if not os.path.isdir(base): return
+    for name in list(os.listdir(base)):
+        directory = os.path.join(base, name)
+        if not os.path.isdir(directory): continue
+        job = JOBS.get(name)
+        if job and job.get("keep"): continue
+        if job and job.get("status") in _ACTIVE and _pid_alive(job.get("pid")): continue
+        created = (job or {}).get("created") or os.path.getmtime(directory)
+        if now - created > age:
+            shutil.rmtree(directory, ignore_errors=True)
+            JOBS.pop(name, None)
+
+
+def mark_kept(jid: str) -> None:
+    job = JOBS.get(jid)
+    if not job: return
+    job["keep"] = True
+    try: _persist(job)
+    except OSError: pass
+
+
+def _dir_size(path: str, limit: int) -> None:
+    total = 0
+    for dp, dns, fns in os.walk(path):
+        dns[:] = [d for d in dns if d != ".git"]
+        for name in fns:
+            try: total += os.path.getsize(os.path.join(dp, name))
+            except OSError: continue
+            if total > limit: raise ImportError_(f"Import is larger than {limit} bytes")
+
+
+def _stage_runner(job_dir: str) -> str:
+    dest = os.path.join(job_dir, ".runner")
+    os.makedirs(dest, exist_ok=True)
+    shutil.copyfile(RUNNER, os.path.join(dest, "runner.py"))
+    return dest
+
+
+def _docker_argv(job_dir: str, cwd: str, command: List[str], env: Dict[str, str], network: str, name: str) -> List[str]:
+    return container.build(
+        name=name, image=config.import_image(), job_dir=job_dir, cwd=cwd, command=command, env=env,
+        network=network, memory=config.import_memory(), cpus=config.import_cpus(), pids=config.import_pids(),
+        runner_dir=_stage_runner(job_dir), root=root(), host_root=config.import_host_dir(),
+    )
+
+
+def _host(job, cmd, cwd=None, timeout=180):
+    """Fetch only. ``git clone`` does not execute repository code, and the sandbox image has no git."""
     _log(job, "$ " + " ".join(cmd))
     p = subprocess.run(cmd, cwd=cwd, env=sub_env(), capture_output=True, text=True, timeout=timeout)
     tail = (p.stdout + p.stderr).strip().splitlines()[-15:]
-    for l in tail: job["log"].append("  " + l)
+    for line in tail: job["log"].append("  " + line)
+    if p.returncode != 0: raise ImportError_(f"Command failed ({p.returncode}): {' '.join(cmd[:3])}…")
+
+
+def _sh(job, cmd, cwd=None, timeout=INSTALL_TIMEOUT):
+    _log(job, "$ " + " ".join(cmd))
+    if config.import_runtime() == "docker":
+        name = container.container_name()
+        argv = _docker_argv(job["dir"], cwd or job["dir"], cmd, container.sandbox_env(job["dir"]), "bridge", name)
+        try:
+            out, err, code, timed_out = container.captured(argv, name=name, timeout=timeout)
+        except container.DockerMissing as exc:
+            raise ImportError_(str(exc)) from None
+        tail = (out + err).strip().splitlines()[-15:]
+        for line in tail: job["log"].append("  " + line)
+        if timed_out: raise ImportError_(f"Timeout after {timeout}s: {' '.join(cmd[:3])}…")
+        if code != 0: raise ImportError_(f"Command failed ({code}): {' '.join(cmd[:3])}…")
+        return
+    p = subprocess.run(cmd, cwd=cwd, env=sub_env(), capture_output=True, text=True, timeout=timeout)
+    tail = (p.stdout + p.stderr).strip().splitlines()[-15:]
+    for line in tail: job["log"].append("  " + line)
     if p.returncode != 0: raise ImportError_(f"Command failed ({p.returncode}): {' '.join(cmd[:3])}…")
 
 
@@ -76,91 +199,121 @@ def find_graphs(repo: str) -> List[Dict[str, str]]:
 
 
 def runner_cmd(job_dir: str, mode: str, repo: str, ref: str):
-    return [os.path.join(job_dir, "venv", "bin", "python"), RUNNER, mode, repo, ref]
+    py = os.path.join(job_dir, "venv", "bin", "python")
+    script = RUNNER_IN_CONTAINER if config.import_runtime() == "docker" else RUNNER
+    return [py, script, mode, repo, ref]
 
 
 def parse_lines(out: str) -> List[dict]:
     res = []
-    for l in out.splitlines():
-        l = l.strip()
-        if l.startswith("{"):
-            try: res.append(json.loads(l))
+    for line in out.splitlines():
+        line = line.strip()
+        if line.startswith("{"):
+            try: res.append(json.loads(line))
             except Exception: pass
     return res
 
 
-def inspect_ref(job_dir, repo, ref) -> dict:
-    p = subprocess.run(runner_cmd(job_dir, "inspect", repo, ref), cwd=repo, env=sub_env(), capture_output=True, text=True, timeout=INSPECT_TIMEOUT)
-    evs = parse_lines(p.stdout)
-    for e in evs:
-        if e.get("type") == "graph": return e
-    err = next((e for e in evs if e.get("type") == "error"), None)
-    raise ImportError_((err or {}).get("errors", [p.stderr.strip()[-800:] or "Could not inspect the graph"])[0])
+def inspect_ref(job_dir, repo, ref, secrets=None) -> dict:
+    if config.import_runtime() == "docker":
+        name = container.container_name()
+        argv = _docker_argv(job_dir, repo, runner_cmd(job_dir, "inspect", repo, ref), container.sandbox_env(job_dir, secrets), "none", name)
+        try:
+            out, err, _code, timed_out = container.captured(argv, name=name, timeout=INSPECT_TIMEOUT)
+        except container.DockerMissing as exc:
+            raise ImportError_(str(exc)) from None
+        if timed_out: raise ImportError_(f"Timeout after {INSPECT_TIMEOUT}s: inspect")
+        evs = parse_lines(out)
+        stderr = err
+    else:
+        p = subprocess.run(runner_cmd(job_dir, "inspect", repo, ref), cwd=repo, env=sub_env(), capture_output=True, text=True, timeout=INSPECT_TIMEOUT)
+        evs, stderr = parse_lines(p.stdout), p.stderr
+    for event in evs:
+        if event.get("type") == "graph": return event
+    err = next((event for event in evs if event.get("type") == "error"), None)
+    raise ImportError_((err or {}).get("errors", [stderr.strip()[-800:] or "Could not inspect the graph"])[0])
 
 
 def required_env(repo: str) -> List[str]:
     keys = []
-    for f in (".env.example", ".env.sample", ".env.template"):
-        p = os.path.join(repo, f)
-        if os.path.exists(p):
-            for l in open(p, errors="ignore"):
-                m = re.match(r"^\s*([A-Z][A-Z0-9_]*(?:KEY|TOKEN))\s*=", l)
+    for name in (".env.example", ".env.sample", ".env.template"):
+        path = os.path.join(repo, name)
+        if os.path.exists(path):
+            for line in open(path, errors="ignore"):
+                m = re.match(r"^\s*([A-Z][A-Z0-9_]*(?:KEY|TOKEN))\s*=", line)
                 if m: keys.append(m.group(1))
     return keys
 
 
+def _install(job, repo: str, d: str):
+    venv = os.path.join(d, "venv")
+    if config.import_runtime() == "docker":
+        _sh(job, ["python", "-m", "venv", venv], cwd=d, timeout=INSTALL_TIMEOUT)
+        py = os.path.join(venv, "bin", "python")
+        pip = [py, "-m", "pip", "install", "-q"]
+    else:
+        _sh(job, ["uv", "venv", "-q", venv, "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "venv", venv])
+        py = os.path.join(venv, "bin", "python")
+        pip = ["uv", "pip", "install", "-q", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install", "-q"]
+    if os.path.exists(os.path.join(repo, "pyproject.toml")) or os.path.exists(os.path.join(repo, "setup.py")):
+        _sh(job, pip + ["-e", repo, "langgraph", "python-dotenv"], cwd=repo)
+    elif os.path.exists(os.path.join(repo, "requirements.txt")):
+        _sh(job, pip + ["-r", os.path.join(repo, "requirements.txt"), "langgraph", "python-dotenv"], cwd=repo)
+    else:
+        _sh(job, pip + ["langgraph", "python-dotenv"], cwd=repo)
+
+
 def do_import(job_id: str):
-    job = JOBS[job_id]; d = job["dir"]
+    job = JOBS[job_id]; d = job["dir"]; job["pid"] = os.getpid()
     try:
-        job["status"] = "fetching"
+        job["status"] = "fetching"; _persist(job)
         src = os.path.join(d, "src_raw")
         if job["kind"] == "url":
             cmd = ["git", "clone", "--depth", "1"] + (["--branch", job["branch"]] if job.get("branch") else []) + [job["url"], src]
-            _sh(job, cmd, timeout=180)
+            _host(job, cmd, timeout=180)
         else:
-            os.makedirs(src); src = safe_extract(job["zip_path"], src)
+            os.makedirs(src, exist_ok=True); src = safe_extract(job["zip_path"], src)
         repo = os.path.realpath(os.path.join(src, job.get("subdir") or ""))
         if not repo.startswith(os.path.realpath(d)) or not os.path.isdir(repo): raise ImportError_("Invalid subdir")
+        _dir_size(repo, config.import_max_bytes())
         job["repo"] = repo
-        job["status"] = "installing"
-        _sh(job, ["uv", "venv", "-q", os.path.join(d, "venv"), "--python", sys.executable] if shutil.which("uv") else [sys.executable, "-m", "venv", os.path.join(d, "venv")])
-        py = os.path.join(d, "venv", "bin", "python")
-        pip = ["uv", "pip", "install", "-q", "--python", py] if shutil.which("uv") else [py, "-m", "pip", "install", "-q"]
-        if os.path.exists(os.path.join(repo, "pyproject.toml")) or os.path.exists(os.path.join(repo, "setup.py")):
-            _sh(job, pip + ["-e", repo, "langgraph", "python-dotenv"])
-        elif os.path.exists(os.path.join(repo, "requirements.txt")):
-            _sh(job, pip + ["-r", os.path.join(repo, "requirements.txt"), "langgraph", "python-dotenv"])
-        else:
-            _sh(job, pip + ["langgraph", "python-dotenv"])
-        job["status"] = "inspecting"
+        job["status"] = "installing"; _persist(job)
+        _install(job, repo, d)
+        job["status"] = "inspecting"; _persist(job)
         refs = find_graphs(repo)
         if not refs: raise ImportError_("No graph found (langgraph.json or a compiled StateGraph variable)")
         _log(job, f"Found {len(refs)} graph(s): " + ", ".join(r["ref"] for r in refs))
+        job["required_env"] = required_env(repo)
+        secrets = _run_secrets({"required_env": job["required_env"]})
         graphs = []
-        for r in refs:
+        for ref in refs:
             try:
-                g = inspect_ref(d, repo, r["ref"]); graphs.append({**r, "graph": g}); _log(job, f"✓ {r['id']}: {len(g['nodes'])} nodes, {len(g['edges'])} edges")
-            except Exception as e:
-                _log(job, f"✗ {r['id']}: {e}")
+                graph = inspect_ref(d, repo, ref["ref"], secrets); graphs.append({**ref, "graph": graph}); _log(job, f"✓ {ref['id']}: {len(graph['nodes'])} nodes, {len(graph['edges'])} edges")
+            except Exception as exc:
+                _log(job, f"✗ {ref['id']}: {exc}")
         if not graphs: raise ImportError_("No graph could be loaded (see log)")
-        job["graphs"] = graphs; job["required_env"] = required_env(repo)
+        job["graphs"] = graphs
         job["status"] = "ready"; _log(job, "Done — pick a graph to create a workflow")
-    except subprocess.TimeoutExpired as e:
-        job["status"] = "error"; job["error"] = f"Timeout: {e.cmd[0]}"; _log(job, job["error"])
-    except Exception as e:
-        job["status"] = "error"; job["error"] = str(e); _log(job, f"Error: {e}")
+    except subprocess.TimeoutExpired as exc:
+        job["status"] = "error"; job["error"] = f"Timeout: {exc.cmd[0] if getattr(exc, 'cmd', None) else 'command'}"; _log(job, job["error"])
+    except Exception as exc:
+        job["status"] = "error"; job["error"] = str(exc); _log(job, f"Error: {exc}")
+    try: _persist(job)
+    except OSError: pass
 
 
 def start_job(owner: str, kind: str, url: str = None, branch: str = None, subdir: str = None, zip_bytes: bytes = None, sync=False) -> str:
+    ensure_loaded(); cleanup()
     if kind == "url" and not GH_RE.match(url or ""): raise ImportError_("Only public GitHub URLs like https://github.com/owner/repo are supported")
     if branch and not re.match(r"^[\w./-]+$", branch): raise ImportError_("Invalid branch")
     if subdir and (".." in subdir.split("/") or subdir.startswith("/")): raise ImportError_("Invalid subdir")
-    jid = uuid.uuid4().hex[:10]; d = os.path.realpath(os.path.join(ROOT, jid)); os.makedirs(d)
+    jid = uuid.uuid4().hex[:10]; d = os.path.realpath(os.path.join(root(), jid)); os.makedirs(d)
     job = {"id": jid, "owner": owner, "kind": kind, "url": url, "branch": branch, "subdir": subdir, "dir": d,
-           "status": "queued", "log": [], "graphs": [], "error": None, "created": time.time()}
+           "status": "queued", "log": [], "graphs": [], "error": None, "created": time.time(), "pid": os.getpid(), "keep": False}
     if zip_bytes is not None:
         job["zip_path"] = os.path.join(d, "upload.zip"); open(job["zip_path"], "wb").write(zip_bytes)
     JOBS[jid] = job
+    _persist(job)
     if sync: do_import(jid)
     else: threading.Thread(target=do_import, args=(jid,), daemon=True).start()
     return jid
@@ -194,22 +347,55 @@ def to_workflow(job: dict, gid: str) -> dict:
                        "required_env": job.get("required_env", []), "imported_at": time.time()}}
 
 
+def _run_secrets(source: dict) -> Dict[str, str]:
+    names = list(source.get("required_env") or [])
+    extra = [k.strip() for k in (os.environ.get("STUDIO_IMPORT_SECRETS") or "").split(",") if k.strip()]
+    out = {}
+    for key in names + extra:
+        if key in os.environ and container.allow_secret(key): out[key] = os.environ[key]
+    return out
+
+
+def _open_run(job_dir: str, repo: str, ref: str, secrets: Dict[str, str]) -> container.Child:
+    cmd = runner_cmd(job_dir, "run", repo, ref)
+    if config.import_runtime() == "docker":
+        name = container.container_name()
+        argv = _docker_argv(job_dir, repo, cmd, container.sandbox_env(job_dir, secrets), config.import_network(), name)
+        return container.start(argv, name=name)
+    return container.local_child(cmd, cwd=repo, env=sub_env())
+
+
 def run_imported(wf: dict, inp: dict, on_proc=None, resume: dict | None = None, checkpointing: bool = False):
-    """Sync generator: run original compiled graph in its venv subprocess and yield events.
-    checkpointing: the runner attaches an in-memory LangGraph saver (when the graph has none) and yields `_checkpoint`
-    {node, nodes, blob} after each superstep; resume = {"blob"} continues such a checkpoint (TASK-0021)."""
+    """Sync generator: run the original compiled graph and yield events.
+
+    Docker is the runtime when import is enabled. The subprocess runtime remains for tests.
+    checkpointing: the runner attaches an in-memory LangGraph saver (when the graph has none) and yields
+    ``_checkpoint`` {node, nodes, blob} after each superstep; resume = {"blob"} continues it (TASK-0021).
+    """
     s = wf["source"]
     inp = {**inp, **({"__checkpointing__": True} if checkpointing else {}), **({"__resume__": resume["blob"]} if resume and resume.get("blob") else {})}
     missing = [k for k in s.get("required_env", []) if k not in os.environ and not _in_dotenv(s["repo_dir"], k)]
-    if not os.path.exists(os.path.join(s["job_dir"], "venv", "bin", "python")):
+    # A Docker venv symlinks this file at the image interpreter. On the host that target
+    # does not exist, so exists() would look like a deleted venv. lexists() checks the link.
+    if not os.path.lexists(os.path.join(s["job_dir"], "venv", "bin", "python")):
         yield {"type": "error", "errors": ["The import environment is gone (venv deleted). Please import the repo again."]}; return
-    p = subprocess.Popen(runner_cmd(s["job_dir"], "run", s["repo_dir"], s["ref"]), cwd=s["repo_dir"], env=sub_env(),
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-    timer = threading.Timer(RUN_TIMEOUT, p.kill); timer.start()
-    p.stdin.write(json.dumps(inp)); p.stdin.close()
+    try:
+        child = _open_run(s["job_dir"], s["repo_dir"], s["ref"], _run_secrets(s))
+    except container.DockerMissing as exc:
+        yield {"type": "error", "errors": [str(exc)]}; return
+    if on_proc: on_proc(child)
+    timed_out = False
+
+    def _kill():
+        nonlocal timed_out
+        timed_out = True
+        child.kill()
+
+    timer = threading.Timer(RUN_TIMEOUT, _kill); timer.start()
+    child._p.stdin.write(json.dumps(inp)); child._p.stdin.close()
     got_end = False
     try:
-        for line in p.stdout:
+        for line in child.stdout:
             line = line.strip()
             if not line.startswith("{"): continue
             try: ev = json.loads(line)
@@ -220,13 +406,16 @@ def run_imported(wf: dict, inp: dict, on_proc=None, resume: dict | None = None, 
             if ev.get("node"): ev.setdefault("label", {"__start__": "Start", "__end__": "End"}.get(ev["node"], ev["node"]))
             if ev.get("type") in ("run_finished", "error"): got_end = True
             yield ev
-        p.wait()
+        child.wait()
     finally:
         timer.cancel()
-        if p.poll() is None: p.kill()  # generator closed early (cancel/timeout) -> stop the subprocess
+        if child._p.poll() is None: child.kill()
     if not got_end:
-        err = p.stderr.read()[-800:]
-        yield {"type": "error", "errors": [f"Subprocess exited abnormally (code {p.returncode}, possibly a {RUN_TIMEOUT}s timeout). {err}"]}
+        killed = container.failure_event(child.returncode, timed_out, RUN_TIMEOUT, child.stderr_text())
+        if killed: yield killed
+        else:
+            err = child.stderr_text()[-800:]
+            yield {"type": "error", "errors": [f"Subprocess exited abnormally (code {child.returncode}, possibly a {RUN_TIMEOUT}s timeout). {err}"]}
 
 
 def _in_dotenv(repo, key):

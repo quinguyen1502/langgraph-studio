@@ -301,6 +301,7 @@
     "IMPORT_INVALID": "Import thất bại: {{reason}}",
     "IMPORT_JOB_NOT_FOUND": "Không tìm thấy import job",
     "IMPORT_NOT_READY": "Job chưa sẵn sàng hoặc graph không hợp lệ",
+    "IMPORT_DISABLED": "Import repo đang tắt (đặt STUDIO_ENABLE_IMPORT=1 để bật tính năng thử nghiệm)",
     "RUN_NOT_WAITING": "Run này không chờ phản hồi",
     "RUN_RESPONSE_INVALID": "Phản hồi phải là văn bản (tối đa {{max}} ký tự)",
     "TRIGGER_TOKEN_INVALID": "Token workflow bị thiếu, không hợp lệ hoặc đã thu hồi",

@@ -16,6 +16,7 @@ __pycache__/
 *.db-wal
 *.db-shm
 backend/imports/
+.imports/
 # env/secrets
 .env
 .env.*

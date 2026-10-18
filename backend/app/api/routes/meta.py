@@ -9,7 +9,8 @@ router = APIRouter(prefix="/api", tags=["meta"])
 def health():
     bus = get_run_bus()
     return {"ok": True, "llm_mode": config.llm_mode(), "database": get_db().engine.dialect.name,
-            "run_bus": bus.kind, "run_bus_ok": bus.ping(), "tracing": get_telemetry().enabled}
+            "run_bus": bus.kind, "run_bus_ok": bus.ping(), "tracing": get_telemetry().enabled,
+            "import_enabled": config.import_enabled()}
 
 @router.get("/tools")
 def tools(user=Depends(current_user)): return [{"name": k, "doc": (v.__doc__ or "").strip()} for k, v in TOOLS.items()]

@@ -97,3 +97,22 @@ def callback_rate_window() -> int: return max(1, _int("STUDIO_CALLBACK_RATE_WIND
 def mcp_stdio_enabled() -> bool: return os.environ.get("STUDIO_MCP_STDIO") == "1"  # stdio servers run processes on the API host: off by default
 def mcp_allow_private() -> bool: return os.environ.get("STUDIO_MCP_ALLOW_PRIVATE") == "1"  # HTTP servers on private/loopback addresses
 def mcp_timeout() -> float: return max(1.0, float(os.environ.get("STUDIO_MCP_TIMEOUT", 30)))  # per MCP session (s)
+# --- TASK-0015: repo import is experimental and off until STUDIO_ENABLE_IMPORT=1 ---
+def import_enabled() -> bool: return os.environ.get("STUDIO_ENABLE_IMPORT") == "1"
+def import_runtime() -> str:
+    """``docker`` when import is enabled, unless STUDIO_IMPORT_RUNTIME=subprocess."""
+    choice = (os.environ.get("STUDIO_IMPORT_RUNTIME") or "").strip().lower()
+    if choice in ("docker", "subprocess"): return choice
+    return "docker" if import_enabled() else "subprocess"
+def import_max_bytes() -> int: return max(1, _int("STUDIO_IMPORT_MAX_BYTES", 200 * 1024 * 1024))
+def import_max_age_s() -> float: return max(0, _int("STUDIO_IMPORT_MAX_AGE_HOURS", 72)) * 3600
+def import_memory() -> str: return os.environ.get("STUDIO_IMPORT_MEMORY", "1g") or "1g"
+def import_cpus() -> str: return os.environ.get("STUDIO_IMPORT_CPUS", "1") or "1"
+def import_pids() -> int: return max(32, _int("STUDIO_IMPORT_PIDS", 256))
+def import_image() -> str: return os.environ.get("STUDIO_IMPORT_IMAGE", "python:3.12-slim") or "python:3.12-slim"
+def import_network() -> str:
+    choice = (os.environ.get("STUDIO_IMPORT_NETWORK") or "bridge").strip().lower()
+    return choice if choice in ("bridge", "none") else "bridge"
+def import_host_dir() -> str | None:
+    value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
+    return value or None

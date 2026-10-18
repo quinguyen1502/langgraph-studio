@@ -21,7 +21,7 @@ test('notification bell: waiting run appears, opens the run, marks read', async 
   const wid = (await (await page.request.post('/api/workflows', { headers: H, data: APPROVAL })).json()).data.id
   await page.goto(`/workflows/${wid}`)
   await page.getByRole('tab', { name: 'Input' }).first().click()
-  await page.locator('[role=tabpanel] textarea').first().fill('{"message": "refund 42"}')
+  await page.locator('#run-input').fill('{"message": "refund 42"}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
   await page.goto('/workflows')

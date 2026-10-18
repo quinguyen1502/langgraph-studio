@@ -17,11 +17,11 @@ test('tidy up a pile of nodes left→right and top→bottom, undo in one step', 
   let b = Object.fromEntries((await boxes(page)).map(x => [x.id, x]))
   expect(overlap(Object.values(b))).toBe(false); expect(b.start.x).toBeLessThan(b.a.x); expect(b.a.x).toBeLessThan(b.end.x)
   await expect(page.locator('#unsaved-badge')).toBeVisible()
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(300); expect(overlap(await boxes(page))).toBe(true)
+  await page.keyboard.press('ControlOrMeta+z'); await page.waitForTimeout(300); expect(overlap(await boxes(page))).toBe(true)
   await page.locator('#more-btn').click(); await page.locator('#layout-tb').click(); await page.waitForTimeout(500)
   b = Object.fromEntries((await boxes(page)).map(x => [x.id, x]))
   expect(overlap(Object.values(b))).toBe(false); expect(b.start.y).toBeLessThan(b.a.y); expect(b.a.y).toBeLessThan(b.end.y)
-  await page.keyboard.press('Control+z'); await page.waitForTimeout(300)
+  await page.keyboard.press('ControlOrMeta+z'); await page.waitForTimeout(300)
   await page.locator('#more-btn').click(); await page.locator('#layout-btn').click(); await page.waitForTimeout(500)  // remembers TB
   b = Object.fromEntries((await boxes(page)).map(x => [x.id, x])); expect(b.start.y).toBeLessThan(b.end.y)
 })

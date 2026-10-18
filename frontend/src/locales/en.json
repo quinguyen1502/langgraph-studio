@@ -333,6 +333,7 @@
     "RUN_NOT_FOUND": "Run not found, already finished or not yours",
     "RUN_NODE_NOT_REACHED": "The run finished without reaching node '{{node}}'",
     "NODE_FAILED": "Node failed",
+    "HTTP_TOOL_URL_BLOCKED": "HTTP Tool node {{node}}: the URL must be a public http(s) address",
     "CREDENTIAL_NOT_FOUND": "Credential not found or not yours",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Unsupported provider: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key is required",

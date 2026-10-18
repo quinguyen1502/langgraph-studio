@@ -11,10 +11,10 @@ test('delete → undo → redo, coalesced typing, one step per drag, unsaved mar
   // delete → undo → redo (keyboard and buttons)
   await reply.click(); await page.keyboard.press('Delete'); await expect(reply).toHaveCount(0)
   await expect(page.locator('#unsaved-badge')).toBeVisible()
-  await page.locator('.react-flow__pane').click(); await page.keyboard.press('Control+z'); await expect(reply).toHaveCount(1)
+  await page.locator('.react-flow__pane').click(); await page.keyboard.press('ControlOrMeta+z'); await expect(reply).toHaveCount(1)
   await expect(page.locator('.react-flow__edge')).toHaveCount(2); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
   await redo.click(); await expect(reply).toHaveCount(0)
-  await page.keyboard.press('Control+Shift+z'); await expect(reply).toHaveCount(0)  // nothing more to redo
+  await page.keyboard.press('ControlOrMeta+Shift+z'); await expect(reply).toHaveCount(0)  // nothing more to redo
   await undo.click(); await expect(reply).toHaveCount(1); await expect(redo).toBeEnabled()
   // typing a label is one step; text-field Ctrl+Z stays native (no graph undo)
   await reply.click(); const label = page.locator('aside').last().locator('input').first()

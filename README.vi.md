@@ -24,7 +24,7 @@ Muốn model thật, mở **Credentials** trên trang danh sách workflow và th
 
 ## Tài khoản
 
-Mật khẩu hash bằng PBKDF2-SHA256 (200 nghìn vòng, salt riêng). Đăng nhập trả JWT HS256, hạn 24 giờ (`JWT_TTL_SECONDS`, mặc định 86400). Đặt `JWT_SECRET` khi chạy chung hoặc production. Giá trị còn là placeholder thì backend ghi cảnh báo. `STUDIO_ENV=production` thì từ chối khởi động.
+Mật khẩu hash bằng PBKDF2-SHA256 (200 nghìn vòng, salt riêng). Đăng nhập trả JWT HS256, hạn 24 giờ (`JWT_TTL_SECONDS`, mặc định 86400). Đặt `JWT_SECRET` khi chạy chung hoặc production. Giá trị còn là placeholder thì backend ghi cảnh báo. `STUDIO_ENV=production` thì từ chối khởi động. `STUDIO_CORS_ORIGINS` (phân tách bằng dấu phẩy) liệt kê các origin trình duyệt được gọi API. Khi chưa đặt, môi trường dev cho phép `*`, production không cho origin nào, vì UI chạy cùng origin. URL WebSocket mang `?token=`; log của uvicorn ghi thành `token=***`.
 
 Đăng ký: mật khẩu 8–128 ký tự, có ít nhất một chữ và một số. Mật khẩu demo `admin123` không bị quy tắc này. Email được cắt khoảng trắng và đưa về chữ thường. Đăng nhập sai luôn báo email hoặc mật khẩu không đúng.
 
@@ -70,8 +70,8 @@ UI có tiếng Anh và tiếng Việt (`frontend/src/locales/en.json` và `vi.js
 ```
 
 - **LLM.** `model`, `prompt` với `{{state.field}}`, `output_field`. Khi đang chạy, từng đoạn chữ tới qua event `node_token` và hiện ở dòng Logs cùng tab Output. Các đoạn này không lưu vào lịch sử run. Văn bản cuối không đổi.
-- **Tool.** `mode=function` cộng tên đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py` (ví dụ `lookup_order`), hoặc `mode=http` với `method`, `url`, và `body` có template.
-- **Condition.** `field`. Nhãn cạnh đi ra khớp đúng chuỗi, rồi không phân biệt hoa thường, rồi theo chuỗi con. Cạnh `default` là lối còn lại.
+- **Tool.** `mode=function` cộng tên đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py` (ví dụ `lookup_order`), hoặc `mode=http` với `method`, `url`, và `body` có template. URL của HTTP Tool phải trỏ tới địa chỉ công khai: loopback, mạng riêng, link-local và địa chỉ metadata bị chặn với `HTTP_TOOL_URL_BLOCKED`, trừ khi `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. Request đi tới đúng IP đã kiểm tra, không theo redirect, và hết hạn sau `STUDIO_HTTP_TOOL_TIMEOUT` giây (mặc định 30).
+- **Condition.** `field`. Nhãn cạnh đi ra khớp đúng chuỗi, rồi không phân biệt hoa thường sau khi bỏ khoảng trắng và dấu câu, rồi theo nguyên từ trong giá trị, nhãn dài nhất thắng. Thứ tự nhãn không ảnh hưởng: `Disapprove.` chọn `disapprove`, không chọn `approve`. Hai nhãn nguyên từ dài bằng nhau là mơ hồ. Cạnh `default` là lối còn lại khi không khớp hoặc mơ hồ.
 - **Nhánh song song.** Nhiều cạnh ra từ một node không phải Condition chạy cùng superstep. Trường state bị nhiều nhánh ghi cần reducer: `append` (list), `merge` (object), hoặc `add` (số). Mặc định là `replace`. Thiếu reducer thì validate lỗi.
 - **Join.** Chờ mọi nhánh đi vào rồi chạy một lần. Cần ít nhất hai cạnh vào, và không nhận cạnh thẳng từ Condition.
 - **Subgraph.** `workflow_id` của một workflow đã lưu của bạn. Node bên trong hiện trên trace dạng `Subgraph › node` (id `sub/node`). State dùng chung theo tên trường. Vòng tham chiếu, workflow con không tồn tại hoặc là bản import, và lồng quá năm cấp đều lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`).

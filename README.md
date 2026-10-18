@@ -24,7 +24,7 @@ To use a real model, open **Credentials** on the workflow list and add a provide
 
 ## Accounts
 
-Passwords are hashed with PBKDF2-SHA256 (200k rounds, a unique salt). Login returns an HS256 JWT that lasts 24 hours (`JWT_TTL_SECONDS`, default 86400). Set `JWT_SECRET` for any shared or production process. If that value is still the placeholder, the backend logs a warning. With `STUDIO_ENV=production` it refuses to start.
+Passwords are hashed with PBKDF2-SHA256 (200k rounds, a unique salt). Login returns an HS256 JWT that lasts 24 hours (`JWT_TTL_SECONDS`, default 86400). Set `JWT_SECRET` for any shared or production process. If that value is still the placeholder, the backend logs a warning. With `STUDIO_ENV=production` it refuses to start. `STUDIO_CORS_ORIGINS` (comma-separated) lists the browser origins allowed to call the API. When it is unset, development allows `*` and production allows none, because the UI is served from the same origin. WebSocket URLs carry `?token=`; uvicorn's log lines show it as `token=***`.
 
 Registration requires a password of 8–128 characters with at least one letter and one digit. The seeded `admin123` password is exempt. Email is trimmed and lower-cased. A bad login always says the email or password is wrong.
 
@@ -70,8 +70,8 @@ The UI is English and Vietnamese (`frontend/src/locales/en.json` and `vi.json`).
 ```
 
 - **LLM.** `model`, `prompt` with `{{state.field}}`, `output_field`. While a run is going, token deltas arrive as `node_token` events and show in the Logs row and the Output tab. They are not stored in run history. The final text is unchanged.
-- **Tool.** `mode=function` plus a name registered with `@register_tool` in `backend/app/engine/tools.py` (for example `lookup_order`), or `mode=http` plus `method`, `url`, and a templated `body`.
-- **Condition.** `field`. Outgoing edge labels are matched exactly, then case-insensitively, then as a substring. An optional `default` edge is the fallback.
+- **Tool.** `mode=function` plus a name registered with `@register_tool` in `backend/app/engine/tools.py` (for example `lookup_order`), or `mode=http` plus `method`, `url`, and a templated `body`. An HTTP Tool URL must resolve to a public address: loopback, private, link-local, and metadata addresses fail with `HTTP_TOOL_URL_BLOCKED` unless `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. The request goes to the checked IP, does not follow redirects, and times out after `STUDIO_HTTP_TOOL_TIMEOUT` seconds (default 30).
+- **Condition.** `field`. Outgoing edge labels are matched exactly, then case-insensitively after trimming spaces and punctuation, then as a whole word in the value, where the longest label wins. Label order does not matter: `Disapprove.` picks `disapprove`, not `approve`. Two whole-word labels of the same length are ambiguous. An optional `default` edge is the fallback for no match or an ambiguous one.
 - **Parallel branches.** Several outgoing edges from a node that is not a Condition run in the same superstep. A state field written by more than one branch needs a reducer: `append` (list), `merge` (object), or `add` (number). The default is `replace`. A missing reducer fails validation.
 - **Join.** Waits for every incoming branch, then runs once. It needs at least two incoming edges and cannot take an edge straight from a Condition.
 - **Subgraph.** `workflow_id` of one of your saved workflows. Inner nodes appear in the trace as `Subgraph › node` (id `sub/node`). State is shared by field name. Cycles, a missing or imported child, and nesting deeper than five levels fail on save and on run (`WORKFLOW_INVALID`).

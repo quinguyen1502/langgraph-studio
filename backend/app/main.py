@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.deps import get_db, run_service, run_worker
-from .core.logging import get_logger
+from .core.logging import get_logger, redact_tokens
 from .core import config
 from .api.error_handlers import register_error_handlers
 from .api.routes import ROUTERS
@@ -37,7 +37,9 @@ def create_app() -> FastAPI:
         if w: await w.stop()
 
     app = FastAPI(title="LangGraph Studio MVP", default_response_class=EnvelopeResponse, lifespan=lifespan)  # every REST response is an envelope
-    app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    if origins := config.cors_origins():  # STUDIO_CORS_ORIGINS; production default: same-origin only (TASK-0039)
+        app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
+    redact_tokens("uvicorn.access", "uvicorn.error")  # WebSocket URLs carry ?token=<JWT>
     register_error_handlers(app)
     for r in ROUTERS: app.include_router(r)
     return app

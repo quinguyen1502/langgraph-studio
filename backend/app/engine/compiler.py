@@ -1,6 +1,7 @@
 """Compile workflow JSON {nodes, edges, state} into a LangGraph StateGraph."""
 from __future__ import annotations
-from typing import Annotated, Any, Dict, Optional, TypedDict
+import re, string
+from typing import Annotated, Any, Dict, List, Optional, TypedDict
 from langgraph.cache.memory import InMemoryCache
 from langgraph.graph import StateGraph, START, END
 from .errors import ValidationError
@@ -10,6 +11,21 @@ from .reducers import fn_of
 from .validator import validate
 
 TYPE_MAP = {"string": str, "number": float, "integer": int, "boolean": bool, "object": dict, "list": list}
+
+
+def pick_branch(value: str, labels: List[str]) -> Optional[str]:
+    """Condition label for `value` (TASK-0039, REQ-0027), independent of label order: exact match, then case-insensitive
+    after trimming spaces and punctuation, then the longest label found as a whole word. A tie between two longest
+    whole-word labels is ambiguous: None, so the default edge (or an error) applies."""
+    if value in labels: return value
+    norm = lambda x: x.strip().strip(string.punctuation + " ").casefold()
+    for k in labels:
+        if norm(k) and norm(k) == norm(value): return k
+    hits = [k for k in labels if norm(k) and re.search(rf"(?<!\w){re.escape(norm(k))}(?!\w)", value.casefold())]
+    if not hits: return None
+    best = max(len(norm(k)) for k in hits)
+    top = [k for k in hits if len(norm(k)) == best]
+    return top[0] if len(top) == 1 else None
 
 
 def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, resume=None, effects=None, checkpointer=None, ports=None):
@@ -54,9 +70,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
             def router(state, field=field, mapping=mapping, default=default, nid=nid, label=label):
                 raw = state.get(field)
                 v = ("" if raw is None else str(raw).lower() if isinstance(raw, bool) else str(raw)).strip()
-                if v in mapping: return v
-                for k in mapping:  # case-insensitive / contains fallback
-                    if k.lower() == v.lower() or k.lower() in v.lower(): return k
+                if (k := pick_branch(v, list(mapping))) is not None: return k
                 if default and default in mapping: return default
                 raise ValueError(f"Condition '{label}' ({nid}): value {field}='{v[:100]}' matches no label {list(mapping)} and there is no default")
             g.add_conditional_edges(nid, router, mapping)

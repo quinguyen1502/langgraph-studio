@@ -30,7 +30,7 @@ class TeamRepository:
     # ---- members ----
     def members(self, tid: str) -> list[tuple[TeamMember, User]]:
         with self.db.session() as s:
-            return list(s.execute(select(TeamMember, User).join(User, User.id == TeamMember.user_id).where(TeamMember.team_id == tid).order_by(User.email)).tuples())
+            return list(s.execute(select(TeamMember, User).join(User, User.id == TeamMember.user_id).where(TeamMember.team_id == tid).order_by(User.email)))
 
     def add_member(self, m: TeamMember) -> bool:
         """True when the user was not a member yet."""
@@ -49,7 +49,7 @@ class TeamRepository:
     def shares_for_workflow(self, wid: str) -> list[tuple[WorkflowTeamShare, str]]:
         with self.db.session() as s:
             return list(s.execute(select(WorkflowTeamShare, Team.name).join(Team, Team.id == WorkflowTeamShare.team_id)
-                                  .where(WorkflowTeamShare.workflow_id == wid).order_by(Team.name)).tuples())
+                                  .where(WorkflowTeamShare.workflow_id == wid).order_by(Team.name)))
 
     def roles_for_user(self, uid: str, wid: Optional[str] = None) -> dict[str, list[str]]:
         """workflow id -> share roles granted through this user's teams (optionally for one workflow)."""

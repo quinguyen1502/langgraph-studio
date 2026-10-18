@@ -1,19 +1,17 @@
 """Result webhooks (TASK-0007, hardened in TASK-0019 / DEC-0016).
 
-- SSRF guard: http(s) only; private / loopback / link-local / reserved / multicast targets are refused
-  unless STUDIO_ALLOW_PRIVATE_CALLBACKS=1.
-- DNS-rebinding safe: the host is resolved ONCE at delivery time, every address is validated, and the request
-  connects to that pinned IP (Host header + TLS SNI/certificate check still use the original hostname).
+- SSRF guard and DNS-rebinding-safe pinned IP from `core/net.py` (shared with MCP and HTTP Tool nodes);
+  private targets are refused unless STUDIO_ALLOW_PRIVATE_CALLBACKS=1. The host is resolved at delivery time.
 - Signed: `X-Studio-Signature: t=<unix ts>,v1=<hex HMAC-SHA256(secret, "<ts>.<raw body>")>` with the token's
   signing secret (shown once when the token is created). `verify_signature` is the reference check.
 """
-import hashlib, hmac, ipaddress, json, socket, time
+import hashlib, hmac, json, time
 from dataclasses import dataclass
 from typing import Optional
-from urllib.parse import urlparse, urlunparse
 import httpx
 from ..core import config
 from ..core.errors import AppError
+from ..core.net import pinned_request, public_address  # noqa: F401  (re-exported for MCP and tests)
 from ..core.logging import get_logger
 
 log = get_logger("webhooks")
@@ -26,22 +24,6 @@ def http_client() -> httpx.Client:
     return httpx.Client(timeout=10, follow_redirects=False)  # a redirect could point anywhere: never follow
 
 
-def _blocked(ip: ipaddress._BaseAddress) -> bool:
-    return ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast or ip.is_unspecified
-
-
-def public_address(url: Optional[str], allow_private: bool, code: str = "CALLBACK_URL_INVALID") -> tuple[str, str]:
-    """Validate an outbound http(s) `url` and resolve its host once. Returns (url, pinned_ip); raises AppError(code).
-    Private, loopback, link-local and reserved addresses are refused unless `allow_private` (SSRF guard)."""
-    u = urlparse(url or "")
-    if u.scheme not in ("http", "https") or not u.hostname: raise AppError(code)
-    try: addrs = [ai[4][0].split("%")[0] for ai in socket.getaddrinfo(u.hostname, u.port or (443 if u.scheme == "https" else 80), proto=socket.IPPROTO_TCP)]
-    except (OSError, UnicodeError): raise AppError(code) from None
-    if not addrs: raise AppError(code)
-    if not allow_private and any(_blocked(ipaddress.ip_address(a)) for a in addrs): raise AppError(code)
-    return url or "", addrs[0]
-
-
 def resolve(url: Optional[str]) -> tuple[str, str]:
     """Validate a callback `url` and resolve its host once. Returns (url, pinned_ip). Raises CALLBACK_URL_INVALID."""
     return public_address(url, config.allow_private_callbacks())
@@ -50,16 +32,6 @@ def resolve(url: Optional[str]) -> tuple[str, str]:
 def check_callback_url(url: Optional[str]) -> Optional[str]:
     """Early validation when the run is queued (the address is resolved and checked again at delivery)."""
     return resolve(url)[0] if url else None
-
-
-def pinned_request(url: str, ip: str) -> tuple[str, dict, dict]:
-    """(url with the IP as host, headers, httpx extensions) so the connection goes to the validated IP."""
-    u = urlparse(url); host = u.hostname or ""
-    ip_host = f"[{ip}]" if ":" in ip else ip
-    netloc = ip_host + (f":{u.port}" if u.port else "")
-    headers = {"Host": u.netloc.rsplit("@", 1)[-1]}
-    ext = {"sni_hostname": host} if u.scheme == "https" else {}
-    return urlunparse(u._replace(netloc=netloc)), headers, ext
 
 
 def _mac(secret: str, body: bytes, ts: int) -> str:

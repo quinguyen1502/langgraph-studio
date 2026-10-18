@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { EditorLayout } from '@/components/editor-layout'
 import { NodeInput } from '@/components/node-input'
 import { NodeRuntime } from '@/components/node-runtime'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -230,16 +231,14 @@ function NodeMenu({ id, type, edges, insert, onCopy, onCut, onDuplicate, onDelet
 
 function EditorSkeleton() {
   const { t } = useTranslation()
-  return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background" aria-busy="true">
-    <span className="sr-only">{t('common.loading')}</span>
-    <header className="col-span-3 flex items-center gap-3 border-b px-4">
+  return <EditorLayout busy
+    header={<header className="h-14 shrink-0 flex items-center gap-3 border-b px-4"><span className="sr-only">{t('common.loading')}</span>
       <Skeleton className="size-8" /><Skeleton className="h-5 w-40" /><Skeleton className="h-8 w-72" /><Skeleton className="ml-auto h-8 w-28" />
-    </header>
-    <aside className="space-y-2 border-r p-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}</aside>
-    <main className="p-8"><Skeleton className="h-16 w-56 rounded-xl" /></main>
-    <aside className="space-y-2 border-l p-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-full" /><Skeleton className="h-24 w-full" /></aside>
-    <section className="col-span-3 space-y-2 border-t p-3"><Skeleton className="h-8 w-48" /><Skeleton className="h-40 w-full" /></section>
-  </div>
+    </header>}
+    left={<aside className="h-full space-y-2 overflow-hidden p-3">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12 w-full" />)}</aside>}
+    canvas={<main className="h-full p-8"><Skeleton className="h-16 w-56 rounded-xl" /></main>}
+    right={<aside className="h-full space-y-2 overflow-hidden p-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-8 w-full" /><Skeleton className="h-24 w-full" /></aside>}
+    bottom={<section className="h-full space-y-2 overflow-hidden p-3"><Skeleton className="h-8 w-48" /><Skeleton className="h-40 w-full" /></section>} />
 }
 
 export function EditorPage() { return <ReactFlowProvider><Studio /></ReactFlowProvider> }
@@ -508,9 +507,9 @@ function Studio() {
     </div>
   </div>
 
-  return <div className="h-screen grid grid-rows-[56px_1fr_300px] grid-cols-[250px_1fr_320px] bg-background text-foreground text-sm">
-    {/* Top bar */}
-    <header className="col-span-3 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b px-4">
+  return <EditorLayout className="text-foreground text-sm"
+    /* Top bar */
+    header={<header className="h-14 shrink-0 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center border-b px-4">
       <div className="flex min-w-0 items-center gap-2">
         <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
         <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>LangGraph Studio</div>
@@ -562,10 +561,10 @@ function Studio() {
       <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
       <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
-    </header>
+    </header>}
 
-    {/* Left */}
-    <aside className="border-r bg-muted/30 min-h-0">
+    /* Left */
+    left={<aside className="h-full bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><div className="p-3 space-y-4">
         <div>
           <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.palette')}</div>
@@ -595,12 +594,12 @@ function Studio() {
           <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
         </div>
       </div></ScrollArea>
-    </aside>
+    </aside>}
 
-    {/* Canvas */}
-    <ContextMenu>
+    /* Canvas */
+    canvas={<ContextMenu>
     <ContextMenuTrigger asChild>
-    <main className="min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
+    <main className="h-full min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
       {clipNote && <div role="status" id="clip-notice" className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-md border bg-popover text-popover-foreground shadow-md px-3 py-1.5 text-sm">{clipNote}</div>}
       <CanvasEdit.Provider value={editable}>
       <ReactFlow nodes={nodesView} edges={edges} nodeTypes={nodeTypes} onNodesChange={onNodesChange} onEdgesChange={onEdgesChange}
@@ -638,11 +637,11 @@ function Studio() {
         <ContextMenuItem id="delete-edge" variant="destructive" onSelect={() => ctx && removeIds([], [ctx.id])}><Trash2 />{t('editor.deleteEdge')}</ContextMenuItem>
       </>}
     </ContextMenuContent>
-    </ContextMenu>
+    </ContextMenu>}
 
-    {/* Right config */}
-    <aside className="border-l bg-muted/30 min-h-0">
-      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 w-[318px]">
+    /* Right config */
+    right={<aside className="h-full bg-muted/30 min-h-0">
+      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
@@ -680,10 +679,10 @@ function Studio() {
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'code' && <>
-            <div className="flex flex-wrap gap-1 max-w-[286px]">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />{t('editor.looksLlm')}</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">{t('editor.readOnly')}</Badge></div>
+            <div className="flex flex-wrap gap-1">{d.is_llm && <Badge variant="outline" className="gap-1"><Sparkles className="size-3" />{t('editor.looksLlm')}</Badge>}{d.kind && <Badge variant="secondary">{d.kind}</Badge>}<Badge variant="outline">{t('editor.readOnly')}</Badge></div>
             <F label={t('field.nodeName')}><Input readOnly value={d.node_name || ''} className="font-mono text-xs" /></F>
             <F label={t('field.reference')}><Input readOnly value={d.ref || ''} className="font-mono text-xs" /></F>
-            <F label={t('field.source')}><pre className="h-72 w-[286px] overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
+            <F label={t('field.source')}><pre className="h-72 w-full overflow-auto rounded-md border bg-muted/50 p-2 text-[11px] leading-relaxed whitespace-pre">{d.source}</pre></F>
           </>}
           {selNode.type === 'retriever' && <>
             <RetrieverSettings kb={d.knowledge_base_id} topK={d.top_k} onKb={v => upd('knowledge_base_id', v)} onTopK={v => upd('top_k', v)} />
@@ -707,10 +706,10 @@ function Studio() {
           </>}
         </div>}
       </div></fieldset></ScrollArea>
-    </aside>
+    </aside>}
 
-    {/* Bottom run panel */}
-    <section className="col-span-3 border-t min-h-0 flex flex-col">
+    /* Bottom run panel */
+    bottom={<section className="h-full min-h-0 flex flex-col">
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
         <div className="flex items-center gap-3 px-3 py-2 border-b">
           <TabsList><TabsTrigger value="input">{t('editor.tabInput')}</TabsTrigger><TabsTrigger value="logs">{t('editor.tabLogs')} {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
@@ -750,6 +749,5 @@ function Studio() {
           </div></ScrollArea>
         </TabsContent>
       </Tabs>
-    </section>
-  </div>
+    </section>} />
 }

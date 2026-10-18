@@ -43,7 +43,8 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
       {c.team_id && <span className="font-mono text-xs text-muted-foreground">({c.team_id})</span>}
       <Badge variant="outline" className="font-mono">{c.hint}</Badge>
     </div>
-    {shared ? <>
+    {k.link_based ? <p className="text-xs text-muted-foreground">{t('approvals.linkNote')}</p>  /* no callback: answered on /approve */
+      : shared ? <>
       <CopyField id={`${idp}-shared`} label={t('approvals.sharedUrl')} value={shared} />
       <p className="text-xs text-muted-foreground">{t('approvals.sharedHelp', { team: c.team_id })}</p></>
       : <CopyField id={`${idp}-url`} label={t('approvals.callbackUrl')} value={url} />}

@@ -32,8 +32,10 @@ export function HumanApprovalSettings({ value, channels, onChange }: { value?: A
       {!list.length && <p className="text-xs text-muted-foreground" id="approval-no-channels">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels" id="approval-open-channels">{t('approvals.node.addChannel')}</TextLink></p>}</div>
     {v.channel && <>
       {missing && <Alert variant="warning" id="approval-not-connected"><TriangleAlert /><AlertDescription className="text-xs">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels">{t('approvals.node.addChannel')}</TextLink></AlertDescription></Alert>}
-      <div className="space-y-1.5"><Label htmlFor="approval-target" className="text-xs text-muted-foreground">{t(`approvals.node.target.${v.channel}`)}</Label>
-        <Input id="approval-target" className="font-mono text-xs" value={v.target || ''} placeholder={t(`approvals.node.targetPh.${v.channel}`)} onChange={e => set({ target: e.target.value })} /></div>
+      {channels?.kinds.find(k => k.kind === v.channel)?.target_required === false
+        ? <p className="text-xs text-muted-foreground" id="approval-no-target">{t('approvals.node.noTarget')}</p>
+        : <div className="space-y-1.5"><Label htmlFor="approval-target" className="text-xs text-muted-foreground">{t(`approvals.node.target.${v.channel}`)}</Label>
+          <Input id="approval-target" className="font-mono text-xs" value={v.target || ''} placeholder={t(`approvals.node.targetPh.${v.channel}`)} onChange={e => set({ target: e.target.value })} /></div>}
       <div className="space-y-1.5"><Label htmlFor="approval-approvers" className="text-xs text-muted-foreground">{t('approvals.node.approvers')}</Label>
         <Input id="approval-approvers" className="text-xs" value={raw} placeholder="lead@example.com, ops@example.com"
           onChange={e => { setRaw(e.target.value); set({ approvers: e.target.value.split(',').map(x => x.trim()).filter(Boolean) }) }} />

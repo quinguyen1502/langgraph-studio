@@ -582,18 +582,31 @@
   "approvals": {
     "kind": {
       "slack": "Slack",
-      "telegram": "Telegram"
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "teams": "Microsoft Teams"
     },
     "optional": "optional",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
       "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
-      "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL)."
+      "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL).",
+      "whatsapp": "In a Meta app with the WhatsApp product, copy the access token, the phone number ID and the app secret, and choose a verify token. Then set the webhook in the Meta dashboard to the callback URL below with that verify token, and subscribe to \"messages\". Button messages only reach people who wrote to the number in the last 24 hours; outside that window, give an approved template with two quick-reply buttons (Approve, Reject).",
+      "email": "Sends the request through the studio's SMTP settings (SMTP_HOST) with Approve / Reject links. Whoever answers signs in to the studio, so there is no account to link. Needs STUDIO_PUBLIC_URL.",
+      "teams": "In Teams, add the Workflows template \"Post to a channel when a webhook request is received\" and paste its URL here. The card's buttons open the studio, where the approver signs in. Needs STUDIO_PUBLIC_URL."
     },
     "field": {
       "bot_token": "Bot token",
       "signing_secret": "Signing secret",
-      "webhook_secret": "Webhook secret"
+      "webhook_secret": "Webhook secret",
+      "access_token": "Access token",
+      "phone_number_id": "Phone number ID",
+      "app_secret": "App secret",
+      "verify_token": "Verify token",
+      "template_name": "Template name (optional)",
+      "template_lang": "Template language (optional, e.g. en, vi)",
+      "webhook_url": "Workflows webhook URL"
     },
     "callbackUrl": "Callback URL",
     "copy": "Copy",
@@ -606,15 +619,18 @@
     "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. Slack accounts are linked per workspace. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
     "identity": {
       "slack": "Slack member ID",
-      "telegram": "Telegram user ID"
+      "telegram": "Telegram user ID",
+      "whatsapp": "WhatsApp number"
     },
     "identityPh": {
       "slack": "U0123ABCD",
-      "telegram": "123456789"
+      "telegram": "123456789",
+      "whatsapp": "84901234567"
     },
     "identityHow": {
       "slack": "Slack: your profile → ⋮ → Copy member ID.",
-      "telegram": "Telegram: message @userinfobot to see your numeric ID."
+      "telegram": "Telegram: message @userinfobot to see your numeric ID.",
+      "whatsapp": "WhatsApp: your number in international form, digits only (no +)."
     },
     "auditEmpty": "No approval requests yet.",
     "col": {
@@ -641,14 +657,21 @@
       "addChannel": "Add one in Channels",
       "target": {
         "slack": "Slack channel ID",
-        "telegram": "Telegram chat ID"
+        "telegram": "Telegram chat ID",
+        "whatsapp": "WhatsApp number",
+        "email": "E-mail addresses",
+        "teams": "Destination"
       },
       "targetPh": {
         "slack": "C0123ABCD",
-        "telegram": "-1001234567890"
+        "telegram": "-1001234567890",
+        "whatsapp": "84901234567",
+        "email": "lead@example.com, ops@example.com",
+        "teams": ""
       },
       "approvers": "Approvers (e-mails)",
-      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts."
+      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts.",
+      "noTarget": "The webhook posts to its Teams channel."
     },
     "verified": "Verified",
     "unverified": "Not verified",
@@ -677,7 +700,9 @@
     "removeTitle": "Remove connection {{name}}?",
     "removeBody": "Human nodes using it stop sending approval requests here. This cannot be undone.",
     "unlinkTitle": "Unlink {{name}}?",
-    "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again."
+    "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again.",
+    "whatsappWindow": "WhatsApp delivers the code only if you messaged the business number in the last 24 hours.",
+    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account."
   },
   "settings": {
     "title": "Settings",
@@ -711,7 +736,10 @@
     },
     "platform": {
       "slack": "Buttons in a Slack channel. One connection per workspace.",
-      "telegram": "Buttons in a Telegram group or private chat, through your bot."
+      "telegram": "Buttons in a Telegram group or private chat, through your bot.",
+      "whatsapp": "Reply buttons in a WhatsApp chat, from your business number.",
+      "email": "An e-mail with Approve / Reject links to the studio.",
+      "teams": "An Adaptive Card in a Teams channel with buttons that open the studio."
     },
     "scopeHelp": {
       "org": "Organization connections are set up by an admin and usable by everyone.",
@@ -1203,6 +1231,31 @@
       "0 9 * * 1": "Mondays at 09:00",
       "0 0 1 * *": "First day of the month",
       "custom": "Custom"
+    }
+  },
+  "approve": {
+    "title": "Approval request",
+    "approveQ": "Approve this request?",
+    "rejectQ": "Reject this request?",
+    "approve": "Approve",
+    "reject": "Reject",
+    "workflow": "Workflow",
+    "step": "Step",
+    "question": "Question",
+    "expires": "Expires",
+    "done": {
+      "approved": "Approved. The run goes on.",
+      "rejected": "Rejected. The run goes on with the rejection."
+    },
+    "decided": "Already answered{{by}}.",
+    "by": " by {{who}}",
+    "openRun": "Open the run",
+    "expired": "This request has expired.",
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "superseded": "Answered elsewhere"
     }
   }
 }

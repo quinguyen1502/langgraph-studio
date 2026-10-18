@@ -49,6 +49,7 @@ class IdentityService:
             slots.append({"kind": kind, "team_id": team or None, "team_name": name, "available": available, "external_id": i.external_id if i else None,
                           "verified": bool(i and i.verified_at), "code_pending": pending, "code_expires": i.code_expires if pending else None})
         for kind, a in self.adapters.items():
+            if a.link_based: continue  # e-mail / Teams: the studio account decides, nothing to link (TASK-0047)
             if a.per_team:
                 for c in self.channels.workspaces(uid, kind): slot(kind, c.team_id, c.name, True)
             else: slot(kind, "", None, self.channels.dm_channel(uid, kind) is not None)

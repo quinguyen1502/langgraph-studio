@@ -582,18 +582,31 @@
   "approvals": {
     "kind": {
       "slack": "Slack",
-      "telegram": "Telegram"
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "teams": "Microsoft Teams"
     },
     "optional": "không bắt buộc",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
       "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",
-      "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai)."
+      "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai).",
+      "whatsapp": "Trong một Meta app có sản phẩm WhatsApp, sao chép access token, phone number ID và app secret, rồi tự chọn một verify token. Sau đó đặt webhook trong Meta dashboard là callback URL bên dưới với verify token đó, và đăng ký sự kiện \"messages\". Tin có nút chỉ tới được người đã nhắn cho số này trong 24 giờ qua; ngoài khung đó, hãy nhập một template đã duyệt có hai nút trả lời nhanh (Duyệt, Từ chối).",
+      "email": "Gửi yêu cầu qua cấu hình SMTP của studio (SMTP_HOST) kèm link Duyệt / Từ chối. Người trả lời đăng nhập vào studio nên không cần liên kết tài khoản. Cần STUDIO_PUBLIC_URL.",
+      "teams": "Trong Teams, thêm template Workflows \"Post to a channel when a webhook request is received\" rồi dán URL của nó vào đây. Nút trên card mở studio, người duyệt đăng nhập ở đó. Cần STUDIO_PUBLIC_URL."
     },
     "field": {
       "bot_token": "Bot token",
       "signing_secret": "Signing secret",
-      "webhook_secret": "Webhook secret"
+      "webhook_secret": "Webhook secret",
+      "access_token": "Access token",
+      "phone_number_id": "Phone number ID",
+      "app_secret": "App secret",
+      "verify_token": "Verify token",
+      "template_name": "Tên template (tuỳ chọn)",
+      "template_lang": "Ngôn ngữ template (tuỳ chọn, ví dụ en, vi)",
+      "webhook_url": "URL webhook của Workflows"
     },
     "callbackUrl": "URL callback",
     "copy": "Sao chép",
@@ -606,15 +619,18 @@
     "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Tài khoản Slack được liên kết theo từng workspace. Bot gửi mã một lần tới tài khoản đó; nhập mã ở đây để xác minh. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
     "identity": {
       "slack": "Slack member ID",
-      "telegram": "Telegram user ID"
+      "telegram": "Telegram user ID",
+      "whatsapp": "Số WhatsApp"
     },
     "identityPh": {
       "slack": "U0123ABCD",
-      "telegram": "123456789"
+      "telegram": "123456789",
+      "whatsapp": "84901234567"
     },
     "identityHow": {
       "slack": "Slack: hồ sơ của bạn → ⋮ → Copy member ID.",
-      "telegram": "Telegram: nhắn @userinfobot để xem ID dạng số."
+      "telegram": "Telegram: nhắn @userinfobot để xem ID dạng số.",
+      "whatsapp": "WhatsApp: số của bạn ở dạng quốc tế, chỉ gồm chữ số (không có +)."
     },
     "auditEmpty": "Chưa có yêu cầu phê duyệt nào.",
     "col": {
@@ -641,14 +657,21 @@
       "addChannel": "Thêm ở Kênh",
       "target": {
         "slack": "Slack channel ID",
-        "telegram": "Telegram chat ID"
+        "telegram": "Telegram chat ID",
+        "whatsapp": "Số WhatsApp",
+        "email": "Địa chỉ e-mail",
+        "teams": "Nơi nhận"
       },
       "targetPh": {
         "slack": "C0123ABCD",
-        "telegram": "-1001234567890"
+        "telegram": "-1001234567890",
+        "whatsapp": "84901234567",
+        "email": "lead@example.com, ops@example.com",
+        "teams": ""
       },
       "approvers": "Người duyệt (e-mail)",
-      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi."
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
+      "noTarget": "Webhook đăng vào kênh Teams của nó."
     },
     "verified": "Đã xác minh",
     "unverified": "Chưa xác minh",
@@ -677,7 +700,9 @@
     "removeTitle": "Gỡ kết nối {{name}}?",
     "removeBody": "Node Human dùng kết nối này sẽ ngừng gửi yêu cầu phê duyệt tới đây. Không thể hoàn tác.",
     "unlinkTitle": "Huỷ liên kết {{name}}?",
-    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại."
+    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại.",
+    "whatsappWindow": "WhatsApp chỉ gửi mã nếu bạn đã nhắn cho số doanh nghiệp trong 24 giờ qua.",
+    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ."
   },
   "settings": {
     "title": "Cài đặt",
@@ -711,7 +736,10 @@
     },
     "platform": {
       "slack": "Nút bấm trong kênh Slack. Mỗi workspace một kết nối.",
-      "telegram": "Nút bấm trong group hoặc chat riêng Telegram, qua bot của bạn."
+      "telegram": "Nút bấm trong group hoặc chat riêng Telegram, qua bot của bạn.",
+      "whatsapp": "Nút trả lời trong chat WhatsApp, gửi từ số doanh nghiệp của bạn.",
+      "email": "Một e-mail có link Duyệt / Từ chối tới studio.",
+      "teams": "Một Adaptive Card trong kênh Teams, nút bấm mở studio."
     },
     "scopeHelp": {
       "org": "Kết nối toàn tổ chức do admin thiết lập, mọi người đều dùng được.",
@@ -1203,6 +1231,31 @@
       "0 9 * * 1": "Thứ Hai lúc 09:00",
       "0 0 1 * *": "Ngày đầu tháng",
       "custom": "Tuỳ chỉnh"
+    }
+  },
+  "approve": {
+    "title": "Yêu cầu phê duyệt",
+    "approveQ": "Duyệt yêu cầu này?",
+    "rejectQ": "Từ chối yêu cầu này?",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "workflow": "Workflow",
+    "step": "Bước",
+    "question": "Câu hỏi",
+    "expires": "Hết hạn",
+    "done": {
+      "approved": "Đã duyệt. Run sẽ chạy tiếp.",
+      "rejected": "Đã từ chối. Run sẽ chạy tiếp với kết quả từ chối."
+    },
+    "decided": "Đã được trả lời{{by}}.",
+    "by": " bởi {{who}}",
+    "openRun": "Mở run",
+    "expired": "Yêu cầu này đã hết hạn.",
+    "status": {
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "expired": "Hết hạn",
+      "superseded": "Đã trả lời ở nơi khác"
     }
   }
 }

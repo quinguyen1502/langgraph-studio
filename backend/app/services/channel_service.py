@@ -91,14 +91,15 @@ class ChannelService:
 
     def list(self, uid: str) -> dict:
         admin = self.is_admin(uid)
-        return {"kinds": [{"kind": k, "fields": list(a.fields), "optional": list(a.optional)} for k, a in self.adapters.items()],
+        return {"kinds": [{"kind": k, "fields": list(a.fields), "optional": list(a.optional), "link_based": a.link_based, "target_required": a.target_required}
+                          for k, a in self.adapters.items()],
                 "channels": [self.public(c, uid, admin) for c in self.repo.channels_visible(uid) if c.kind in self.adapters],
                 "public_url": config.public_url() or None, "is_admin": admin, "org_usable": self.org_allowed(uid)}
 
     def _values(self, a: ApprovalChannel, body: dict) -> tuple[str, str, dict]:
         """Validate, check with the platform (502 CHANNEL_API_FAILED) -> (encrypted secrets, hint, {name, team_id})."""
         vals = a.prepare(body); info = a.describe(vals)
-        return crypto.encrypt(json.dumps(vals)), crypto.mask(vals[a.hint_field]), info
+        return crypto.encrypt(json.dumps(vals)), crypto.mask(vals[a.hint_field]) if vals.get(a.hint_field) else "", info  # e-mail has no secret
 
     @staticmethod
     def _name(body: dict) -> Optional[str]:

@@ -42,6 +42,8 @@ There is no login lockout and no password reset.
 | Right | Config for the selection, and run history. |
 | Bottom | JSON input and the live log. |
 
+Drag the border of the left, right, or bottom panel to resize it. The minimums are 180px, 260px, and 140px, and the canvas keeps at least 280×160px. The sizes are stored in this browser (`localStorage.lgs.editorPanels`), not on the workflow. Clearing site data restores 250px, 320px, and 300px.
+
 `?` or `Ctrl/⌘+/` opens the shortcut sheet (`frontend/src/lib/shortcuts.ts`). `Ctrl/⌘+S` saves, `Ctrl/⌘+Enter` runs, `Ctrl/⌘+.` stops, `Ctrl/⌘+A` selects all, `Shift+1` fits the view, `Ctrl/⌘` plus `+`/`-` zooms. Shortcuts other than save, run, and stop are ignored while typing. An open dialog disables them.
 
 `Ctrl/⌘+Z` undoes and `Ctrl/⌘+Shift+Z` or `Ctrl/⌘+Y` redoes, up to 100 steps. One drag is one step. Continuous typing in the same node is one step. Text fields keep the browser's own undo. The unsaved badge clears when you undo back to the saved graph.

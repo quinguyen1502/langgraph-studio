@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0038
-- Status: todo
+- Status: done
 - Phase: editor panels
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-18
@@ -42,6 +42,8 @@ Let the author drag the editor borders to resize the palette, the config panel, 
 - UI conventions: `docs/ui-conventions.md`
 - Decision: `.factory-state/decisions/DEC-0008-shadcn-ui-and-theme-tokens-only.md`
 - Editor: `frontend/src/pages/Editor.tsx`
+- Review: `.factory-state/artifacts/REV-0037-task-0038.md`
+- QA: `.factory-state/artifacts/QA-0037-task-0038.md`
 
 ## Expected Outputs
 
@@ -90,6 +92,9 @@ Let the author drag the editor borders to resize the palette, the config panel, 
 ## Activity Log
 
 - 2026-10-18: Owner asked for one task. REQ-0026 approved. Task filed in `todo`. Not started.
+- 2026-10-18: Owner asked to complete TASK-0038 ("Trước hết hoàn thành task 0038"). Branch `factory/task-0038-resize-editor-panels` at `develop` (`00d9a8e`). Task moved to `doing`. `factory ready` still does not exit 0 (the CLI needs `textual`); no packages installed for it.
+- 2026-10-18: Implemented. `npx shadcn@latest add resizable` added `react-resizable-panels` 4.14.5; the component moved to `src/components/ui/resizable.tsx`. New `components/editor-layout.tsx` (header + nested vertical/horizontal groups) is used by `Studio` and `EditorSkeleton`. Sizes in px under `localStorage.lgs.editorPanels` (`lib/panel-sizes.ts`). The config panel no longer pins its content to 318px/286px, so a wider panel gives the fields more room. The lockfile carries only the new package. New `e2e/resize.spec.ts` and `lib/__tests__/panel-sizes.test.ts`. README en/vi describe the drag.
+- 2026-10-18: REV-0037 has no blocking findings. QA-0037 passed. Task set to done. PR into `develop`. Not merged.
 
 ## Handoff Notes
 

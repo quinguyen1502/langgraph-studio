@@ -42,6 +42,8 @@ Chưa có khoá tài khoản sau nhiều lần đăng nhập sai, và chưa có 
 | Phải | Cấu hình phần đang chọn, và lịch sử chạy. |
 | Dưới | Input JSON và log trực tiếp. |
 
+Kéo viền của panel trái, phải hoặc dưới để đổi kích thước. Tối thiểu là 180px, 260px và 140px, canvas giữ ít nhất 280×160px. Kích thước lưu trong trình duyệt này (`localStorage.lgs.editorPanels`), không lưu trên workflow. Xoá dữ liệu trang sẽ trả về 250px, 320px và 300px.
+
 `?` hoặc `Ctrl/⌘+/` mở bảng phím tắt (`frontend/src/lib/shortcuts.ts`). `Ctrl/⌘+S` lưu, `Ctrl/⌘+Enter` chạy, `Ctrl/⌘+.` dừng, `Ctrl/⌘+A` chọn tất cả, `Shift+1` vừa khung nhìn, `Ctrl/⌘` với `+`/`-` phóng to hoặc thu nhỏ. Khi đang gõ, chỉ lưu, chạy và dừng còn tác dụng. Hộp thoại đang mở thì phím tắt editor tắt.
 
 `Ctrl/⌘+Z` hoàn tác, `Ctrl/⌘+Shift+Z` hoặc `Ctrl/⌘+Y` làm lại, tối đa 100 bước. Một lần kéo là một bước. Gõ liên tục trong cùng một node gộp thành một bước. Ô nhập giữ hoàn tác của trình duyệt. Huy hiệu chưa lưu mất khi hoàn tác về đúng bản đã lưu.

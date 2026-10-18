@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0026
-- Status: Approved
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-18
 - Updated: 2026-10-18
@@ -92,6 +92,6 @@ Those three panels have fixed sizes. A long prompt, a wide graph, or a tall trac
 
 ## Related Artifacts
 
-- Task: `.factory-state/tasks/todo/TASK-0038-resize-editor-panels.md`
+- Task: `.factory-state/tasks/done/TASK-0038-resize-editor-panels.md`
 - UI conventions: `docs/ui-conventions.md`
 - Decision: `.factory-state/decisions/DEC-0008-shadcn-ui-and-theme-tokens-only.md`

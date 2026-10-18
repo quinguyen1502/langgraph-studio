@@ -39,7 +39,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
    - Informational or success notices keep the default variant.
    - `--warning` / `--warning-foreground` are shadcn-style CSS variables (light and dark in `index.css`), registered as `--color-warning*` in `@theme`. Never use raw palette colours.
 
-9. **Template fields use `TemplateEditor`** (TASK-0041). Any node field that the backend renders with `{{state.field}}` (`engine/templating.py`) uses `components/template-editor.tsx`, not an Input or Textarea. It shows references as tags, marks fields missing from the state schema, suggests fields after `{{`, and has an insert-field menu. Pass `readOnly` for viewers: CodeMirror ignores a disabled `fieldset`.
+9. **Template fields use `TemplateEditor`** (TASK-0041). Any node field that the backend renders with `{{state.field}}` (`engine/templating.py`) uses `components/template-editor.tsx`, not an Input or Textarea. It shows references as tags (path and filters included), marks fields missing from the state schema and unknown filters, suggests fields after `{{` and filters after `|`, opens a tag as text on double-click, and has an insert-field menu (DEC-0034). Pass `readOnly` for viewers: CodeMirror ignores a disabled `fieldset`.
 
 ## Review checklist
 

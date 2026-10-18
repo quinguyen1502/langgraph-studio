@@ -79,6 +79,7 @@
 | `RUN_NODE_NOT_REACHED` | 400 | The run finished without reaching node '{node}' |
 | `NODE_FAILED` | 500 | Node failed |
 | `HTTP_TOOL_URL_BLOCKED` | 400 | HTTP Tool node {node}: the URL must be a public http(s) address |
+| `TEMPLATE_REF_INVALID` | 400 | Template error: {reason} |
 | `CREDENTIAL_NOT_FOUND` | 404 | Credential not found or not yours |
 | `CREDENTIAL_PROVIDER_UNSUPPORTED` | 400 | Unsupported provider: {provider} |
 | `CREDENTIAL_KEY_REQUIRED` | 400 | API key is required |

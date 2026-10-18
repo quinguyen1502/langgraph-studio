@@ -341,6 +341,7 @@
     "RUN_NODE_NOT_REACHED": "The run finished without reaching node '{{node}}'",
     "NODE_FAILED": "Node failed",
     "HTTP_TOOL_URL_BLOCKED": "HTTP Tool node {{node}}: the URL must be a public http(s) address",
+    "TEMPLATE_REF_INVALID": "Template error: {{reason}}",
     "CREDENTIAL_NOT_FOUND": "Credential not found or not yours",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Unsupported provider: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key is required",
@@ -1165,7 +1166,21 @@
     "noFields": "No fields in the state schema",
     "placeholder": "Type {{open}} to insert a state field",
     "tagTitle": "State field {{field}}",
-    "unknownTitle": "{{field}} is not in the state schema"
+    "unknownTitle": "{{field}} is not in the state schema",
+    "badFilter": "Unknown filter or wrong argument: {{filter}}",
+    "editHint": "Double-click to edit",
+    "filters": {
+      "upper": "UPPER CASE",
+      "lower": "lower case",
+      "trim": "strip spaces at both ends",
+      "json": "as JSON",
+      "length": "number of items or characters",
+      "first": "first item",
+      "last": "last item",
+      "default": "use this text when empty",
+      "join": "join a list with this text",
+      "truncate": "cut to this many characters"
+    }
   },
   "reset": {
     "forgotTitle": "Reset your password",

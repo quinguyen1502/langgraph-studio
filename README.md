@@ -84,6 +84,16 @@ The UI is English and Vietnamese (`frontend/src/locales/en.json` and `vi.json`).
 - **Human.** `prompt` and `output_field`. The run waits. See [Human approval](#human-approval).
 - **Code.** Read-only nodes produced by repo import. The right panel shows the original source. Editing the canvas does not change the imported file.
 
+### Templates
+
+Prompts, Human questions, HTTP Tool URLs and bodies, Retriever queries, and MCP arguments are templates. A reference is `{{state.field}}`, with an optional path and filters:
+
+- `{{state.order.items.0.sku}}` walks objects by key and lists by index. A missing step gives an empty value.
+- `{{state.name | trim | upper}}` applies filters left to right: `upper`, `lower`, `trim`, `json`, `length`, `first`, `last`, `default("text")`, `join(", ")`, `truncate(80)`.
+- An MCP argument that is exactly one reference keeps the value's type, so `{{state.items | length}}` passes a number.
+
+The editor shows references as tags. Type `{{` for state fields and `|` inside a reference for filters. Double-click a tag to edit it as text. A field missing from the state or an unknown filter is red, and Save lists it. A run refuses an invalid reference with `TEMPLATE_REF_INVALID`.
+
 The seeded **Customer Support** example is Start → Classify intent → Route on `intent` → `order_status` (lookup, then reply) or `general` (answer) → End. Try `{"message": "Where is order A100?"}` and `{"message": "What are your hours?"}`.
 
 ## Local LLM providers

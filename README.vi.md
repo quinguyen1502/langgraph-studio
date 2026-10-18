@@ -84,6 +84,16 @@ UI có tiếng Anh và tiếng Việt (`frontend/src/locales/en.json` và `vi.js
 - **Human.** `prompt` và `output_field`. Run dừng chờ. Xem [Phê duyệt](#phê-duyệt).
 - **Code.** Node chỉ đọc do import repo tạo ra. Panel phải hiện source gốc. Sửa trên canvas không đổi file đã import.
 
+### Template
+
+Prompt, câu hỏi Human, URL và body của HTTP Tool, query Retriever và tham số MCP là template. Một tham chiếu là `{{state.field}}`, có thể kèm đường dẫn và filter:
+
+- `{{state.order.items.0.sku}}` đi vào object theo khoá và vào list theo chỉ số. Thiếu bước nào thì giá trị rỗng.
+- `{{state.name | trim | upper}}` chạy filter từ trái sang phải: `upper`, `lower`, `trim`, `json`, `length`, `first`, `last`, `default("text")`, `join(", ")`, `truncate(80)`.
+- Tham số MCP chỉ gồm đúng một tham chiếu thì giữ kiểu giá trị, nên `{{state.items | length}}` truyền một số.
+
+Editor hiện tham chiếu thành tag. Gõ `{{` để chọn trường state, gõ `|` trong tham chiếu để chọn filter. Double-click vào tag để sửa dạng text. Trường không có trong state hoặc filter lạ có màu đỏ và Save sẽ liệt kê. Khi chạy, tham chiếu sai bị từ chối với `TEMPLATE_REF_INVALID`.
+
 Ví dụ **Customer Support** được seed sẵn: Start → Classify intent → Route theo `intent` → `order_status` (tra cứu rồi trả lời) hoặc `general` (trả lời) → End. Thử `{"message": "Đơn A100 đâu rồi?"}` và `{"message": "Giờ mở cửa?"}`.
 
 ## Nhà cung cấp LLM trên máy

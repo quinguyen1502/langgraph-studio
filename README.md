@@ -50,7 +50,7 @@ There is no login lockout and no password reset.
 
 `Ctrl/⌘+C`, `Ctrl/⌘+X`, `Ctrl/⌘+V`, and `Ctrl/⌘+D` copy, cut, paste, and duplicate. Start and End are never copied. Only edges between selected nodes travel with them. Pasted nodes get new ids. The clipboard is `localStorage` (`langgraph-studio/nodes` v1), so you can paste into another workflow in the same browser. A credential you cannot use is cleared on paste.
 
-**Arrange** or `Shift+L` lays the graph out with dagre at the real node size. The arrow beside it picks left-to-right or top-to-bottom. The top-left of the graph stays put. One arrange is one undo step.
+**Arrange** or `Shift+L` lays the graph out with dagre at the real node size. The arrow beside it picks left-to-right or top-to-bottom. The top-left of the graph stays put. One arrange is one undo step. Right-click the canvas and choose **Add note** for a sticky. It is saved with the workflow, Arrange leaves it where it is, and a run does not execute it.
 
 **New workflow** opens the template gallery: a blank graph, four starters (Chatbot, RAG Q&A, Approval flow, Router), and your templates or the organisation's. Each template has a preview. **Save as template** copies the saved graph. Organisation scope needs `org.manage`. Export and import use `*.template.json` (`{"format": "langgraph-studio/template", "version": 1, ...}`). Templates never contain credentials, knowledge bases, MCP servers, approval channels, subgraph links, headers, or API keys. Those fields are emptied. Deleting a template requires typing its name.
 

@@ -22,8 +22,8 @@ The canvas only holds nodes that run. There is no place to leave a comment next 
 
 ### In Scope
 
-- A `note` block on the flowchart, added from the node palette and the command palette.
-- Multiline plain text, shown on the block and edited while the note is selected.
+- A sticky on the flowchart, added by right-clicking the canvas. It is not a graph node in the palette or the command palette.
+- Multiline plain text, shown on the sticky and edited on it while it is selected.
 - The note is saved with the workflow and restored with it.
 - Validation, compile, and Arrange treat the note as outside the executable graph.
 
@@ -49,7 +49,7 @@ The canvas only holds nodes that run. There is no place to leave a comment next 
 
 ## Desired Behavior
 
-- The author adds a note from the palette or the command palette. It appears as a free block, with no connection handles.
+- The author right-clicks the canvas and chooses Add note. A sticky appears at that spot, with no connection handles and no node card.
 - The block shows its text. Empty text shows a placeholder. Selecting the note edits the text. The text survives selecting another node and coming back, and it survives save and reload.
 - A graph with Start → End plus a loose note validates and runs. The note does not appear in the trace.
 - An edge whose source or target is a note fails validation, and the message names the note.
@@ -69,7 +69,7 @@ The canvas only holds nodes that run. There is no place to leave a comment next 
 
 ## Acceptance Criteria
 
-- The palette and the command palette can add a note. Insert before, insert after, and insert on an edge cannot.
+- Right-click on the canvas can add a sticky. The node palette, the command palette, insert before, insert after, and insert on an edge cannot.
 - The note has no handles. Its text is still there after save and reload.
 - A workflow with a loose note validates. Compile does not register the note as a graph node, and a run of Start → End does not emit an event for the note.
 - An edge into the note fails validation and the message names the note.
@@ -85,7 +85,7 @@ The canvas only holds nodes that run. There is no place to leave a comment next 
 ## Assumptions
 
 - The note is plain text in `data.text`, not Markdown.
-- Designer and architect are skipped. The block follows the existing node card and config panel.
+- Designer and architect are skipped. The owner asked for a sticky, added from the canvas context menu, rather than a node card (2026-10-18).
 - `factory ready` does not exit 0 on this machine. The owner asked for the task anyway. Do not install packages to clear it.
 - One task. Independent of REQ-0024.
 
@@ -95,7 +95,7 @@ The canvas only holds nodes that run. There is no place to leave a comment next 
 
 ## Related Artifacts
 
-- Task: `.factory-state/tasks/todo/TASK-0037-canvas-note.md`
+- Task: `.factory-state/tasks/done/TASK-0037-canvas-note.md`
 - UI conventions: `docs/ui-conventions.md`
 - Decision: `.factory-state/decisions/DEC-0008-shadcn-ui-and-theme-tokens-only.md`
 - Validator: `backend/app/engine/validator.py`

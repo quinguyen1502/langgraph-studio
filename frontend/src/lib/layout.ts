@@ -7,21 +7,22 @@ export type Direction = 'LR' | 'TB'
 export const DEFAULT_SIZE = { width: 200, height: 70 }
 const size = (n: Node) => ({ width: n.measured?.width ?? n.width ?? DEFAULT_SIZE.width, height: n.measured?.height ?? n.height ?? DEFAULT_SIZE.height })
 
-/** New positions for every node. `keepOrigin` anchors the result at the current top-left so the canvas doesn't jump. */
+/** New positions for every executable node. Notes stay where they are, and a note far from the graph does not move the anchor. */
 export function layoutGraph(nodes: Node[], edges: Edge[], dir: Direction = 'LR', keepOrigin = true): Node[] {
-  if (!nodes.length) return nodes
+  const flow = nodes.filter(n => n.type !== 'note')
+  if (!flow.length) return nodes
   const g = new dagre.graphlib.Graph({ multigraph: true })
   g.setGraph({ rankdir: dir, nodesep: dir === 'LR' ? 50 : 70, ranksep: dir === 'LR' ? 100 : 80, marginx: 0, marginy: 0 })
   g.setDefaultEdgeLabel(() => ({}))
-  const ids = new Set(nodes.map(n => n.id))
-  nodes.forEach(n => g.setNode(n.id, size(n)))
+  const ids = new Set(flow.map(n => n.id))
+  flow.forEach(n => g.setNode(n.id, size(n)))
   edges.forEach(e => { if (ids.has(e.source) && ids.has(e.target) && e.source !== e.target) g.setEdge(e.source, e.target, {}, e.id) })
   dagre.layout(g)
-  const placed = nodes.map(n => { const p = g.node(n.id), s = size(n); return { ...n, position: { x: Math.round(p.x - s.width / 2), y: Math.round(p.y - s.height / 2) } } })
-  if (!keepOrigin) return placed
-  const ox = Math.min(...nodes.map(n => n.position.x)) - Math.min(...placed.map(n => n.position.x))
-  const oy = Math.min(...nodes.map(n => n.position.y)) - Math.min(...placed.map(n => n.position.y))
-  return placed.map(n => ({ ...n, position: { x: n.position.x + ox, y: n.position.y + oy } }))
+  const placed = flow.map(n => { const p = g.node(n.id), s = size(n); return { ...n, position: { x: Math.round(p.x - s.width / 2), y: Math.round(p.y - s.height / 2) } } })
+  const ox = keepOrigin ? Math.min(...flow.map(n => n.position.x)) - Math.min(...placed.map(n => n.position.x)) : 0
+  const oy = keepOrigin ? Math.min(...flow.map(n => n.position.y)) - Math.min(...placed.map(n => n.position.y)) : 0
+  const moved = new Map(placed.map(n => [n.id, { ...n, position: { x: n.position.x + ox, y: n.position.y + oy } }]))
+  return nodes.map(n => n.type === 'note' ? n : moved.get(n.id)!)
 }
 
 /** Pairs of nodes whose boxes intersect (used by tests and as a safety check). */

@@ -26,4 +26,15 @@ describe('layoutGraph', () => {
     expect(Math.min(...r.map(n => n.position.x))).toBe(500); expect(Math.min(...r.map(n => n.position.y))).toBe(300)
     expect(moved[0].position).toEqual({ x: 500, y: 300 }); expect(layoutGraph([], [])).toEqual([])
   })
+  it('leaves notes where they are and does not let a far note move the anchor', () => {
+    const note: Node = { id: 'note', type: 'note', position: { x: -5000, y: 8000 }, data: { text: 'keep' } }
+    const far: Node = { id: 'far', type: 'note', position: { x: 9000, y: -2000 }, data: { text: '' } }
+    const base = layoutGraph(nodes, edges, 'LR')
+    const withNotes = layoutGraph([...nodes, note, far], edges, 'LR')
+    const p = Object.fromEntries(withNotes.map(n => [n.id, n.position]))
+    const b = Object.fromEntries(base.map(n => [n.id, n.position]))
+    expect(p.note).toEqual({ x: -5000, y: 8000 }); expect(p.far).toEqual({ x: 9000, y: -2000 })
+    for (const id of ['start', 'a', 'b', 'c', 'end']) expect(p[id]).toEqual(b[id])
+    expect(layoutGraph([note], [], 'LR', false)[0].position).toEqual({ x: -5000, y: 8000 })
+  })
 })

@@ -114,6 +114,8 @@
     "edgeLabel": "Label (khớp với giá trị field của Condition)",
     "deleteEdge": "Xoá edge",
     "deleteNode": "Xoá node",
+    "addNote": "Thêm ghi chú",
+    "deleteNote": "Xoá ghi chú",
     "insertBefore": "Chèn phía trước",
     "insertAfter": "Chèn phía sau",
     "insertHere": "Chèn node",
@@ -189,6 +191,8 @@
     "moreTip": "Thao tác khác (bố cục, phiên bản, chia sẻ, API…)",
     "lockCanvas": "Khoá canvas",
     "unlockCanvas": "Mở khoá canvas",
+    "notePlaceholder": "Viết ghi chú…",
+    "noteHint": "Sửa chữ ngay trên ghi chú.",
     "deleteWorkflow": "Xoá workflow"
   },
   "nodes": {

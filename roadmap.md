@@ -73,3 +73,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Editor polish
 
 - TASK-0032 Editor polish and bilingual README (REQ-0020, Implemented 2026-10-18): **done** — PR [#35](https://github.com/quinguyen1502/langgraph-studio/pull/35). REV-0031, QA-0031.
+
+## Delivery records
+
+- TASK-0033 Align requirement status and the integration branch (REQ-0021, Implemented 2026-10-18): **done** — PR [#36](https://github.com/quinguyen1502/langgraph-studio/pull/36). DEC-0033 supersedes DEC-0002. REV-0032, QA-0032.

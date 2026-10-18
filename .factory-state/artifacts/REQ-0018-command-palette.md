@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0018
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-17
-- Updated: 2026-10-17
+- Updated: 2026-10-18
 - Source: owner request 2026-10-17 (Phase 5: Editor UX) — suggested by the factory agent, approved by the owner 2026-10-17
 
 ## Summary
@@ -58,3 +58,7 @@ A Mod+K command palette to search actions, nodes and workflows.
 ## Open Questions
 
 - None yet
+
+## Related Artifacts
+
+- Delivered by `.factory-state/tasks/done/TASK-0028-command-palette.md`, merged to `develop`.

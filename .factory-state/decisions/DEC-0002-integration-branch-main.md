@@ -4,13 +4,15 @@
 
 - Project: langgraph-studio
 - Decision ID: DEC-0002
-- Status: Accepted
+- Status: Superseded by DEC-0033 (2026-10-18)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Related Requirements: REQ-0001
 - Related Architecture: ARCH-0001
 - Related Tasks: TASK-0002
+
+> Superseded by DEC-0033: the integration branch is `develop`. The text below is the 2026-10-16 decision.
 
 ## Context
 

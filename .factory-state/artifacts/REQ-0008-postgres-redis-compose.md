@@ -4,10 +4,10 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0008
-- Status: Proposed
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-18
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -75,3 +75,4 @@ Replace SQLite with PostgreSQL, add Redis for run queue/pubsub, and provide Dock
 - `project-specs.md`
 - `.factory-state/artifacts/ARCH-0001-current-architecture.md`
 - `.factory-state/artifacts/DISC-0001-project-context.md`
+- Delivered by `.factory-state/tasks/done/TASK-0009-move-to-postgres-and-redis-with-docker-compose.md`, merged to `develop`.

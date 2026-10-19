@@ -1,0 +1,94 @@
+# Triển khai bằng Compose
+
+## Các dịch vụ
+
+| Dịch vụ | Image | Vai trò |
+| --- | --- | --- |
+| `postgres` | `pgvector/pgvector:pg17` | Workflow, run, checkpoint, phiên bản, vector |
+| `redis` | `redis:7-alpine` | Run bus, hàng đợi job, bộ đếm giới hạn tần suất, thông báo trực tiếp |
+| `api` | `./backend` | FastAPI. Chạy migration Alembic và seed khi khởi động |
+| `worker` | `./backend`, `python -m app.worker` | Chạy job trong hàng đợi: run qua API, lịch chạy, run khôi phục, gửi webhook |
+| `web` | `./frontend` | nginx phục vụ bản build Vite và chuyển `/api`, `/ws` sang API |
+| `jaeger` | `jaegertracing/all-in-one` | Tuỳ chọn, bật bằng `--profile tracing` |
+
+```bash
+cp .env.example .env   # đặt JWT_SECRET và POSTGRES_PASSWORD; không commit .env
+docker compose up --build
+python scripts/compose_smoke.py http://localhost:8080
+```
+
+UI ở `http://localhost:8080` (`WEB_PORT`). `.env.example` liệt kê mọi biến; các
+biến hay dùng nhất có ở [Cấu hình](../reference/configuration.md).
+
+## Danh sách kiểm tra cho production
+
+| Cấu hình | Lý do |
+| --- | --- |
+| `STUDIO_ENV=production` | Từ chối `JWT_SECRET` mẫu, không tạo tài khoản demo, và vô hiệu hoá tài khoản đó nếu còn mật khẩu demo. |
+| `JWT_SECRET` | Ký phiên đăng nhập. Dài và ngẫu nhiên. |
+| `STUDIO_SECRET_KEY` | Khoá Fernet cho credential đã lưu. Nên đặt rõ ràng; mất khoá thì credential cũ không đọc được nữa. |
+| `STUDIO_ADMIN_EMAILS` | Tạo admin đầu tiên (production không có admin demo). |
+| `STUDIO_PUBLIC_URL` | URL công khai dùng cho link trong e-mail, yêu cầu duyệt và webhook. |
+| `STUDIO_CORS_ORIGINS` | Chỉ cần khi trình duyệt ở origin khác gọi API. Production mặc định không cho origin nào. |
+| `STUDIO_TRUSTED_PROXIES` | CIDR của các proxy phía trước, để đọc đúng IP client cho giới hạn tần suất. |
+| TLS | Kết thúc HTTPS ở phía trước `web`. Cookie phiên là `Secure` trong production. |
+
+`STUDIO_SECRET_KEY` để trống sẽ được sinh một lần vào volume `apidata`
+(`/data/secret.key`). Cách này chạy được, nhưng hãy sao lưu volume cùng với
+database.
+
+## Database
+
+`GET /api/health` cho biết `database` (`postgresql` hoặc `sqlite`) và
+`run_bus` (`redis` hoặc `memory`). Khi phát triển ở máy, để trống
+`DATABASE_URL` để dùng SQLite `backend/studio.db`, và để trống `REDIS_URL` để
+run bus nằm trong bộ nhớ.
+
+Migration lúc khởi động có khoá để nhiều process không migrate cùng lúc
+(advisory lock của Postgres, hoặc `<db>.migrate.lock` với SQLite). Thay đổi
+schema đi qua Alembic:
+
+```bash
+cd backend && .venv/bin/alembic revision --autogenerate -m "describe"
+.venv/bin/alembic upgrade head
+```
+
+## Worker và hàng đợi
+
+`STUDIO_WORKER=1` (mặc định khi không dùng Compose) chạy worker ngay trong
+process API. Khi có `REDIS_URL`, worker có thể là process riêng
+`python -m app.worker`; Compose đặt API là `STUDIO_WORKER=0` và chạy dịch vụ
+`worker`.
+
+```bash
+docker compose up --scale worker=3
+```
+
+| Biến | Mặc định | Nghĩa |
+| --- | --- | --- |
+| `STUDIO_WORKER_CONCURRENCY` | 2 | Số job một worker chạy cùng lúc |
+| `STUDIO_JOB_VISIBILITY_TIMEOUT` | 30 giây | Thời hạn giữ job; worker gia hạn trong lúc chạy |
+| `STUDIO_JOB_REAP_EVERY` | 15 giây | Chu kỳ đưa các job hết hạn giữ về lại hàng đợi |
+
+Hàng đợi trong bộ nhớ chỉ dùng khi phát triển: job mất khi process đó khởi
+động lại. Với Redis, job có worker bị chết sẽ được đưa lại hàng đợi khi hết hạn
+giữ, và chạy tiếp từ checkpoint cuối (`run_recovered` trong trace). Mỗi lần
+worker nhận một run, `runs.lease_gen` tăng lên; mọi lần ghi phải mang fencing
+token đó, nên worker đã mất quyền giữ không ghi được và tự dừng.
+
+## Model chạy ở máy khi dùng Compose
+
+Trong Compose, `localhost` là chính container. `api` và `worker` đặt
+`extra_hosts: host.docker.internal:host-gateway`, nên trỏ Ollama tới
+`http://host.docker.internal:11434` và LM Studio tới
+`http://host.docker.internal:1234/v1`. Trên Linux, chạy
+`OLLAMA_HOST=0.0.0.0 ollama serve` và bật *Serve on Local Network* của LM
+Studio; firewall có thể cần cho phép bridge của Docker.
+
+## Docker socket
+
+Compose gắn `/var/run/docker.sock` vào `api` và `worker`, phục vụ
+[chế độ Code](code-runtime.md) và [import repo](import.md). Socket này tương
+đương quyền root trên máy chạy Docker. Đừng bật hai tính năng đó trên máy bạn
+không tin. Trên Linux, nếu user của container (uid 10001) không mở được
+socket, đặt `STUDIO_DOCKER_GID="$(stat -c %g /var/run/docker.sock)"`.

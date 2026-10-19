@@ -1,0 +1,356 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LangGraph Studio intro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=block" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1d1b26;
+    --brand: #6c4bd8;
+    --brand-deep: #4b2fb0;
+    --soft: #efeaff;
+    --muted: #6b6878;
+    --surface: #f6f5f9;
+    --line: #e7e5ee;
+    --ok: #13a36b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow: hidden; background: #fff; }
+  body { width: 1920px; height: 1080px; position: relative; font-family: 'Inter', sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+  [data-in] { opacity: 0; will-change: transform, opacity, filter; }
+  code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .center-stack { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0 80px; }
+  .line { font-size: 80px; font-weight: 800; letter-spacing: -2px; line-height: 1.2; }
+  .line .soft { color: #a9a6b6; }
+  .line.ask { color: var(--brand); margin-bottom: 12px; }
+
+  .eyebrow { font-size: 24px; font-weight: 800; letter-spacing: 5px; color: var(--brand); text-transform: uppercase; margin-bottom: 24px; }
+  .headline { font-size: 54px; font-weight: 900; letter-spacing: -2px; line-height: 1.08; }
+  .body { font-size: 28px; font-weight: 600; line-height: 1.45; color: var(--muted); margin-top: 28px; }
+  .body code { font-size: 26px; color: var(--brand-deep); background: var(--soft); padding: 2px 8px; border-radius: 8px; }
+  .col { position: absolute; top: 0; height: 1080px; left: 100px; width: 480px; display: flex; flex-direction: column; justify-content: center; }
+
+  /* browser window around the app screenshots */
+  .browser { position: absolute; border-radius: 18px; overflow: hidden; background: #fff;
+             box-shadow: 0 60px 120px -40px rgba(29,27,38,.45), 0 0 0 1px var(--line); }
+  .browser .bar { height: 46px; background: var(--surface); border-bottom: 1px solid var(--line); display: flex; align-items: center; padding: 0 18px; gap: 9px; }
+  .browser .bar > i { width: 13px; height: 13px; border-radius: 50%; display: block; }
+  .browser .bar > i:nth-child(1) { background: #f26b5b; } .browser .bar > i:nth-child(2) { background: #f5bf4f; } .browser .bar > i:nth-child(3) { background: #5ec95a; }
+  .browser .url { margin-left: 20px; flex: 1; max-width: 560px; height: 30px; border-radius: 15px; background: #fff; border: 1px solid var(--line);
+                  display: flex; align-items: center; padding: 0 16px; font-size: 16px; font-weight: 600; color: var(--muted); }
+  .browser .page { position: relative; width: 100%; aspect-ratio: 1.6; overflow: hidden; }
+  .browser .page .zoom { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
+  .browser .page img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+  .hl { position: absolute; border-radius: 14px; border: 4px solid var(--brand); z-index: 4;
+        box-shadow: 0 0 0 9999px rgba(29,27,38,.10), 0 0 40px rgba(108,75,216,.5); }
+
+  .chips { position: absolute; display: flex; flex-wrap: wrap; gap: 12px; }
+  .chip { display: inline-flex; align-items: center; gap: 10px; padding: 10px 20px 10px 14px; border-radius: 999px; font-size: 22px; font-weight: 800;
+          background: var(--ink); color: #fff; white-space: nowrap; box-shadow: 0 10px 26px rgba(29,27,38,.22); }
+  .chip i { width: 12px; height: 12px; border-radius: 50%; background: #a48bff; display: block; }
+
+  .title-top { position: absolute; left: 0; right: 0; top: 96px; text-align: center; padding: 0 60px; }
+  .title-top .body { margin: 18px auto 0; max-width: 1300px; }
+
+  .term { position: absolute; left: 110px; top: 330px; width: 900px; height: 560px; border-radius: 18px; background: #17151f; color: #e8e6f0;
+          box-shadow: 0 60px 120px -40px rgba(29,27,38,.55); overflow: hidden; }
+  .term .bar { height: 46px; display: flex; align-items: center; gap: 9px; padding: 0 18px; background: #211e2b; }
+  .term .bar > i { width: 13px; height: 13px; border-radius: 50%; display: block; background: #3a3647; }
+  .term .bar > span { margin-left: 16px; font: 600 16px 'Inter'; color: #8e8a9e; }
+  .term pre { font: 500 18px/1.65 'JetBrains Mono', monospace; padding: 26px 30px; white-space: pre-wrap; }
+  .term .p { color: #a48bff; } .term .k { color: #7ee0b5; } .term .s { color: #f5c97b; } .term .dim { color: #8e8a9e; }
+  .term .caret { display: inline-block; width: 11px; height: 24px; background: #a48bff; vertical-align: -4px; margin-left: 2px; }
+
+  .tiles { position: absolute; left: 140px; right: 140px; top: 0; height: 1080px; display: flex; gap: 30px; align-items: center; }
+  .tile { flex: 1; height: 470px; border-radius: 36px; background: var(--surface); padding: 46px 38px; display: flex; flex-direction: column; }
+  .tile svg { flex: none; width: 72px; height: 72px; stroke: var(--brand); fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .tile h3 { font-size: 38px; font-weight: 900; margin-top: 44px; line-height: 1.15; letter-spacing: -.5px; min-height: 2.3em; }
+  .tile p { font-size: 25px; font-weight: 600; color: var(--muted); margin-top: 14px; line-height: 1.42; }
+  .tiles-head { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 28px; font-weight: 800; letter-spacing: 6px; color: var(--brand); text-transform: uppercase; }
+
+  .start-head { position: absolute; left: 0; right: 0; top: 150px; text-align: center; }
+  .steps { position: absolute; left: 150px; right: 150px; top: 390px; height: 400px; display: flex; align-items: stretch; gap: 22px; }
+  .step { flex: 1; border-radius: 36px; background: var(--surface); padding: 42px 40px; display: flex; flex-direction: column; }
+  .step b { width: 62px; height: 62px; border-radius: 50%; background: var(--brand); color: #fff; font-size: 30px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+  .step h3 { font-size: 44px; font-weight: 900; margin-top: auto; letter-spacing: -.5px; }
+  .step p { font-size: 24px; font-weight: 600; color: var(--muted); margin-top: 14px; line-height: 1.4; min-height: 2.8em; }
+  .step p code { font-size: 22px; color: var(--brand-deep); }
+  .step-arrow { flex: none; align-self: center; display: block; }
+  .step-arrow svg { display: block; width: 50px; height: 50px; stroke: #a9a6b6; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+
+  .icon { width: 200px; height: 200px; border-radius: 50px; overflow: hidden; box-shadow: 0 30px 70px -10px rgba(75,47,176,.45); }
+  .icon img { width: 100%; height: 100%; display: block; }
+  .wordmark { font-size: 140px; font-weight: 900; letter-spacing: -5px; line-height: 1; margin-top: 44px; }
+  .tagline { font-size: 42px; font-weight: 700; color: var(--muted); margin-top: 26px; }
+  .pills { display: flex; gap: 18px; justify-content: center; margin-top: 60px; }
+  .pills > span { padding: 14px 28px; border-radius: 999px; background: var(--soft); color: var(--brand-deep); font-size: 28px; font-weight: 800; }
+  #fade { position: absolute; inset: 0; background: #fff; opacity: 0; z-index: 100; }
+</style>
+</head>
+<body>
+
+<!-- S1 problem (0–6.5) -->
+<div class="center-stack">
+  <div class="line ask" data-t="s1q" data-in="0.3" data-out="5.9" data-y="30" data-b="10"></div>
+  <div class="line" data-t="s1a" data-in="1.2" data-out="6.0" data-y="40" data-b="14"></div>
+  <div class="line" data-t="s1b" data-in="2.3" data-out="6.1" data-y="40" data-b="14"></div>
+  <div class="line" data-t="s1c" data-in="3.4" data-out="6.2" data-y="40" data-b="14"></div>
+</div>
+
+<!-- S2 brand (6.5–11.5) -->
+<div class="center-stack">
+  <div class="icon" data-in="6.6" data-d="1.4" data-s="0.6" data-b="20" data-out="11.1"><img src="../../handbook/docs/assets/logo.svg"></div>
+  <div class="wordmark" data-in="7.3" data-d="1.2" data-y="40" data-b="16" data-out="11.2">LangGraph Studio</div>
+  <div class="tagline" data-t="tag" data-in="8.1" data-y="30" data-b="10" data-out="11.3"></div>
+</div>
+
+<!-- S3–S7 product tour in one browser window (11.5–57) -->
+<div class="browser" id="tour" style="left:610px; top:128px; width:1230px;"
+     data-in="11.6" data-d="1.4" data-y="320" data-out="56.8" data-od="0.9" data-oy="240">
+  <div class="bar"><i></i><i></i><i></i><div class="url">studio.example.com/workflows</div></div>
+  <div class="page"><div class="zoom" id="zoom">
+    <img data-src="editor" data-in="-1">
+    <img data-src="node-config" data-in="20.2" data-d="0.5">
+    <img data-src="run-trace" data-in="28.2" data-d="0.5">
+    <img data-src="trace-detail" data-in="33.4" data-d="0.4">
+    <img data-src="human-waiting" data-in="39.2" data-d="0.5">
+    <img data-src="code-node" data-in="48.2" data-d="0.5">
+    <div class="hl" style="left:0.6%; top:7.4%; width:16.4%; height:58.6%" data-in="13.6" data-d="0.6" data-s="1.05" data-out="15.9" data-od="0.4"></div>
+    <div class="hl" style="left:18%; top:7.4%; width:59.4%; height:58.6%" data-in="16.2" data-d="0.6" data-s="1.03" data-out="19.6" data-od="0.4"></div>
+    <div class="hl" style="left:78.4%; top:44.6%; width:21%; height:17%" data-in="22.2" data-d="0.6" data-s="1.05" data-out="27.6" data-od="0.4"></div>
+    <div class="hl" style="left:0.4%; top:72%; width:99.2%; height:22.8%" data-in="29.8" data-d="0.6" data-s="1.02" data-out="33.2" data-od="0.4"></div>
+    <div class="hl" style="left:54.6%; top:83.6%; width:44.8%; height:7.4%" data-in="35" data-d="0.6" data-s="1.05" data-out="38.7" data-od="0.4"></div>
+    <div class="hl" style="left:0.4%; top:72.8%; width:99.2%; height:23.4%" data-in="40.8" data-d="0.6" data-s="1.02" data-out="47.6" data-od="0.4"></div>
+    <div class="hl" style="left:78.6%; top:5.8%; width:20.6%; height:21.8%" data-in="49.8" data-d="0.6" data-s="1.05" data-out="52.6" data-od="0.4"></div>
+    <div class="hl" style="left:79%; top:42%; width:19.8%; height:24.6%" data-in="52.8" data-d="0.6" data-s="1.05" data-out="56.4" data-od="0.4"></div>
+  </div></div>
+</div>
+<div class="col">
+  <div class="eyebrow" data-t="edE" data-in="12.2" data-y="24" data-out="19.7"></div>
+  <div class="headline" data-t="edH" data-in="12.4" data-y="36" data-b="12" data-out="19.8"></div>
+  <div class="body" data-t="edB" data-in="12.9" data-y="30" data-b="8" data-out="19.9"></div>
+</div>
+<div class="col">
+  <div class="eyebrow" data-t="cfgE" data-in="20.4" data-y="24" data-out="27.7"></div>
+  <div class="headline" data-t="cfgH" data-in="20.6" data-y="36" data-b="12" data-out="27.8"></div>
+  <div class="body" data-t="cfgB" data-in="21.1" data-y="30" data-b="8" data-out="27.9"></div>
+</div>
+<div class="col">
+  <div class="eyebrow" data-t="runE" data-in="28.4" data-y="24" data-out="38.7"></div>
+  <div class="headline" data-t="runH" data-in="28.6" data-y="36" data-b="12" data-out="38.8"></div>
+  <div class="body" data-t="runB" data-in="29.1" data-y="30" data-b="8" data-out="38.9"></div>
+</div>
+<div class="col">
+  <div class="eyebrow" data-t="humE" data-in="39.4" data-y="24" data-out="47.7"></div>
+  <div class="headline" data-t="humH" data-in="39.6" data-y="36" data-b="12" data-out="47.8"></div>
+  <div class="body" data-t="humB" data-in="40.1" data-y="30" data-b="8" data-out="47.9"></div>
+</div>
+<div class="chips" style="left:110px; top:790px; width:470px">
+  <span class="chip" data-in="42.4" data-s="0.8" data-y="16" data-out="47.6"><i></i>Slack</span>
+  <span class="chip" data-in="42.7" data-s="0.8" data-y="16" data-out="47.6"><i></i>Telegram</span>
+  <span class="chip" data-in="43.0" data-s="0.8" data-y="16" data-out="47.6"><i></i>WhatsApp</span>
+  <span class="chip" data-in="43.3" data-s="0.8" data-y="16" data-out="47.6"><i></i>E-mail</span>
+  <span class="chip" data-in="43.6" data-s="0.8" data-y="16" data-out="47.6"><i></i>Teams</span>
+</div>
+<div class="col">
+  <div class="eyebrow" data-t="codeE" data-in="48.4" data-y="24" data-out="56.5"></div>
+  <div class="headline" data-t="codeH" data-in="48.6" data-y="36" data-b="12" data-out="56.6"></div>
+  <div class="body" data-t="codeB" data-in="49.1" data-y="30" data-b="8" data-out="56.7"></div>
+</div>
+
+<!-- S8 triggers (57–66) -->
+<div class="title-top">
+  <div class="eyebrow" data-t="trigE" data-in="57.3" data-y="24" data-out="65.5"></div>
+  <div class="headline" data-t="trigH" data-in="57.5" data-y="36" data-b="12" data-out="65.6"></div>
+</div>
+<div class="term" data-in="57.9" data-d="1.3" data-y="300" data-out="65.7" data-od="0.8" data-oy="160">
+  <div class="bar"><i></i><i></i><i></i><span>zsh</span></div>
+  <pre><span class="p">$ </span><span data-type="58.9,61.2" data-full='curl -X POST https://studio.example.com/api/hooks/workflows/support/runs \&#10;    -H "Authorization: Bearer wft_••••" \&#10;    -d &apos;{"input": {"message": "Where is A100?"}, "mode": "sync"}&apos;'></span><i class="caret" id="caret"></i>
+<span data-in="61.8" data-d="0.4" data-out="65.6"><span class="dim">{</span>
+  <span class="k">"success"</span>: true,
+  <span class="k">"data"</span>: { <span class="k">"status"</span>: <span class="s">"ok"</span>, <span class="k">"version"</span>: 3,
+            <span class="k">"final_state"</span>: { <span class="k">"intent"</span>: <span class="s">"order_status"</span>, … } }
+<span class="dim">}</span></span></pre>
+</div>
+<div class="browser" style="left:1060px; top:330px; width:750px;" data-in="58.3" data-d="1.3" data-y="300" data-out="65.8" data-od="0.8" data-oy="160">
+  <div class="bar"><i></i><i></i><i></i><div class="url" data-t="schedUrl"></div></div>
+  <div class="page"><div class="zoom" data-zoom="1.55,-40.6,-28"><img data-src="schedules" data-in="-1"></div></div>
+</div>
+<div class="chips" style="left:1060px; top:870px">
+  <span class="chip" data-in="62.4" data-s="0.8" data-y="16" data-out="65.6"><i></i><span data-t="chipSigned"></span></span>
+  <span class="chip" data-in="62.8" data-s="0.8" data-y="16" data-out="65.6"><i></i><span data-t="chipCron"></span></span>
+</div>
+
+<!-- S9 platform (66–74) -->
+<div class="tiles-head" data-t="opsHead" data-in="66.3" data-y="20" data-out="73.6"></div>
+<div class="tiles">
+  <div class="tile" data-in="66.5" data-d="1.1" data-y="70" data-b="10" data-out="73.7">
+    <svg viewBox="0 0 48 48"><ellipse cx="24" cy="11" rx="15" ry="6"/><path d="M9 11v13c0 3.3 6.7 6 15 6s15-2.7 15-6V11"/><path d="M9 24v13c0 3.3 6.7 6 15 6s15-2.7 15-6V24"/></svg>
+    <h3 data-t="t1h"></h3><p data-t="t1p"></p>
+  </div>
+  <div class="tile" data-in="66.75" data-d="1.1" data-y="70" data-b="10" data-out="73.75">
+    <svg viewBox="0 0 48 48"><rect x="6" y="8" width="36" height="10" rx="3"/><rect x="6" y="22" width="36" height="10" rx="3"/><rect x="6" y="36" width="36" height="6" rx="3"/><path d="M12 13h2M12 27h2"/></svg>
+    <h3 data-t="t2h"></h3><p data-t="t2p"></p>
+  </div>
+  <div class="tile" data-in="67.0" data-d="1.1" data-y="70" data-b="10" data-out="73.8">
+    <svg viewBox="0 0 48 48"><path d="M5 38h38"/><path d="M8 30l9-10 8 6 14-16"/><circle cx="17" cy="20" r="2"/><circle cx="25" cy="26" r="2"/><circle cx="39" cy="10" r="2"/></svg>
+    <h3 data-t="t3h"></h3><p data-t="t3p"></p>
+  </div>
+  <div class="tile" data-in="67.25" data-d="1.1" data-y="70" data-b="10" data-out="73.85">
+    <svg viewBox="0 0 48 48"><path d="M24 4l16 6v12c0 10-7 18-16 22C15 40 8 32 8 22V10z"/><path d="M17 24l5 5 9-10"/></svg>
+    <h3 data-t="t4h"></h3><p data-t="t4p"></p>
+  </div>
+</div>
+
+<!-- S10 getting started (74–81) -->
+<div class="start-head">
+  <div class="eyebrow" data-t="startE" data-in="74.3" data-y="24" data-out="80.5"></div>
+  <div class="headline" data-t="startH" data-in="74.5" data-y="36" data-b="12" data-out="80.6"></div>
+</div>
+<div class="steps">
+  <div class="step" data-in="75.1" data-d="1.0" data-y="60" data-b="10" data-out="80.6"><b>1</b><h3 data-t="st1h"></h3><p data-t="st1p"></p></div>
+  <i class="step-arrow" data-in="75.6" data-out="80.6"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i>
+  <div class="step" data-in="75.7" data-d="1.0" data-y="60" data-b="10" data-out="80.65"><b>2</b><h3 data-t="st2h"></h3><p data-t="st2p"></p></div>
+  <i class="step-arrow" data-in="76.2" data-out="80.6"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></i>
+  <div class="step" data-in="76.3" data-d="1.0" data-y="60" data-b="10" data-out="80.7"><b>3</b><h3 data-t="st3h"></h3><p data-t="st3p"></p></div>
+</div>
+
+<!-- S11 closing (81–90) -->
+<div class="center-stack">
+  <div class="icon" data-in="81.4" data-d="1.4" data-s="0.7" data-b="18" style="width:170px;height:170px;border-radius:42px"><img src="../../handbook/docs/assets/logo.svg"></div>
+  <div class="wordmark" data-in="82" data-d="1.2" data-y="36" data-b="14" style="font-size:120px;margin-top:38px">LangGraph Studio</div>
+  <div class="tagline" data-t="close" data-in="82.8" data-y="26" data-b="8"></div>
+  <div class="pills">
+    <span data-in="84" data-y="20" data-t="pill1"></span>
+    <span data-in="84.2" data-y="20" data-t="pill2"></span>
+    <span data-in="84.4" data-y="20" data-t="pill3"></span>
+  </div>
+</div>
+
+<div id="fade"></div>
+
+<script>
+const STRINGS = {
+  en: {
+    s1q: 'Is your agent still…',
+    s1a: 'a Python file only you can read,',
+    s1b: 'a black box when it fails,',
+    s1c: 'and a week away <span class="soft">from production?</span>',
+    tag: 'Design, run and operate LangGraph workflows.',
+    edE: 'Editor', edH: 'Draw the graph.<br>Save it as JSON.', edB: 'Thirteen node types and a typed state. The backend compiles it into a LangGraph <code>StateGraph</code>.',
+    cfgE: 'Nodes', cfgH: 'Configure every node<br>in place.', cfgB: 'Prompts with <code>{{state.field}}</code> references, filters and a model per node. Checked before you run.',
+    runE: 'Runs and traces', runH: 'See every step<br>as it runs.', runB: 'Duration, tokens and cost per node. Open any step for its input, output and state diff.',
+    humE: 'Human approval', humH: 'Pause for a person.<br>Resume from a checkpoint.', humB: 'Approve in the studio, or from chat buttons and e-mail links.',
+    codeE: 'Code mode', codeH: 'Python in the node.<br>In a locked container.', codeB: 'No network, a read-only root, no server secrets. Test it with sample state.',
+    trigE: 'Triggers', trigH: 'Call it from any service.', schedUrl: 'studio.example.com · Schedules',
+    chipSigned: 'Signed webhooks', chipCron: 'Cron schedules',
+    opsHead: 'Built for production',
+    t1h: 'Postgres and pgvector', t1p: 'Workflows, checkpoints, versions and vectors in one database.',
+    t2h: 'Redis workers', t2p: 'Leased jobs, recovery from the last checkpoint, effectively-once side effects.',
+    t3h: 'OpenTelemetry', t3p: 'A trace per run, a span per node. OTLP, Jaeger or LangSmith.',
+    t4h: 'Roles and versions', t4p: 'Admin, editor and viewer, shares, an audit log, and every change versioned.',
+    startE: 'Getting started', startH: 'Up in three steps.',
+    st1h: 'Start', st1p: '<code>./dev.sh</code> or <code>docker compose up</code>',
+    st2h: 'Add a model', st2p: 'OpenAI, Anthropic, Ollama, LM Studio, or the offline mock.',
+    st3h: 'Build and run', st3p: 'From a template or a blank graph.',
+    close: 'Graphs you can see. Runs you can trust.',
+    pill1: 'Self-hosted', pill2: 'FastAPI · React Flow', pill3: 'English · Tiếng Việt',
+  },
+  vi: {
+    s1q: 'Agent của bạn vẫn là…',
+    s1a: 'một file Python chỉ mình bạn đọc được,',
+    s1b: 'một hộp đen mỗi khi lỗi,',
+    s1c: 'và còn cả tuần <span class="soft">mới lên production?</span>',
+    tag: 'Thiết kế, chạy và vận hành workflow LangGraph.',
+    edE: 'Trình soạn thảo', edH: 'Vẽ graph.<br>Lưu thành JSON.', edB: 'Mười ba loại node và state có kiểu. Backend biên dịch thành <code>StateGraph</code> của LangGraph.',
+    cfgE: 'Node', cfgH: 'Cấu hình từng node<br>ngay tại chỗ.', cfgB: 'Prompt có tham chiếu <code>{{state.field}}</code>, filter và model riêng cho từng node. Kiểm tra trước khi chạy.',
+    runE: 'Run và trace', runH: 'Thấy từng bước<br>khi đang chạy.', runB: 'Thời gian, token và chi phí của từng node. Mở bước bất kỳ để xem input, output và state diff.',
+    humE: 'Duyệt bởi người', humH: 'Dừng chờ người duyệt.<br>Chạy tiếp từ checkpoint.', humB: 'Duyệt trong studio, hoặc bằng nút trên chat và link trong e-mail.',
+    codeE: 'Chế độ Code', codeH: 'Python ngay trong node.<br>Trong container khoá chặt.', codeB: 'Không mạng, root chỉ đọc, không có secret của server. Chạy thử với state mẫu.',
+    trigE: 'Trigger', trigH: 'Gọi từ bất kỳ dịch vụ nào.', schedUrl: 'studio.example.com · Lịch chạy',
+    chipSigned: 'Webhook có chữ ký', chipCron: 'Lịch cron',
+    opsHead: 'Sẵn sàng cho production',
+    t1h: 'Postgres và pgvector', t1p: 'Workflow, checkpoint, phiên bản và vector trong một database.',
+    t2h: 'Worker trên Redis', t2p: 'Job có lease, khôi phục từ checkpoint cuối, side effect gần như đúng một lần.',
+    t3h: 'OpenTelemetry', t3p: 'Mỗi run một trace, mỗi node một span. OTLP, Jaeger hoặc LangSmith.',
+    t4h: 'Vai trò và phiên bản', t4p: 'Admin, editor, viewer, chia sẻ, nhật ký, và mọi thay đổi đều có phiên bản.',
+    startE: 'Bắt đầu', startH: 'Chạy được sau ba bước.',
+    st1h: 'Khởi động', st1p: '<code>./dev.sh</code> hoặc <code>docker compose up</code>',
+    st2h: 'Thêm model', st2p: 'OpenAI, Anthropic, Ollama, LM Studio, hoặc bản mock offline.',
+    st3h: 'Dựng và chạy', st3p: 'Từ một mẫu hoặc graph trống.',
+    close: 'Graph nhìn thấy được. Run tin được.',
+    pill1: 'Tự host', pill2: 'FastAPI · React Flow', pill3: 'English · Tiếng Việt',
+  },
+};
+
+const params = new URLSearchParams(location.search);
+const LANG = params.get('lang') === 'vi' ? 'vi' : 'en';
+document.documentElement.lang = LANG;
+const S = STRINGS[LANG];
+document.querySelectorAll('[data-t]').forEach(el => { el.innerHTML = S[el.dataset.t]; });
+document.querySelectorAll('img[data-src]').forEach(img => { img.src = `../../handbook/docs/images/${LANG}/${img.dataset.src}.png`; });
+
+const clamp = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const easeOut = t => 1 - Math.pow(1 - t, 4);
+const easeIn = t => t * t * t;
+const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const num = (el, k, d) => el.dataset[k] !== undefined ? parseFloat(el.dataset[k]) : d;
+
+const items = [...document.querySelectorAll('[data-in]')].map(el => ({
+  el, tin: num(el, 'in'), d: num(el, 'd', 0.9), tout: num(el, 'out', Infinity), od: num(el, 'od', 0.55),
+  y: num(el, 'y', 0), s: num(el, 's', 1), b: num(el, 'b', 0), oy: num(el, 'oy', -24),
+}));
+
+// Typed text: data-type="start,end" reveals data-full over that span.
+const typers = [...document.querySelectorAll('[data-type]')].map(el => {
+  const [a, b] = el.dataset.type.split(',').map(Number);
+  return { el, a, b, full: el.dataset.full };
+});
+const caret = document.getElementById('caret');
+
+// Camera on the tour window: [time, scale, x%, y%] keyframes, x/y the point that moves to the top-left.
+const CAM = [[11.6, 1, 0, 0], [15.9, 1, 0, 0], [16.8, 1.4, -17, -5], [19.5, 1.4, -17, -5], [20.2, 1, 0, 0],
+             [21.6, 1.55, -55, -22], [27.4, 1.55, -55, -22], [28.2, 1, 0, 0], [29.4, 1, 0, 0], [30.4, 1.35, 0, -35], [33.0, 1.35, 0, -35],
+             [34.4, 1.6, -60, -60], [38.6, 1.6, -60, -60], [39.2, 1, 0, 0], [40.4, 1.35, 0, -35], [47.4, 1.35, 0, -35], [48.2, 1, 0, 0],
+             [49.6, 1.5, -50, 0], [52.4, 1.5, -50, 0], [53.4, 1.5, -50, -14], [56, 1.5, -50, -14], [56.8, 1, 0, 0]];
+const zoom = document.getElementById('zoom');
+function camAt(t) {
+  if (t <= CAM[0][0]) return CAM[0].slice(1);
+  for (let i = 1; i < CAM.length; i++) if (t <= CAM[i][0]) {
+    const a = CAM[i - 1], b = CAM[i], p = easeInOut((t - a[0]) / (b[0] - a[0]));
+    return [1, 2, 3].map(j => a[j] + (b[j] - a[j]) * p);
+  }
+  return CAM[CAM.length - 1].slice(1);
+}
+document.querySelectorAll('[data-zoom]').forEach(el => {
+  const [s, x, y] = el.dataset.zoom.split(',').map(Number);
+  el.style.transform = `translate(${x}%, ${y}%) scale(${s})`;
+});
+
+window.DURATION = 90;
+window.renderAt = function (t) {
+  for (const it of items) {
+    const pin = easeOut(clamp((t - it.tin) / it.d));
+    const pout = easeIn(clamp((t - (it.tout - it.od)) / it.od));
+    const op = pin * (1 - pout), st = it.el.style;
+    st.opacity = op.toFixed(4);
+    st.visibility = op <= 0.001 ? 'hidden' : 'visible';
+    if (op <= 0.001) continue;
+    const ty = it.y * (1 - pin) + it.oy * pout, sc = it.s + (1 - it.s) * pin;
+    st.transform = `translate3d(0, ${ty.toFixed(2)}px, 0) scale(${sc.toFixed(4)})`;
+    const blur = it.b * (1 - pin) + it.b * 0.6 * pout;
+    st.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : 'none';
+  }
+  for (const ty of typers) ty.el.textContent = ty.full.slice(0, Math.round(ty.full.length * clamp((t - ty.a) / (ty.b - ty.a))));
+  if (caret) caret.style.opacity = t >= 58.4 && t < 61.6 && (t <= 61.2 || Math.floor(t * 3) % 2 === 0) ? 1 : 0;
+  const [s, x, y] = camAt(t);
+  zoom.style.transform = `translate(${x.toFixed(3)}%, ${y.toFixed(3)}%) scale(${s.toFixed(4)})`;
+  document.getElementById('fade').style.opacity = clamp((t - 88.6) / 1.4).toFixed(4);
+};
+renderAt(0);
+</script>
+</body>
+</html>

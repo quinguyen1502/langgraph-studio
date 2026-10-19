@@ -28,6 +28,7 @@
 
 `backend/tests/test_api_envelope.py` checks that every catalog code appears in this table and in both locale files.
 
+<!-- --8<-- [start:catalog] -->
 ## WebSocket `/ws/run` error events
 
 ```jsonc
@@ -204,7 +205,7 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 
 ### LLM providers (TASK-0030)
 
-`PROVIDER_*` and `MODEL_NOT_FOUND` come from `POST /api/providers/{id}/test`, `GET /api/credentials/{id}/models` and, as the `code` of a run `error` event, from LLM nodes. `PROVIDER_AUTH_FAILED` is deliberately 400 (not 401) so the UI does not treat a rejected provider key as an expired studio session. `PROVIDER_UNREACHABLE` in Docker usually means the base URL says `localhost`: use `http://host.docker.internal:<port>` (see README, *Local LLM providers*).
+`PROVIDER_*` and `MODEL_NOT_FOUND` come from `POST /api/providers/{id}/test`, `GET /api/credentials/{id}/models` and, as the `code` of a run `error` event, from LLM nodes. `PROVIDER_AUTH_FAILED` is deliberately 400 (not 401) so the UI does not treat a rejected provider key as an expired studio session. `PROVIDER_UNREACHABLE` in Docker usually means the base URL says `localhost`: use `http://host.docker.internal:<port>` (see the handbook, *LLM providers*).
 
 `PROVIDER_EMBEDDINGS_UNSUPPORTED` and `KB_EMBEDDING_DIMENSION_MISMATCH` come from knowledge-base uploads, re-index, search and `POST /api/credentials/{id}/embeddings/test`. A knowledge base stores the dimension of its vectors (`dims`); a model that suddenly returns another size (same name, e.g. a re-pulled local model) is refused instead of mixing vectors. Changing the model or credential still re-indexes automatically.
 
@@ -217,3 +218,4 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 The `CODE_*` codes are the `code` of a run `error` event from a Tool node in Code mode. `CODE_FAILED`, `CODE_INVALID` (raised by the code itself), `CODE_RESULT_NOT_JSON`, `CODE_TIMEOUT` and `CODE_MEMORY` events also carry `code_output` with `stdout`, `traceback` and `runtime`. `CODE_RUNTIME_OFF` and `CODE_RUNTIME_UNAVAILABLE` mean the server cannot run code at all: the mode is off (`STUDIO_ENABLE_CODE_NODES`), Docker is not reachable, or the image (`STUDIO_CODE_IMAGE`, default `studio-code:1`) is missing.
 
 `CODE_WRITE_FORBIDDEN` (TASK-0054) comes from saving a workflow, restoring a version, using or importing a template, and any other write that adds a Code node or changes its `code`, when the user's role lacks `code.write` (admins only by default). Running, moving, renaming or deleting a Code node, and duplicating a workflow, stay allowed. Nothing is stored when it is refused.
+<!-- --8<-- [end:catalog] -->

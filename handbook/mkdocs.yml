@@ -1,0 +1,182 @@
+site_name: LangGraph Studio
+site_description: Design, run and operate LangGraph workflows in the browser
+
+# mkdocs-static-i18n derives the language switcher and canonical URLs from this.
+site_url: https://quinguyen1502.github.io/langgraph-studio/
+repo_url: https://github.com/quinguyen1502/langgraph-studio
+repo_name: langgraph-studio
+edit_uri: edit/develop/handbook/docs/
+
+docs_dir: docs
+site_dir: site
+strict: true
+validation:
+  anchors: warn
+  unrecognized_links: warn
+
+theme:
+  name: material
+  language: en
+  logo: assets/logo.svg
+  favicon: assets/logo.svg
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes
+    - navigation.top
+    - navigation.path
+    - navigation.footer
+    - search.highlight
+    - search.suggest
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+copyright: LangGraph Studio · Qui Nguyen · 2026
+
+plugins:
+  - search
+  - i18n:
+      docs_structure: suffix
+      fallback_to_default: true
+      reconfigure_material: true
+      reconfigure_search: true
+      languages:
+        - locale: en
+          default: true
+          name: English
+          build: true
+        - locale: vi
+          name: Tiếng Việt
+          build: true
+          site_description: Thiết kế, chạy và vận hành workflow LangGraph trên trình duyệt
+          nav_translations:
+            Home: Trang chủ
+            Getting started: Bắt đầu
+            Install: Cài đặt
+            Your first workflow: Workflow đầu tiên
+            Concepts: Khái niệm
+            Build: Xây dựng
+            The editor: Trình soạn thảo
+            Nodes: Các loại node
+            State and references: State và tham chiếu
+            Workflow templates: Mẫu workflow
+            Versions: Phiên bản
+            Code mode: Chế độ Code
+            Knowledge bases: Kho tri thức
+            MCP servers: Máy chủ MCP
+            Run: Chạy
+            Runs and traces: Run và trace
+            Human approval: Duyệt bởi người
+            API triggers and webhooks: API trigger và webhook
+            Schedules: Lịch chạy
+            Operate: Vận hành
+            Deploy with Compose: Triển khai bằng Compose
+            Accounts and security: Tài khoản và bảo mật
+            Roles and sharing: Vai trò và chia sẻ
+            LLM providers: Nhà cung cấp LLM
+            Approval channels: Kênh duyệt
+            Code runtime: Môi trường chạy Code
+            Observability: Quan sát hệ thống
+            Import a LangGraph repo: Import repo LangGraph
+            Reference: Tham chiếu
+            Configuration: Cấu hình
+            HTTP API: HTTP API
+            Error codes: Mã lỗi
+            Architecture: Kiến trúc
+            Keyboard shortcuts: Phím tắt
+            Development: Phát triển
+            FAQ: Câu hỏi thường gặp
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.snippets:
+      base_path: [..]
+      check_paths: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - start/index.md
+      - Install: start/install.md
+      - Your first workflow: start/first-workflow.md
+      - Concepts: start/concepts.md
+  - Build:
+      - guide/index.md
+      - The editor: guide/editor.md
+      - Nodes: guide/nodes.md
+      - State and references: guide/state.md
+      - Code mode: guide/code-mode.md
+      - Knowledge bases: guide/knowledge.md
+      - MCP servers: guide/mcp.md
+      - Workflow templates: guide/templates.md
+      - Versions: guide/versions.md
+  - Run:
+      - run/index.md
+      - Runs and traces: run/traces.md
+      - Human approval: run/human-approval.md
+      - API triggers and webhooks: run/api-triggers.md
+      - Schedules: run/schedules.md
+  - Operate:
+      - operate/index.md
+      - Deploy with Compose: operate/deploy.md
+      - Accounts and security: operate/accounts.md
+      - Roles and sharing: operate/access.md
+      - LLM providers: operate/providers.md
+      - Approval channels: operate/channels.md
+      - Code runtime: operate/code-runtime.md
+      - Observability: operate/observability.md
+      - Import a LangGraph repo: operate/import.md
+  - Reference:
+      - reference/index.md
+      - Configuration: reference/configuration.md
+      - HTTP API: reference/api.md
+      - Error codes: reference/errors.md
+      - Architecture: reference/architecture.md
+      - Keyboard shortcuts: reference/shortcuts.md
+      - Development: reference/development.md
+      - FAQ: reference/faq.md

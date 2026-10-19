@@ -572,7 +572,7 @@
     "example": "Ví dụ",
     "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả.",
     "signingSecret": "Khoá ký webhook",
-    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem README).",
+    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem handbook, mục API trigger).",
     "rotate": "Đổi khoá ký",
     "rotateAria": "Đổi khoá ký của {{name}}",
     "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",

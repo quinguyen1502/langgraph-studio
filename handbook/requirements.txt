@@ -1,0 +1,4 @@
+# Pinned for a reproducible `mkdocs build --strict`.
+# mkdocs-static-i18n's material extra caps Material below 9.7.2.
+mkdocs-material==9.6.21
+mkdocs-static-i18n==1.3.0

@@ -20,7 +20,7 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
 }, []))
 const lang = args.lang === 'vi' ? 'vi' : 'en'
 const fps = Number(args.fps || 30)
-const POSTER_AT = 44.6  // the run waiting at the Human node
+const POSTER_AT = 55.6  // the run waiting at the Human node, with the approval channels
 
 const browser = await chromium.launch({ executablePath: chromePath(), args: ['--allow-file-access-from-files', '--force-color-profile=srgb', '--hide-scrollbars'] })
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })

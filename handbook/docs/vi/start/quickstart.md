@@ -30,8 +30,8 @@ và có thể được dịch vụ khác gọi qua HTTP.
 
 ## 2. Thêm và nối các node
 
-1. Kéo **LLM** từ **Node palette** thả vào canvas, rồi kéo **Human** đặt cạnh
-   nó.
+1. Kéo **LLM** từ **Node palette** thả vào canvas. Cuộn palette xuống tới
+   **Human** và kéo nó đặt cạnh node LLM.
 2. Chọn cạnh từ Start tới End và nhấn ++delete++.
 3. Nối các node: kéo từ handle bên phải của **Start** tới handle bên trái của
    **LLM**, rồi **LLM** tới **Human**, rồi **Human** tới **End**.
@@ -77,7 +77,16 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
 
 3. Thêm field `decision` vào state và chọn nó làm **Output field**. Field này
    nhận `approved`, `rejected` hoặc câu trả lời được gõ vào.
-4. Chọn **Lưu** (++ctrl+s++ hoặc ++cmd+s++). Backend kiểm tra graph và lưu
+4. Tuỳ chọn: ở **Kênh phê duyệt**, đặt **Gửi yêu cầu phê duyệt tới** một kênh
+   Slack, Telegram, WhatsApp, e-mail hoặc Teams đã kết nối, rồi điền đích gửi
+   (với Slack là channel id). **Người duyệt (e-mail)** liệt kê những người khác
+   được trả lời. Kênh được kết nối ở **Cài đặt → Kênh**; xem
+   [Kênh duyệt](../operate/channels.md). Làm theo hướng dẫn này chỉ cần
+   **Chỉ trong Studio**.
+
+    ![Node Human gửi yêu cầu tới Slack](../images/quickstart-human.png)
+
+5. Chọn **Lưu** (++ctrl+s++ hoặc ++cmd+s++). Backend kiểm tra graph và lưu
    thành một phiên bản mới.
 
 !!! info "Kiểm tra graph"
@@ -100,6 +109,14 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
 
 3. Đọc câu hỏi và câu trả lời đã soạn, rồi chọn **Duyệt**. Run chạy tiếp từ
    checkpoint và kết thúc.
+
+!!! tip "Trả lời từ chat hoặc e-mail"
+    Khi node Human có kênh, cùng yêu cầu đó cũng được gửi tới kênh: nút
+    **Duyệt** và **Từ chối** trên Slack và Telegram, hai nút trả lời trên
+    WhatsApp, và link trong e-mail và Teams mở về studio. Chỉ chủ của run và
+    những người duyệt được liệt kê mới trả lời được, và chỉ một lần. Trả lời
+    trong studio sẽ đóng yêu cầu ở mọi nơi. Xem
+    [Duyệt bởi người](../run/human-approval.md#duyet-qua-chat).
 
 !!! success "Kiểm tra"
     Tab **Logs** hiện **Hoàn thành** với bốn bước: Start, Soạn trả lời, Duyệt
@@ -151,7 +168,8 @@ Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó m
   ([State và tham chiếu](../guide/state.md)).
 - Mỗi lần lưu là một phiên bản, và mỗi run ghi lại phiên bản nó dùng
   ([Phiên bản](../guide/versions.md)).
-- Node Human dừng run ở trạng thái `waiting` và chạy tiếp từ checkpoint
+- Node Human dừng run ở trạng thái `waiting` và chạy tiếp từ checkpoint; yêu
+  cầu duyệt có thể gửi cả tới chat hoặc e-mail
   ([Duyệt bởi người](../run/human-approval.md)).
 - Mỗi bước của run giữ input, output và state diff
   ([Run và trace](../run/traces.md)).

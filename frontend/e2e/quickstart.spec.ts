@@ -27,7 +27,7 @@ const T = {
   },
 }
 // Frames that also illustrate the quickstart page
-const DOC = { gallery: 'quickstart-gallery', graph: 'quickstart-graph', 'llm-config': 'quickstart-llm', waiting: 'quickstart-waiting', diff: 'quickstart-diff', token: 'quickstart-api', history: 'quickstart-history' }
+const DOC = { gallery: 'quickstart-gallery', graph: 'quickstart-graph', 'llm-config': 'quickstart-llm', 'human-slack': 'quickstart-human', waiting: 'quickstart-waiting', diff: 'quickstart-diff', token: 'quickstart-api', history: 'quickstart-history' }
 
 for (const lang of ['en', 'vi'] as Lang[]) {
   test.describe(`quickstart ${lang}`, () => {
@@ -67,6 +67,13 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       const H = { Authorization: `Bearer ${token}` }
       for (const w of (await (await page.request.get('/api/workflows', { headers: H })).json()).data)
         if (w.id !== 'example') await page.request.delete(`/api/workflows/${w.id}?force=true`, { headers: H })
+      // Approval channels the Human node can send to, against the e2e fake chat APIs
+      for (const c of (await (await page.request.get('/api/approvals/channels', { headers: H })).json()).data.channels)
+        await page.request.delete(`/api/approvals/channels/${c.id}`, { headers: H })
+      const CHAT = `http://127.0.0.1:${process.env.E2E_CHAT_PORT || 8111}`
+      for (const data of [{ kind: 'slack', bot_token: 'xoxb-1111-2222-e2etoken', signing_secret: '0123456789abcdef0123456789abcdef' },
+        { kind: 'telegram', bot_token: '123456:e2e-bot-token-0123456789abcdef' }, { kind: 'teams', webhook_url: `${CHAT}/teams/hook-quickstart` }])
+        expect((await page.request.post('/api/approvals/channels', { headers: H, data })).ok()).toBeTruthy()
 
       // 1. Create: New workflow → Blank workflow
       await page.goto('/workflows'); await expect(page.locator('#new-wf')).toBeVisible()
@@ -83,10 +90,14 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       const [px, py] = await box(pane)
       const LLM_AT = { x: 260, y: 420 }, HUMAN_AT = { x: 560, y: 420 }
       const dropLlm: Box = [px + LLM_AT.x, py + LLM_AT.y, 1, 1], dropHuman: Box = [px + HUMAN_AT.x, py + HUMAN_AT.y, 1, 1]
-      await snap('blank', { llm: card('LLM'), human: card('Human'), dropLlm, dropHuman, edge: page.locator('[data-testid="rf__edge-e1"]') })
+      await snap('blank', { llm: card('LLM'), dropLlm })
       await card('LLM').dragTo(pane, { targetPosition: LLM_AT })
+      // Human sits below the fold of the palette: scroll to it first, as a person would
+      await card('Human').scrollIntoViewIfNeeded()
+      await snap('llm-dropped', { human: card('Human'), dropHuman })
       await card('Human').dragTo(pane, { targetPosition: HUMAN_AT })
       await expect(page.locator('.react-flow__node')).toHaveCount(4)
+      await snap('both-dropped', { edge: page.locator('[data-testid="rf__edge-e1"]') })
       await page.locator('[data-testid="rf__edge-e1"] path').first().click({ force: true }); await page.keyboard.press('Delete')
       await expect(page.locator('.react-flow__edge')).toHaveCount(0)
       const start = '.react-flow__node[data-id="start"]', end = '.react-flow__node[data-id="end"]', llm = '.react-flow__node-llm', human = '.react-flow__node-human'
@@ -113,7 +124,14 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await field(s.label).locator('input').fill(s.approve)
       await page.locator('#human-prompt').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.insertText(s.question)
       await addField('decision'); await pickOutput('decision')
-      await snap('human-config', { prompt: page.locator('#human-prompt'), output: field(s.output), save: page.locator('#save-btn') })
+      // Send the request to Slack as well; the studio still shows it to the run's owner
+      await page.locator('#approval-channel').scrollIntoViewIfNeeded()
+      await snap('human-config', { prompt: page.locator('#human-prompt'), output: field(s.output), channel: page.locator('#approval-channel') })
+      await page.locator('#approval-channel').click(); await expect(page.getByRole('option', { name: /Slack/ })).toBeVisible()
+      await snap('channels', { list: page.getByRole('listbox'), slack: page.getByRole('option', { name: /Slack/ }) })
+      await page.getByRole('option', { name: /Slack/ }).click()
+      await page.locator('#approval-target').fill('C0SUPPORT')
+      await snap('human-slack', { channel: page.locator('#approval-channel'), target: page.locator('#approval-target'), save: page.locator('#save-btn') })
       await page.locator('#save-btn').click(); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
       await pane.click({ position: { x: 30, y: 30 } })
       await snap('graph', { save: page.locator('#save-btn'), input: page.getByRole('tab', { name: 'Input' }).first() })

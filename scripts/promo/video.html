@@ -43,6 +43,12 @@
   #cursor { position: absolute; left: 0; top: 0; width: 34px; height: 34px; z-index: 20; will-change: transform; }
   #ripple { position: absolute; left: 0; top: 0; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 4px solid var(--brand); z-index: 19; opacity: 0; }
 
+  #chips { position: absolute; left: 0; right: 0; top: 28px; display: flex; justify-content: center; gap: 12px; z-index: 18; }
+  #chips span { display: inline-flex; align-items: center; gap: 10px; padding: 11px 22px 11px 16px; border-radius: 999px; font-size: 24px; font-weight: 800;
+                background: var(--ink); color: #fff; box-shadow: 0 12px 28px rgba(29,27,38,.28); }
+  #chips i { width: 12px; height: 12px; border-radius: 50%; background: #a48bff; display: block; }
+  #chips .ok2 { background: var(--brand); } #chips .ok2 i { background: #fff; }
+
   /* caption under the window */
   #cap { position: absolute; left: 0; right: 0; top: 986px; display: flex; justify-content: center; }
   .line { position: absolute; display: flex; align-items: center; gap: 16px; font-size: 31px; font-weight: 700; letter-spacing: -.3px; white-space: nowrap; }
@@ -87,6 +93,7 @@
       <div class="ghost fx" id="ghost-human"><i style="background:#fde7f1"></i>Human</div>
     </div>
     <div id="ripple"></div>
+    <div id="chips" class="fx"><span><i></i>Slack</span><span><i></i>Telegram</span><span><i></i>WhatsApp</span><span><i></i>E-mail</span><span><i></i>Teams</span><span class="ok2"><i></i>Approve · Reject</span></div>
     <svg id="cursor" class="fx" viewBox="0 0 24 24"><path d="M4 2.5l15 9.2-6.6 1.3 3.9 7.4-2.9 1.5-3.9-7.4L4.8 19z" fill="#1d1b26" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/></svg>
   </div></div>
 </div>
@@ -106,11 +113,11 @@
 </div>
 
 <div class="center">
-  <div class="logo fx" data-a="78.4"><img src="../../handbook/docs/en/assets/logo.svg"></div>
-  <div class="word fx" data-a="78.8" style="font-size:96px">LangGraph Studio</div>
-  <div class="sub fx" data-a="79.4" data-t="outro"></div>
-  <div class="cmd fx" data-a="80.2"><span class="p">$ </span>git clone …/langgraph-studio &amp;&amp; ./dev.sh</div>
-  <div class="url2 fx" data-a="80.8">quinguyen1502.github.io/langgraph-studio</div>
+  <div class="logo fx" data-a="89.4"><img src="../../handbook/docs/en/assets/logo.svg"></div>
+  <div class="word fx" data-a="89.8" style="font-size:96px">LangGraph Studio</div>
+  <div class="sub fx" data-a="90.4" data-t="outro"></div>
+  <div class="cmd fx" data-a="91.2"><span class="p">$ </span>git clone …/langgraph-studio &amp;&amp; ./dev.sh</div>
+  <div class="url2 fx" data-a="91.8">quinguyen1502.github.io/langgraph-studio</div>
 </div>
 
 <div id="fade"></div>
@@ -123,11 +130,13 @@ const STRINGS = {
     chapters: ['Create', 'Build', 'Configure', 'Run', 'Ship'],
     create: 'Create a workflow: <b2>New workflow</b2> → <b2>Blank workflow</b2>',
     drag: 'Drag an <code>LLM</code> and a <code>Human</code> node from the palette',
-    wire: 'Remove the old edge, then wire Start → LLM → Human → End',
+    wire: 'Select the old edge, press <kbd>Del</kbd>, then wire Start → LLM → Human → End',
     tidy: '<kbd>Shift</kbd><kbd>L</kbd> tidies the graph',
     prompt: 'Write the prompt. <code>{{state.message}}</code> reads the run input',
     output: 'Add a <code>reply</code> field to the state and write the answer to it',
     human: 'The Human node asks before the reply goes out',
+    channel: 'Send the request to Slack, Telegram, WhatsApp, e-mail or Teams too',
+    remote: 'Approvers can answer there: buttons in chat, links in e-mail and Teams',
     save: 'Save. Every save is a new version',
     input: 'Run it with a JSON input',
     wait: 'The run stops at the Human node, with its state checkpointed',
@@ -144,11 +153,13 @@ const STRINGS = {
     chapters: ['Tạo', 'Dựng', 'Cấu hình', 'Chạy', 'Đưa vào dùng'],
     create: 'Tạo workflow: <b2>Workflow mới</b2> → <b2>Workflow trống</b2>',
     drag: 'Kéo một node <code>LLM</code> và một node <code>Human</code> từ palette',
-    wire: 'Xoá cạnh cũ, rồi nối Start → LLM → Human → End',
+    wire: 'Chọn cạnh cũ, nhấn <kbd>Del</kbd>, rồi nối Start → LLM → Human → End',
     tidy: '<kbd>Shift</kbd><kbd>L</kbd> sắp xếp lại graph',
     prompt: 'Viết prompt. <code>{{state.message}}</code> đọc từ input của run',
     output: 'Thêm field <code>reply</code> vào state và ghi câu trả lời vào đó',
     human: 'Node Human hỏi trước khi câu trả lời được gửi đi',
+    channel: 'Gửi yêu cầu duyệt tới cả Slack, Telegram, WhatsApp, e-mail hoặc Teams',
+    remote: 'Người duyệt trả lời ngay tại đó: nút trên chat, link trong e-mail và Teams',
     save: 'Lưu. Mỗi lần lưu là một phiên bản mới',
     input: 'Chạy với một input JSON',
     wait: 'Run dừng ở node Human, state được lưu checkpoint',
@@ -190,59 +201,63 @@ show('list', 0)
 move(mid('list', 'newWf'), 5.6, 6.6); click(6.8); show('gallery', 7.0)
 cap('create', 0, 5.6, 9.6)
 move(mid('gallery', 'blank'), 7.6, 8.6); click(8.8); show('blank', 9.1)
-// 2 Build: drag two nodes, wire them, tidy
-cap('drag', 1, 9.8, 14.4)
+// 2 Build: drag two nodes (the palette scrolls to Human), delete the old edge, wire, tidy
+cap('drag', 1, 9.8, 15.6)
 move(mid('blank', 'llm'), 9.8, 10.6); move(mid('blank', 'dropLlm'), 10.9, 11.9, true)
-DRAGS.push({ el: 'ghost-llm', t0: 10.85, t1: 11.9, out: 14.5 })
-move(mid('blank', 'human'), 12.2, 12.9); move(mid('blank', 'dropHuman'), 13.2, 14.1, true)
-DRAGS.push({ el: 'ghost-human', t0: 13.15, t1: 14.1, out: 14.5 })
-show('dropped', 14.4)
-cap('wire', 1, 14.6, 18.6)
-const wire = (a, b, t0, t1) => { move(mid('dropped', a), t0 - 0.6, t0); move(mid('dropped', b), t0 + 0.05, t1, true); WIRES.push({ a: mid('dropped', a), b: mid('dropped', b), t0, t1, out: 19.3 }) }
-wire('startOut', 'llmIn', 15.3, 16.1); wire('llmOut', 'humanIn', 16.8, 17.5); wire('humanOut', 'endIn', 18.2, 18.9)
-cap('tidy', 1, 18.7, 21.0); show('wired', 19.4)
-camAt(19.6, 20.5, 1.6, (([x, y]) => [x + 150, y])(mid('wired', 'llm')))
+DRAGS.push({ el: 'ghost-llm', t0: 10.85, t1: 11.9, out: 12.2 })
+show('llm-dropped', 12.2)
+move(mid('llm-dropped', 'human'), 12.6, 13.4); move(mid('llm-dropped', 'dropHuman'), 13.7, 14.7, true)
+DRAGS.push({ el: 'ghost-human', t0: 13.65, t1: 14.7, out: 14.9 })
+show('both-dropped', 14.9)
+cap('wire', 1, 15.6, 20.9)
+move(mid('both-dropped', 'edge'), 15.6, 16.3); click(16.5); show('dropped', 16.9)
+const wire = (a, b, t0, t1) => { move(mid('dropped', a), t0 - 0.6, t0); move(mid('dropped', b), t0 + 0.05, t1, true); WIRES.push({ a: mid('dropped', a), b: mid('dropped', b), t0, t1, out: 21.5 }) }
+wire('startOut', 'llmIn', 17.5, 18.3); wire('llmOut', 'humanIn', 18.9, 19.6); wire('humanOut', 'endIn', 20.2, 20.9)
+cap('tidy', 1, 20.9, 23.1); show('wired', 21.5)
+camAt(21.7, 22.6, 1.6, (([x, y]) => [x + 150, y])(mid('wired', 'llm')))
 // 3 Configure
-move(mid('wired', 'llm'), 21.0, 21.8); click(22.0); show('llm-selected', 22.2)
-const promptAt = mid('llm-selected', 'prompt')
-camAt(22.4, 23.4, 1.75, promptAt)
-cap('prompt', 2, 22.4, 27.0)
-show('llm-config', 25.0)
-camAt(27.0, 28.0, 1.75, mid('llm-config', 'state')); cap('output', 2, 27.0, 30.6)
-camAt(28.8, 29.8, 1.75, mid('llm-config', 'output'))
-camAt(30.2, 30.9, 1, home)
-move(mid('llm-config', 'human'), 30.6, 31.3); click(31.5); show('human-config', 31.7)
-camAt(31.9, 32.8, 1.75, mid('human-config', 'prompt')); cap('human', 2, 31.8, 35.2)
-camAt(34.6, 35.3, 1, home)
-move(mid('human-config', 'save'), 35.3, 36.1); click(36.3); show('graph', 36.5); cap('save', 2, 36.3, 38.6)
+move(mid('wired', 'llm'), 23.1, 23.9); click(24.1); show('llm-selected', 24.3)
+camAt(24.5, 25.5, 1.75, mid('llm-selected', 'prompt')); cap('prompt', 2, 24.5, 29.1)
+show('llm-config', 27.1)
+camAt(29.1, 30.1, 1.75, mid('llm-config', 'state')); cap('output', 2, 29.1, 32.7)
+camAt(30.9, 31.9, 1.75, mid('llm-config', 'output'))
+camAt(32.3, 33.0, 1, home)
+move(mid('llm-config', 'human'), 32.7, 33.4); click(33.6); show('human-config', 33.8)
+camAt(34.0, 34.9, 1.75, mid('human-config', 'prompt')); cap('human', 2, 33.9, 37.0)
+camAt(36.6, 37.4, 1.6, mid('human-config', 'channel')); cap('channel', 2, 37.0, 42.4)
+move(mid('human-config', 'channel'), 37.4, 38.0); click(38.2); show('channels', 38.4)
+move(mid('channels', 'slack'), 38.9, 39.5); click(39.7); show('human-slack', 39.9)
+camAt(41.6, 42.3, 1, home)
+move(mid('human-slack', 'save'), 42.2, 42.9); click(43.1); show('graph', 43.3); cap('save', 2, 43.1, 45.4)
 // 4 Run
-move(mid('graph', 'input'), 38.4, 39.1); click(39.3); show('input', 39.5)
-camAt(39.7, 40.5, 1.5, [560, 760]); cap('input', 3, 39.6, 43.0)
-camAt(41.8, 42.4, 1, home)
-move(mid('input', 'run'), 42.2, 42.9); click(43.1); show('waiting', 43.4)
-camAt(43.6, 44.4, 1.3, (([x, y, w, h]) => [x + w * 0.32, y + h / 2])(tg('waiting', 'panel'))); cap('wait', 3, 43.5, 47.6)
-move(mid('waiting', 'approve'), 46.4, 47.1); click(47.3); show('done', 47.6)
-camAt(47.8, 48.4, 1.3, [560, 520]); cap('approve', 3, 47.6, 50.4)
-camAt(50.0, 50.6, 1, home)
-move(mid('done', 'llm'), 50.4, 51.0); click(51.2); show('diff', 51.4)
-camAt(51.6, 52.4, 1.6, mid('diff', 'diff')); cap('diff', 3, 51.5, 55.4)
-camAt(54.8, 55.4, 1, home)
-// 5 Ship
-move(mid('diff', 'more'), 55.4, 56.0); click(56.2); show('more', 56.4)
-move(mid('more', 'api'), 56.5, 57.1); click(57.3); show('api', 57.5)
-camAt(57.6, 58.4, 1.35, mid('api', 'name')); cap('token', 4, 57.5, 61.4)
-move(mid('api', 'create'), 58.5, 59.2); click(59.4); show('token', 59.6)
+move(mid('graph', 'input'), 45.4, 46.1); click(46.3); show('input', 46.5)
+camAt(46.7, 47.5, 1.5, [560, 760]); cap('input', 3, 46.6, 50.0)
+camAt(48.8, 49.4, 1, home)
+move(mid('input', 'run'), 49.2, 49.9); click(50.1); show('waiting', 50.4)
+camAt(50.6, 51.4, 1.3, (([x, y, w, h]) => [x + w * 0.32, y + h / 2])(tg('waiting', 'panel'))); cap('wait', 3, 50.5, 54.0)
+cap('remote', 3, 54.0, 58.3); const CHIPS = { tin: 54.2, tout: 58.3 }
+move(mid('waiting', 'approve'), 57.4, 58.1); click(58.3); show('done', 58.6)
+camAt(58.8, 59.4, 1.3, [560, 520]); cap('approve', 3, 58.6, 61.4)
 camAt(61.0, 61.6, 1, home)
-const TERM = { tin: 61.6, tout: 67.8, type0: 62.2, type1: 64.6, resp: 65.1 }
-cap('curl', 4, 61.6, 67.8)
-show('schedule', 68.0)
-camAt(68.2, 69.0, 1.45, mid('schedule', 'preview')); cap('cron', 4, 68.0, 72.6)
-move(mid('schedule', 'create'), 70.4, 71.1); click(71.3); show('scheduled', 71.5)
-camAt(72.4, 73.0, 1, home)
-show('history', 73.0)
-camAt(73.3, 74.1, 1.5, [480, 740]); cap('history', 4, 73.0, 77.4)
-const WIN = { tin: 4.6, tout: 77.8 }, CURSOR = { tin: 5.4, tout: 77.4 }
-window.DURATION = 86.6
+move(mid('done', 'llm'), 61.4, 62.0); click(62.2); show('diff', 62.4)
+camAt(62.6, 63.4, 1.6, mid('diff', 'diff')); cap('diff', 3, 62.5, 66.4)
+camAt(65.8, 66.4, 1, home)
+// 5 Ship
+move(mid('diff', 'more'), 66.4, 67.0); click(67.2); show('more', 67.4)
+move(mid('more', 'api'), 67.5, 68.1); click(68.3); show('api', 68.5)
+camAt(68.6, 69.4, 1.35, mid('api', 'name')); cap('token', 4, 68.5, 72.4)
+move(mid('api', 'create'), 69.5, 70.2); click(70.4); show('token', 70.6)
+camAt(72.0, 72.6, 1, home)
+const TERM = { tin: 72.6, tout: 78.8, type0: 73.2, type1: 75.6, resp: 76.1 }
+cap('curl', 4, 72.6, 78.8)
+show('schedule', 79.0)
+camAt(79.2, 80.0, 1.45, mid('schedule', 'preview')); cap('cron', 4, 79.0, 83.6)
+move(mid('schedule', 'create'), 81.4, 82.1); click(82.3); show('scheduled', 82.5)
+camAt(83.4, 84.0, 1, home)
+show('history', 84.0)
+camAt(84.3, 85.1, 1.5, [480, 740]); cap('history', 4, 84.0, 88.4)
+const WIN = { tin: 4.6, tout: 88.8 }, CURSOR = { tin: 5.4, tout: 88.4 }
+window.DURATION = 97.6
 
 // ---- build the DOM ------------------------------------------------------------------------------
 document.querySelectorAll('[data-t]').forEach(el => { el.textContent = S[el.dataset.t] })
@@ -326,6 +341,7 @@ window.renderAt = function (t) {
 
   CAPS.forEach((cp, i) => { const op = fadeIO(t, cp.t0, cp.t1, 0.35); setFx(capEls[i], op, 14 * (1 - easeOut(clamp((t - cp.t0) / 0.35)))) ; capEls[i].style.left = '50%'; capEls[i].style.translate = '-50% 0' })
 
+  setFx(document.getElementById('chips'), fadeIO(t, CHIPS.tin, CHIPS.tout, 0.45), -30 * (1 - easeOut(clamp((t - CHIPS.tin) / 0.45))))
   setFx(term.el, fadeIO(t, TERM.tin, TERM.tout, 0.6), 200 * (1 - easeOut(clamp((t - TERM.tin) / 0.6))))
   term.typed.textContent = call.slice(0, Math.round(call.length * clamp((t - TERM.type0) / (TERM.type1 - TERM.type0))))
   setFx(term.resp, clamp((t - TERM.resp) / 0.3))

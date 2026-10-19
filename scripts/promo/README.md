@@ -1,9 +1,9 @@
 # Quickstart video
 
-Renders the 87 s video on the handbook home page. It follows the
+Renders the 98 s video on the handbook home page. It follows the
 [Quickstart](../../handbook/docs/en/start/quickstart.md) step by step: create a
-blank workflow, drag an LLM and a Human node, wire and configure them, run and
-approve, read the state diff, create an API token, call it with `curl`, add a
+blank workflow, drag an LLM and a Human node, wire and configure them, send
+the approval request to Slack, run and approve, read the state diff, create an API token, call it with `curl`, add a
 schedule, and open History.
 
 The screens are real: `frontend/e2e/quickstart.spec.ts` does the quickstart in
@@ -39,7 +39,7 @@ The spec takes about a minute, each render a few minutes. To check a layout
 without encoding, render stills at chosen seconds:
 
 ```bash
-node render.mjs --lang en --stills 11.4,44.6,64
+node render.mjs --lang en --stills 13,55.6,75
 ```
 
 To inspect one moment, open `video.html?lang=vi` in Chrome started with

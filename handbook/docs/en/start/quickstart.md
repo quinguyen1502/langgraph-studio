@@ -30,8 +30,8 @@ person to approve it, and can be called from another service over HTTP.
 
 ## 2. Add and connect the nodes
 
-1. Drag **LLM** from the **Node palette** onto the canvas, then drag
-   **Human** next to it.
+1. Drag **LLM** from the **Node palette** onto the canvas. Scroll the palette
+   down to **Human** and drag it next to the LLM node.
 2. Select the edge from Start to End and press ++delete++.
 3. Connect the nodes: drag from the right handle of **Start** to the left
    handle of **LLM**, then **LLM** to **Human**, then **Human** to **End**.
@@ -77,7 +77,16 @@ workflow has one field, `message`, which holds the run input.
 
 3. Add a state field `decision` and set it as the **Output field**. It
    receives `approved`, `rejected` or a typed answer.
-4. Select **Save** (++ctrl+s++ or ++cmd+s++). The backend validates the graph
+4. Optional: under **Approval channel**, set **Send the approval request to**
+   a connected Slack, Telegram, WhatsApp, e-mail or Teams channel, then its
+   target (for Slack, the channel id). **Approvers (e-mails)** lists who else
+   may answer. Channels are connected under **Settings → Channels**; see
+   [Approval channels](../operate/channels.md). The quickstart works with
+   **Studio only**.
+
+    ![The Human node sending its request to Slack](../images/quickstart-human.png)
+
+5. Select **Save** (++ctrl+s++ or ++cmd+s++). The backend validates the graph
    and stores it as a new version.
 
 !!! info "Validation"
@@ -100,6 +109,14 @@ workflow has one field, `message`, which holds the run input.
 
 3. Read the question and the drafted reply, then select **Approve**. The run
    resumes from its checkpoint and finishes.
+
+!!! tip "Answer from chat or e-mail"
+    With a channel set on the Human node, the same request also goes there:
+    **Approve** and **Reject** buttons in Slack and Telegram, two reply
+    buttons in WhatsApp, and links in e-mail and Teams that open the studio.
+    Only the run's owner and the listed approvers can answer, once. Answering
+    in the studio closes the request everywhere. See
+    [Human approval](../run/human-approval.md#approve-from-chat).
 
 !!! success "Check"
     The **Logs** tab shows **Completed** with four steps: Start, Draft reply,
@@ -152,7 +169,8 @@ Select **Draft reply** on the canvas or in **Logs**. The step opens with
   ([State and references](../guide/state.md)).
 - Every save is a version, and every run records the version it used
   ([Versions](../guide/versions.md)).
-- A Human node pauses a run in `waiting` and resumes it from a checkpoint
+- A Human node pauses a run in `waiting` and resumes it from a checkpoint;
+  the request can also go to chat or e-mail
   ([Human approval](../run/human-approval.md)).
 - Each step of a run keeps its input, output and state diff
   ([Runs and traces](../run/traces.md)).

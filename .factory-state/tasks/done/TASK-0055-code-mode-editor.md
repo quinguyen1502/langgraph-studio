@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0055
-- Status: review
+- Status: done
 - Phase: nodes
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -115,6 +115,7 @@ In the editor, a user with `code.write` can pick **Code** for a Tool node, write
 - 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
 - 2026-10-19: Started on `factory/task-0055-code-mode-editor`, branched from TASK-0054 (owner: "Làm task 1 chuỗi 54, 55, 56").
 - 2026-10-19: Implemented. Test with sample state is `POST /api/code/test`; see the DEC-0041 addendum. Review REV-0052, QA QA-0052 (pass). PR open; not merged.
+- 2026-10-19: Merged in PR #63 (owner: "Merge lần lượt PR #62, #63, #64").
 
 ## Handoff Notes
 

@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlsplit
 import httpx
 from ..core import config
 from ..core.net import pinned_request, public_address
-from . import decisions, emails, foreach
+from . import code_runtime, decisions, emails, foreach
 from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, TokenBuffer, call_llm
@@ -23,6 +23,14 @@ def token_stream(nid: str) -> Optional[TokenBuffer]:
     try: from langgraph.config import get_stream_writer; write = get_stream_writer()
     except Exception: return None
     return TokenBuffer(lambda delta: write({"node": nid, "delta": delta}))
+
+
+def code_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], ports: Ports) -> Any:
+    """Tool node Code mode (TASK-0053): main(state) in the sandbox. What it printed goes to the trace (`code_output`)."""
+    res = code_runtime.run_code(d.get("code") or "", dict(state), node=nid, timeout=d.get("timeout"), cancelled=ports.cancelled)
+    try: from langgraph.config import get_stream_writer; get_stream_writer()({"node": nid, "code_output": res.trace()})
+    except Exception: pass  # outside a streamed run
+    return res.value
 
 
 def http_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], extra: Dict[str, str]) -> Any:
@@ -68,6 +76,8 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
         def fn(state):
             if d.get("mode") == "http":
                 res = http_call(node["id"], d, state, effects.headers(node["id"]) if effects else {})
+            elif d.get("mode") == "code":
+                res = code_call(node["id"], d, state, ports)
             else:
                 res = call_tool(TOOLS[d["function"]], state, effects.key(node["id"]) if effects else None)
             return {d["output_field"]: res}

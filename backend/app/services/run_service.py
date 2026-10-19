@@ -400,6 +400,8 @@ class RunService:
             try: loop.call_soon_threadsafe(q.put_nowait, x)
             except RuntimeError: pass  # loop closed after client went away
 
+        if plan.ports is not None:  # a Code node's sandbox is killed when the run is cancelled or times out (TASK-0053)
+            plan.ports.cancelled = lambda: cancel.is_set() or bus.is_cancelled(rid)
         plan.effects = Effects(rid, plan.attempt, ledger=_RunLedger(self.ledger, rid, plan.fence) if self.ledger is not None else None,
                           guard=self._guard(rid, plan.fence))
 

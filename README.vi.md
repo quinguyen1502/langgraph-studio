@@ -76,7 +76,7 @@ UI có tiếng Anh và tiếng Việt (`frontend/src/locales/en.json` và `vi.js
 ```
 
 - **LLM.** `model`, `prompt` với `{{state.field}}`, `output_field`. Khi đang chạy, từng đoạn chữ tới qua event `node_token` và hiện ở dòng Logs cùng tab Output. Các đoạn này không lưu vào lịch sử run. Văn bản cuối không đổi.
-- **Tool.** `mode=function` cộng tên đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py` (ví dụ `lookup_order`), hoặc `mode=http` với `method`, `url`, và `body` có template. URL của HTTP Tool phải trỏ tới địa chỉ công khai: loopback, mạng riêng, link-local và địa chỉ metadata bị chặn với `HTTP_TOOL_URL_BLOCKED`, trừ khi `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. Request đi tới đúng IP đã kiểm tra, không theo redirect, và hết hạn sau `STUDIO_HTTP_TOOL_TIMEOUT` giây (mặc định 30).
+- **Tool.** `mode=function` cộng tên đăng ký bằng `@register_tool` trong `backend/app/engine/tools.py` (ví dụ `lookup_order`), `mode=http` với `method`, `url`, và `body` có template, hoặc `mode=code` (xem [Chế độ Code](#chế-độ-code)). URL của HTTP Tool phải trỏ tới địa chỉ công khai: loopback, mạng riêng, link-local và địa chỉ metadata bị chặn với `HTTP_TOOL_URL_BLOCKED`, trừ khi `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. Request đi tới đúng IP đã kiểm tra, không theo redirect, và hết hạn sau `STUDIO_HTTP_TOOL_TIMEOUT` giây (mặc định 30).
 - **Condition.** `field`. Nhãn cạnh đi ra khớp đúng chuỗi, rồi không phân biệt hoa thường sau khi bỏ khoảng trắng và dấu câu, rồi theo nguyên từ trong giá trị, nhãn dài nhất thắng. Thứ tự nhãn không ảnh hưởng: `Disapprove.` chọn `disapprove`, không chọn `approve`. Hai nhãn nguyên từ dài bằng nhau là mơ hồ. Cạnh `default` là lối còn lại khi không khớp hoặc mơ hồ.
 - **Nhánh song song.** Nhiều cạnh ra từ một node không phải Condition chạy cùng superstep. Trường state bị nhiều nhánh ghi cần reducer: `append` (list), `merge` (object), hoặc `add` (số). Mặc định là `replace`. Thiếu reducer thì validate lỗi.
 - **Join.** Chờ mọi nhánh đi vào rồi chạy một lần. Cần ít nhất hai cạnh vào, và không nhận cạnh thẳng từ Condition.
@@ -87,7 +87,25 @@ UI có tiếng Anh và tiếng Việt (`frontend/src/locales/en.json` và `vi.js
 - **Decision (Jev).** Hỏi Jev của [TypeSafe](https://typesafe.ai) các câu hỏi có kiểu về `text` (một template; nếu chỉ có đúng một `{{state.x}}` thì giá trị được gửi nguyên kiểu). Mỗi câu hỏi có `id`, `instructions` và một loại. `choice` nhận 2–255 `options` và trả về một nhãn. `score` nhận 2–10 `levels` từ thấp đến cao và trả về một số từ 0 đến chỉ số của mức cuối; số này có thể nằm giữa hai mức. `noul` trả về một số từ 0 (sai) đến 1 (đúng). `field` của câu hỏi nhận câu trả lời đó, nên Condition có thể rẽ nhánh theo lựa chọn. `output_field` (kiểu object) nhận mọi câu trả lời kèm xác suất và độ tin cậy. Node dùng credential TypeSafe, nếu không có thì dùng `TYPESAFE_API_KEY`, nếu vẫn không có thì trả câu trả lời mẫu offline: câu hỏi lựa chọn chọn phương án đầu tiên có tên xuất hiện trong văn bản. Chi phí tính $0.042 cho mỗi triệu token input; token output miễn phí. Node có cài đặt retry, timeout và cache, và run được khôi phục sẽ dùng lại câu trả lời cũ.
 - **Send email.** Gửi một email qua credential SMTP (**Credentials → SMTP**: máy chủ, cổng, STARTTLS / SSL / không mã hóa, tên đăng nhập, địa chỉ gửi; mật khẩu được lưu mã hóa). `to`, `cc`, `bcc` và `reply_to` là template, các địa chỉ cách nhau bằng dấu phẩy; một `{{state.x}}` cũng có thể chứa danh sách. Tối đa 50 người nhận. `subject` và `body` là template; với định dạng **HTML**, giá trị từ state được escape và app thêm một bản văn bản thuần. `output_field` (object, không bắt buộc) nhận `{sent, dry_run, to, cc, bcc, subject, message_id, refused}`. Không chọn credential thì node **chạy thử**: không gửi gì, kết quả hiện email kèm `preview` dạng văn bản. Run được khôi phục không bao giờ gửi lại (node-result ledger), và `Message-ID` lấy từ idempotency key của node. Máy chủ SMTP nội bộ hoặc loopback cần `STUDIO_SMTP_ALLOW_PRIVATE=1` (ví dụ Mailpit ở `localhost:1025`). Các node của mỗi chủ workflow chỉ gửi tới tối đa `STUDIO_EMAIL_NODE_HOURLY_LIMIT` người nhận mỗi giờ (mặc định 100). Đặt một node Human phía trước để duyệt email đã soạn.
 - **Human.** `prompt` và `output_field`. Run dừng chờ. Xem [Phê duyệt](#phê-duyệt).
-- **Code.** Node chỉ đọc do import repo tạo ra. Panel phải hiện source gốc. Sửa trên canvas không đổi file đã import.
+- **Code (import).** Node chỉ đọc do import repo tạo ra. Panel phải hiện source gốc. Sửa trên canvas không đổi file đã import.
+
+### Chế độ Code
+
+Tool node với `mode=code` chạy `code`, là source Python có hàm `main(state)`. Giá trị trả về được ghi vào `output_field` và phải là JSON (dict, list, chuỗi, số, bool hoặc null).
+
+```python
+def main(state):
+    print("đã nhận:", state["message"])   # hiện trong trace, không lưu vào state
+    return state["message"].upper()
+```
+
+- **Mặc định tắt.** Đặt `STUDIO_ENABLE_CODE_NODES=1` và build image một lần: `docker build -t studio-code:1 docker/studio-code`. Image là `python:3.12-slim` kèm `pydantic` và `python-dateutil`; `STUDIO_CODE_IMAGE` để dùng image khác. Khi chế độ tắt, hoặc thiếu Docker hay image, workflow có Code node không qua được bước kiểm tra và báo rõ lý do.
+- **Mỗi lần gọi là một container mới.** Container không có mạng (`--network none`), root chỉ đọc với `/tmp` 64 MB, không mount thư mục nào của host. Môi trường không có biến nào của server hay credential. State là một bản sao JSON; code chỉ thay đổi run qua giá trị trả về.
+- **Giới hạn:** bộ nhớ `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5), số process `STUDIO_CODE_PIDS` (64). Mỗi lần gọi bị dừng sau timeout của node, tối đa `STUDIO_CODE_MAX_SECONDS` (30). Mỗi process server chạy cùng lúc tối đa `STUDIO_CODE_CONCURRENCY` (4) container. Huỷ run thì container bị kill.
+- **Kích thước:** source tối đa 64 KB, state và kết quả mỗi thứ tối đa 1 MB, stdout tối đa 64 KB (dài hơn thì bị cắt).
+- **Trace:** output của `print()`, runtime và thời gian chạy nằm trong `code_output` của node. Khi lỗi, trace có traceback và cấu hình retry của node vẫn áp dụng. Mã lỗi là `CODE_*` ([docs/api-errors.md](docs/api-errors.md)).
+- **Tốc độ:** mỗi lần gọi khoảng 0,3 giây khi image đã có sẵn.
+- **Compose:** API và worker khởi động container qua Docker socket, giống import repo.
 
 ### Template
 

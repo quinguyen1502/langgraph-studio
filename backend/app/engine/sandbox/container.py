@@ -72,13 +72,9 @@ def _write_env(path: str, env: Dict[str, str]) -> None:
     os.chmod(path, 0o600)
 
 
-def build(*, name: str, image: str, job_dir: str, cwd: str, command: List[str], env: Dict[str, str],
-          network: str, memory: str, cpus: str, pids: int, runner_dir: Optional[str],
-          root: str, host_root: Optional[str]) -> List[str]:
-    job_dir = os.path.realpath(job_dir)
-    env_file = os.path.join(job_dir, ".sandbox.env")
-    _write_env(env_file, env)
-    argv = [
+def _locked(name: str, network: str, memory: str, cpus: str, pids: int) -> List[str]:
+    """``docker run`` with the limits every sandbox shares: read-only root, no capabilities, small /tmp."""
+    return [
         docker_exe(), "run", "--rm", "-i", "--name", name, "--init",
         "--network", network,
         "--memory", memory, "--memory-swap", memory,
@@ -88,6 +84,22 @@ def build(*, name: str, image: str, job_dir: str, cwd: str, command: List[str], 
         "--tmpfs", "/tmp:rw,nosuid,size=64m",
         "--stop-timeout", "1",
         "--user", f"{os.getuid()}:{os.getgid()}",
+    ]
+
+
+def build_code(*, name: str, image: str, command: List[str], memory: str, cpus: str, pids: int) -> List[str]:
+    """Tool node Code mode (TASK-0053): no network, no mounts, and a fixed environment that holds no secret."""
+    env = ["-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1", "-e", "PYTHONDONTWRITEBYTECODE=1"]
+    return _locked(name, "none", memory, cpus, pids) + env + ["-w", "/tmp", image] + command
+
+
+def build(*, name: str, image: str, job_dir: str, cwd: str, command: List[str], env: Dict[str, str],
+          network: str, memory: str, cpus: str, pids: int, runner_dir: Optional[str],
+          root: str, host_root: Optional[str]) -> List[str]:
+    job_dir = os.path.realpath(job_dir)
+    env_file = os.path.join(job_dir, ".sandbox.env")
+    _write_env(env_file, env)
+    argv = _locked(name, network, memory, cpus, pids) + [
         "-v", f"{host_path(job_dir, root, host_root)}:{job_dir}:rw",
         "--env-file", host_path(env_file, root, host_root),
         "-w", cwd,

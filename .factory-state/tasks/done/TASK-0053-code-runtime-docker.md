@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0053
-- Status: todo
+- Status: done
 - Phase: nodes
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -118,6 +118,9 @@ Run a Tool node's Python code (`mode: "code"`) in a Docker container with no net
 
 - 2026-10-19: Created from REQ-0039 (owner: "Chia REQ-0039 thành task (plan-tasks) trên cùng PR #60"); not started.
 - 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
+- 2026-10-19: Started on `factory/task-0053-code-runtime-docker` (owner: "Làm task 0053 đi, CI hết quota rồi").
+- 2026-10-19: Implemented. The runner goes in as `python -I -c`, so nothing is mounted. Cancel uses `Ports.cancelled`. Review REV-0050, QA QA-0050 (pass). PR open; not merged.
+- 2026-10-19: Merged in PR #61 (owner: "Merge PR #61").
 
 ## Handoff Notes
 

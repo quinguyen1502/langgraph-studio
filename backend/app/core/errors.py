@@ -172,6 +172,15 @@ CATALOG: dict[str, tuple[int, str]] = {
     "EMAIL_TOO_MANY_RECIPIENTS": (400, "Send email node {node}: at most {max} recipients"),
     "EMAIL_RATE_LIMITED": (429, "Send email nodes may reach {limit} recipients per hour; try again in {retry} s"),
     "ORG_RESOURCE_NOT_ALLOWED": (403, "Your role may not use organization-wide resources at run time ({kind})"),
+    # Tool node Code mode (TASK-0053)
+    "CODE_RUNTIME_OFF": (400, "Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES)"),
+    "CODE_RUNTIME_UNAVAILABLE": (503, "Code nodes cannot run on this server: {reason}"),
+    "CODE_INVALID": (400, "Code node {node}: {reason}"),
+    "CODE_FAILED": (400, "Code node {node} raised {error}"),
+    "CODE_TIMEOUT": (400, "Code node {node} was stopped after {seconds} s"),
+    "CODE_MEMORY": (400, "Code node {node} ran out of memory (limit {limit})"),
+    "CODE_RESULT_NOT_JSON": (400, "Code node {node}: main() returned {type}, which cannot be stored as JSON"),
+    "CODE_TOO_LARGE": (413, "Code node {node}: the {what} is larger than {max_kb} KB"),
 }
 
 

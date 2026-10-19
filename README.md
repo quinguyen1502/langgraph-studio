@@ -76,7 +76,7 @@ The UI is English and Vietnamese (`frontend/src/locales/en.json` and `vi.json`).
 ```
 
 - **LLM.** `model`, `prompt` with `{{state.field}}`, `output_field`. While a run is going, token deltas arrive as `node_token` events and show in the Logs row and the Output tab. They are not stored in run history. The final text is unchanged.
-- **Tool.** `mode=function` plus a name registered with `@register_tool` in `backend/app/engine/tools.py` (for example `lookup_order`), or `mode=http` plus `method`, `url`, and a templated `body`. An HTTP Tool URL must resolve to a public address: loopback, private, link-local, and metadata addresses fail with `HTTP_TOOL_URL_BLOCKED` unless `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. The request goes to the checked IP, does not follow redirects, and times out after `STUDIO_HTTP_TOOL_TIMEOUT` seconds (default 30).
+- **Tool.** `mode=function` plus a name registered with `@register_tool` in `backend/app/engine/tools.py` (for example `lookup_order`), `mode=http` plus `method`, `url`, and a templated `body`, or `mode=code` (see [Code mode](#code-mode)). An HTTP Tool URL must resolve to a public address: loopback, private, link-local, and metadata addresses fail with `HTTP_TOOL_URL_BLOCKED` unless `STUDIO_HTTP_TOOL_ALLOW_PRIVATE=1`. The request goes to the checked IP, does not follow redirects, and times out after `STUDIO_HTTP_TOOL_TIMEOUT` seconds (default 30).
 - **Condition.** `field`. Outgoing edge labels are matched exactly, then case-insensitively after trimming spaces and punctuation, then as a whole word in the value, where the longest label wins. Label order does not matter: `Disapprove.` picks `disapprove`, not `approve`. Two whole-word labels of the same length are ambiguous. An optional `default` edge is the fallback for no match or an ambiguous one.
 - **Parallel branches.** Several outgoing edges from a node that is not a Condition run in the same superstep. A state field written by more than one branch needs a reducer: `append` (list), `merge` (object), or `add` (number). The default is `replace`. A missing reducer fails validation.
 - **Join.** Waits for every incoming branch, then runs once. It needs at least two incoming edges and cannot take an edge straight from a Condition.
@@ -87,7 +87,25 @@ The UI is English and Vietnamese (`frontend/src/locales/en.json` and `vi.json`).
 - **Decision (Jev).** Asks [TypeSafe](https://typesafe.ai)'s Jev typed questions about `text` (a template; an exact `{{state.x}}` sends the value with its type). Each question has an `id`, `instructions`, and a type. `choice` takes 2–255 `options` and answers with a label. `score` takes 2–10 `levels` from low to high and answers with a number from 0 to the last level index; the number can fall between levels. `noul` answers with a number from 0 (false) to 1 (true). A question's `field` receives its answer, so a Condition can branch on a choice. `output_field` (an object) receives every answer with its probabilities and confidence. The node uses a TypeSafe credential, else `TYPESAFE_API_KEY`, else offline sample answers: a choice picks the first option named in the text. Usage is priced at $0.042 per million input tokens; output tokens are free. The node takes retry, timeout, and cache settings, and a recovered run reuses its answers.
 - **Send email.** Sends one e-mail through an SMTP credential (**Credentials → SMTP**: host, port, STARTTLS / SSL / none, user name, sender; the password is stored encrypted). `to`, `cc`, `bcc` and `reply_to` are templates with addresses separated by commas; one `{{state.x}}` may also hold a list. At most 50 recipients. `subject` and `body` are templates; with format **HTML**, values from the state are escaped and a plain text part is added. The optional `output_field` (an object) gets `{sent, dry_run, to, cc, bcc, subject, message_id, refused}`. Without a credential the node is a **dry run**: nothing is sent, and the result shows the message with a text `preview`. A recovered run never sends again (the node-result ledger), and the `Message-ID` comes from the node's idempotency key. Private or loopback SMTP hosts need `STUDIO_SMTP_ALLOW_PRIVATE=1` (for example Mailpit on `localhost:1025`). Each workflow owner's nodes reach at most `STUDIO_EMAIL_NODE_HOURLY_LIMIT` recipients per hour (default 100). Put a Human node before it to approve a drafted e-mail.
 - **Human.** `prompt` and `output_field`. The run waits. See [Human approval](#human-approval).
-- **Code.** Read-only nodes produced by repo import. The right panel shows the original source. Editing the canvas does not change the imported file.
+- **Code (imported).** Read-only nodes produced by repo import. The right panel shows the original source. Editing the canvas does not change the imported file.
+
+### Code mode
+
+A Tool node with `mode=code` runs `code`, Python source that defines `main(state)`. The return value goes to `output_field`; it must be JSON (a dict, list, string, number, bool or null).
+
+```python
+def main(state):
+    print("seen:", state["message"])   # shown in the trace, not stored in the state
+    return state["message"].upper()
+```
+
+- **Off by default.** Set `STUDIO_ENABLE_CODE_NODES=1` and build the image once: `docker build -t studio-code:1 docker/studio-code`. The image is `python:3.12-slim` with `pydantic` and `python-dateutil`; `STUDIO_CODE_IMAGE` picks another one. While the mode is off, or Docker or the image is missing, a workflow with a Code node fails validation and says why.
+- **Every call gets a new container.** It has no network (`--network none`), a read-only root with a 64 MB `/tmp`, and no host mounts. Its environment holds no server variable or credential. The state is a JSON copy; the code changes the run only through its return value.
+- **Limits:** memory `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5) and processes `STUDIO_CODE_PIDS` (64). A call is stopped after the node's timeout, capped by `STUDIO_CODE_MAX_SECONDS` (30). At most `STUDIO_CODE_CONCURRENCY` (4) containers run at once per server process. A cancelled run kills its container.
+- **Size limits:** the source is at most 64 KB, the state and the result at most 1 MB each, and stdout at most 64 KB (longer output is cut).
+- **Trace:** `print()` output, the runtime and the duration are in the node's `code_output`. A failure shows the traceback, and the node's retry settings apply. The error codes are `CODE_*` ([docs/api-errors.md](docs/api-errors.md)).
+- **Speed:** a call takes about 0.3 s on a warm image.
+- **Compose:** the API and the worker start the containers through the Docker socket, like repo import.
 
 ### Templates
 

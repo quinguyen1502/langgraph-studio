@@ -138,3 +138,16 @@ def import_network() -> str:
 def import_host_dir() -> str | None:
     value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
     return value or None
+# --- TASK-0053: Tool node Code mode (REQ-0039, DEC-0041); off until STUDIO_ENABLE_CODE_NODES=1 ---
+CODE_RUNTIMES = ("docker",)
+def code_runtime() -> str:
+    """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
+    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
+    choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
+    return choice if choice in CODE_RUNTIMES else "off"
+def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
+def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
+def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"
+def code_pids() -> int: return max(16, _int("STUDIO_CODE_PIDS", 64))
+def code_max_seconds() -> int: return max(1, _int("STUDIO_CODE_MAX_SECONDS", 30))  # per call, also caps the node timeout
+def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))  # containers at once per process

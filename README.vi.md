@@ -100,6 +100,7 @@ def main(state):
 ```
 
 - **Mặc định tắt.** Đặt `STUDIO_ENABLE_CODE_NODES=1` và build image một lần: `docker build -t studio-code:1 docker/studio-code`. Image là `python:3.12-slim` kèm `pydantic` và `python-dateutil`; `STUDIO_CODE_IMAGE` để dùng image khác. Khi chế độ tắt, hoặc thiếu Docker hay image, workflow có Code node không qua được bước kiểm tra và báo rõ lý do.
+- **Ai được viết code:** chỉ role có `code.write`, mặc định chỉ admin có. Editor vẫn mở, chạy, di chuyển, đổi tên, xoá Code node và nhân bản workflow có Code node được. Thêm Code node hoặc sửa code của nó bị từ chối với `CODE_WRITE_FORBIDDEN`, dù qua lưu workflow, khôi phục version, hay import hoặc dùng template.
 - **Mỗi lần gọi là một container mới.** Container không có mạng (`--network none`), root chỉ đọc với `/tmp` 64 MB, không mount thư mục nào của host. Môi trường không có biến nào của server hay credential. State là một bản sao JSON; code chỉ thay đổi run qua giá trị trả về.
 - **Giới hạn:** bộ nhớ `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5), số process `STUDIO_CODE_PIDS` (64). Mỗi lần gọi bị dừng sau timeout của node, tối đa `STUDIO_CODE_MAX_SECONDS` (30). Mỗi process server chạy cùng lúc tối đa `STUDIO_CODE_CONCURRENCY` (4) container. Huỷ run thì container bị kill.
 - **Kích thước:** source tối đa 64 KB, state và kết quả mỗi thứ tối đa 1 MB, stdout tối đa 64 KB (dài hơn thì bị cắt).

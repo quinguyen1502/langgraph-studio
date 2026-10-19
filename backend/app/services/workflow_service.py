@@ -30,7 +30,12 @@ class WorkflowService:
         self.teams, self.audit = teams, audit  # TeamRepository, AuditService (TASK-0029)  # AccessService etc. (TASK-0014); None = owner-only
 
     # -- persistence: every write goes through here so versions stay in sync (TASK-0008) --
-    def _write(self, wid: str, name: str, wf: dict, uid: str, *, new: bool = True, note: str | None = None) -> None:
+    def _write(self, wid: str, name: str, wf: dict, uid: str, *, new: bool = True, note: str | None = None,
+               before: dict | None = None) -> None:
+        """`before` is the graph the code is compared with for `code.write` (TASK-0054): the stored one by default."""
+        if self.access is not None:
+            if before is None and not new: before = json.loads((self.repo.get(wid) or Workflow(data="{}")).data or "{}")
+            self.access.require_code(uid, before, wf)
         data, now = _dumps(wf), time.time()
         if new: self.repo.save(wid, name, data, now, uid)
         else: self.repo.update_name(wid, name, data, now)
@@ -153,7 +158,7 @@ class WorkflowService:
         if not ex: wf["name"] = unique_name(self.repo.names_for_owner(uid), wf["name"])
         wf.pop("source", None)  # never trust client-provided source metadata
         if old.get("source"): wf["source"] = old["source"]
-        self._write(wid, wf.get("name", "Untitled"), wf, uid, new=not ex)  # the owner never changes
+        self._write(wid, wf.get("name", "Untitled"), wf, uid, new=not ex, before=old)  # the owner never changes
         return {"id": wid, "errors": [] if wf.get("source") else self.validate(wf, uid, wid)}
 
     def validate(self, wf: dict, uid: str, wid=None):
@@ -178,7 +183,7 @@ class WorkflowService:
     def duplicate(self, wid: str, uid: str) -> dict:
         w = self.owned(wid, uid); self._require(uid, P.WORKFLOWS_CREATE); d = json.loads(w.data or "{}")
         d["name"] = unique_name(self.repo.names_for_owner(uid), w.name or "")
-        nid = new_id(); self._write(nid, d["name"], d, uid)
+        nid = new_id(); self._write(nid, d["name"], d, uid, before=d)  # a copy writes no new code
         return {"id": nid, "name": d["name"]}
 
     def dependents(self, wid: str, uid: str) -> list[dict]:

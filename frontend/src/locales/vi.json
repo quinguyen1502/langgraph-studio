@@ -510,7 +510,8 @@
     "CODE_TIMEOUT": "Code node {{node}} bị dừng sau {{seconds}} giây",
     "CODE_MEMORY": "Code node {{node}} dùng quá bộ nhớ cho phép ({{limit}})",
     "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() trả về {{type}}, không lưu được dưới dạng JSON",
-    "CODE_TOO_LARGE": "Code node {{node}}: {{what}} lớn hơn {{max_kb}} KB"
+    "CODE_TOO_LARGE": "Code node {{node}}: {{what}} lớn hơn {{max_kb}} KB",
+    "CODE_WRITE_FORBIDDEN": "Vai trò của bạn không được thêm Code node hay sửa code của nó (code.write)"
   },
   "lang": {
     "en": "English",
@@ -935,7 +936,8 @@
       "org_manage": "Kênh và máy chủ MCP của tổ chức",
       "workflows_all": "Toàn quyền với mọi workflow",
       "workflows_create": "Tạo, nhập và nhân bản workflow",
-      "resources_manage": "Thông tin xác thực, kho tri thức, máy chủ MCP và kênh riêng"
+      "resources_manage": "Thông tin xác thực, kho tri thức, máy chủ MCP và kênh riêng",
+      "code_write": "Viết và sửa code trong Code node"
     },
     "yes": "Được phép",
     "no": "Không được phép",

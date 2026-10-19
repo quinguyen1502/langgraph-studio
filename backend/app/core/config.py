@@ -65,6 +65,14 @@ def login_lock() -> int: return max(1, _int("STUDIO_LOGIN_LOCK", 15 * 60))  # s 
 def password_reset_ttl() -> int: return max(60, _int("STUDIO_PASSWORD_RESET_TTL", 3600))  # s a reset link works
 def cookie_secure() -> bool:  # the session cookie needs HTTPS; production defaults to on, STUDIO_COOKIE_SECURE=0 for plain-HTTP setups
     return os.environ.get("STUDIO_COOKIE_SECURE", "1" if IS_PROD else "0").lower() in ("1", "true", "yes", "on")
+def home_dir() -> str:
+    """Default directory for the generated secret key and repo imports (Docker sets both paths to /data instead).
+    `~/.superstep`, or the v0.1.0 `~/.langgraph-studio` while only that one exists, so stored credentials still decrypt
+    after the rename (TASK-0058)."""
+    new, old = os.path.expanduser("~/.superstep"), os.path.expanduser("~/.langgraph-studio")
+    return old if not os.path.exists(new) and os.path.isdir(old) else new
+
+
 def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
     """The studio's own SMTP server (notification, approval and password reset e-mail; core/smtp.py settings); None

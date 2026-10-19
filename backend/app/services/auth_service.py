@@ -111,9 +111,9 @@ class AuthService:
         if opts["reset"] == "email" and u is not None and u.active:
             url = f"{config.public_url()}/reset-password?token={self._new_reset(u.id, 'self')}"
             minutes = config.password_reset_ttl() // 60
-            text = f"Someone asked to reset the password of {u.email} on LangGraph Studio.\n\nOpen this link within {minutes} minutes to choose a new one:\n{url}\n\nIf it was not you, ignore this e-mail."
-            body = f"<p>Someone asked to reset the password of {html.escape(u.email)} on LangGraph Studio.</p><p><a href=\"{html.escape(url)}\">Choose a new password</a> (valid for {minutes} minutes).</p><p>If it was not you, ignore this e-mail.</p>"
-            send = lambda: mailer.send(config.smtp(), u.email, "[LangGraph Studio] Reset your password", text, body)
+            text = f"Someone asked to reset the password of {u.email} on Superstep.\n\nOpen this link within {minutes} minutes to choose a new one:\n{url}\n\nIf it was not you, ignore this e-mail."
+            body = f"<p>Someone asked to reset the password of {html.escape(u.email)} on Superstep.</p><p><a href=\"{html.escape(url)}\">Choose a new password</a> (valid for {minutes} minutes).</p><p>If it was not you, ignore this e-mail.</p>"
+            send = lambda: mailer.send(config.smtp(), u.email, "[Superstep] Reset your password", text, body)
             threading.Thread(target=send, daemon=True).start() if self.background else send()
         return {"reset": opts["reset"]}
 

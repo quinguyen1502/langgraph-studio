@@ -74,5 +74,5 @@ production không cho origin nào, vì UI được phục vụ từ cùng origin
 
 Key của nhà cung cấp, mật khẩu SMTP, header MCP và token của kênh duyệt được
 mã hoá bằng Fernet (`STUDIO_SECRET_KEY`, hoặc file sinh ra
-`~/.langgraph-studio/secret.key` / `STUDIO_SECRET_KEY_FILE`, quyền 0600). API
+`~/.superstep/secret.key` / `STUDIO_SECRET_KEY_FILE`, quyền 0600). API
 chỉ trả về bốn ký tự cuối của key.

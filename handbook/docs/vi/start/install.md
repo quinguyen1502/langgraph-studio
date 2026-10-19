@@ -11,8 +11,8 @@
 ## Phát triển ở máy
 
 ```bash
-git clone https://github.com/quinguyen1502/langgraph-studio.git
-cd langgraph-studio
+git clone https://github.com/quinguyen1502/superstep.git
+cd superstep
 ./dev.sh
 ```
 

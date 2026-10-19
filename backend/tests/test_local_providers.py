@@ -81,12 +81,12 @@ def test_lmstudio_chat_streaming_and_tools():
 def test_openrouter_sends_key_and_headers_and_maps_auth():
     models = respx.get("https://openrouter.ai/api/v1/models").respond(json={"data": [{"id": "meta-llama/llama-3.1-8b-instruct"}, {"id": "openrouter/auto"}]})
     chat = respx.post("https://openrouter.ai/api/v1/chat/completions").respond(json=chat_reply("routed"))
-    cred = {"provider": "openrouter", "api_key": OR_KEY, "headers": {"HTTP-Referer": "https://studio.example", "X-Title": "LangGraph Studio"}}
+    cred = {"provider": "openrouter", "api_key": OR_KEY, "headers": {"HTTP-Referer": "https://studio.example", "X-Title": "Superstep"}}
     assert providers.get("openrouter").list_models(cred)[1] == "openrouter/auto"
     assert models.calls[0].request.headers["authorization"] == f"Bearer {OR_KEY}"
     assert llm.call_llm("hi", "", cred) == "routed"
     req = chat.calls[0].request
-    assert req.headers["http-referer"] == "https://studio.example" and req.headers["x-title"] == "LangGraph Studio"
+    assert req.headers["http-referer"] == "https://studio.example" and req.headers["x-title"] == "Superstep"
     assert json.loads(req.content)["model"] == "openrouter/auto"
     chat.respond(401, json={"error": {"message": "No auth credentials found", "code": 401}})
     with pytest.raises(providers.ProviderError) as e: llm.call_llm("hi", "x", cred)

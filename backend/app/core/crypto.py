@@ -2,12 +2,13 @@
 
 Key source (first match):
   1. STUDIO_SECRET_KEY env var (urlsafe base64 32-byte Fernet key)
-  2. key file STUDIO_SECRET_KEY_FILE (default ~/.langgraph-studio/secret.key), created with 0600 on first use.
+  2. key file STUDIO_SECRET_KEY_FILE (default ~/.superstep/secret.key, see config.home_dir), created with 0600 on first use.
 """
 from __future__ import annotations
 import hashlib, hmac, os
 from typing import Optional
 from cryptography.fernet import Fernet, InvalidToken
+from . import config
 from .errors import AppError
 
 _fernet: Optional[Fernet] = None
@@ -16,7 +17,7 @@ _fernet: Optional[Fernet] = None
 def _key() -> bytes:
     env = os.environ.get("STUDIO_SECRET_KEY")
     if env: return env.encode()
-    path = os.path.expanduser(os.environ.get("STUDIO_SECRET_KEY_FILE") or "~/.langgraph-studio/secret.key")
+    path = os.path.expanduser(os.environ.get("STUDIO_SECRET_KEY_FILE") or os.path.join(config.home_dir(), "secret.key"))
     if os.path.exists(path): return open(path, "rb").read().strip()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     k = Fernet.generate_key()
@@ -40,7 +41,8 @@ def decrypt(token: str) -> str:
 
 
 def derive_key(purpose: str) -> bytes:
-    """A separate HMAC key per purpose (e.g. signing approval tokens), derived from the same secret key."""
+    """A separate HMAC key per purpose (e.g. signing approval tokens), derived from the same secret key.
+    The prefix keeps the v0.1.0 name: changing it would invalidate every pending approval link and identity code."""
     return hmac.new(_key(), b"langgraph-studio:" + purpose.encode(), hashlib.sha256).digest()
 
 

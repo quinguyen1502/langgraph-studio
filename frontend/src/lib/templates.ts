@@ -2,7 +2,7 @@
 export type TplNode = { id: string; type: string; position: { x: number; y: number } }
 export type Template = { id: string; name: string; description: string; scope: 'builtin' | 'user' | 'org'; mine: boolean; deletable?: boolean
   nodes: TplNode[]; edges: { source: string; target: string }[] }
-export const TEMPLATE_FORMAT = 'langgraph-studio/template'
+export const TEMPLATE_FORMAT = 'superstep/template'
 
 /** Fit node positions into a w×h box (keeping aspect, with padding); returns centre points per node id. */
 export function previewLayout(nodes: TplNode[], w = 240, h = 96, pad = 12): Record<string, { x: number; y: number }> {

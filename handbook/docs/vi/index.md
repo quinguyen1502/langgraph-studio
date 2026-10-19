@@ -1,5 +1,5 @@
 ---
-title: Tài liệu LangGraph Studio
+title: Tài liệu Superstep
 hide:
   - navigation
   - toc
@@ -7,9 +7,9 @@ hide:
 
 <div class="home" markdown>
 
-# Tài liệu LangGraph Studio
+# Tài liệu Superstep
 
-LangGraph Studio là nền tảng tự host để xây workflow LangGraph trên trình duyệt
+Superstep là nền tảng tự host để xây workflow LangGraph trên trình duyệt
 và chạy chúng như một dịch vụ. Mỗi workflow là một tài liệu JSON: backend
 FastAPI kiểm tra, biên dịch nó thành `StateGraph` của LangGraph, rồi chạy kèm
 sự kiện của từng node. Cùng một workflow có thể được khởi chạy qua HTTP, theo
@@ -22,8 +22,8 @@ lịch cron, hoặc dừng lại chờ người quyết định.
 ## Bắt đầu nhanh
 
 ```bash
-git clone https://github.com/quinguyen1502/langgraph-studio.git
-cd langgraph-studio && ./dev.sh
+git clone https://github.com/quinguyen1502/superstep.git
+cd superstep && ./dev.sh
 ```
 
 Mở <http://localhost:5173> và đăng nhập bằng `admin@example.com` /

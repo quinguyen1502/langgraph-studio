@@ -2,7 +2,7 @@
 
 ## Name
 
-langgraph-studio
+superstep (named langgraph-studio up to v0.1.0, renamed in TASK-0058)
 
 ## Domain
 

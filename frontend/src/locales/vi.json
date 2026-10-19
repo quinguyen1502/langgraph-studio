@@ -32,7 +32,7 @@
     "expired": "hết hạn"
   },
   "auth": {
-    "loginTitle": "Đăng nhập LangGraph Studio",
+    "loginTitle": "Đăng nhập Superstep",
     "registerTitle": "Tạo tài khoản",
     "loginHint": "Demo: admin@example.com / admin123",
     "registerHint": "Tài khoản mới sẽ có sẵn workflow ví dụ",
@@ -303,7 +303,7 @@
     "dockerHint": "Chạy trên máy của bạn. Khi studio chạy bằng Docker Compose, dùng http://host.docker.internal:<port> thay cho localhost.",
     "header": "Header {{name}} (không bắt buộc)",
     "refererPh": "https://trang-cua-ban.example",
-    "titlePh": "LangGraph Studio",
+    "titlePh": "Superstep",
     "providers": {
       "openai": "OpenAI / tương thích",
       "anthropic": "Anthropic",
@@ -433,7 +433,7 @@
     "APPROVAL_TOKEN_INVALID": "Nút phê duyệt không hợp lệ.",
     "APPROVAL_TOKEN_EXPIRED": "Yêu cầu phê duyệt này đã hết hạn.",
     "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời.",
-    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong LangGraph Studio (Cài đặt → Tài khoản của tôi) để phê duyệt.",
+    "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {{kind}} trong Superstep (Cài đặt → Tài khoản của tôi) để phê duyệt.",
     "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này.",
     "KB_NOT_FOUND": "Không tìm thấy kho tri thức hoặc không thuộc về bạn",
     "KB_NAME_REQUIRED": "Cần nhập tên kho tri thức",

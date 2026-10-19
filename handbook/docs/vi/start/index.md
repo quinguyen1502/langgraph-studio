@@ -1,6 +1,6 @@
 # Bắt đầu
 
-LangGraph Studio gồm ba phần:
+Superstep gồm ba phần:
 
 | Phần | Là gì |
 | --- | --- |

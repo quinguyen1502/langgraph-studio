@@ -48,7 +48,7 @@ def test_problems():
     bad = {"format": T.FORMAT, "version": 1, "workflow": {"nodes": [{"id": "a", "type": "llm"}], "edges": [{"source": "a", "target": "zz"}]}}
     errs = T.problems(bad)
     assert any("Start" in e for e in errs) and any("edge" in e for e in errs)
-    assert T.problems({"format": "x", "version": 2, "workflow": {}})[:2] == ["format must be 'langgraph-studio/template'", "unsupported version 2"]
+    assert T.problems({"format": "x", "version": 2, "workflow": {}})[:2] == ["format must be 'superstep/template'", "unsupported version 2"]
 
 
 def test_list_use_builtin():
@@ -97,3 +97,9 @@ def test_org_scope_needs_admin():
     assert code(c.delete(f"/api/templates/{t['id']}", headers=H(u.token))) == "TEMPLATE_READ_ONLY"
     assert c.post(f"/api/templates/{t['id']}/use", headers=H(u.token)).json()["data"]["id"]
     assert c.delete(f"/api/templates/{t['id']}", headers=H(a.token)).json()["data"]["ok"]
+
+
+def test_v010_format_still_imports():
+    b = T.BUILTINS[0]
+    old = {**T.export_payload(b["name"], b["description"], b["workflow"]), "format": "langgraph-studio/template"}
+    assert T.problems(old) == [] and T.export_payload("x", None, b["workflow"])["format"] == "superstep/template"

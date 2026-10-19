@@ -11,7 +11,7 @@ from typing import Any, Dict, Iterator, List, Optional
 import httpx
 
 PROTOCOL = "2025-06-18"
-CLIENT = {"name": "langgraph-studio", "version": "1.0"}
+CLIENT = {"name": "superstep", "version": "1.0"}
 STDERR_KEEP = 2000
 
 

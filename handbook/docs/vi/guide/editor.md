@@ -39,7 +39,7 @@ khi bạn undo về đúng graph đã lưu.
 ++ctrl+c++, ++ctrl+x++, ++ctrl+v++ và ++ctrl+d++ để copy, cut, paste và nhân bản
 node. Chỉ những edge nối giữa các node được chọn mới đi theo, node dán vào có
 id mới. Start và End không bao giờ được copy. Clipboard nằm trong
-`localStorage` (`langgraph-studio/nodes` v1), nên có thể dán sang workflow
+`localStorage` (`superstep/nodes` v1), nên có thể dán sang workflow
 khác trong cùng trình duyệt. Credential mà bạn không có quyền dùng sẽ bị xoá
 khi dán.
 

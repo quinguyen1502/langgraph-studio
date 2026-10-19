@@ -1,4 +1,4 @@
-# LangGraph Studio handbook
+# Superstep handbook
 
 Source of the public documentation site, built with
 [Zensical](https://zensical.org) from MkDocs-format config. English is the

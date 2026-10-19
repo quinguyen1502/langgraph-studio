@@ -11,7 +11,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `JWT_SECRET` | giá trị mẫu | Ký token phiên |
 | `JWT_TTL_SECONDS` | `86400` | Thời hạn phiên |
 | `STUDIO_SECRET_KEY` | tự sinh | Khoá Fernet cho secret đã lưu |
-| `STUDIO_SECRET_KEY_FILE` | `~/.langgraph-studio/secret.key` | Nơi lưu khoá tự sinh |
+| `STUDIO_SECRET_KEY_FILE` | `~/.superstep/secret.key` | Nơi lưu khoá tự sinh |
 | `DATABASE_URL` | SQLite `backend/studio.db` | URL SQLAlchemy, ví dụ `postgresql://…` |
 | `STUDIO_DB` | `backend/studio.db` | Đường dẫn SQLite khi `DATABASE_URL` trống |
 | `REDIS_URL` | trống | Run bus, hàng đợi và bộ đếm; trống thì nằm trong bộ nhớ |
@@ -110,7 +110,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | --- | --- | --- |
 | `STUDIO_ENABLE_IMPORT` | `0` | Bật import |
 | `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` chỉ dùng khi test (không cách ly) |
-| `STUDIO_IMPORT_DIR` | `~/.langgraph-studio/imports` | Thư mục job |
+| `STUDIO_IMPORT_DIR` | `~/.superstep/imports` | Thư mục job |
 | `STUDIO_IMPORT_HOST_DIR` | trống | Đường dẫn trên host của thư mục đó khi dùng Compose |
 | `STUDIO_IMPORT_IMAGE` | `python:3.12-slim` | Image sandbox |
 | `STUDIO_IMPORT_MEMORY` | `1g` | Bộ nhớ |
@@ -148,7 +148,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | --- | --- | --- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | trống | Endpoint OTLP/HTTP; trống là tắt trace |
 | `OTEL_EXPORTER_OTLP_HEADERS` | trống | Header OTLP |
-| `OTEL_SERVICE_NAME` | `langgraph-studio` | Tên dịch vụ |
+| `OTEL_SERVICE_NAME` | `superstep` | Tên dịch vụ |
 | `STUDIO_TRACE_URL` | trống | Mẫu link **Mở trace** có `{trace_id}` |
 | `STUDIO_OTEL_METRICS` | `0` | Xuất thêm metric |
 | `LANGSMITH_API_KEY`, `LANGSMITH_TRACING` | trống | Xuất sang LangSmith |

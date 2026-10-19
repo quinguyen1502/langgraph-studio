@@ -48,7 +48,7 @@ class EmailChannel(ApprovalChannel):
         body = (f"<h2>{html.escape(msg.title)}</h2>" + "".join(f"<p>{html.escape(x)}</p>" for x in msg.lines)
                 + f'<p><a href="{html.escape(yes)}">✅ {html.escape(msg.approve_label)}</a> &nbsp; <a href="{html.escape(no)}">❌ {html.escape(msg.reject_label)}</a></p>'
                 + (f'<p><a href="{html.escape(msg.link)}">{html.escape(msg.open_label)}</a></p>' if msg.link else ""))
-        failed = [x for x in to if not mailer.send(smtp, x, f"[LangGraph Studio] {msg.title}", text, body)]
+        failed = [x for x in to if not mailer.send(smtp, x, f"[Superstep] {msg.title}", text, body)]
         if len(failed) == len(to): raise AppError("CHANNEL_API_FAILED", kind=self.label, reason="SMTP refused the message")
         return {"to": to}
 

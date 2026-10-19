@@ -34,7 +34,7 @@ export function SettingsPage() {
   const Component = COMPONENTS[current.id]
   return <div className="min-h-dvh bg-background">
     <header className="flex h-14 items-center gap-3 border-b px-6">
-      <Link to="/workflows" className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Workflow className="size-4" /></div>LangGraph Studio</Link>
+      <Link to="/workflows" className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Workflow className="size-4" /></div>Superstep</Link>
       <div className="ml-auto flex items-center gap-1"><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
     </header>
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6 md:flex-row">

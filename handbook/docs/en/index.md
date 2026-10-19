@@ -1,5 +1,5 @@
 ---
-title: LangGraph Studio documentation
+title: Superstep documentation
 hide:
   - navigation
   - toc
@@ -7,9 +7,9 @@ hide:
 
 <div class="home" markdown>
 
-# LangGraph Studio documentation
+# Superstep documentation
 
-LangGraph Studio is a self-hosted platform for building LangGraph workflows in
+Superstep is a self-hosted platform for building LangGraph workflows in
 the browser and running them as services. A workflow is a JSON document: the
 FastAPI backend validates it, compiles it into a LangGraph `StateGraph`, and
 runs it with per-node events. The same workflow can be started over HTTP, on a
@@ -22,8 +22,8 @@ cron schedule, or paused for a human decision.
 ## Quickstart
 
 ```bash
-git clone https://github.com/quinguyen1502/langgraph-studio.git
-cd langgraph-studio && ./dev.sh
+git clone https://github.com/quinguyen1502/superstep.git
+cd superstep && ./dev.sh
 ```
 
 Open <http://localhost:5173> and sign in as `admin@example.com` /

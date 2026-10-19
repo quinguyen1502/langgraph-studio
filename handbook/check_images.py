@@ -10,7 +10,7 @@ for page in site.rglob("*.html"):
     for ref in re.findall(r'(?:src|poster)="([^"#?]+)"', page.read_text(encoding="utf-8")):
         if ref.startswith(("http:", "https:", "data:", "//")) or not ref.endswith((".png", ".jpg", ".svg", ".mp4", ".webp", ".gif")):
             continue
-        target = (site / ref.lstrip("/").removeprefix("langgraph-studio/")) if ref.startswith("/") else page.parent / unquote(ref)
+        target = (site / ref.lstrip("/").removeprefix("superstep/")) if ref.startswith("/") else page.parent / unquote(ref)
         if not target.resolve().exists():
             missing.append(f"{page.relative_to(site)}: {ref}")
 print("\n".join(missing) or "all images found")

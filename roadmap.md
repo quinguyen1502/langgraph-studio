@@ -154,4 +154,4 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 
 ## Rename
 
-- TASK-0058 Rename the product to **Superstep** (UI, backend strings, Compose, handbook, video, README), keeping v0.1.0 installs working, plus a redirect for the old docs URL: **todo**, scope approved by the owner 2026-10-19. The repository rename and the user site repo for the redirect are owner actions after merge.
+- TASK-0058 Rename the product to **Superstep** (UI, backend strings, Compose, handbook, video, README), keeping v0.1.0 installs working, plus a redirect for the old docs URL: **merged** (PR #69, plan PR #68, REV-0054, QA-0054). The repository rename and the user site repo for the redirect are owner actions after merge.

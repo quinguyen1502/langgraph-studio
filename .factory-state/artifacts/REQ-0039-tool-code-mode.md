@@ -204,11 +204,13 @@ Closed 2026-10-19 (owner in chat):
 
 ## Owner Acceptance
 
-- 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Next step: `plan-tasks`.
+- 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Planned 2026-10-19 as TASK-0053 to TASK-0056 (DEC-0041).
 
 ## Related Artifacts
 
 - `.factory-state/artifacts/CLAR-0001-tool-code-mode.md`
+- `.factory-state/decisions/DEC-0041-tool-code-mode.md`
+- Tasks: `.factory-state/tasks/todo/TASK-0053-code-runtime-docker.md`, `TASK-0054-code-write-permission.md`, `TASK-0055-code-mode-editor.md`, `TASK-0056-code-subprocess-runtime.md`
 - `.factory-state/artifacts/REQ-0009-sandboxed-imports.md`
 - `.factory-state/artifacts/REV-0029-task-0015-container-sandbox.md`
 - `.factory-state/artifacts/REQ-0019-node-execution-settings.md`

@@ -11,6 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { badFilter, closeLen, FILTERS, openFilter, openRef, parseRef, refLabel, stateRef, stateRefRe, type FilterName } from '@/lib/state-refs'
 import { cn } from '@/lib/utils'
 import i18n from '@/lib/i18n'
+import { Tip } from '@/components/tip'
 
 export type TemplateField = { name: string; type?: string }
 
@@ -155,16 +156,22 @@ export function TemplateEditor({ value, onChange, fields, readOnly, singleLine, 
     view.dispatch(view.state.replaceSelection(stateRef(name))); view.focus()  // focus moves now, not when the menu finishes closing
   }
   // The wrapper mirrors the shadcn Input/Textarea classes (including their dark: backgrounds) so it matches the inputs around it.
-  return <div className={cn('relative min-w-0 rounded-lg border border-input bg-transparent py-1.5 pl-2.5 pr-8 text-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30',
+  // A click on the box outside the text (padding, the empty lines below) focuses the editor at the end, like a textarea.
+  const focusEnd = (e: React.MouseEvent) => {
+    const view = cm.current?.view
+    if (!view || readOnly || (e.target as HTMLElement).closest('.cm-line, button')) return
+    e.preventDefault(); view.focus(); view.dispatch({ selection: { anchor: view.state.doc.length } })
+  }
+  return <div onMouseDown={focusEnd} className={cn('relative min-w-0 cursor-text rounded-lg border border-input bg-transparent py-1.5 pl-2.5 pr-8 text-xs transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30',
     readOnly && 'cursor-not-allowed bg-input/50 opacity-50 dark:bg-input/80', className)}>
     <CodeMirror ref={cm} value={value} onChange={onChange} theme="none" editable={!readOnly} readOnly={!!readOnly} basicSetup={SETUP} extensions={extensions}
       minHeight={singleLine ? undefined : `${rows * 1.5}em`} maxHeight="20rem" />
     {/* not modal: a modal menu traps focus until it unmounts, so a key pressed right after picking would reach the canvas */}
     {!readOnly && <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-xs" className="absolute right-1 top-1 text-muted-foreground" aria-label={t('template.insert')} title={t('template.insert')}
+      <Tip tip={t('template.insert')}><DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-xs" className="absolute right-1 top-1 text-muted-foreground" aria-label={t('template.insert')}
           {...(id ? { id: `${id}-insert` } : {})}><Braces /></Button>
-      </DropdownMenuTrigger>
+      </DropdownMenuTrigger></Tip>
       <DropdownMenuContent align="end" className="max-h-72 min-w-40" onCloseAutoFocus={e => { e.preventDefault(); cm.current?.view?.focus() }}>
         <DropdownMenuLabel className="text-xs text-muted-foreground">{t('template.insert')}</DropdownMenuLabel>
         {fields.length ? fields.map(f => <DropdownMenuItem key={f.name} onSelect={() => insert(f.name)} className="font-mono text-xs">

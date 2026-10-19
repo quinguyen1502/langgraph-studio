@@ -23,7 +23,7 @@ import { UserMenu } from '@/components/user-menu'
 import { PendingBadge } from '@/components/pending-badge'
 import { NotificationBell } from '@/components/notification-bell'
 import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
-import { Tip } from './parts'
+import { Tip } from '@/components/tip'
 import { useStudioCtx } from './studio-context'
 
 const isMacPlatform = isMac()
@@ -44,8 +44,8 @@ export function EditorHeader() {
       <div className="flex min-w-0 items-center gap-2">
       <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-28" aria-label={t('editor.nameLabel')} />
       {edit && isDirty() && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
-      {!edit && <Badge variant="secondary" id="view-only" title={ownerEmail ?? ''}>{t('editor.viewOnly')}</Badge>}
-      {edit && ownerEmail && <Badge variant="outline" id="shared-editor" title={ownerEmail}>{t('list.sharedBy', { email: ownerEmail })}</Badge>}
+      {!edit && <Tip tip={ownerEmail}><Badge variant="secondary" id="view-only">{t('editor.viewOnly')}</Badge></Tip>}
+      {edit && ownerEmail && <Tip tip={ownerEmail}><Badge variant="outline" id="shared-editor">{t('list.sharedBy', { email: ownerEmail })}</Badge></Tip>}
       <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
       <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}

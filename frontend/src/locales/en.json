@@ -1133,7 +1133,7 @@
       "escape": "Clear selection / close panel",
       "run": "Run workflow",
       "stop": "Stop the run",
-      "delete": "Delete selection (not Start/End)",
+      "delete": "Delete selection (one Start and one End stay)",
       "selectAll": "Select all",
       "fitView": "Fit to view",
       "zoomIn": "Zoom in",

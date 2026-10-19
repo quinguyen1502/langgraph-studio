@@ -1133,7 +1133,7 @@
       "escape": "Bỏ chọn / đóng bảng",
       "run": "Chạy workflow",
       "stop": "Dừng lần chạy",
-      "delete": "Xoá phần đang chọn (trừ Start/End)",
+      "delete": "Xoá phần đang chọn (luôn giữ một Start và một End)",
       "selectAll": "Chọn tất cả",
       "fitView": "Vừa khung nhìn",
       "zoomIn": "Phóng to",

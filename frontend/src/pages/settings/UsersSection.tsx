@@ -19,6 +19,7 @@ import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import { can, useMe, type AdminUser, type Policy, type RoleMatrix } from '@/lib/rbac'
 import { useOnChange } from '@/lib/use-when'
+import { Tip } from '@/components/tip'
 
 type Data = RoleMatrix & { users: AdminUser[] }
 
@@ -107,7 +108,7 @@ export function UsersSection() {
           <TableCell><div className="flex items-center gap-2"><Switch checked={u.active} disabled={self || busy === u.id} aria-label={t('users.activeFor', { email: u.email })} onCheckedChange={v => patch(u, { active: v })} />
             <span className={u.active ? 'text-sm' : 'text-sm text-muted-foreground'}>{t(u.active ? 'users.statusActive' : 'users.statusDisabled')}</span></div></TableCell>
           <TableCell className="pr-4"><div className="flex gap-1">
-            <Button variant="ghost" size="icon" disabled={!u.active} aria-label={t('users.resetFor', { email: u.email })} title={t('users.resetFor', { email: u.email })} className="user-reset" onClick={() => setReset(u)}><KeyRound /></Button>
+            <Tip tip={t('users.resetFor', { email: u.email })}><Button variant="ghost" size="icon" disabled={!u.active} aria-label={t('users.resetFor', { email: u.email })} className="user-reset" onClick={() => setReset(u)}><KeyRound /></Button></Tip>
             <Button variant="ghost" size="icon" disabled={self} aria-label={t('users.deleteFor', { email: u.email })} className="user-delete" onClick={() => setDel(u)}><Trash2 /></Button></div></TableCell>
         </TableRow> })}</TableBody></Table></Card>
     <Card id="roles-matrix"><CardHeader><CardTitle>{t('users.matrixTitle')}</CardTitle><CardDescription>{t('users.matrixIntro')}</CardDescription></CardHeader>

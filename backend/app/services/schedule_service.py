@@ -5,7 +5,7 @@ credentials with nobody watching. A run starts as the schedule's creator with `s
 job queue as API runs. Missed times while no worker ran are not replayed: a due schedule fires once and moves to its next time.
 """
 import json, time, uuid
-from typing import Optional
+from typing import List, Optional
 from ..core import config, permissions as P
 from ..core.errors import AppError
 from ..core.logging import get_logger
@@ -87,7 +87,8 @@ class ScheduleService:
         check(expr, tz); return {"next_runs": cron.upcoming(expr, tz, time.time(), max(1, min(n, 10)))}
 
     # ---- scheduler (run worker) ----
-    def fire_due(self, now: Optional[float] = None) -> list[str]:
+    # typing.List: in this class body `list` is the method above, and Python 3.12 evaluates annotations eagerly
+    def fire_due(self, now: Optional[float] = None) -> List[str]:
         """Start a run for every due schedule this process wins; returns the run ids."""
         now = time.time() if now is None else now; started = []
         for s in self.schedules.due(now):

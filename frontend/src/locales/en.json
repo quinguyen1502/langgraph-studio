@@ -510,7 +510,8 @@
     "CODE_TIMEOUT": "Code node {{node}} was stopped after {{seconds}} s",
     "CODE_MEMORY": "Code node {{node}} ran out of memory (limit {{limit}})",
     "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() returned {{type}}, which cannot be stored as JSON",
-    "CODE_TOO_LARGE": "Code node {{node}}: the {{what}} is larger than {{max_kb}} KB"
+    "CODE_TOO_LARGE": "Code node {{node}}: the {{what}} is larger than {{max_kb}} KB",
+    "CODE_WRITE_FORBIDDEN": "Your role may not add Code nodes or change their code (code.write)"
   },
   "lang": {
     "en": "English",
@@ -935,7 +936,8 @@
       "org_manage": "Organization channels and MCP servers",
       "workflows_all": "Full access to every workflow",
       "workflows_create": "Create, import and duplicate workflows",
-      "resources_manage": "Own credentials, knowledge bases, MCP servers and channels"
+      "resources_manage": "Own credentials, knowledge bases, MCP servers and channels",
+      "code_write": "Write and change code in Code nodes"
     },
     "yes": "Allowed",
     "no": "Not allowed",

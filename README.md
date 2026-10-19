@@ -100,6 +100,7 @@ def main(state):
 ```
 
 - **Off by default.** Set `STUDIO_ENABLE_CODE_NODES=1` and build the image once: `docker build -t studio-code:1 docker/studio-code`. The image is `python:3.12-slim` with `pydantic` and `python-dateutil`; `STUDIO_CODE_IMAGE` picks another one. While the mode is off, or Docker or the image is missing, a workflow with a Code node fails validation and says why.
+- **Who may write code:** roles with `code.write`, which only admins have. Editors can still open, run, move, rename and delete Code nodes, and duplicate a workflow that has one. Adding a Code node or changing its code is refused with `CODE_WRITE_FORBIDDEN`, whether it comes from a save, a version restore, or a template import or use.
 - **Every call gets a new container.** It has no network (`--network none`), a read-only root with a 64 MB `/tmp`, and no host mounts. Its environment holds no server variable or credential. The state is a JSON copy; the code changes the run only through its return value.
 - **Limits:** memory `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5) and processes `STUDIO_CODE_PIDS` (64). A call is stopped after the node's timeout, capped by `STUDIO_CODE_MAX_SECONDS` (30). At most `STUDIO_CODE_CONCURRENCY` (4) containers run at once per server process. A cancelled run kills its container.
 - **Size limits:** the source is at most 64 KB, the state and the result at most 1 MB each, and stdout at most 64 KB (longer output is cut).

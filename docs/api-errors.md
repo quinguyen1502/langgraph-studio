@@ -56,6 +56,8 @@
 | `AUTH_PASSWORD_TOO_LONG` | 400 | Password must be at most {max} characters |
 | `AUTH_PASSWORD_WEAK` | 400 | Password must contain both letters and digits |
 | `AUTH_LOCKED` | 429 | Too many failed sign-ins. Try again in {minutes} min |
+| `AUTH_PASSWORD_WRONG` | 400 | The current password is incorrect |
+| `AUTH_PASSWORD_SAME` | 400 | The new password must be different from the current one |
 | `AUTH_CSRF` | 403 | Missing X-Requested-With header |
 | `PASSWORD_RESET_INVALID` | 400 | This reset link is invalid or has expired |
 | `WORKFLOW_NOT_FOUND` | 404 | Workflow not found |

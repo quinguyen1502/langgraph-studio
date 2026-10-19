@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0052
-- Status: todo
+- Status: done
 - Phase: auth
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -54,8 +54,10 @@ Profile page and self-service password change.
 
 ## Open Questions
 
-- Display name or not (REQ-0038).
+- Display name: not added (e-mail only, no migration); the owner can ask for it later.
 
 ## Activity Log
 
 - 2026-10-19: Created from owner feedback; not started.
+- 2026-10-19: Started on `factory/task-0052-profile-and-password` (owner: "Làm task 0052 đi"). Profile is the first Settings section (`/settings/profile`).
+- 2026-10-19: Implemented; review REV-0049, QA QA-0049 (pass). Awaiting the owner's merge.

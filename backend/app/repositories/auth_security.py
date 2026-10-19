@@ -44,5 +44,12 @@ class AuthSecurityRepository:
             s.execute(delete(PasswordReset).where(PasswordReset.user_id == uid, PasswordReset.used.is_(None)))  # other open links die too
             s.commit(); return True
 
+    def set_password(self, uid: str, password_hash: str, now: float) -> None:
+        """A self-service change (TASK-0052): older sessions stop working and open reset links die."""
+        with self.db.session() as s:
+            s.execute(update(User).where(User.id == uid).values(password=password_hash, password_changed=now))
+            s.execute(delete(PasswordReset).where(PasswordReset.user_id == uid, PasswordReset.used.is_(None)))
+            s.commit()
+
     def prune_resets(self, before: float) -> None:
         with self.db.session() as s: s.execute(delete(PasswordReset).where(PasswordReset.expires < before)); s.commit()

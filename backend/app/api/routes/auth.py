@@ -1,7 +1,7 @@
 import time
 from fastapi import APIRouter, Depends, Response
 from ...core import config, permissions as P, security
-from ...schemas.auth import Credentials, ResetConfirm, ResetRequest
+from ...schemas.auth import Credentials, PasswordChange, ResetConfirm, ResetRequest
 from ..deps import auth_service, current_user, need
 
 router = APIRouter(prefix="/api", tags=["auth"])
@@ -40,3 +40,8 @@ def admin_reset_link(target: str, user=Depends(need(P.USERS_MANAGE)), svc=Depend
 
 @router.get("/me")
 def me(user=Depends(current_user)): return user
+
+@router.post("/me/password")
+def change_password(body: PasswordChange, response: Response, user=Depends(current_user), svc=Depends(auth_service)):
+    """TASK-0052: a new session for this browser; every other session of the account is signed out."""
+    return _signed_in(svc.change_password(user["id"], body.current_password, body.new_password), response)

@@ -23,3 +23,8 @@ class ResetRequest(BaseModel):  # TASK-0045
 class ResetConfirm(BaseModel):
     token: str
     password: str
+
+
+class PasswordChange(BaseModel):  # TASK-0052
+    current_password: str
+    new_password: str

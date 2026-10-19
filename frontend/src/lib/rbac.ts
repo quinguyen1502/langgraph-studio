@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 
 export type Role = 'admin' | 'editor' | 'viewer'
 export type Access = 'owner' | 'editor' | 'viewer'
-export type Me = { id: string; email: string; role: Role; permissions: string[]; is_admin: boolean }
+export type Me = { id: string; email: string; role: Role; permissions: string[]; is_admin: boolean; created: number | null }
 export type Share = { user_id: string; email: string; role: 'viewer' | 'editor'; created: number }
 export type Shares = { owner: { id: string; email: string | null }; can_share: boolean; can_transfer: boolean; shares: Share[]; teams: TeamShare[] }
 export type AdminUser = { id: string; email: string; role: Role; active: boolean; created: number | null; workflows: number }

@@ -23,7 +23,7 @@ def normalise_email(email: str) -> str:
 
 def public_user(u) -> dict:
     return {"id": u.id, "email": u.email, "role": u.role, "permissions": sorted(P.PERMISSIONS.get(u.role, ())),
-            "is_admin": u.role == "admin"}
+            "is_admin": u.role == "admin", "created": u.created}
 
 
 def _digest(token: str) -> str: return hashlib.sha256(token.encode()).hexdigest()
@@ -51,20 +51,38 @@ class AuthService:
             self.workflows.seed_example(uid)  # new users get a copy of the example workflow
         return self._session(uid)
 
-    def login(self, email: str, password: str) -> dict:
-        email = normalise_email(email); now = time.time()
+    def _check_password(self, email: str, password: str, wrong: str):
+        """The user if `password` is right. A lock refuses even the right password; a wrong one counts toward it
+        (sign-in and password change share the counter, TASK-0045/0052) and raises `wrong`."""
+        now = time.time()
         if self.sec and (t := self.sec.throttle(email)) and t.locked_until and t.locked_until > now:
-            raise AppError("AUTH_LOCKED", minutes=math.ceil((t.locked_until - now) / 60))  # even with the right password
+            raise AppError("AUTH_LOCKED", minutes=math.ceil((t.locked_until - now) / 60))
         u = self.users.get_by_email(email)
         if not u or not security.verify_password(password, u.password or ""):
             if self.sec:
                 t = self.sec.record_failure(email, now, config.login_window(), config.login_max_failures(), config.login_lock())
                 self.sec.prune_throttle(now - config.login_window() - config.login_lock())
                 if t.locked_until and t.locked_until > now: raise AppError("AUTH_LOCKED", minutes=math.ceil(config.login_lock() / 60))
-            raise AppError("AUTH_INVALID_CREDENTIALS")  # generic: no user enumeration
-        if not u.active: raise AppError("AUTH_ACCOUNT_DISABLED")
+            raise AppError(wrong)
         if self.sec: self.sec.clear_throttle(email)
+        return u
+
+    def login(self, email: str, password: str) -> dict:
+        u = self._check_password(normalise_email(email), password, "AUTH_INVALID_CREDENTIALS")  # generic: no user enumeration
+        if not u.active: raise AppError("AUTH_ACCOUNT_DISABLED")
         return self._session(u.id)
+
+    def change_password(self, uid: str, current: str, new: str) -> dict:
+        """TASK-0052: needs the current password. Other sessions stop working; the caller gets a fresh one."""
+        me = self.users.get_by_id(uid)
+        if me is None: raise AppError("AUTH_TOKEN_INVALID")
+        u = self._check_password(me.email, current, "AUTH_PASSWORD_WRONG")
+        if (err := security.password_problem(new)): raise err
+        if security.verify_password(new, u.password or ""): raise AppError("AUTH_PASSWORD_SAME")
+        self.sec.set_password(uid, security.hash_password(new), time.time())
+        log.info("password changed by user %s", uid)
+        if self.audit: self.audit.record(uid, "user.password_changed", "user", uid, u.email)
+        return self._session(uid)
 
     # ---- password reset (TASK-0045) ----
     def options(self) -> dict:

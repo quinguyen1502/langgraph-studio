@@ -34,6 +34,8 @@ Five failed sign-ins within 15 minutes lock that e-mail for 15 minutes, even wit
 
 To reset a password, an admin opens **Settings → Users** and makes a one-time link (the key icon), then sends it to the user. With `SMTP_HOST` and `STUDIO_PUBLIC_URL` set, **Forgot password?** on the sign-in page e-mails the link instead, and it answers the same way for every address. A link works once, for `STUDIO_PASSWORD_RESET_TTL` seconds (default 3600). Setting a new password signs out every older session of that account and clears its lockout.
 
+Each user sees their account under **Settings → Profile** (also in the user menu): e-mail, role, join date, language and notification settings. **Change password** there needs the current password (`POST /api/me/password` with `current_password` and `new_password`). A wrong current password counts toward the sign-in lockout (`AUTH_PASSWORD_WRONG`, then `AUTH_LOCKED`), and the new one must follow the same rules and differ from the old one (`AUTH_PASSWORD_SAME`). The change signs out every other session of the account, keeps this browser signed in with a new session, cancels open reset links and is recorded in the activity log as `user.password_changed`. The e-mail address cannot be changed.
+
 In production (`STUDIO_ENV=production`) the demo account is not created. If it already exists with the demo password, it is deactivated at start-up; use `STUDIO_ADMIN_EMAILS` to bootstrap an admin.
 
 ## Editor

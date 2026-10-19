@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0039
-- Status: Proposed
+- Status: Proposed (owner answered CLAR-0001 on 2026-10-19; awaiting acceptance)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
 - Updated: 2026-10-19
@@ -42,7 +42,8 @@ A third mode for the Tool node, **Code**, next to `function` and `http`. The use
   - the code is not empty;
   - it compiles (`compile()` only; nothing is executed on the server);
   - it defines `main`;
-  - the mode is allowed for the editing user (see Open Questions).
+  - the editing user has `code.write`;
+  - the configured runtime is available (Docker, or the explicit host subprocess mode).
 - en and vi strings. New error codes go in `core/errors.py` CATALOG, `docs/api-errors.md` and both locales.
 - README (en and vi): what the mode is for, its limits, and how to enable it.
 
@@ -50,13 +51,14 @@ A third mode for the Tool node, **Code**, next to `function` and `http`. The use
 
 - Languages other than Python.
 - Changing the existing `function` mode or the `@register_tool` registry.
-- Installing packages per node at run time (unless the owner picks that option; see Open Questions).
+- Installing packages per node at run time (CLAR-0001: fixed image only).
+- Network access from code, and credentials passed to code (CLAR-0001: not in the first version).
 - Keeping state between calls: no shared filesystem and no warm interpreter between runs.
 - A full IDE: no debugger, breakpoints or language server.
 
 ## Stakeholders Or Users
 
-- Workflow authors (editor role, possibly admin only; see Open Questions).
+- Workflow authors who hold `code.write` (admins by default).
 - Project owner or administrator, who enables the feature and sets limits.
 - Viewers and other users who run a shared workflow containing a Code node.
 
@@ -81,22 +83,70 @@ A third mode for the Tool node, **Code**, next to `function` and `http`. The use
   - it passes the state and waits for at most the node timeout (or a server default);
   - the returned value is stored in the output field;
   - the run continues.
-- Failures stop the node with a clear error and the run follows the node's retry settings: an exception in user code, a non-JSON return value, the time limit, the memory limit, or Docker unavailable.
+- Failures stop the node with a clear error and the run follows the node's retry settings: an exception in user code, a non-JSON return value, the time limit, the memory limit, or the runtime being unavailable.
 - The run panel and trace show the result, the captured `print()` output (truncated) and the traceback.
 - **Test with sample state** gives the same result as a real run for the same state, and writes no run history.
 
 ## Business Rules
 
-- User code never runs in the API or worker process.
-- The container never receives server environment variables, DB access or the credential store unless the owner allows credentials (see Open Questions). Even then it gets only what the node lists.
+Owner decisions from CLAR-0001 (2026-10-19):
+
+- **Who may write code:** a new global permission `code.write`.
+  - Admins have it by default; editors and viewers do not.
+  - It is added to `core/permissions.py` and shown in the admin role matrix.
+  - It is checked when a user saves, imports or uses a template with a Code node, or changes its code, and not only in the UI.
+  - A user without it can still see the code read-only, run the workflow, and move or delete the node. The API refuses an added or changed `code` field.
+- **Network:** always off. The container runs with `--network none`, and no node or workflow can change that.
+- **Packages:** a fixed image set by `STUDIO_CODE_IMAGE`. Nothing is installed at run time.
+  - The default image's package list is still open (see Open Questions).
+  - The editor shows which packages the image has.
+- **Credentials:** none in the first version. The process gets no credential values and no server environment variables.
+- **Without Docker:** a host subprocess is allowed only when the admin sets it explicitly. Users must always be able to see that their code is not isolated (see Host Subprocess Mode below).
+
+Other rules:
+
+- User code never runs inside the API or worker process. It always runs in a separate container or child process.
 - The state passed in is a JSON copy; the code cannot change the run except through its return value.
-- Size limits: state in, result out, and stdout (for example 1 MB result and 64 KB stdout; final values set in the task).
-- Who may add or change a Code node is checked on save, on import and on template use, not only in the UI.
+- Size limits apply to state in, result out, and stdout. For example 1 MB for the result and 64 KB for stdout; final values are set in the task.
 - A workflow shared with a viewer can still be run by that viewer. The code runs with the sandbox's rights, never the viewer's or the owner's.
+
+## Host Subprocess Mode
+
+The owner chose to allow running without Docker and asked that users be made aware of it. The rules below are this REQ's proposal for that.
+
+**Turning it on**
+
+- It needs two flags: `STUDIO_ENABLE_CODE_NODES=1` and `STUDIO_CODE_RUNTIME=subprocess`.
+- There is never an automatic fallback. With `docker` (the default) and no Docker available, Code nodes fail validation with a clear error.
+
+**Limits that still apply**
+
+- The process starts with an empty environment (no `JWT_SECRET`, `DATABASE_URL` or `STUDIO_*`).
+- Its working directory is a temporary folder that is deleted afterwards.
+- On Linux, rlimits cap memory, CPU time, open files and processes.
+- The time limit kills the whole process group.
+- The README states what this mode cannot stop:
+  - network access;
+  - reading files the server user can read;
+  - a weaker memory limit on macOS.
+
+**How users and admins are told**
+
+1. **Server log:** one `WARNING` at start-up, saying that code nodes run on the host without isolation.
+2. **API:** `GET /api/meta` (or the existing tools endpoint) returns `code_runtime`, one of `docker`, `subprocess` or `off`. The UI reads this one value; nothing else guesses the runtime.
+3. **Editor:** the Code mode config shows a warning Alert. It uses theme tokens (`--warning`), in en and vi, and reads roughly "Code runs directly on the server, without isolation". It cannot be dismissed.
+4. **Canvas:** a Code node carries a small warning badge with a tooltip explaining the risk.
+5. **Mode picker:** the **Code** entry shows a "Not isolated" badge next to its name.
+6. **Run results:**
+   - each Code call's trace row shows `runtime: subprocess`;
+   - the run panel shows one warning line per run that used it;
+   - the run record keeps the runtime, so history shows it later.
+7. **Admin Settings:** a sandbox status card shows the code runtime (Docker, host subprocess, or off), the image, and the limits, with a short risk note when it is `subprocess`.
+8. **Audit log:** the first Code node run after a server start in this mode records `system.code_runtime_subprocess`, so admins can see when the mode was in use.
 
 ## Constraints
 
-- Docker is the only isolation runtime (REQ-0009 decision). gVisor and Firecracker stay out of scope.
+- Docker is the only isolation runtime (REQ-0009 decision). gVisor and Firecracker stay out of scope. The host subprocess mode is not isolation; it exists only for servers without Docker and is always labelled as such.
 - Mock or offline mode must keep working. A workflow without Code nodes must not need Docker.
 - Layers per DEC-0009:
   - the runner and the container call live in `engine/`;
@@ -109,10 +159,15 @@ A third mode for the Tool node, **Code**, next to `function` and `http`. The use
 - A Code node returning `state["message"].upper()` writes the upper-cased message to its output field, and the next node can use it.
 - `print()` output and a raised exception appear in the trace. The run fails with the traceback, and retry settings apply.
 - An endless loop is stopped at the time limit; allocating past the memory limit is stopped. Both are reported as node errors.
-- Code cannot read server environment variables (for example `JWT_SECRET`) or files outside the container, and cannot reach the network unless the owner allows it.
-- Saving or importing a workflow with a Code node is refused for users not allowed to write code, with an error code shown in en and vi.
-- Without Docker, a Code node fails validation with a clear message, and other workflows run as before.
-- pytest covers runner I/O, limits, isolation and permissions (Docker-dependent tests skip when Docker is missing). Playwright covers editing, Test with sample state, and a run.
+- In Docker mode, code cannot read server environment variables (for example `JWT_SECRET`), cannot read files outside the container, and cannot reach the network (`--network none`).
+- A user without `code.write` gets an error code, shown in en and vi, when they save or import a workflow that adds or changes a Code node. Running such a workflow still works.
+- With the default runtime and no Docker, a Code node fails validation with a clear message, and other workflows run as before.
+- In host subprocess mode:
+  - the process environment has no server secrets, and the time limit kills it;
+  - `code_runtime` is `subprocess`;
+  - the editor Alert, the canvas badge, the trace label, the run warning and the admin status card are all visible;
+  - the start-up warning is logged.
+- pytest covers runner I/O, limits, isolation, permissions and both runtimes; Docker-dependent tests skip when Docker is missing. Playwright covers editing, Test with sample state, a run, and the subprocess warnings.
 
 ## Edge Cases
 
@@ -123,22 +178,29 @@ A third mode for the Tool node, **Code**, next to `function` and `http`. The use
 - Many parallel Code nodes, for example inside For each: container start-up cost and a cap on concurrent containers.
 - Loop iterations call the code each time; the trace shows each call as its own row.
 - A Code node in a template or export: the code is kept, and the permission rule applies when it is used or imported.
+- An admin removes `code.write` from a role later: existing Code nodes keep running; members of that role can no longer change them.
+- The runtime changes between save and run (for example Docker removed): the run fails at validation and names the missing runtime; nothing falls back silently.
 
 ## Assumptions
 
 - A new container per call is acceptable, at about 0.5–1.5 s overhead per call on a warm image. A warm pool is a later optimisation if needed.
-- The container uses its own image setting (for example `STUDIO_CODE_IMAGE`, default `python:3.12-slim`), separate from the import image.
-- The feature is off by default behind a flag (for example `STUDIO_ENABLE_CODE_NODES`), like repo import.
+- The container uses its own image setting, `STUDIO_CODE_IMAGE`, separate from the import image.
+- The feature is off by default behind `STUDIO_ENABLE_CODE_NODES`, like repo import. `STUDIO_CODE_RUNTIME` is `docker` (default) or `subprocess`.
 
 ## Open Questions
 
-Owner decisions are collected in `.factory-state/artifacts/CLAR-0001-tool-code-mode.md`, answered with `factory clarify CLAR-0001`:
+Answered 2026-10-19 in `.factory-state/artifacts/CLAR-0001-tool-code-mode.md`:
 
-1. **Who may write code:** admins only, users with a new `code.write` permission, or every editor?
-2. **Network access:** always off, off by default with a per-node switch, or always on?
-3. **Python packages:** standard library only, a fixed image with chosen packages, or per-node requirements installed at run time?
-4. **Credentials:** none in the first version, or chosen credentials passed to the code (as env vars or as an argument)?
-5. **Without Docker:** turn the mode off, or allow a host subprocess behind an explicit flag (less safe)?
+- Who may write code: the `code.write` permission (admins by default).
+- Network: always off.
+- Packages: a fixed image set by `STUDIO_CODE_IMAGE`.
+- Credentials: none.
+- Without Docker: an explicit host subprocess mode, with the warnings in Host Subprocess Mode.
+
+Still open:
+
+- Packages in the default image. Proposal: build a small `studio-code` image on `python:3.12-slim` with `requests`, `pydantic` and `python-dateutil`. `requests` is useless while the network is off, so the first version could ship stdlib plus `pydantic` and `python-dateutil`.
+- Does the owner accept the warning list in Host Subprocess Mode, in particular the audit entry (point 8)?
 
 ## Related Artifacts
 

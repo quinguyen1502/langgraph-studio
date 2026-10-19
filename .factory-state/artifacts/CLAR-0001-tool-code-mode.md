@@ -2,13 +2,13 @@
 schema_version: 1
 id: CLAR-0001
 task_id: REQ-0039
-status: open
+status: answered
 source_artifacts:
   - .factory-state/artifacts/REQ-0039-tool-code-mode.md
   - .factory-state/artifacts/REQ-0009-sandboxed-imports.md
 created: 2026-10-19
 updated: 2026-10-19
-answered_at: null
+answered_at: '2026-10-19'
 questions:
   - id: who-can-write
     type: single_choice
@@ -76,7 +76,12 @@ questions:
       - value: subprocess-flag
         label: Allow a host subprocess behind an explicit flag (less safe)
     depends_on: null
-answers: {}
+answers:
+  who-can-write: permission
+  network: blocked
+  packages: fixed-image
+  credentials: none
+  no-docker: subprocess-flag
 ---
 # Clarification: REQ-0039 Tool node Code mode
 
@@ -87,3 +92,13 @@ factory clarify CLAR-0001 -C <project-dir>
 ```
 
 The implementing agent copies the answers into REQ-0039 (Open Questions and Business Rules) before `plan-tasks`.
+
+## Answers (2026-10-19, owner in chat)
+
+- who-can-write: `permission` (recommended)
+- network: `blocked` (recommended)
+- packages: `fixed-image` (recommended); the package list is still open in REQ-0039
+- credentials: `none` (recommended)
+- no-docker: `subprocess-flag`. The owner asked that users be made aware when code is not isolated; REQ-0039 "Host subprocess mode" lists how.
+
+Copied into REQ-0039 on 2026-10-19.

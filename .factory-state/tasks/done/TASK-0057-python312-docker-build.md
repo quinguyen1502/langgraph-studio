@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0057
-- Status: doing
+- Status: done
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -74,4 +74,4 @@ web Docker image builds.
 
 - Python 3.12 venv: import and the full pytest suite, as above.
 - `docker compose build web api` with Docker 28.3.3: both images built.
-- CI on the pull request.
+- CI on PR #66: all six checks pass (both backend jobs, both frontend builds, compose build + smoke, factory verify). Merged in PR #66.

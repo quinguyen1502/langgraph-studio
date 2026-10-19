@@ -18,6 +18,9 @@ import { McpSettings } from '@/components/mcp-settings'
 import { DecisionSettings } from '@/components/decision-settings'
 import { EmailSettings } from '@/components/email-settings'
 import { TemplateEditor } from '@/components/template-editor'
+import { CodeSettings } from '@/components/code-settings'
+import { useCodeRuntime } from '@/lib/code-runtime'
+import { can, useMe } from '@/lib/rbac'
 import { META, RUNTIME, LOOP_LABELS } from './meta'
 import { Sel, F } from './parts'
 import { useStudioCtx } from './studio-context'
@@ -25,7 +28,8 @@ import { useStudioCtx } from './studio-context'
 /** Right panel: config of the selected node or edge (TASK-0040). */
 export function EditorConfig() {
   const { t } = useTranslation()
-  const { nodes, setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
+  const { nodes, setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state, input } = useStudioCtx()
+  const codeRt = useCodeRuntime(); const canCode = can(useMe(), 'code.write')  // Tool node Code mode (TASK-0055)
   const chatCreds = creds.filter(c => (providers.find(p => p.id === c.provider)?.kind ?? 'chat') === 'chat')  // TypeSafe keys: Decision nodes; SMTP: Send email
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0">
@@ -61,9 +65,15 @@ export function EditorConfig() {
             <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
           </>}
           {selNode.type === 'tool' && <>
-            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => upd('mode', v)}><SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem></SelectContent></Select></F>
-            {d.mode === 'http' ? <>
+            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, code: codeRt?.starter ?? '' }) : upd('mode', v)}>
+              <SelectTrigger className="w-full" id="tool-mode"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem>
+                <SelectItem value="code" id="tool-mode-code" disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>{t('editor.pythonCode')}</SelectItem></SelectContent></Select>
+              {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
+              {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
+            {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={selNode.id} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}
+                editable={edit} input={input} nodeId={selNode.id} timeout={typeof d.timeout === 'number' ? d.timeout : undefined} /></F>
+            : d.mode === 'http' ? <>
               <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
               <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>
               <F label={t('field.bodyTemplate')}><TemplateEditor {...tpl} rows={4} id="http-body" value={d.body || ''} onChange={v => upd('body', v)} /></F>

@@ -106,3 +106,16 @@ The TASK-0015 sandbox (`engine/sandbox/container.py`) already builds a locked-do
 - Running a Code node needs Docker on the API and worker hosts, or the explicit subprocess flag.
 - The Compose setup documents mounting the Docker socket for the worker, as imports already do.
 - A first call on a cold image is slow, so the README tells admins to pre-pull or build `studio-code:1`.
+
+## Addendum (TASK-0055, 2026-10-19)
+
+- Test with sample state is `POST /api/code/test {source, state, node?, timeout?}`, not a per-workflow route.
+  - The request carries the source and the state, and reads no workflow data, so there is no workflow access to check.
+  - It needs `code.write` and is rate-limited per user (`STUDIO_CODE_TEST_PER_MINUTE`).
+  - It also works for a workflow that has not been saved yet.
+- A failure of the code itself returns 200 with `{ok: false, error, traceback, stdout}`. These still raise the usual API errors:
+  - a bad source (`CODE_INVALID`);
+  - a server that cannot run code (`CODE_RUNTIME_*`);
+  - a missing permission (`CODE_WRITE_FORBIDDEN`).
+- `GET /api/meta/runtime` also returns `available`, `problem` and `starter`, so the editor never guesses.
+

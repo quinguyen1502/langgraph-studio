@@ -211,7 +211,8 @@
     "loop": {
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
-    }
+    },
+    "pythonCode": "Python code"
   },
   "nodes": {
     "start": "Start point",
@@ -531,7 +532,8 @@
     "source": "Source",
     "url": "URL",
     "humanPrompt": "Question for the human ({{field}})",
-    "queryTemplate": "Search query ({{field}})"
+    "queryTemplate": "Search query ({{field}})",
+    "code": "Code"
   },
   "samples": {
     "input": "{\n  \"message\": \"Where is my order A100?\"\n}",
@@ -1398,5 +1400,19 @@
     "outputField": "Result field (optional, object)",
     "outputNone": "None",
     "hint": "Each run sends at most once: a recovered run reuses the result instead of sending again. Put a Human approval before this node to check the e-mail first."
+  },
+  "code": {
+    "off": "Code nodes are turned off on this server. An admin can turn them on with STUDIO_ENABLE_CODE_NODES=1.",
+    "unavailable": "Code nodes cannot run on this server right now: {{problem}}",
+    "readOnly": "Only roles with code.write can change this code. You can still run the workflow.",
+    "locked": "Writing code needs the code.write permission (admins).",
+    "packages": "Available: {{packages}}.",
+    "stdlib": "the standard library",
+    "limits": "No network; stopped after {{seconds}} s or {{memory}} of memory.",
+    "test": "Test with sample state",
+    "testHint": "Runs main(state) once with the run panel's input. Nothing is saved.",
+    "result": "Result ({{ms}} ms)",
+    "stdout": "Printed output",
+    "traceback": "Traceback"
   }
 }

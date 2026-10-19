@@ -211,7 +211,8 @@
     "loop": {
       "each": "each: chạy phần thân cho phần tử tiếp theo",
       "done": "done: sau phần tử cuối"
-    }
+    },
+    "pythonCode": "Code Python"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -531,7 +532,8 @@
     "source": "Mã nguồn",
     "url": "URL",
     "humanPrompt": "Câu hỏi cho người duyệt ({{field}})",
-    "queryTemplate": "Câu truy vấn ({{field}})"
+    "queryTemplate": "Câu truy vấn ({{field}})",
+    "code": "Code"
   },
   "samples": {
     "input": "{\n  \"message\": \"Đơn hàng A100 của tôi đâu rồi?\"\n}",
@@ -1398,5 +1400,19 @@
     "outputField": "Trường kết quả (không bắt buộc, object)",
     "outputNone": "Không có",
     "hint": "Mỗi lần chạy chỉ gửi tối đa một lần: run được khôi phục sẽ dùng lại kết quả thay vì gửi lại. Đặt một node Human approval trước node này để duyệt email trước khi gửi."
+  },
+  "code": {
+    "off": "Code node đang tắt trên server này. Admin có thể bật bằng STUDIO_ENABLE_CODE_NODES=1.",
+    "unavailable": "Server hiện chưa chạy được Code node: {{problem}}",
+    "readOnly": "Chỉ role có code.write mới sửa được code này. Bạn vẫn chạy được workflow.",
+    "locked": "Viết code cần quyền code.write (admin).",
+    "packages": "Có sẵn: {{packages}}.",
+    "stdlib": "thư viện chuẩn",
+    "limits": "Không có mạng; dừng sau {{seconds}} giây hoặc khi dùng quá {{memory}} bộ nhớ.",
+    "test": "Chạy thử với state mẫu",
+    "testHint": "Chạy main(state) một lần với input ở run panel. Không lưu gì.",
+    "result": "Kết quả ({{ms}} ms)",
+    "stdout": "Output đã in",
+    "traceback": "Traceback"
   }
 }

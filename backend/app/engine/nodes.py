@@ -5,7 +5,7 @@ from urllib.parse import unquote, urlsplit
 import httpx
 from ..core import config
 from ..core.net import pinned_request, public_address
-from . import decisions, foreach
+from . import decisions, emails, foreach
 from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, TokenBuffer, call_llm
@@ -84,6 +84,8 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
         fn = decisions.node_fn(node, resolve, usage)
     elif t == "foreach":
         fn = foreach.node_fn(node)
+    elif t == "email":
+        fn = emails.node_fn(node, resolve, (lambda: effects.key(node["id"])) if effects else (lambda: None), ports)
     else:  # start, condition, end, join, subgraph entry/exit -> passthrough
         def fn(state):
             return {}

@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from . import decisions, foreach
+from . import decisions, emails, foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach", "decision")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach", "decision", "email")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
 
 
@@ -19,6 +19,7 @@ def templates_of(t: Any, d: Dict[str, Any]) -> List[str]:
     if t == "tool" and d.get("mode") == "http": return [d.get("url") or "", d.get("body") or ""]
     if t == "mcp": return _strings(d.get("arguments") or {})
     if t == "decision": return decisions.templates(d)
+    if t == "email": return emails.templates(d)
     return []
 
 
@@ -27,6 +28,7 @@ def written(n: Dict[str, Any]) -> List[str]:
     t, d = n.get("type"), n.get("data") or {}
     if t in WRITERS: return [d["output_field"]] if d.get("output_field") else []
     if t == "decision": return decisions.fields(d)
+    if t == "email": return emails.fields(d)
     if t == "foreach": return [f for f in (d.get("item_field"), d.get("index_field")) if f]
     return []
 
@@ -126,6 +128,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             errs.append(f"Subgraph node {nid}: choose a workflow")
         if t == "foreach": errs += foreach.errors(nid, d, out.get(nid, []), schema, reaches)
         if t == "decision": errs += decisions.errors(nid, d, schema)
+        if t == "email": errs += emails.errors(nid, d, schema)
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]

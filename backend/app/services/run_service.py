@@ -111,7 +111,7 @@ def _parse_until(req: dict) -> Optional[str]:
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -126,6 +126,7 @@ class RunService:
         self.mcp = mcp  # McpService (optional): MCP tool nodes (TASK-0013)
         self.policy = policy  # PolicyService (optional): org resources at run time (TASK-0029)
         self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
+        self.quota = quota  # rate_limit.Counter (optional): recipients Send email nodes may reach per owner per hour (TASK-0051)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -177,7 +178,17 @@ class RunService:
         """Services nodes may call during a run, bound to the resource owner `uid`. Org-wide MCP servers follow the admin
         policy for the person running (`actor`, TASK-0029)."""
         org = self.policy.org_allowed(actor or uid) if self.policy is not None else True
-        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid, org) if self.mcp else None)
+        return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid, org) if self.mcp else None,
+                     email_quota=self.email_quota(uid))
+
+    def email_quota(self, uid: str) -> Optional[Callable[[int], None]]:
+        """Send email nodes of `uid`'s workflows reach at most STUDIO_EMAIL_NODE_HOURLY_LIMIT recipients an hour."""
+        if self.quota is None: return None
+        def take(n: int) -> None:
+            limit = config.email_node_hourly_limit()
+            count, retry = self.quota.add(f"email:{uid}", n, 3600)
+            if count > limit: raise AppError("EMAIL_RATE_LIMITED", limit=limit, retry=retry)
+        return take
 
     def _expand(self, uid: str, wid: Optional[str], wf: dict) -> tuple[dict, Optional[list]]:
         """Inline subgraph nodes (TASK-0011) with the workflows this user may read. The expanded graph is what runs and

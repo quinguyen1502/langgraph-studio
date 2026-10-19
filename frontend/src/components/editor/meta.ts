@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square, Repeat, Scale } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square, Repeat, Scale, Mail } from 'lucide-react'
 import i18n from '@/lib/i18n'
 
 export type Field = { name: string; type: string; reducer?: string }
@@ -20,8 +20,9 @@ META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.foreach = { label: 'For each', icon: Repeat, color: 'bg-node-foreach-muted text-node-foreach', accent: 'bg-node-foreach' }
 META.decision = { label: 'Decision (Jev)', icon: Scale, color: 'bg-node-decision-muted text-node-decision', accent: 'bg-node-decision' }
+META.email = { label: 'Send email', icon: Mail, color: 'bg-node-email-muted text-node-email', accent: 'bg-node-email' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-export const TYPES = ['start', 'llm', 'decision', 'retriever', 'tool', 'mcp', 'condition', 'foreach', 'human', 'join', 'subgraph', 'end']
+export const TYPES = ['start', 'llm', 'decision', 'retriever', 'tool', 'mcp', 'email', 'condition', 'foreach', 'human', 'join', 'subgraph', 'end']
 export const INSERTABLE = TYPES.filter(t => t !== 'start' && t !== 'end')
 export const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human', 'decision'])
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
@@ -43,6 +44,7 @@ export const DEFAULTS: Record<string, any> = {
   condition: { label: 'Condition', field: '', default: '' },
   decision: { label: 'Decision', credential_id: '', model: 'jev-latest', text: '{{state.message}}', output_field: '',
     questions: [{ id: 'q1', type: 'choice', instructions: '', options: [{ label: '', description: '' }, { label: '', description: '' }], field: '' }] },
+  email: { label: 'Send email', credential_id: '', to: '', cc: '', bcc: '', reply_to: '', subject: '', body: '', format: 'text', output_field: '' },
   foreach: { label: 'For each', items_field: '', item_field: '', index_field: '', max_items: 100 },
   human: { label: 'Approval', prompt: '', output_field: '' },
   mcp: { label: 'MCP tool', server_id: '', tool: '', arguments: {}, output_field: '' },

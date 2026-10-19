@@ -33,7 +33,7 @@ from ..services.run_service import RunService
 from ..services.run_worker import RunWorker
 from ..services.delivery_service import DeliveryService
 from ..services.notification_service import NotificationService
-from ..services.rate_limit import RateLimiter, make_rate_limiter
+from ..services.rate_limit import Counter, RateLimiter, make_counter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.schedule_service import ScheduleService
 from ..services.telemetry import Telemetry
@@ -63,6 +63,11 @@ def run_worker() -> RunWorker:
 @lru_cache
 def get_rate_limiter() -> RateLimiter:
     return make_rate_limiter(config.REDIS_URL)  # shared via Redis, else per process
+
+
+@lru_cache
+def get_counter() -> Counter:
+    return make_counter(config.REDIS_URL)  # blocking twin of the rate limiter for quotas inside runs (TASK-0051)
 
 
 def delivery_service() -> DeliveryService:
@@ -131,7 +136,7 @@ def auth_service() -> AuthService:
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
                       knowledge=knowledge_service(), mcp=mcp_service(), access=access_service(),
-                      policy=policy_service())
+                      policy=policy_service(), quota=get_counter())
 
 def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed)

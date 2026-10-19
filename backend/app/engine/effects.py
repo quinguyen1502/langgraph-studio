@@ -14,7 +14,7 @@ import hashlib, inspect
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Optional, Protocol
 
-SIDE_EFFECT_TYPES = ("llm", "tool", "decision")  # Decision: a paid call, reused on recovery
+SIDE_EFFECT_TYPES = ("llm", "tool", "decision", "email")  # Decision: a paid call; Send email: never sent twice
 
 
 class Ledger(Protocol):

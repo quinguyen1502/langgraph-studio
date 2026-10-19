@@ -226,7 +226,8 @@
     "retriever": "Search a knowledge base",
     "mcp": "Call a tool on an MCP server",
     "foreach": "Repeat a branch for each list item",
-    "decision": "Ask TypeSafe Jev typed questions"
+    "decision": "Ask TypeSafe Jev typed questions",
+    "email": "Send an e-mail through SMTP"
   },
   "trace": {
     "idle": "Not run",
@@ -280,8 +281,8 @@
   },
   "creds": {
     "button": "Credentials",
-    "title": "LLM credentials",
-    "desc": "API keys are encrypted at rest (Fernet) and never returned to the browser.",
+    "title": "Credentials",
+    "desc": "API keys and passwords are encrypted at rest (Fernet) and never returned to the browser.",
     "empty": "No credentials yet. Without a credential, LLM nodes run the mock.",
     "name": "Name",
     "namePh": "My OpenAI",
@@ -308,14 +309,47 @@
       "ollama": "Ollama (local)",
       "lmstudio": "LM Studio (local)",
       "openai_compatible": "OpenAI-compatible (vLLM / llama.cpp / LocalAI)",
-      "openrouter": "OpenRouter"
+      "openrouter": "OpenRouter",
+      "smtp": "SMTP (e-mail)"
     },
     "testOk_one": "Connected · {{count}} model · {{ms}} ms",
     "testOk_other": "Connected · {{count}} models · {{ms}} ms",
     "editAria": "Edit {{name}}",
     "editTitle": "Edit credential {{name}}",
     "keyKeep": "Stored key {{hint}} is kept; type a new one to replace it",
-    "clearKey": "Remove the stored key"
+    "clearKey": "Remove the stored key",
+    "smtp": {
+      "preset": "Server",
+      "presets": {
+        "gmail": "Gmail",
+        "outlook": "Outlook / Microsoft 365",
+        "sendgrid": "SendGrid",
+        "resend": "Resend",
+        "mailgun": "Mailgun",
+        "custom": "Other server"
+      },
+      "presetHint": {
+        "gmail": "Turn on 2-Step Verification, then create an app password (Google Account → Security → App passwords) and use it as the password.",
+        "outlook": "Use your full address as the user name. Your Microsoft 365 admin must allow SMTP AUTH for the mailbox.",
+        "sendgrid": "The user name is \"apikey\" and the password is a SendGrid API key with Mail Send permission.",
+        "resend": "The user name is \"resend\" and the password is a Resend API key. The sender must be on a verified domain.",
+        "mailgun": "Use the SMTP login and password of your Mailgun domain."
+      },
+      "host": "SMTP host",
+      "port": "Port",
+      "security": "Security",
+      "securityOpts": {
+        "starttls": "STARTTLS",
+        "ssl": "SSL/TLS",
+        "none": "None"
+      },
+      "username": "User name",
+      "password": "Password (optional)",
+      "fromEmail": "From address",
+      "fromName": "From name (optional)",
+      "fromNamePh": "Acme Support",
+      "testOk": "Signed in · {{ms}} ms (nothing was sent)"
+    }
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -457,7 +491,16 @@
     "TEMPLATE_READ_ONLY": "This template cannot be deleted",
     "TEMPLATE_INVALID": "Not a valid template file",
     "TEMPLATE_NAME_REQUIRED": "Template name is required",
-    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation"
+    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation",
+    "CREDENTIAL_SETTINGS_INVALID": "Check the setting {{field}}",
+    "EMAIL_HOST_BLOCKED": "The SMTP host {{host}} is a private or local address (allowed only with STUDIO_SMTP_ALLOW_PRIVATE=1)",
+    "EMAIL_AUTH_FAILED": "The SMTP server rejected the sign-in: {{reason}}",
+    "EMAIL_SEND_FAILED": "The e-mail could not be sent: {{reason}}",
+    "EMAIL_CREDENTIAL_INVALID": "Send email node {{node}}: choose an SMTP credential",
+    "EMAIL_RECIPIENT_INVALID": "Send email node {{node}}: '{{address}}' is not an e-mail address",
+    "EMAIL_RECIPIENTS_MISSING": "Send email node {{node}}: there is no recipient (To, Cc or Bcc)",
+    "EMAIL_TOO_MANY_RECIPIENTS": "Send email node {{node}}: at most {{max}} recipients",
+    "EMAIL_RATE_LIMITED": "Send email nodes may reach {{limit}} recipients per hour; try again in {{retry}} s"
   },
   "lang": {
     "en": "English",
@@ -1305,5 +1348,27 @@
     "removeItem": "Remove",
     "outputField": "All answers with probabilities go to (object field)",
     "hint": "Write a choice to a text field, then use a Condition on that field to branch. Score and yes/no answers need a number field. Ctrl+Z undoes a removal."
+  },
+  "email": {
+    "credential": "SMTP credential",
+    "dryRun": "None: dry run (nothing is sent)",
+    "dryRunHint": "Without an SMTP credential the node only shows the e-mail it would send, in the run trace and the output field. Add one under Credentials to send for real.",
+    "to": "To",
+    "cc": "Cc",
+    "bcc": "Bcc",
+    "replyTo": "Reply-To",
+    "more": "Cc, Bcc, Reply-To",
+    "addressHint": "Separate addresses with commas. {{field}} can hold one address, several, or a list. At most 50 recipients.",
+    "subject": "Subject",
+    "format": "Format",
+    "formats": {
+      "text": "Plain text",
+      "html": "HTML"
+    },
+    "body": "Message",
+    "htmlHint": "Values from {{field}} are escaped, so they show as text. A plain text version is added for mail apps that do not show HTML.",
+    "outputField": "Result field (optional, object)",
+    "outputNone": "None",
+    "hint": "Each run sends at most once: a recovered run reuses the result instead of sending again. Put a Human approval before this node to check the e-mail first."
   }
 }

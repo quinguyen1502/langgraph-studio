@@ -87,8 +87,10 @@ def value(ref: Ref, state: Dict[str, Any]) -> Any:
     return v
 
 
-def render(template: str, state: Dict[str, Any]) -> str:
-    return VAR_RE.sub(lambda m: _text(value(parse(m), state)), template or "")
+def render(template: str, state: Dict[str, Any], escape: Optional[Callable[[str], str]] = None) -> str:
+    """`escape` (e.g. html.escape) is applied to each inserted value, never to the template's own text."""
+    esc = escape or (lambda x: x)
+    return VAR_RE.sub(lambda m: esc(_text(value(parse(m), state))), template or "")
 
 
 def render_args(args: Any, state: Dict[str, Any]) -> Any:

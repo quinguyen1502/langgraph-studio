@@ -8,9 +8,11 @@ from typing import Any, Callable, Dict, List, Optional
 
 Retrieve = Callable[[str, str, int], List[Dict[str, Any]]]   # (knowledge_base_id, query, top_k) -> chunks
 McpCall = Callable[[str, str, Dict[str, Any]], Any]          # (server_id, tool, arguments) -> result
+EmailQuota = Callable[[int], None]                           # (recipients) -> None, raises EMAIL_RATE_LIMITED (TASK-0051)
 
 
 @dataclass
 class Ports:
     retrieve: Optional[Retrieve] = None
     mcp_call: Optional[McpCall] = None
+    email_quota: Optional[EmailQuota] = None

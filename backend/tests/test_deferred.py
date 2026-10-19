@@ -99,7 +99,7 @@ def test_notify_webhook_signed(c, monkeypatch):
     monkeypatch.setenv("STUDIO_NOTIFY_WEBHOOK_SECRET", "whsec_notify")
     tok = user(c); wid = approval_wf(c, tok)
     rid = ws(c, tok, {"workflow_id": wid, "input": {"message": "C1"}})[0]["run_id"]
-    req = wait_for(lambda: next((r for r in sent if r.url.path == "/notify"), None))
+    req = wait_for(lambda: next((r for r in sent if r.url.path == "/notify" and json.loads(r.content).get("run_id") == rid), None))  # not a late one from an earlier test
     body = json.loads(req.content)
     assert req.headers["x-studio-event"] == "notification.created" and body["run_id"] == rid and body["kind"] == "run_waiting"
     assert webhooks.verify_signature("whsec_notify", req.headers["x-studio-signature"], req.content)

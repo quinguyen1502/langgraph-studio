@@ -1,7 +1,8 @@
-"""SMTP sending shared by notification and password reset e-mail (TASK-0045). Settings: `config.smtp()`."""
-import smtplib, ssl
-from email.message import EmailMessage
+"""System e-mail (notifications, approval links, password reset; TASK-0045) through the studio's SMTP settings
+(`config.smtp()`). Delivery itself is core/smtp.py, shared with Send email nodes (TASK-0051)."""
 from typing import Optional
+from ..core import smtp as mail
+from ..core.errors import AppError
 from ..core.logging import get_logger
 
 log = get_logger("mail")
@@ -9,17 +10,7 @@ log = get_logger("mail")
 
 def send(smtp: dict, to: str, subject: str, text: str, html: Optional[str] = None) -> bool:
     """Send one message; False (logged, no exception) when the server refuses or is unreachable."""
-    msg = EmailMessage(); msg["From"] = smtp["sender"]; msg["To"] = to; msg["Subject"] = subject
-    msg.set_content(text)
-    if html: msg.add_alternative(html, subtype="html")
     try:
-        cls = smtplib.SMTP_SSL if smtp["ssl"] else smtplib.SMTP
-        with cls(smtp["host"], smtp["port"], timeout=10) as s:
-            if smtp["starttls"] and not smtp["ssl"]:
-                s.ehlo()
-                if s.has_extn("starttls"): s.starttls(context=ssl.create_default_context()); s.ehlo()
-            if smtp["user"]: s.login(smtp["user"], smtp["password"] or "")
-            s.send_message(msg)
-        return True
-    except (OSError, smtplib.SMTPException) as e:
-        log.warning("e-mail failed: %s", type(e).__name__); return False
+        mail.deliver(smtp, mail.message(smtp, [to], subject, text, html), [to]); return True
+    except AppError as e:
+        log.warning("e-mail failed: %s", e.code); return False

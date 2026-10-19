@@ -146,6 +146,15 @@
 | `USER_DELETE_MODE_INVALID` | 400 | Mode must be anonymize or delete |
 | `WORKFLOW_IN_USE` | 409 | {count} workflow(s) use this workflow as a subgraph |
 | `ORG_RESOURCE_NOT_ALLOWED` | 403 | Your role may not use organization-wide resources at run time ({kind}) |
+| `CREDENTIAL_SETTINGS_INVALID` | 400 | Check the setting {field} |
+| `EMAIL_HOST_BLOCKED` | 400 | The SMTP host {host} is a private or local address (allowed only with STUDIO_SMTP_ALLOW_PRIVATE=1) |
+| `EMAIL_AUTH_FAILED` | 400 | The SMTP server rejected the sign-in: {reason} |
+| `EMAIL_SEND_FAILED` | 502 | The e-mail could not be sent: {reason} |
+| `EMAIL_CREDENTIAL_INVALID` | 400 | Send email node {node}: choose an SMTP credential |
+| `EMAIL_RECIPIENT_INVALID` | 400 | Send email node {node}: '{address}' is not an e-mail address |
+| `EMAIL_RECIPIENTS_MISSING` | 400 | Send email node {node}: there is no recipient (To, Cc or Bcc) |
+| `EMAIL_TOO_MANY_RECIPIENTS` | 400 | Send email node {node}: at most {max} recipients |
+| `EMAIL_RATE_LIMITED` | 429 | Send email nodes may reach {limit} recipients per hour; try again in {retry} s |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |
@@ -187,3 +196,7 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 `PROVIDER_*` and `MODEL_NOT_FOUND` come from `POST /api/providers/{id}/test`, `GET /api/credentials/{id}/models` and, as the `code` of a run `error` event, from LLM nodes. `PROVIDER_AUTH_FAILED` is deliberately 400 (not 401) so the UI does not treat a rejected provider key as an expired studio session. `PROVIDER_UNREACHABLE` in Docker usually means the base URL says `localhost`: use `http://host.docker.internal:<port>` (see README, *Local LLM providers*).
 
 `PROVIDER_EMBEDDINGS_UNSUPPORTED` and `KB_EMBEDDING_DIMENSION_MISMATCH` come from knowledge-base uploads, re-index, search and `POST /api/credentials/{id}/embeddings/test`. A knowledge base stores the dimension of its vectors (`dims`); a model that suddenly returns another size (same name, e.g. a re-pulled local model) is refused instead of mixing vectors. Changing the model or credential still re-indexes automatically.
+
+### Send email nodes (TASK-0051)
+
+`CREDENTIAL_SETTINGS_INVALID` comes from creating, editing or testing an SMTP credential (`details.field` names the setting). `EMAIL_HOST_BLOCKED`, `EMAIL_AUTH_FAILED` and `EMAIL_SEND_FAILED` come from its *Test connection* and, as the `code` of a run `error` event, from Send email nodes, together with the other `EMAIL_*` codes. `EMAIL_AUTH_FAILED` is 400 (not 401) for the same reason as `PROVIDER_AUTH_FAILED`. `EMAIL_RATE_LIMITED` counts recipients per workflow owner in a fixed one-hour window (`STUDIO_EMAIL_NODE_HOURLY_LIMIT`, default 100).

@@ -151,3 +151,7 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 ## Documentation
 
 - Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **in review** (PR #65).
+
+## Rename
+
+- TASK-0058 Rename the product to **Superstep** (UI, backend strings, Compose, handbook, video, README), keeping v0.1.0 installs working, plus a redirect for the old docs URL: **todo**, scope approved by the owner 2026-10-19. The repository rename and the user site repo for the redirect are owner actions after merge.

@@ -16,14 +16,14 @@ import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
 import { TemplateEditor } from '@/components/template-editor'
-import { META, RUNTIME } from './meta'
+import { META, RUNTIME, LOOP_LABELS } from './meta'
 import { Sel, F } from './parts'
 import { useStudioCtx } from './studio-context'
 
 /** Right panel: config of the selected node or edge (TASK-0040). */
 export function EditorConfig() {
   const { t } = useTranslation()
-  const { setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
+  const { nodes, setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
@@ -32,7 +32,11 @@ export function EditorConfig() {
         {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
         {selEdge && <div className="space-y-3">
           <Badge variant="outline">Edge {selEdge.source} → {selEdge.target}</Badge>
-          <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>
+          {nodes.find(n => n.id === selEdge.source)?.type === 'foreach'
+            ? <F label={t('editor.loopEdge')}><Select value={LOOP_LABELS.includes(String(selEdge.label)) ? String(selEdge.label) : undefined} onValueChange={v => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: v } : x))}>
+                <SelectTrigger className="w-full" id="loop-edge"><SelectValue placeholder={t('common.choose')} /></SelectTrigger>
+                <SelectContent>{LOOP_LABELS.map(l => <SelectItem key={l} value={l}>{t(`editor.loop.${l}`)}</SelectItem>)}</SelectContent></Select></F>
+            : <F label={t('editor.edgeLabel')}><Input value={String(selEdge.label || '')} onChange={e => setEdges(es => es.map(x => x.id === selEdge.id ? { ...x, label: e.target.value } : x))} /></F>}
         </div>}
         {selNode && selNode.type !== 'note' && <div className="space-y-3">
           <div className="flex items-center gap-2">{(() => { const m = META[selNode.type!]; const I = m.icon; return <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div> })()}
@@ -84,6 +88,16 @@ export function EditorConfig() {
             <F label={t('editor.condField')}><Sel value={d.field} onChange={v => upd('field', v)} opts={fieldNames} /></F>
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
+          </>}
+          {selNode.type === 'foreach' && <>
+            <F label={t('editor.loopItems')}><Sel value={d.items_field} onChange={v => upd('items_field', v)} opts={state.filter(f => f.type === 'list').map(f => f.name)} /></F>
+            <F label={t('editor.loopItem')}><Sel value={d.item_field} onChange={v => upd('item_field', v)} opts={state.filter(f => !f.reducer || f.reducer === 'replace').map(f => f.name)} /></F>
+            <F label={t('editor.loopIndex')}><Select value={d.index_field || 'none'} onValueChange={v => upd('index_field', v === 'none' ? '' : v)}>
+              <SelectTrigger className="w-full" id="loop-index"><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="none">{t('editor.loopIndexNone')}</SelectItem>
+                {state.filter(f => (f.type === 'integer' || f.type === 'number') && (!f.reducer || f.reducer === 'replace')).map(f => <SelectItem key={f.name} value={f.name}>{f.name}</SelectItem>)}</SelectContent></Select></F>
+            <F label={t('editor.loopMax')}><Input id="loop-max" type="number" min={1} max={1000} value={d.max_items ?? 100} onChange={e => upd('max_items', e.target.value === '' ? undefined : Number(e.target.value))} /></F>
+            <p className="text-[11px] text-muted-foreground" id="loop-hint">{t('editor.loopHint')}</p>
           </>}
           {RUNTIME.has(selNode.type || '') && <>
             <NodeInput fields={fieldNames} value={d.input_fields} onChange={input_fields => setRuntime({ input_fields })} />

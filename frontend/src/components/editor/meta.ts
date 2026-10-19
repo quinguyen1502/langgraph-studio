@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square, Repeat } from 'lucide-react'
 import i18n from '@/lib/i18n'
 
 export type Field = { name: string; type: string; reducer?: string }
@@ -18,14 +18,18 @@ META.subgraph = { label: 'Subgraph', icon: Layers, color: 'bg-node-subgraph-mute
 META.subgraph_exit = META.subgraph
 META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-mcp', accent: 'bg-node-mcp' }
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
+META.foreach = { label: 'For each', icon: Repeat, color: 'bg-node-foreach-muted text-node-foreach', accent: 'bg-node-foreach' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-export const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'human', 'join', 'subgraph', 'end']
+export const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'foreach', 'human', 'join', 'subgraph', 'end']
 export const INSERTABLE = TYPES.filter(t => t !== 'start' && t !== 'end')
 export const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human'])
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 export const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
 export const canvasId = (nid: string) => nid.split('/')[0]
+
+/** For each edges (TASK-0049): `each` enters the loop body, `done` leaves after the last item. */
+export const LOOP_LABELS = ['each', 'done']
 
 export const styleEdges = (es: any[]): Edge[] => es.map(e => e.conditional ? { ...e, animated: true, style: { strokeDasharray: '6 4' }, labelBgPadding: [6, 3], labelBgBorderRadius: 4 } : e)
 export function defaultInput(state: Field[]) {
@@ -36,6 +40,7 @@ export const DEFAULTS: Record<string, any> = {
   llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: '', output_field: '' }, // prompt comes from i18n `samples.prompt` on drop
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
+  foreach: { label: 'For each', items_field: '', item_field: '', index_field: '', max_items: 100 },
   human: { label: 'Approval', prompt: '', output_field: '' },
   mcp: { label: 'MCP tool', server_id: '', tool: '', arguments: {}, output_field: '' },
   retriever: { label: 'Retriever', knowledge_base_id: '', query: '{{state.message}}', top_k: 4, output_field: '' },

@@ -5,6 +5,7 @@ from urllib.parse import unquote, urlsplit
 import httpx
 from ..core import config
 from ..core.net import pinned_request, public_address
+from . import foreach
 from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, TokenBuffer, call_llm
@@ -79,6 +80,8 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
         def fn(state):
             if ports.mcp_call is None: raise RuntimeError("MCP nodes need the MCP service")
             return {d["output_field"]: ports.mcp_call(d["server_id"], d["tool"], render_args(d.get("arguments") or {}, state))}
+    elif t == "foreach":
+        fn = foreach.node_fn(node)
     else:  # start, condition, end, join, subgraph entry/exit -> passthrough
         def fn(state):
             return {}

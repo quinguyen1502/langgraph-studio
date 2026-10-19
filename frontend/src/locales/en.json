@@ -200,7 +200,18 @@
     "unlockCanvas": "Unlock the canvas",
     "notePlaceholder": "Write a note…",
     "noteHint": "Edit the text on the note.",
-    "deleteWorkflow": "Delete workflow"
+    "deleteWorkflow": "Delete workflow",
+    "loopItems": "List to loop over",
+    "loopItem": "Current item goes to",
+    "loopIndex": "Item number (0, 1, 2…) goes to",
+    "loopIndexNone": "Do not store",
+    "loopMax": "Max items",
+    "loopHint": "Connect two edges: \"each\" into the steps to repeat, ending with an edge back to this node, and \"done\" for after the last item. Items run one at a time. To collect results, write them to a list field with the append reducer.",
+    "loopEdge": "Edge role",
+    "loop": {
+      "each": "each: run the body for the next item",
+      "done": "done: after the last item"
+    }
   },
   "nodes": {
     "start": "Start point",
@@ -213,7 +224,8 @@
     "join": "Wait for all parallel branches",
     "subgraph": "Run another saved workflow",
     "retriever": "Search a knowledge base",
-    "mcp": "Call a tool on an MCP server"
+    "mcp": "Call a tool on an MCP server",
+    "foreach": "Repeat a branch for each list item"
   },
   "trace": {
     "idle": "Not run",

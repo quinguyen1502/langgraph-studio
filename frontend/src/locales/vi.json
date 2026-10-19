@@ -200,7 +200,18 @@
     "unlockCanvas": "Mở khoá canvas",
     "notePlaceholder": "Viết ghi chú…",
     "noteHint": "Sửa chữ ngay trên ghi chú.",
-    "deleteWorkflow": "Xoá workflow"
+    "deleteWorkflow": "Xoá workflow",
+    "loopItems": "Danh sách cần lặp",
+    "loopItem": "Ghi phần tử hiện tại vào",
+    "loopIndex": "Ghi số thứ tự (0, 1, 2…) vào",
+    "loopIndexNone": "Không lưu",
+    "loopMax": "Số phần tử tối đa",
+    "loopHint": "Nối hai cạnh: \"each\" vào các bước cần lặp, bước cuối nối ngược về node này, và \"done\" cho phần sau phần tử cuối. Các phần tử chạy lần lượt từng cái. Muốn gom kết quả, ghi vào một trường list có reducer append.",
+    "loopEdge": "Vai trò của cạnh",
+    "loop": {
+      "each": "each: chạy phần thân cho phần tử tiếp theo",
+      "done": "done: sau phần tử cuối"
+    }
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -213,7 +224,8 @@
     "join": "Chờ mọi nhánh song song",
     "subgraph": "Chạy một workflow đã lưu",
     "retriever": "Tìm trong kho tri thức",
-    "mcp": "Gọi công cụ trên máy chủ MCP"
+    "mcp": "Gọi công cụ trên máy chủ MCP",
+    "foreach": "Lặp lại một nhánh cho từng phần tử của danh sách"
   },
   "trace": {
     "idle": "Chưa chạy",

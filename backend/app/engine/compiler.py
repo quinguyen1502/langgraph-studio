@@ -4,6 +4,7 @@ import re, string
 from typing import Annotated, Any, Dict, List, Optional, TypedDict
 from langgraph.cache.memory import InMemoryCache
 from langgraph.graph import StateGraph, START, END
+from . import foreach
 from .errors import ValidationError
 from .node_policy import add_node_kwargs, input_schema, limit, needs_cache
 from .nodes import node_fn
@@ -41,6 +42,7 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
         typ = TYPE_MAP.get(f.get("type", "string"), str); fn = fn_of(f)
         return Annotated[typ, fn] if fn else Optional[typ]  # reducer fields: LangGraph combines parallel writes (TASK-0011)
     ann = {f["name"]: annotation(f) for f in wf.get("state", [])}
+    ann.update({foreach.cursor(n["id"]): Optional[int] for n in wf["nodes"] if n.get("type") == "foreach"})  # loop positions (TASK-0049)
     State = TypedDict("State", ann, total=False)  # type: ignore
     g = StateGraph(State)
     nodes = {n["id"]: n for n in wf["nodes"] if n.get("type") != "note"}  # notes are canvas comments (REQ-0025)
@@ -62,6 +64,8 @@ def compile_workflow(wf: Dict[str, Any], resolve=None, usage=None, entry=None, r
             g.add_edge(START, nid)
         if n["type"] == "end":
             g.add_edge(nid, END)
+        elif n["type"] == "foreach":
+            g.add_conditional_edges(nid, foreach.router(nid), {e["label"]: e["target"] for e in out})
         elif n["type"] == "condition":
             field = n["data"]["field"]
             mapping = {e["label"]: e["target"] for e in out}

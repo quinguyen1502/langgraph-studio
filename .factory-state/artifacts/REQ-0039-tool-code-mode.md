@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0039
-- Status: Proposed (owner answered CLAR-0001 on 2026-10-19; awaiting acceptance)
+- Status: Accepted
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
 - Updated: 2026-10-19
@@ -98,7 +98,7 @@ Owner decisions from CLAR-0001 (2026-10-19):
   - A user without it can still see the code read-only, run the workflow, and move or delete the node. The API refuses an added or changed `code` field.
 - **Network:** always off. The container runs with `--network none`, and no node or workflow can change that.
 - **Packages:** a fixed image set by `STUDIO_CODE_IMAGE`. Nothing is installed at run time.
-  - The default image's package list is still open (see Open Questions).
+  - The default image is a small `studio-code` image on `python:3.12-slim` with the standard library plus `pydantic` and `python-dateutil` (no `requests`, since the network is off).
   - The editor shows which packages the image has.
 - **Credentials:** none in the first version. The process gets no credential values and no server environment variables.
 - **Without Docker:** a host subprocess is allowed only when the admin sets it explicitly. Users must always be able to see that their code is not isolated (see Host Subprocess Mode below).
@@ -112,7 +112,7 @@ Other rules:
 
 ## Host Subprocess Mode
 
-The owner chose to allow running without Docker and asked that users be made aware of it. The rules below are this REQ's proposal for that.
+The owner chose to allow running without Docker and asked that users be made aware of it. The owner accepted the rules below on 2026-10-19, all eight points included.
 
 **Turning it on**
 
@@ -197,10 +197,14 @@ Answered 2026-10-19 in `.factory-state/artifacts/CLAR-0001-tool-code-mode.md`:
 - Credentials: none.
 - Without Docker: an explicit host subprocess mode, with the warnings in Host Subprocess Mode.
 
-Still open:
+Closed 2026-10-19 (owner in chat):
 
-- Packages in the default image. Proposal: build a small `studio-code` image on `python:3.12-slim` with `requests`, `pydantic` and `python-dateutil`. `requests` is useless while the network is off, so the first version could ship stdlib plus `pydantic` and `python-dateutil`.
-- Does the owner accept the warning list in Host Subprocess Mode, in particular the audit entry (point 8)?
+- Default image packages: the standard library plus `pydantic` and `python-dateutil`, as proposed.
+- Host Subprocess Mode warnings: accepted as proposed, all eight points including the audit entry.
+
+## Owner Acceptance
+
+- 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Next step: `plan-tasks`.
 
 ## Related Artifacts
 

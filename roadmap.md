@@ -141,7 +141,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Code nodes
 
-REQ-0039, Accepted 2026-10-19; CLAR-0001 answered; DEC-0041 Proposed.
+REQ-0039, Accepted 2026-10-19; CLAR-0001 answered; DEC-0041 Accepted 2026-10-19; tasks approved by the owner.
 
 - TASK-0053 Code mode runtime: Docker sandbox with no network, `studio-code` image, node mode and validation. **todo**. Independent of TASK-0054.
 - TASK-0054 `code.write` permission, checked on every path that writes a graph. **todo**. Independent of TASK-0053.

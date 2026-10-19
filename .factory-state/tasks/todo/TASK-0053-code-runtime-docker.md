@@ -117,6 +117,7 @@ Run a Tool node's Python code (`mode: "code"`) in a Docker container with no net
 ## Activity Log
 
 - 2026-10-19: Created from REQ-0039 (owner: "Chia REQ-0039 thành task (plan-tasks) trên cùng PR #60"); not started.
+- 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
 
 ## Handoff Notes
 

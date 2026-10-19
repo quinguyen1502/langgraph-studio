@@ -97,6 +97,7 @@ Only users with the new `code.write` permission (admins by default) can add a Co
 ## Activity Log
 
 - 2026-10-19: Created from REQ-0039; not started.
+- 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
 
 ## Handoff Notes
 

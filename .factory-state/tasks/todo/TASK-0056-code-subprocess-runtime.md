@@ -104,6 +104,7 @@ Allow Code nodes on servers without Docker through an explicit host subprocess r
 ## Activity Log
 
 - 2026-10-19: Created from REQ-0039; not started.
+- 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
 
 ## Handoff Notes
 

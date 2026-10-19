@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Decision ID: DEC-0041
-- Status: Proposed
+- Status: Accepted
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
 - Updated: 2026-10-19

@@ -204,7 +204,7 @@ Closed 2026-10-19 (owner in chat):
 
 ## Owner Acceptance
 
-- 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Planned 2026-10-19 as TASK-0053 to TASK-0056 (DEC-0041).
+- 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Planned 2026-10-19 as TASK-0053 to TASK-0056 (DEC-0041); the owner approved the tasks and accepted DEC-0041 the same day.
 
 ## Related Artifacts
 

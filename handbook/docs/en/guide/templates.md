@@ -29,7 +29,7 @@ pick your own after creating.
 **Export** on a card writes a `*.template.json` file:
 
 ```json
-{"format": "langgraph-studio/template", "version": 1,
+{"format": "superstep/template", "version": 1,
  "name": "…", "description": "…", "workflow": {"state": [], "nodes": [], "edges": []}}
 ```
 

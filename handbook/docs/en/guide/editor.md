@@ -39,7 +39,7 @@ when you undo back to the saved graph.
 ++ctrl+c++, ++ctrl+x++, ++ctrl+v++ and ++ctrl+d++ copy, cut, paste and duplicate
 nodes. Only edges between selected nodes travel with them, and pasted nodes
 get new ids. Start and End are never copied. The clipboard lives in
-`localStorage` (`langgraph-studio/nodes` v1), so you can paste into another
+`localStorage` (`superstep/nodes` v1), so you can paste into another
 workflow in the same browser. A credential you cannot use is cleared on paste.
 
 ## Layout

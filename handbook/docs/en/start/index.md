@@ -1,6 +1,6 @@
 # Getting started
 
-LangGraph Studio has three parts:
+Superstep has three parts:
 
 | Part | What it is |
 | --- | --- |

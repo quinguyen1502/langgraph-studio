@@ -2,7 +2,7 @@
 INHERIT: mkdocs.base.yml
 
 site_description: Thiết kế, chạy và vận hành workflow LangGraph trên trình duyệt
-site_url: https://quinguyen1502.github.io/langgraph-studio/vi/
+site_url: https://quinguyen1502.github.io/superstep/vi/
 edit_uri: edit/develop/handbook/docs/vi/
 docs_dir: docs/vi
 site_dir: site/vi

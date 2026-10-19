@@ -39,7 +39,7 @@ export function EditorHeader() {
         <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
         {/* the product name hides when its column is too narrow instead of running under the name field */}
         <div className="flex min-w-0 flex-1 items-center gap-2 font-semibold" id="header-brand"><div className="shrink-0 rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>
-          <div className="@container min-w-0 flex-1"><span className="hidden whitespace-nowrap @[8.5rem]:inline">LangGraph Studio</span></div></div>
+          <div className="@container min-w-0 flex-1"><span className="hidden whitespace-nowrap @[8.5rem]:inline">Superstep</span></div></div>
       </div>
       <div className="flex min-w-0 items-center gap-2">
       <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-28" aria-label={t('editor.nameLabel')} />

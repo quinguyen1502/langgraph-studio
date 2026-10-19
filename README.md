@@ -1,34 +1,34 @@
-# LangGraph Studio
+# Superstep
 
-[![CI](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml)
-[![Handbook](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/langgraph-studio/)
+[![CI](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml)
+[![Handbook](https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/superstep/)
 
 **English** · [Tiếng Việt](README.vi.md)
 
-LangGraph Studio is a self-hosted platform for building LangGraph workflows in
+Superstep is a self-hosted platform for building LangGraph workflows in
 the browser and running them as services. Workflows are JSON documents that
 the FastAPI backend validates and compiles into a LangGraph `StateGraph`. Each
 one can run from the editor with a live per-node trace, from another service
 over HTTP, on a cron schedule, and pause for a human decision in between.
 
-[![Quickstart video: build, run, approve and trigger a workflow](handbook/docs/en/assets/video/studio-intro-en.jpg)](https://quinguyen1502.github.io/langgraph-studio/#video)
+[![Quickstart video: build, run, approve and trigger a workflow](handbook/docs/en/assets/video/studio-intro-en.jpg)](https://quinguyen1502.github.io/superstep/#video)
 
-[Documentation](https://quinguyen1502.github.io/langgraph-studio/) ·
-[Quickstart](https://quinguyen1502.github.io/langgraph-studio/start/quickstart/) ·
-[HTTP API](https://quinguyen1502.github.io/langgraph-studio/reference/api/) ·
-[Architecture](https://quinguyen1502.github.io/langgraph-studio/reference/architecture/)
+[Documentation](https://quinguyen1502.github.io/superstep/) ·
+[Quickstart](https://quinguyen1502.github.io/superstep/start/quickstart/) ·
+[HTTP API](https://quinguyen1502.github.io/superstep/reference/api/) ·
+[Architecture](https://quinguyen1502.github.io/superstep/reference/architecture/)
 
 ## Quick start
 
 ```bash
-git clone https://github.com/quinguyen1502/langgraph-studio.git
-cd langgraph-studio && ./dev.sh
+git clone https://github.com/quinguyen1502/superstep.git
+cd superstep && ./dev.sh
 ```
 
 Open <http://localhost:5173> and sign in as `admin@example.com` / `admin123`
 (seeded outside production). The API docs are at <http://localhost:8000/docs>.
 LLM nodes answer from a deterministic offline mock until you add a model
-credential. The [Quickstart](https://quinguyen1502.github.io/langgraph-studio/start/quickstart/)
+credential. The [Quickstart](https://quinguyen1502.github.io/superstep/start/quickstart/)
 builds, runs, approves and triggers a first workflow in about ten minutes.
 
 The full stack (Postgres with pgvector, Redis, API, worker, nginx):
@@ -72,17 +72,17 @@ flowchart LR
 
 Editor runs execute in the API process and stream events over WebSocket. API
 triggers, schedules and recovered runs go through the queue to a worker.
-Details: [Architecture](https://quinguyen1502.github.io/langgraph-studio/reference/architecture/).
+Details: [Architecture](https://quinguyen1502.github.io/superstep/reference/architecture/).
 
 ## Documentation
 
 | Topic | Handbook section |
 | --- | --- |
-| Install, quickstart, concepts | [Get started](https://quinguyen1502.github.io/langgraph-studio/start/) |
-| Editor, nodes, state, Code mode, knowledge, MCP | [Build](https://quinguyen1502.github.io/langgraph-studio/guide/) |
-| Traces, human approval, API triggers, schedules | [Run](https://quinguyen1502.github.io/langgraph-studio/run/) |
-| Deployment, accounts, roles, providers, channels | [Operate](https://quinguyen1502.github.io/langgraph-studio/operate/) |
-| Configuration, HTTP API, error codes, architecture | [Reference](https://quinguyen1502.github.io/langgraph-studio/reference/) |
+| Install, quickstart, concepts | [Get started](https://quinguyen1502.github.io/superstep/start/) |
+| Editor, nodes, state, Code mode, knowledge, MCP | [Build](https://quinguyen1502.github.io/superstep/guide/) |
+| Traces, human approval, API triggers, schedules | [Run](https://quinguyen1502.github.io/superstep/run/) |
+| Deployment, accounts, roles, providers, channels | [Operate](https://quinguyen1502.github.io/superstep/operate/) |
+| Configuration, HTTP API, error codes, architecture | [Reference](https://quinguyen1502.github.io/superstep/reference/) |
 
 The handbook source is in [`handbook/`](handbook/README.md). Every variable is
 in [`.env.example`](.env.example) and every error code in
@@ -109,5 +109,5 @@ cd frontend && npm run e2e
 Changes follow the delivery workflow in [`AGENTS.md`](AGENTS.md): a
 requirement and a task in `.factory-state/`, a branch
 `factory/task-<id>-<name>`, checks, a review, and a merge after human
-approval. See [Development](https://quinguyen1502.github.io/langgraph-studio/reference/development/)
+approval. See [Development](https://quinguyen1502.github.io/superstep/reference/development/)
 for the test setup and the conventions each layer follows.

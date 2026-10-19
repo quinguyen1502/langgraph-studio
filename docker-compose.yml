@@ -1,6 +1,6 @@
 # Full stack: postgres + redis + api + web (TASK-0009). Usage: cp .env.example .env && docker compose up --build
 # UI: http://localhost:${WEB_PORT:-8080}  (demo login admin@example.com / admin123)
-name: langgraph-studio
+name: superstep
 
 services:
   postgres:
@@ -60,7 +60,7 @@ services:
       # OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4318 and STUDIO_TRACE_URL=http://localhost:16686/trace/{trace_id}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
       OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-langgraph-studio}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-superstep}
       STUDIO_TRACE_URL: ${STUDIO_TRACE_URL:-}
       LANGSMITH_API_KEY: ${LANGSMITH_API_KEY:-}
       LANGSMITH_TRACING: ${LANGSMITH_TRACING:-}
@@ -141,7 +141,8 @@ services:
       retries: 10
     restart: unless-stopped
 
+# Named as in v0.1.0 (project "langgraph-studio"), so a stack started before the rename keeps its data (TASK-0058).
 volumes:
-  pgdata:
-  redisdata:
-  apidata:
+  pgdata: {name: langgraph-studio_pgdata}
+  redisdata: {name: langgraph-studio_redisdata}
+  apidata: {name: langgraph-studio_apidata}

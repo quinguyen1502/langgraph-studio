@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "langgraph-studio-backend"
+name = "superstep-backend"
 version = "0.1.0"
-description = "FastAPI backend for LangGraph Studio (compiler, runner, auth, repo import)"
+description = "FastAPI backend for Superstep (compiler, runner, auth, repo import)"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi",

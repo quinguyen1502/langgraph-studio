@@ -19,7 +19,7 @@ Những gì diễn ra (`backend/app/engine/repo_import.py`,
 `backend/app/engine/sandbox/container.py`, `backend/app/engine/sandbox/runner.py`):
 
 1. `git clone --depth 1`, hoặc giải nén zip có chặn đường dẫn zip-slip, vào
-   `~/.langgraph-studio/imports/<job_id>/` (`STUDIO_IMPORT_DIR`). Bước này chạy
+   `~/.superstep/imports/<job_id>/` (`STUDIO_IMPORT_DIR`). Bước này chạy
    trong process API; image API có sẵn `git`.
 2. `python -m venv` và `pip` chạy **trong Docker** (`STUDIO_IMPORT_IMAGE`, mặc
    định `python:3.12-slim`). Package lấy từ `pyproject.toml` / `setup.py`

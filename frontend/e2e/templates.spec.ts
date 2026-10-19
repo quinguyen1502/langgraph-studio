@@ -32,7 +32,7 @@ test('save as template strips secrets; export, import, use and delete', async ({
   const card = page.locator('[data-testid=tpl-card]', { hasText: name }); await expect(card).toBeVisible()
   const dl = page.waitForEvent('download'); await card.locator('[data-testid=tpl-export]').click()
   const file = await (await dl).path(); const text = readFileSync(file!, 'utf8')
-  expect(text).toContain('langgraph-studio/template'); expect(text).not.toContain('s3cret'); expect(text).not.toContain('cred-xyz')
+  expect(text).toContain('superstep/template'); expect(text).not.toContain('s3cret'); expect(text).not.toContain('cred-xyz')
 
   // import the exported file back (a second copy), then a broken file shows the coded error
   await page.locator('#tpl-import-file').setInputFiles(file!)

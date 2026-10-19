@@ -75,5 +75,5 @@ because the UI is served from the same origin.
 
 Provider keys, SMTP passwords, MCP headers and channel tokens are encrypted
 with Fernet (`STUDIO_SECRET_KEY`, or a generated
-`~/.langgraph-studio/secret.key` / `STUDIO_SECRET_KEY_FILE`, mode 0600). The
+`~/.superstep/secret.key` / `STUDIO_SECRET_KEY_FILE`, mode 0600). The
 API returns only the last four characters of a key.

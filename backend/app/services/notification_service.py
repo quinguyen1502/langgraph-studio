@@ -67,7 +67,7 @@ class NotificationService:
     @staticmethod
     def _email(smtp: dict, to: str, n: Notification) -> bool:
         p = json.loads(n.params or "{}")
-        subject = f"[LangGraph Studio] {n.title}" + (f": {p['workflow_name']}" if p.get("workflow_name") else "")
+        subject = f"[Superstep] {n.title}" + (f": {p['workflow_name']}" if p.get("workflow_name") else "")
         return mailer.send(smtp, to, subject, email_text(n, p), email_html(n, p))
 
     # ---- owner API ----
@@ -115,6 +115,6 @@ def email_html(n: Notification, p: dict) -> str:
               'style="background:#18181b;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;display:inline-block">Open the run</a></p>') if n.link else ""
     return ('<!doctype html><html><body style="margin:0;padding:24px;background:#f4f4f5;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:#18181b">'
             '<table role="presentation" style="max-width:560px;margin:0 auto;background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:24px;width:100%">'
-            f'<tr><td><p style="margin:0 0 4px;font-size:12px;color:#71717a">LangGraph Studio</p><h1 style="margin:0 0 16px;font-size:18px">{e(n.title)}</h1>'
+            f'<tr><td><p style="margin:0 0 4px;font-size:12px;color:#71717a">Superstep</p><h1 style="margin:0 0 16px;font-size:18px">{e(n.title)}</h1>'
             f'<table role="presentation" style="font-size:14px;border-collapse:collapse">{rows}</table>{button}'
             '<p style="margin:24px 0 0;font-size:12px;color:#a1a1aa">You can turn these e-mails off in Notification settings.</p></td></tr></table></body></html>')

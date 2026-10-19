@@ -3,7 +3,7 @@
 INHERIT: mkdocs.base.yml
 
 site_description: Design, run and operate LangGraph workflows in the browser
-site_url: https://quinguyen1502.github.io/langgraph-studio/
+site_url: https://quinguyen1502.github.io/superstep/
 edit_uri: edit/develop/handbook/docs/en/
 docs_dir: docs/en
 site_dir: site

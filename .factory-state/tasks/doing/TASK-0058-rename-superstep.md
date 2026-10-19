@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0058
-- Status: todo
+- Status: doing
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -64,12 +64,12 @@ are history under `.factory-state/` (left as is).
 6. **README.md / README.vi.md**: title, definition, badges, every documentation link, clone commands.
 7. **Project docs**: `vision.md`, `project.md` (project name), `roadmap.md` (a TASK-0058 line). Old PR links keep
    working through GitHub's redirect and are not rewritten. `project-specs.md` is source context and stays as is.
-8. **Redirect for the old docs URL** (`scripts/pages-redirect/`): a `langgraph-studio/` folder with `index.html` and
-   `404.html` that send any `/langgraph-studio/<path>#<hash>` to the same page under `/superstep/` (meta refresh, a
-   script that keeps the path and hash, `rel=canonical`, a visible link), and a short README on how to publish it.
-   It is published from the owner's **user site** repo `quinguyen1502.github.io` (folder `langgraph-studio/`), not from
-   a new repo named `langgraph-studio`: GitHub drops the redirect of a renamed repo once a new repo takes the old name,
-   which would break old clone URLs and PR links. On 2026-10-19 the user site repo did not exist yet.
+8. **Redirect for the old docs URL** (`scripts/pages-redirect/`): a `404.html` for the root of the owner's **user
+   site** repo `quinguyen1502.github.io`. GitHub Pages serves a site's root `404.html` for every missing path, so it
+   sends any `/langgraph-studio/<page>?<query>#<hash>` to the same page under `/superstep/`; other paths get a plain
+   "not found" with a link. A README says how to publish it. A new repo named `langgraph-studio` is not used: GitHub
+   drops the redirect of a renamed repo once a new repo takes the old name, which would break old clone URLs and PR
+   links. On 2026-10-19 the user site repo did not exist yet.
 
 ### Out Of Scope (owner actions or later tasks)
 
@@ -130,7 +130,7 @@ are history under `.factory-state/` (left as is).
   before the change still works.
 - `docker compose up` on a stack started with v0.1.0 keeps its workflows and runs.
 - Handbook builds strict for en and vi; `check_images.py` passes; the video shows "Superstep" and the new URL.
-- Opened locally, `scripts/pages-redirect/langgraph-studio/404.html` at `/langgraph-studio/run/schedules/#x` lands on
+- Served locally as a site root, `scripts/pages-redirect/404.html` at `/langgraph-studio/run/schedules/#x` lands on
   `/superstep/run/schedules/#x`; `/langgraph-studio/vi/` lands on `/superstep/vi/`.
 - Backend pytest (Python 3.12), frontend build, test, lint and e2e pass.
 
@@ -141,6 +141,26 @@ are history under `.factory-state/` (left as is).
 - `zensical build` for both configs, `python check_images.py site`.
 - Compose upgrade check: start v0.1.0, create a workflow, switch to this branch, `docker compose up --build`, the
   workflow is still there.
+
+## Validation Evidence (2026-10-19, local)
+
+- Backend, Python 3.12 venv: `482 passed, 10 skipped`; new `tests/test_home_dir.py` and
+  `test_templates.py::test_v010_format_still_imports`.
+- Frontend: `npm test` 58 passed (new clipboard test for the v0.1.0 format), `npm run lint` clean, `npm run build` ok.
+- Playwright e2e: 54 passed, 9 skipped (the `HANDBOOK_SHOTS` specs); then `HANDBOOK_SHOTS=1 npm run e2e -- handbook
+  quickstart`: 4 passed, all handbook images retaken with the new brand.
+- Video: `node render.mjs --lang en|vi` (69.7 s each); opening and closing frames read "Superstep",
+  `git clone …/superstep` and `quinguyen1502.github.io/superstep`.
+- Handbook: `zensical build` for en and vi, "No issues found"; `check_images.py`: all images found; en/vi page pairs
+  equal; en/vi locale keys equal.
+- Compose upgrade: Postgres started with the v0.1.0 `docker-compose.yml` (project `langgraph-studio`), a row written;
+  stack down; Postgres started with this branch's file (project `superstep`, container `superstep-postgres-1`): the
+  row was there. The test volume was removed afterwards.
+- Redirect: the script in `scripts/pages-redirect/404.html` run against sample paths:
+  `/langgraph-studio/run/schedules/#x` → `/superstep/run/schedules/#x`, `/langgraph-studio/vi/` → `/superstep/vi/`,
+  `/langgraph-studio?a=1` → `/superstep/?a=1`, `/other/` and `/langgraph-studiox/` unchanged. Not yet tried on GitHub
+  Pages (the user site repo does not exist yet).
+- Not checked: a real approval link created before the change (covered by keeping the HMAC prefix unchanged).
 
 ## Owner Decisions
 

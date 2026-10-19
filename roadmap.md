@@ -137,4 +137,4 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Accounts
 
-- TASK-0052 Profile page and self-service password change (REQ-0038): **in review** (PR #58, REV-0049, QA-0049).
+- TASK-0052 Profile page and self-service password change (REQ-0038): **merged** (PR #58, REV-0049, QA-0049).

@@ -1,0 +1,69 @@
+# Vietnamese site: the same page tree as mkdocs.yml, built from docs/vi into site/vi/.
+INHERIT: mkdocs.base.yml
+
+site_description: Thiết kế, chạy và vận hành workflow LangGraph trên trình duyệt
+site_url: https://quinguyen1502.github.io/langgraph-studio/vi/
+edit_uri: edit/develop/handbook/docs/vi/
+docs_dir: docs/vi
+site_dir: site/vi
+
+theme:
+  language: vi
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Chế độ tối
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Chế độ sáng
+
+nav:
+  - Trang chủ: index.md
+  - Bắt đầu:
+      - start/index.md
+      - Bắt đầu nhanh: start/quickstart.md
+      - Cài đặt: start/install.md
+      - Khái niệm: start/concepts.md
+  - Xây dựng:
+      - guide/index.md
+      - Trình soạn thảo: guide/editor.md
+      - Các loại node: guide/nodes.md
+      - State và tham chiếu: guide/state.md
+      - Chế độ Code: guide/code-mode.md
+      - Kho tri thức: guide/knowledge.md
+      - Máy chủ MCP: guide/mcp.md
+      - Mẫu workflow: guide/templates.md
+      - Phiên bản: guide/versions.md
+  - Chạy:
+      - run/index.md
+      - Run và trace: run/traces.md
+      - Duyệt bởi người: run/human-approval.md
+      - API trigger và webhook: run/api-triggers.md
+      - Lịch chạy: run/schedules.md
+  - Vận hành:
+      - operate/index.md
+      - Triển khai bằng Compose: operate/deploy.md
+      - Tài khoản và bảo mật: operate/accounts.md
+      - Vai trò và chia sẻ: operate/access.md
+      - Nhà cung cấp LLM: operate/providers.md
+      - Kênh duyệt: operate/channels.md
+      - Môi trường chạy Code: operate/code-runtime.md
+      - Quan sát hệ thống: operate/observability.md
+      - Import repo LangGraph: operate/import.md
+  - Tham chiếu:
+      - reference/index.md
+      - Cấu hình: reference/configuration.md
+      - HTTP API: reference/api.md
+      - Mã lỗi: reference/errors.md
+      - Kiến trúc: reference/architecture.md
+      - Phím tắt: reference/shortcuts.md
+      - Phát triển: reference/development.md
+      - Câu hỏi thường gặp: reference/faq.md

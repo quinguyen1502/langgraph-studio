@@ -572,7 +572,7 @@
     "example": "Example",
     "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result.",
     "signingSecret": "Webhook signing secret",
-    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see README).",
+    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see the handbook, API triggers).",
     "rotate": "Rotate signing secret",
     "rotateAria": "Rotate the signing secret of {{name}}",
     "rotated": "New signing secret. The previous one keeps signing callbacks until {{when}}, so receivers can switch over.",

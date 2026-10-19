@@ -147,3 +147,7 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 - TASK-0054 `code.write` permission, checked on every path that writes a graph. **merged** (PR #62, REV-0051, QA-0051). Independent of TASK-0053.
 - TASK-0055 Editor: Python code field, Test with sample state, trace output. **merged** (PR #63, REV-0052, QA-0052). After TASK-0053 and TASK-0054.
 - TASK-0056 Host subprocess runtime and the eight "not isolated" warnings. **merged** (PR #64, REV-0053, QA-0053). After TASK-0053 and TASK-0055.
+
+## Documentation
+
+- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **in review** (PR #65).

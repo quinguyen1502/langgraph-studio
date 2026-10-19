@@ -1,0 +1,70 @@
+# English site, at the root. mkdocs.vi.yml builds the Vietnamese one into site/vi/.
+#   zensical build && zensical build -f mkdocs.vi.yml
+INHERIT: mkdocs.base.yml
+
+site_description: Design, run and operate LangGraph workflows in the browser
+site_url: https://quinguyen1502.github.io/langgraph-studio/
+edit_uri: edit/develop/handbook/docs/en/
+docs_dir: docs/en
+site_dir: site
+
+theme:
+  language: en
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Light mode
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - start/index.md
+      - Quickstart: start/quickstart.md
+      - Install: start/install.md
+      - Concepts: start/concepts.md
+  - Build:
+      - guide/index.md
+      - The editor: guide/editor.md
+      - Nodes: guide/nodes.md
+      - State and references: guide/state.md
+      - Code mode: guide/code-mode.md
+      - Knowledge bases: guide/knowledge.md
+      - MCP servers: guide/mcp.md
+      - Workflow templates: guide/templates.md
+      - Versions: guide/versions.md
+  - Run:
+      - run/index.md
+      - Runs and traces: run/traces.md
+      - Human approval: run/human-approval.md
+      - API triggers and webhooks: run/api-triggers.md
+      - Schedules: run/schedules.md
+  - Operate:
+      - operate/index.md
+      - Deploy with Compose: operate/deploy.md
+      - Accounts and security: operate/accounts.md
+      - Roles and sharing: operate/access.md
+      - LLM providers: operate/providers.md
+      - Approval channels: operate/channels.md
+      - Code runtime: operate/code-runtime.md
+      - Observability: operate/observability.md
+      - Import a LangGraph repo: operate/import.md
+  - Reference:
+      - reference/index.md
+      - Configuration: reference/configuration.md
+      - HTTP API: reference/api.md
+      - Error codes: reference/errors.md
+      - Architecture: reference/architecture.md
+      - Keyboard shortcuts: reference/shortcuts.md
+      - Development: reference/development.md
+      - FAQ: reference/faq.md

@@ -2,13 +2,15 @@
 
 User (JWT): channel connections (personal; org-wide ones need an admin), own channel identities (link, one-time code, verify), audit log.
 Platforms (no JWT; verified by signature / secret header): POST /api/approvals/callback/{kind}/{channel_id}, or the
-shared POST /api/approvals/callback/slack routed by team_id.
+shared POST /api/approvals/callback/slack routed by team_id. GET on the same URL answers WhatsApp's verification.
+Link channels (e-mail, Teams, TASK-0047): GET /api/approvals/link?token= shows the request, POST /api/approvals/link
+records the signed-in user's decision.
 """
 import asyncio
 from typing import Optional
 from urllib.parse import urlencode
 from fastapi import APIRouter, Body, Depends, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import PlainTextResponse, RedirectResponse
 from ...core import config
 from ...core.errors import AppError
 from ...core.client_ip import client_ip
@@ -93,3 +95,20 @@ async def callback(kind: str, cid: str, request: Request, svc=Depends(approval_s
     """Slack interactivity / Telegram webhook. Refusals (expired, not allowed, ...) are answered in the channel and
     return 200 so the platform does not retry; only an unauthenticated request gets 401."""
     return await _callback(kind, cid, request, svc)
+
+
+@router.get("/callback/{kind}/{cid}")
+async def callback_challenge(kind: str, cid: str, request: Request, svc=Depends(approval_service)):
+    """WhatsApp (Meta) checks a webhook URL with GET ?hub.mode=subscribe&hub.verify_token=…&hub.challenge=…; the body
+    must be the challenge itself, so this answer is plain text, not the JSON envelope."""
+    await svc.check_rate(request_ip(request), kind, cid, b"")
+    return PlainTextResponse(await asyncio.to_thread(svc.challenge, kind, cid, dict(request.query_params)))
+
+
+# ---- link channels (TASK-0047) ----
+@router.get("/link")
+def link_info(token: str, user=Depends(current_user), svc=Depends(approval_service)): return svc.link_info(token, user["id"])
+
+@router.post("/link")
+def decide_link(body: dict = Body(...), user=Depends(current_user), svc=Depends(approval_service)):
+    return svc.decide_link(str(body.get("token") or ""), user["id"])

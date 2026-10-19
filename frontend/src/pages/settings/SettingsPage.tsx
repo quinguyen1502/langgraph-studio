@@ -9,6 +9,7 @@ import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { UserMenu } from '@/components/user-menu'
 import { cn } from '@/lib/utils'
+import { ProfileSection } from './ProfileSection'
 import { ChannelsSection } from './ChannelsSection'
 import { AccountsSection } from './AccountsSection'
 import { AuditSection } from './AuditSection'
@@ -21,7 +22,7 @@ import { can, useMe } from '@/lib/rbac'
 import { SECTIONS, type SectionId } from './sections'
 
 const COMPONENTS: Record<SectionId, ComponentType> = {
-  channels: ChannelsSection, accounts: AccountsSection, audit: AuditSection, knowledge: KnowledgeSection,
+  profile: ProfileSection, channels: ChannelsSection, accounts: AccountsSection, audit: AuditSection, knowledge: KnowledgeSection,
   mcp: McpSection, users: UsersSection, teams: TeamsSection, activity: ActivitySection,
 }
 

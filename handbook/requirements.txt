@@ -1,0 +1,2 @@
+# Pinned for a reproducible strict build (`zensical build` reads mkdocs.yml).
+zensical==0.0.71

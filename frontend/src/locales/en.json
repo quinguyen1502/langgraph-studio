@@ -17,7 +17,8 @@
     "expand": "Expand",
     "items": "{{count}} items",
     "keys": "{{count}} keys",
-    "newWorkflow": "New workflow"
+    "newWorkflow": "New workflow",
+    "copy": "Copy"
   },
   "status": {
     "ok": "ok",
@@ -47,7 +48,10 @@
     "login": "Sign in",
     "register": "Sign up",
     "noAccount": "No account yet? ",
-    "haveAccount": "Already have an account? "
+    "haveAccount": "Already have an account? ",
+    "loginPlain": "Use the e-mail and password of your account",
+    "forgot": "Forgot password?",
+    "resetDone": "Password changed. Sign in with the new password."
   },
   "list": {
     "count": "{{count}} workflows",
@@ -196,7 +200,19 @@
     "unlockCanvas": "Unlock the canvas",
     "notePlaceholder": "Write a note…",
     "noteHint": "Edit the text on the note.",
-    "deleteWorkflow": "Delete workflow"
+    "deleteWorkflow": "Delete workflow",
+    "loopItems": "List to loop over",
+    "loopItem": "Current item goes to",
+    "loopIndex": "Item number (0, 1, 2…) goes to",
+    "loopIndexNone": "Do not store",
+    "loopMax": "Max items",
+    "loopHint": "Connect two edges: \"each\" into the steps to repeat, ending with an edge back to this node, and \"done\" for after the last item. Items run one at a time. To collect results, write them to a list field with the append reducer.",
+    "loopEdge": "Edge role",
+    "loop": {
+      "each": "each: run the body for the next item",
+      "done": "done: after the last item"
+    },
+    "pythonCode": "Python code"
   },
   "nodes": {
     "start": "Start point",
@@ -209,7 +225,10 @@
     "join": "Wait for all parallel branches",
     "subgraph": "Run another saved workflow",
     "retriever": "Search a knowledge base",
-    "mcp": "Call a tool on an MCP server"
+    "mcp": "Call a tool on an MCP server",
+    "foreach": "Repeat a branch for each list item",
+    "decision": "Ask TypeSafe Jev typed questions",
+    "email": "Send an e-mail through SMTP"
   },
   "trace": {
     "idle": "Not run",
@@ -263,8 +282,8 @@
   },
   "creds": {
     "button": "Credentials",
-    "title": "LLM credentials",
-    "desc": "API keys are encrypted at rest (Fernet) and never returned to the browser.",
+    "title": "Credentials",
+    "desc": "API keys and passwords are encrypted at rest (Fernet) and never returned to the browser.",
     "empty": "No credentials yet. Without a credential, LLM nodes run the mock.",
     "name": "Name",
     "namePh": "My OpenAI",
@@ -291,14 +310,47 @@
       "ollama": "Ollama (local)",
       "lmstudio": "LM Studio (local)",
       "openai_compatible": "OpenAI-compatible (vLLM / llama.cpp / LocalAI)",
-      "openrouter": "OpenRouter"
+      "openrouter": "OpenRouter",
+      "smtp": "SMTP (e-mail)"
     },
     "testOk_one": "Connected · {{count}} model · {{ms}} ms",
     "testOk_other": "Connected · {{count}} models · {{ms}} ms",
     "editAria": "Edit {{name}}",
     "editTitle": "Edit credential {{name}}",
     "keyKeep": "Stored key {{hint}} is kept; type a new one to replace it",
-    "clearKey": "Remove the stored key"
+    "clearKey": "Remove the stored key",
+    "smtp": {
+      "preset": "Server",
+      "presets": {
+        "gmail": "Gmail",
+        "outlook": "Outlook / Microsoft 365",
+        "sendgrid": "SendGrid",
+        "resend": "Resend",
+        "mailgun": "Mailgun",
+        "custom": "Other server"
+      },
+      "presetHint": {
+        "gmail": "Turn on 2-Step Verification, then create an app password (Google Account → Security → App passwords) and use it as the password.",
+        "outlook": "Use your full address as the user name. Your Microsoft 365 admin must allow SMTP AUTH for the mailbox.",
+        "sendgrid": "The user name is \"apikey\" and the password is a SendGrid API key with Mail Send permission.",
+        "resend": "The user name is \"resend\" and the password is a Resend API key. The sender must be on a verified domain.",
+        "mailgun": "Use the SMTP login and password of your Mailgun domain."
+      },
+      "host": "SMTP host",
+      "port": "Port",
+      "security": "Security",
+      "securityOpts": {
+        "starttls": "STARTTLS",
+        "ssl": "SSL/TLS",
+        "none": "None"
+      },
+      "username": "User name",
+      "password": "Password (optional)",
+      "fromEmail": "From address",
+      "fromName": "From name (optional)",
+      "fromNamePh": "Acme Support",
+      "testOk": "Signed in · {{ms}} ms (nothing was sent)"
+    }
   },
   "errors": {
     "VALIDATION_ERROR": "Some fields are invalid",
@@ -318,6 +370,11 @@
     "AUTH_PASSWORD_TOO_SHORT": "Password must be at least {{min}} characters",
     "AUTH_PASSWORD_TOO_LONG": "Password must be at most {{max}} characters",
     "AUTH_PASSWORD_WEAK": "Password must contain both letters and digits",
+    "AUTH_LOCKED": "Too many failed sign-ins. Try again in {{minutes}} min",
+    "AUTH_PASSWORD_WRONG": "The current password is incorrect",
+    "AUTH_PASSWORD_SAME": "The new password must be different from the current one",
+    "AUTH_CSRF": "Missing X-Requested-With header",
+    "PASSWORD_RESET_INVALID": "This reset link is invalid or has expired",
     "WORKFLOW_NOT_FOUND": "Workflow not found",
     "WORKFLOW_FORBIDDEN": "You do not have access to this workflow",
     "WORKFLOW_NAME_REQUIRED": "Workflow name is required",
@@ -334,6 +391,7 @@
     "RUN_NODE_NOT_REACHED": "The run finished without reaching node '{{node}}'",
     "NODE_FAILED": "Node failed",
     "HTTP_TOOL_URL_BLOCKED": "HTTP Tool node {{node}}: the URL must be a public http(s) address",
+    "TEMPLATE_REF_INVALID": "Template error: {{reason}}",
     "CREDENTIAL_NOT_FOUND": "Credential not found or not yours",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Unsupported provider: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key is required",
@@ -349,6 +407,9 @@
     "RUN_RESPONSE_INVALID": "The response must be text (max {{max}} characters)",
     "TRIGGER_TOKEN_INVALID": "Missing, invalid or revoked workflow token",
     "TOKEN_NOT_FOUND": "Token not found",
+    "SCHEDULE_NOT_FOUND": "Schedule not found",
+    "SCHEDULE_CRON_INVALID": "Schedule: {{reason}}",
+    "SCHEDULE_LIMIT": "A workflow can have at most {{max}} schedules",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
@@ -433,7 +494,25 @@
     "TEMPLATE_READ_ONLY": "This template cannot be deleted",
     "TEMPLATE_INVALID": "Not a valid template file",
     "TEMPLATE_NAME_REQUIRED": "Template name is required",
-    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation"
+    "TEMPLATE_SCOPE_FORBIDDEN": "Only administrators can share templates with the whole organisation",
+    "CREDENTIAL_SETTINGS_INVALID": "Check the setting {{field}}",
+    "EMAIL_HOST_BLOCKED": "The SMTP host {{host}} is a private or local address (allowed only with STUDIO_SMTP_ALLOW_PRIVATE=1)",
+    "EMAIL_AUTH_FAILED": "The SMTP server rejected the sign-in: {{reason}}",
+    "EMAIL_SEND_FAILED": "The e-mail could not be sent: {{reason}}",
+    "EMAIL_CREDENTIAL_INVALID": "Send email node {{node}}: choose an SMTP credential",
+    "EMAIL_RECIPIENT_INVALID": "Send email node {{node}}: '{{address}}' is not an e-mail address",
+    "EMAIL_RECIPIENTS_MISSING": "Send email node {{node}}: there is no recipient (To, Cc or Bcc)",
+    "EMAIL_TOO_MANY_RECIPIENTS": "Send email node {{node}}: at most {{max}} recipients",
+    "EMAIL_RATE_LIMITED": "Send email nodes may reach {{limit}} recipients per hour; try again in {{retry}} s",
+    "CODE_RUNTIME_OFF": "Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES)",
+    "CODE_RUNTIME_UNAVAILABLE": "Code nodes cannot run on this server: {{reason}}",
+    "CODE_INVALID": "Code node {{node}}: {{reason}}",
+    "CODE_FAILED": "Code node {{node}} raised {{error}}",
+    "CODE_TIMEOUT": "Code node {{node}} was stopped after {{seconds}} s",
+    "CODE_MEMORY": "Code node {{node}} ran out of memory (limit {{limit}})",
+    "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() returned {{type}}, which cannot be stored as JSON",
+    "CODE_TOO_LARGE": "Code node {{node}}: the {{what}} is larger than {{max_kb}} KB",
+    "CODE_WRITE_FORBIDDEN": "Your role may not add Code nodes or change their code (code.write)"
   },
   "lang": {
     "en": "English",
@@ -453,7 +532,8 @@
     "source": "Source",
     "url": "URL",
     "humanPrompt": "Question for the human ({{field}})",
-    "queryTemplate": "Search query ({{field}})"
+    "queryTemplate": "Search query ({{field}})",
+    "code": "Code"
   },
   "samples": {
     "input": "{\n  \"message\": \"Where is my order A100?\"\n}",
@@ -492,7 +572,7 @@
     "example": "Example",
     "modes": "mode \"sync\" waits for the result; \"async\" (default) returns 202 with run_id — poll GET …/runs/{run_id} or pass callback_url to receive the result.",
     "signingSecret": "Webhook signing secret",
-    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see README).",
+    "signingHelp": "Callbacks carry X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Verify it and reject old timestamps (see the handbook, API triggers).",
     "rotate": "Rotate signing secret",
     "rotateAria": "Rotate the signing secret of {{name}}",
     "rotated": "New signing secret. The previous one keeps signing callbacks until {{when}}, so receivers can switch over.",
@@ -571,18 +651,31 @@
   "approvals": {
     "kind": {
       "slack": "Slack",
-      "telegram": "Telegram"
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "teams": "Microsoft Teams"
     },
     "optional": "optional",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
       "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
-      "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL)."
+      "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL).",
+      "whatsapp": "In a Meta app with the WhatsApp product, copy the access token, the phone number ID and the app secret, and choose a verify token. Then set the webhook in the Meta dashboard to the callback URL below with that verify token, and subscribe to \"messages\". Button messages only reach people who wrote to the number in the last 24 hours; outside that window, give an approved template with two quick-reply buttons (Approve, Reject).",
+      "email": "Sends the request through the studio's SMTP settings (SMTP_HOST) with Approve / Reject links. Whoever answers signs in to the studio, so there is no account to link. Needs STUDIO_PUBLIC_URL.",
+      "teams": "In Teams, add the Workflows template \"Post to a channel when a webhook request is received\" and paste its URL here. The card's buttons open the studio, where the approver signs in. Needs STUDIO_PUBLIC_URL."
     },
     "field": {
       "bot_token": "Bot token",
       "signing_secret": "Signing secret",
-      "webhook_secret": "Webhook secret"
+      "webhook_secret": "Webhook secret",
+      "access_token": "Access token",
+      "phone_number_id": "Phone number ID",
+      "app_secret": "App secret",
+      "verify_token": "Verify token",
+      "template_name": "Template name (optional)",
+      "template_lang": "Template language (optional, e.g. en, vi)",
+      "webhook_url": "Workflows webhook URL"
     },
     "callbackUrl": "Callback URL",
     "copy": "Copy",
@@ -595,15 +688,18 @@
     "identitiesHelp": "Link your chat accounts so a button you press in Slack or Telegram counts as you. Slack accounts are linked per workspace. The bot sends a one-time code to the account; type it here to verify. Only the run owner and the approvers listed on the Human node can approve.",
     "identity": {
       "slack": "Slack member ID",
-      "telegram": "Telegram user ID"
+      "telegram": "Telegram user ID",
+      "whatsapp": "WhatsApp number"
     },
     "identityPh": {
       "slack": "U0123ABCD",
-      "telegram": "123456789"
+      "telegram": "123456789",
+      "whatsapp": "84901234567"
     },
     "identityHow": {
       "slack": "Slack: your profile → ⋮ → Copy member ID.",
-      "telegram": "Telegram: message @userinfobot to see your numeric ID."
+      "telegram": "Telegram: message @userinfobot to see your numeric ID.",
+      "whatsapp": "WhatsApp: your number in international form, digits only (no +)."
     },
     "auditEmpty": "No approval requests yet.",
     "col": {
@@ -630,14 +726,21 @@
       "addChannel": "Add one in Channels",
       "target": {
         "slack": "Slack channel ID",
-        "telegram": "Telegram chat ID"
+        "telegram": "Telegram chat ID",
+        "whatsapp": "WhatsApp number",
+        "email": "E-mail addresses",
+        "teams": "Destination"
       },
       "targetPh": {
         "slack": "C0123ABCD",
-        "telegram": "-1001234567890"
+        "telegram": "-1001234567890",
+        "whatsapp": "84901234567",
+        "email": "lead@example.com, ops@example.com",
+        "teams": ""
       },
       "approvers": "Approvers (e-mails)",
-      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts."
+      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts.",
+      "noTarget": "The webhook posts to its Teams channel."
     },
     "verified": "Verified",
     "unverified": "Not verified",
@@ -666,7 +769,9 @@
     "removeTitle": "Remove connection {{name}}?",
     "removeBody": "Human nodes using it stop sending approval requests here. This cannot be undone.",
     "unlinkTitle": "Unlink {{name}}?",
-    "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again."
+    "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again.",
+    "whatsappWindow": "WhatsApp delivers the code only if you messaged the business number in the last 24 hours.",
+    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account."
   },
   "settings": {
     "title": "Settings",
@@ -675,6 +780,7 @@
     "clear": "Clear search",
     "toggle": "Show or hide",
     "nav": {
+      "profile": "Profile",
       "channels": "Channels",
       "accounts": "My accounts",
       "audit": "Audit log",
@@ -685,6 +791,7 @@
       "activity": "Activity"
     },
     "intro": {
+      "profile": "Your account, language and password.",
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
       "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
       "audit": "Every approval request and decision made through a chat channel.",
@@ -700,7 +807,10 @@
     },
     "platform": {
       "slack": "Buttons in a Slack channel. One connection per workspace.",
-      "telegram": "Buttons in a Telegram group or private chat, through your bot."
+      "telegram": "Buttons in a Telegram group or private chat, through your bot.",
+      "whatsapp": "Reply buttons in a WhatsApp chat, from your business number.",
+      "email": "An e-mail with Approve / Reject links to the studio.",
+      "teams": "An Adaptive Card in a Teams channel with buttons that open the studio."
     },
     "scopeHelp": {
       "org": "Organization connections are set up by an admin and usable by everyone.",
@@ -828,7 +938,8 @@
       "org_manage": "Organization channels and MCP servers",
       "workflows_all": "Full access to every workflow",
       "workflows_create": "Create, import and duplicate workflows",
-      "resources_manage": "Own credentials, knowledge bases, MCP servers and channels"
+      "resources_manage": "Own credentials, knowledge bases, MCP servers and channels",
+      "code_write": "Write and change code in Code nodes"
     },
     "yes": "Allowed",
     "no": "Not allowed",
@@ -850,7 +961,11 @@
     "reassign_other": "Owns {{count}} workflows: new owner's email",
     "reassignHelp": "An editor or admin. References they cannot use are flagged in each workflow.",
     "deleted_one": "{{email}} removed; {{count}} workflow reassigned ({{flagged}} flagged reference(s)).",
-    "deleted_other": "{{email}} removed; {{count}} workflows reassigned ({{flagged}} flagged reference(s))."
+    "deleted_other": "{{email}} removed; {{count}} workflows reassigned ({{flagged}} flagged reference(s)).",
+    "resetFor": "Make a password reset link for {{email}}",
+    "resetTitle": "Reset link for {{email}}",
+    "resetIntro": "Send this link to the user. It works once, for {{minutes}} minutes, and signs out their other sessions.",
+    "resetLink": "Reset link"
   },
   "share": {
     "button": "Share",
@@ -946,6 +1061,9 @@
       "user_deactivate": "Account deactivated",
       "user_anonymize": "Account anonymized",
       "user_delete": "Account deleted",
+      "user_password_changed": "Password changed",
+      "user_password_reset_link": "Reset link created",
+      "user_password_reset": "Password reset",
       "share_add": "Shared with user",
       "share_role": "Share role changed",
       "share_remove": "Share removed",
@@ -958,7 +1076,8 @@
       "team_member_remove": "Member removed",
       "workflow_transfer": "Ownership transferred",
       "workflow_delete": "Workflow deleted",
-      "policy_org_resources": "Org resource policy changed"
+      "policy_org_resources": "Org resource policy changed",
+      "system_code_runtime_subprocess": "Code nodes ran without isolation"
     },
     "types": {
       "user": "User",
@@ -1034,7 +1153,7 @@
       "escape": "Clear selection / close panel",
       "run": "Run workflow",
       "stop": "Stop the run",
-      "delete": "Delete selection (not Start/End)",
+      "delete": "Delete selection (one Start and one End stay)",
       "selectAll": "Select all",
       "fitView": "Fit to view",
       "zoomIn": "Zoom in",
@@ -1123,6 +1242,194 @@
     "noFields": "No fields in the state schema",
     "placeholder": "Type {{open}} to insert a state field",
     "tagTitle": "State field {{field}}",
-    "unknownTitle": "{{field}} is not in the state schema"
+    "unknownTitle": "{{field}} is not in the state schema",
+    "badFilter": "Unknown filter or wrong argument: {{filter}}",
+    "editHint": "Double-click to edit",
+    "filters": {
+      "upper": "UPPER CASE",
+      "lower": "lower case",
+      "trim": "strip spaces at both ends",
+      "json": "as JSON",
+      "length": "number of items or characters",
+      "first": "first item",
+      "last": "last item",
+      "default": "use this text when empty",
+      "join": "join a list with this text",
+      "truncate": "cut to this many characters"
+    }
+  },
+  "reset": {
+    "forgotTitle": "Reset your password",
+    "forgotHint": "Enter your e-mail. If it has an account, we send a link to choose a new password.",
+    "askAdmin": "Ask an administrator for a reset link (Settings → Users). This server does not send e-mail.",
+    "sent": "If an account exists for this e-mail, a reset link is on its way. Check your inbox.",
+    "send": "Send reset link",
+    "back": "Back to sign in",
+    "newTitle": "Choose a new password",
+    "newHint": "Other sessions of this account are signed out.",
+    "newPassword": "New password",
+    "save": "Save password"
+  },
+  "profile": {
+    "account": "Account",
+    "role": "Role",
+    "emailHint": "Your sign-in name. It cannot be changed here.",
+    "languageHint": "Used across the studio and for chat messages sent to you.",
+    "manage": "Manage",
+    "passwordTitle": "Change password",
+    "passwordIntro": "Other sessions of this account are signed out; this one stays signed in.",
+    "currentPassword": "Current password",
+    "passwordChanged": "Password changed. Other sessions were signed out."
+  },
+  "schedules": {
+    "button": "Schedules",
+    "title": "Schedules",
+    "desc": "Run this workflow on a timetable. Runs start as you, with your credentials, and show in History.",
+    "badge": "Schedule",
+    "empty": "No schedules yet.",
+    "add": "New schedule",
+    "name": "Name",
+    "defaultName": "Schedule",
+    "preset": "Repeat",
+    "cron": "Cron (minute hour day month weekday)",
+    "timezone": "Time zone",
+    "preview": "Next: {{times}}",
+    "input": "Run input (JSON)",
+    "create": "Add schedule",
+    "enabledFor": "Run {{name}} on schedule",
+    "next": "Next {{when}} ({{tz}})",
+    "off": "Off",
+    "last": "last run {{when}}",
+    "stopped": "Stopped",
+    "deleteFor": "Delete schedule {{name}}",
+    "deleteTitle": "Delete schedule {{name}}?",
+    "deleteBody": "Runs already started are kept.",
+    "badJson": "The run input is not valid JSON.",
+    "help": "A time missed while the server was down runs once when it comes back. Every 15 minutes is the most frequent preset; any cron expression works.",
+    "notes": {
+      "access": "Stopped: you no longer manage this workflow.",
+      "invalid": "Stopped: the expression has no next time."
+    },
+    "presets": {
+      "0 * * * *": "Every hour",
+      "*/15 * * * *": "Every 15 minutes",
+      "0 9 * * *": "Every day at 09:00",
+      "0 9 * * 1-5": "Weekdays at 09:00",
+      "0 9 * * 1": "Mondays at 09:00",
+      "0 0 1 * *": "First day of the month",
+      "custom": "Custom"
+    }
+  },
+  "approve": {
+    "title": "Approval request",
+    "approveQ": "Approve this request?",
+    "rejectQ": "Reject this request?",
+    "approve": "Approve",
+    "reject": "Reject",
+    "workflow": "Workflow",
+    "step": "Step",
+    "question": "Question",
+    "expires": "Expires",
+    "done": {
+      "approved": "Approved. The run goes on.",
+      "rejected": "Rejected. The run goes on with the rejection."
+    },
+    "decided": "Already answered{{by}}.",
+    "by": " by {{who}}",
+    "openRun": "Open the run",
+    "expired": "This request has expired.",
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "expired": "Expired",
+      "superseded": "Answered elsewhere"
+    }
+  },
+  "decision": {
+    "credential": "TypeSafe credential",
+    "credentialNone": "None",
+    "mockHint": "Without a credential the node uses the server's TYPESAFE_API_KEY. Without that it gives offline sample answers, so you can build the flow first.",
+    "model": "Model",
+    "text": "Text for Jev to read (use {{field}})",
+    "questions": "Questions",
+    "id": "Id",
+    "type": "Type",
+    "types": {
+      "choice": "Choice",
+      "score": "Score",
+      "noul": "Yes / no"
+    },
+    "typeHint": {
+      "choice": "Picks one option and gives each option a probability.",
+      "score": "Places the text on your levels from low to high. The answer is a number from 0 to the last level, and can fall between levels.",
+      "noul": "How true the statement is, from 0 (false) to 1 (true)."
+    },
+    "instructions": "Instructions",
+    "options": "Options",
+    "optionLabel": "Label",
+    "optionDesc": "What it means (optional)",
+    "addOption": "Add option",
+    "levels": "Levels, low to high",
+    "levelPh": "Describe this level",
+    "addLevel": "Add level",
+    "field": "Write the answer to",
+    "fieldNone": "Do not write",
+    "addQuestion": "Add question",
+    "removeQuestion": "Remove question {{id}}",
+    "removeItem": "Remove",
+    "outputField": "All answers with probabilities go to (object field)",
+    "hint": "Write a choice to a text field, then use a Condition on that field to branch. Score and yes/no answers need a number field. Ctrl+Z undoes a removal."
+  },
+  "email": {
+    "credential": "SMTP credential",
+    "dryRun": "None: dry run (nothing is sent)",
+    "dryRunHint": "Without an SMTP credential the node only shows the e-mail it would send, in the run trace and the output field. Add one under Credentials to send for real.",
+    "to": "To",
+    "cc": "Cc",
+    "bcc": "Bcc",
+    "replyTo": "Reply-To",
+    "more": "Cc, Bcc, Reply-To",
+    "addressHint": "Separate addresses with commas. {{field}} can hold one address, several, or a list. At most 50 recipients.",
+    "subject": "Subject",
+    "format": "Format",
+    "formats": {
+      "text": "Plain text",
+      "html": "HTML"
+    },
+    "body": "Message",
+    "htmlHint": "Values from {{field}} are escaped, so they show as text. A plain text version is added for mail apps that do not show HTML.",
+    "outputField": "Result field (optional, object)",
+    "outputNone": "None",
+    "hint": "Each run sends at most once: a recovered run reuses the result instead of sending again. Put a Human approval before this node to check the e-mail first."
+  },
+  "code": {
+    "off": "Code nodes are turned off on this server. An admin can turn them on with STUDIO_ENABLE_CODE_NODES=1.",
+    "unavailable": "Code nodes cannot run on this server right now: {{problem}}",
+    "readOnly": "Only roles with code.write can change this code. You can still run the workflow.",
+    "locked": "Writing code needs the code.write permission (admins).",
+    "packages": "Available: {{packages}}.",
+    "stdlib": "the standard library",
+    "limits": "No network; stopped after {{seconds}} s or {{memory}} of memory.",
+    "test": "Test with sample state",
+    "testHint": "Runs main(state) once with the run panel's input. Nothing is saved.",
+    "result": "Result ({{ms}} ms)",
+    "stdout": "Printed output",
+    "traceback": "Traceback",
+    "notIsolated": "Code runs directly on this server, without isolation: it can use the network and read files the server can read.",
+    "notIsolatedShort": "Not isolated",
+    "runUnisolated": "Code nodes in this run ran on the server without isolation (subprocess runtime).",
+    "runtimeLabel": "runtime: {{runtime}}",
+    "adminTitle": "Code nodes",
+    "adminIntro": "Where Tool nodes in Code mode run, and with which limits.",
+    "adminRuntime": "Runtime",
+    "adminImage": "Image",
+    "adminLimits": "Limits",
+    "adminLimitsValue": "{{seconds}} s, {{memory}} memory, {{cpus}} CPU, {{pids}} processes",
+    "adminRisk": "The host subprocess runtime is not a sandbox. User code can reach the network and read files the server user can read; on macOS the memory limit does not apply. Use Docker for anything but trusted local use.",
+    "runtimes": {
+      "docker": "Docker sandbox",
+      "subprocess": "Host subprocess (not isolated)",
+      "off": "Off"
+    }
   }
 }

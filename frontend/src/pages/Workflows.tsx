@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { can, canEdit, useMe, type Access } from '@/lib/rbac'
 import { useLoadWhen } from '@/lib/use-when'
+import { Tip } from '@/components/tip'
 
 type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null; access: Access; mine: boolean; owner_email: string | null }
 
@@ -79,9 +80,9 @@ export function WorkflowsPage() {
       <div className="flex items-end justify-between gap-4">
         <div><h1 className="text-2xl font-semibold tracking-tight">{t('list.title')}</h1><p className="text-sm text-muted-foreground" id="wf-count">{loading ? t('common.loading') : q.trim() ? t('list.filtered', { shown: shown.length, total: items.length }) : t('list.count', { count: items.length })}</p></div>
         <div className="flex gap-2">
+          {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
           <div className="relative"><Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" /><Input id="wf-search" aria-label={t('list.searchLabel')} className="pl-8 pr-8 w-64" placeholder={t('list.search')} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
             {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-1 top-1 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
-          {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
           {can(me, 'resources.manage') && <CredentialsDialog />}
           {creates && importsOn && <ImportDialog />}
           {creates && <Button onClick={() => setGallery(true)} id="new-wf"><Plus />{t('common.newWorkflow')}</Button>}
@@ -96,8 +97,8 @@ export function WorkflowsPage() {
           <TableHeader><TableRow><TableHead className="pl-4">{t('list.colName')}</TableHead><TableHead>{t('list.colNodes')}</TableHead><TableHead>{t('list.colUpdated')}</TableHead><TableHead>{t('list.colLastRun')}</TableHead><TableHead className="w-12" /></TableRow></TableHeader>
           <TableBody>
             {shown.map(w => <TableRow key={w.id} className="cursor-pointer" onClick={() => nav(`/workflows/${w.id}`)}>
-              <TableCell className="pl-4 font-medium max-w-0 w-1/2"><div className="truncate" title={w.name}>{w.name}</div><div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"><span className="font-mono">{w.id}</span>
-                {!w.mine && <Badge variant="outline" className="wf-shared" title={w.owner_email ?? ''}>{t('list.sharedBy', { email: w.owner_email ?? '?' })}</Badge>}
+              <TableCell className="pl-4 font-medium max-w-0 w-1/2"><Tip tip={w.name}><div className="truncate">{w.name}</div></Tip><div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"><span className="font-mono">{w.id}</span>
+                {!w.mine && <Tip tip={w.owner_email}><Badge variant="outline" className="wf-shared">{t('list.sharedBy', { email: w.owner_email ?? '?' })}</Badge></Tip>}
                 {w.access !== 'owner' && <Badge variant="secondary" className="wf-access">{t(`share.access.${w.access}`)}</Badge>}</div></TableCell>
               <TableCell><Badge variant="secondary">{w.node_count}</Badge></TableCell>
               <TableCell className="text-muted-foreground">{fmt(w.updated)}</TableCell>

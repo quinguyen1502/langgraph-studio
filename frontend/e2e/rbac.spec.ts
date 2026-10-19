@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0014: share a workflow from the editor, the viewer gets a read-only editor, the admin manages roles in Settings → Users.
 async function login(page: Page, email = 'admin@example.com', password = 'admin123') {
   await page.goto('/login'); await page.getByLabel('Email').fill(email); await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
   await page.locator('#auth-submit').click(); await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page, email, password)}` }
 }
 const WF = (name: string) => ({ name, state: [{ name: 'message', type: 'string' }],
   nodes: [{ id: 'start', type: 'start', position: { x: 60, y: 120 }, data: { label: 'Start' } }, { id: 'end', type: 'end', position: { x: 360, y: 120 }, data: { label: 'End' } }],

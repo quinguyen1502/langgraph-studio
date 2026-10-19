@@ -1,0 +1,56 @@
+# Xây dựng
+
+Các trang này nói về mọi việc làm trong trình soạn thảo: vẽ graph, cấu hình
+node, nối state, và dùng lại công sức giữa các workflow.
+
+<div class="grid cards" markdown>
+
+-   :material-vector-square-edit:{ .lg .middle } **[Trình soạn thảo](editor.md)**
+
+    ---
+
+    Các panel, sửa canvas, undo, clipboard, bố cục, ghi chú và bảng lệnh.
+
+-   :material-shape-outline:{ .lg .middle } **[Các loại node](nodes.md)**
+
+    ---
+
+    Từng loại node, cấu hình và cách nó chạy trong một run.
+
+-   :material-code-braces:{ .lg .middle } **[State và tham chiếu](state.md)**
+
+    ---
+
+    Kiểu field, reducer cho nhánh song song, đường dẫn `{{state.x}}` và filter.
+
+-   :material-language-python:{ .lg .middle } **[Chế độ Code](code-mode.md)**
+
+    ---
+
+    Viết `main(state)` trong node Tool và chạy trong sandbox.
+
+-   :material-database-search:{ .lg .middle } **[Kho tri thức](knowledge.md)**
+
+    ---
+
+    Tải tài liệu lên và tìm kiếm từ node Retriever.
+
+-   :material-connection:{ .lg .middle } **[Máy chủ MCP](mcp.md)**
+
+    ---
+
+    Đăng ký máy chủ Streamable HTTP hoặc stdio và gọi tool của chúng.
+
+-   :material-view-gallery-outline:{ .lg .middle } **[Mẫu workflow](templates.md)**
+
+    ---
+
+    Bắt đầu từ mẫu có sẵn, lưu mẫu riêng, xuất và nhập mẫu.
+
+-   :material-source-branch:{ .lg .middle } **[Phiên bản](versions.md)**
+
+    ---
+
+    Lịch sử mọi thay đổi, so sánh và khôi phục.
+
+</div>

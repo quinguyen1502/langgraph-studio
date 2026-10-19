@@ -1,12 +1,24 @@
 /** Pure graph edits shared by keyboard shortcuts, buttons and (later) the history/clipboard (TASK-0023+). */
 import type { Edge, Node } from '@xyflow/react'
 
-/** Start and End anchor every workflow: they are never removed by a selection delete. */
+/** Start and End anchor every workflow: a delete always keeps at least one of each (extra copies can go). */
 export const PROTECTED = new Set(['start', 'end'])
 
-/** Remove nodes (except protected ones) and edges by id, plus every edge touching a removed node. */
+/** The ids in `nodeIds` that may be removed: all but the last remaining Start and the last remaining End. */
+export function removable(nodes: Node[], nodeIds: Iterable<string>): Set<string> {
+  const want = new Set(nodeIds)
+  const out = new Set([...want].filter(id => !PROTECTED.has(nodes.find(n => n.id === id)?.type ?? '')))
+  for (const type of PROTECTED) {
+    const all = nodes.filter(n => n.type === type)
+    const keep = all.find(n => !want.has(n.id)) ?? all[0]  // one stays: an unselected one if there is, else the first
+    for (const n of all) if (want.has(n.id) && n !== keep) out.add(n.id)
+  }
+  return out
+}
+
+/** Remove nodes and edges by id (see `removable`), plus every edge touching a removed node. */
 export function removeElements(nodes: Node[], edges: Edge[], nodeIds: Iterable<string>, edgeIds: Iterable<string> = []) {
-  const gone = new Set([...nodeIds].filter(id => !PROTECTED.has(nodes.find(n => n.id === id)?.type ?? '')))
+  const gone = removable(nodes, nodeIds)
   const drop = new Set(edgeIds)
   return {
     nodes: nodes.filter(n => !gone.has(n.id)),

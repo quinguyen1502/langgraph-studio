@@ -102,4 +102,52 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Editor maintenance
 
 - TASK-0040 Split `Editor.tsx` into `components/editor/` and clear the React hook oxlint warnings (REQ-0028, Implemented 2026-10-18): **done**. REV-0039, QA-0039. Merged (PR #43).
-- TASK-0041 Template editor with state field chips for node message fields (REQ-0029, Implemented 2026-10-18), with the editor header overlap and `sm` button icon offset: **done**. REV-0040, QA-0040. Not merged.
+- TASK-0041 Template editor with state field chips for node message fields (REQ-0029, Implemented 2026-10-18), with the editor header overlap and `sm` button icon offset: **done**. REV-0040, QA-0040. Merged (PR #44).
+- TASK-0042 Commit `.claude/launch.json` (backend and frontend dev servers for the Claude app preview): **done**. Merged (PR #45).
+- TASK-0043 Template insert menu focus and vendor chunks (REQ-0030, Implemented 2026-10-18): **done**. REV-0041, QA-0041. Merged (PR #47).
+- TASK-0044 Template paths and filters (REQ-0031, DEC-0034, Implemented 2026-10-18): **done**. REV-0042, QA-0042. Merged (PR #48).
+
+## Sign-in hardening
+
+- TASK-0045 Sign-in lockout, password reset links, HttpOnly session cookie, no demo account in production (REQ-0032, DEC-0035, Implemented 2026-10-18): **done**. REV-0043, QA-0043. Merged (PR #49).
+
+## Scheduled runs
+
+- TASK-0046 Cron schedules for workflow runs (REQ-0033, DEC-0036, Implemented 2026-10-19): **done**. REV-0044, QA-0044. Merged (PR #50).
+
+## More approval channels
+
+- TASK-0047 WhatsApp buttons, e-mail and Teams links to /approve (REQ-0034, DEC-0037, Implemented 2026-10-19): **done**. REV-0045, QA-0045. Merged (PR #51).
+
+## Records
+
+- TASK-0048 Close the open questions of REQ-0001, 0002, 0003, 0004, 0008 and 0010; accept DEC-0006; DEC-0033 addendum on release merges to main: **done**. Merged (PR #52).
+
+## Loops
+
+- TASK-0049 For each node: run a branch once per list item, one at a time (REQ-0035, DEC-0038, Implemented 2026-10-19): **done**. REV-0046, QA-0046. Merged (PR #54).
+
+## Decision models
+
+- TASK-0050 Decision (Jev) node: typed questions to TypeSafe System One, answers to state (REQ-0036, DEC-0039, Implemented 2026-10-19): **done**. REV-0047, QA-0047. Merged (PR #55).
+
+## E-mail
+
+- TASK-0051 SMTP credentials and Send email node: dry run without a credential, effectively-once sending, hourly recipient quota (REQ-0037, DEC-0040, Implemented 2026-10-19): **done**. REV-0048, QA-0048. Merged (PR #56).
+
+## Accounts
+
+- TASK-0052 Profile page and self-service password change (REQ-0038): **merged** (PR #58, REV-0049, QA-0049).
+
+## Code nodes
+
+REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Accepted 2026-10-19; tasks approved by the owner.
+
+- TASK-0053 Code mode runtime: Docker sandbox with no network, `studio-code` image, node mode and validation. **merged** (PR #61, REV-0050, QA-0050). Independent of TASK-0054.
+- TASK-0054 `code.write` permission, checked on every path that writes a graph. **merged** (PR #62, REV-0051, QA-0051). Independent of TASK-0053.
+- TASK-0055 Editor: Python code field, Test with sample state, trace output. **merged** (PR #63, REV-0052, QA-0052). After TASK-0053 and TASK-0054.
+- TASK-0056 Host subprocess runtime and the eight "not isolated" warnings. **merged** (PR #64, REV-0053, QA-0053). After TASK-0053 and TASK-0055.
+
+## Documentation
+
+- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **in review** (PR #65).

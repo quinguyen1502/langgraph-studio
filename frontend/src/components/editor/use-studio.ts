@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { addEdge, useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection } from '@xyflow/react'
-import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, Search } from 'lucide-react'
+import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, Search } from 'lucide-react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { freeSpot, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
@@ -8,7 +8,7 @@ import { SHORTCUTS } from '@/lib/shortcuts'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
-import { api, wsUrl, sessionExpired, tokenValid } from '@/lib/api'
+import { api, wsUrl, sessionExpired, signedIn } from '@/lib/api'
 import i18n, { eventErrors } from '@/lib/i18n'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/lib/theme'
@@ -19,7 +19,7 @@ import { buildTrace, withSummary } from '@/lib/trace'
 import { useShortcuts } from '@/lib/use-shortcuts'
 import { useGraphHistory } from '@/lib/use-graph-history'
 import { removeElements, selectionIds, spliceNode } from '@/lib/graph-ops'
-import { META, INSERTABLE, DEFAULTS, MENU_OF, MENU_IDS, ACTION_ICONS, canvasId, styleEdges, defaultInput, type Field, type LogItem } from './meta'
+import { META, INSERTABLE, DEFAULTS, MENU_OF, MENU_IDS, ACTION_ICONS, canvasId, styleEdges, defaultInput, LOOP_LABELS, type Field, type LogItem } from './meta'
 
 /** Editor state and actions (TASK-0040: moved out of pages/Editor.tsx). Panels read it through StudioContext. */
 export function useStudio() {
@@ -94,7 +94,7 @@ export function useStudio() {
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
   /** One socket path for new runs and for resuming a waiting run (the resumed events append to the same log). */
   const stream = (msg: any, resume = false) => {
-    if (!tokenValid()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
+    if (!signedIn()) { setErrors([t('editor.expiredRedirect')]); setTab('logs'); setTimeout(sessionExpired, 1500); return }
     setErrors([]); setTab('logs'); setRunning(true); setTraceSel(null)
     if (resume) setLog(l => l.filter(e => e.type !== 'run_summary'))
     else { setLog([]); setReplay(null); setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } }))) }
@@ -201,7 +201,7 @@ export function useStudio() {
     ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
   const paletteRef = useRef<Record<string, () => void>>({})
   // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
-  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'template' | 'json'>(null)
+  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'schedules' | 'template' | 'json'>(null)
   const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string } | { kind: 'pane'; at: { x: number; y: number } }>(null)
   const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
   const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
@@ -212,6 +212,7 @@ export function useStudio() {
     { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !edit || !wid, run: () => setDlg('template') },
     { id: 'action:share', group: 'actions', label: t('share.button'), icon: Share2, menu: 'workflow', elementId: 'share-btn', disabled: !wid, run: () => setDlg('share') },
     { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
+    { id: 'action:schedules', group: 'actions', label: t('schedules.button'), icon: CalendarClock, menu: 'workflow', elementId: 'schedules-btn', disabled: !wid || access !== 'owner', run: () => setDlg('schedules') },
     { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
     { id: 'action:openPalette', group: 'actions', label: t('palette.title'), icon: Search, shortcut: 'palette', menu: 'help', elementId: 'palette-btn', run: openPalette },
     { id: 'action:deleteWorkflow', group: 'actions', label: t('editor.deleteWorkflow'), icon: Trash2, menu: 'danger', destructive: true, elementId: 'delete-wf-btn',
@@ -254,7 +255,11 @@ export function useStudio() {
       setTraceSel(spans[cur >= 0 ? (cur + 1) % spans.length : spans.length - 1].key); setTab('logs')
     }
   }
-  const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [setEdges])
+  const onConnect = useCallback((c: Connection) => setEdges(es => {
+    // a For each node's first edge is its loop body, the second leaves the loop (TASK-0049)
+    const loop = rf.getNode(c.source)?.type === 'foreach' ? LOOP_LABELS.find(l => !es.some(e => e.source === c.source && e.label === l)) : undefined
+    return addEdge({ ...c, id: 'e' + Date.now(), ...(loop ? { label: loop } : {}) }, es)
+  }), [setEdges, rf])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
     addNode(t, rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY }))

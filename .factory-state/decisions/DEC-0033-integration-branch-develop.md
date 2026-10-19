@@ -50,3 +50,7 @@ The record should match the branch that already holds the merged phases. Rewriti
 ## Review Or Revisit Trigger
 
 - Revisit if release staging needs a branch other than `develop`.
+
+## Addendum 2026-10-19
+
+The owner asked to bring `main` up to date (remaining-work item 1). `main` now receives release merges from `develop` (PR #46, `develop` → `main`, 2026-10-18). Task pull requests still target `develop`; GitHub's default branch is still `main` (a repository setting, unchanged).

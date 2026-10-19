@@ -39,8 +39,13 @@ def verify_password(pw: str, stored: str) -> bool:
     except Exception:
         return False
 
+SESSION_COOKIE = "studio_session"  # HttpOnly cookie that carries the JWT for the browser UI (TASK-0045)
+CSRF_HEADER, CSRF_VALUE = "x-requested-with", "studio"  # cookie-authenticated writes must send it
+
+
 def make_token(uid: str, email: str, ttl: int | None = None) -> str:
-    return jwt.encode({"sub": uid, "email": email, "exp": int(time.time()) + (TTL if ttl is None else ttl)}, SECRET, algorithm="HS256")
+    now = int(time.time())
+    return jwt.encode({"sub": uid, "email": email, "iat": now, "exp": now + (TTL if ttl is None else ttl)}, SECRET, algorithm="HS256")
 
 def decode_token(tok: str) -> dict:
     """Return the JWT payload or raise Unauthorized (expired: AUTH_TOKEN_EXPIRED + header X-Auth-Error: expired)."""

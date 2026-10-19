@@ -1,0 +1,8 @@
+[
+  {"text": "Hi {{state.name}}", "refs": [{"field": "name", "path": [], "filters": []}]},
+  {"text": "{{ state.order.items.0.sku }}", "refs": [{"field": "order", "path": ["items", "0", "sku"], "filters": []}]},
+  {"text": "{{state.name | trim | upper}}", "refs": [{"field": "name", "path": [], "filters": [["trim", null], ["upper", null]]}]},
+  {"text": "{{state.x|default(\"n/a\")}} {{state.t | join(', ') }}", "refs": [{"field": "x", "path": [], "filters": [["default", "n/a"]]}, {"field": "t", "path": [], "filters": [["join", ", "]]}]},
+  {"text": "{{state.s | truncate(20)}}", "refs": [{"field": "s", "path": [], "filters": [["truncate", 20]]}]},
+  {"text": "{{state.}} {{state.a | }} {{ state.a | f(x) }} {{name}} {state.a}", "refs": []}
+]

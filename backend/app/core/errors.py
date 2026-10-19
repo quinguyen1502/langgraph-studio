@@ -25,6 +25,11 @@ CATALOG: dict[str, tuple[int, str]] = {
     "AUTH_PASSWORD_TOO_SHORT": (400, "Password must be at least {min} characters"),
     "AUTH_PASSWORD_TOO_LONG": (400, "Password must be at most {max} characters"),
     "AUTH_PASSWORD_WEAK": (400, "Password must contain both letters and digits"),
+    "AUTH_LOCKED": (429, "Too many failed sign-ins. Try again in {minutes} min"),
+    "AUTH_PASSWORD_WRONG": (400, "The current password is incorrect"),
+    "AUTH_PASSWORD_SAME": (400, "The new password must be different from the current one"),
+    "AUTH_CSRF": (403, "Missing X-Requested-With header"),
+    "PASSWORD_RESET_INVALID": (400, "This reset link is invalid or has expired"),
     # workflows
     "WORKFLOW_NOT_FOUND": (404, "Workflow not found"),
     "WORKFLOW_FORBIDDEN": (403, "You do not have access to this workflow"),
@@ -51,6 +56,9 @@ CATALOG: dict[str, tuple[int, str]] = {
     "RUN_RESPONSE_INVALID": (400, "The response must be text (max {max} characters)"),
     "TRIGGER_TOKEN_INVALID": (401, "Missing, invalid or revoked workflow token"),
     "TOKEN_NOT_FOUND": (404, "Token not found"),
+    "SCHEDULE_NOT_FOUND": (404, "Schedule not found"),
+    "SCHEDULE_CRON_INVALID": (400, "Schedule: {reason}"),
+    "SCHEDULE_LIMIT": (400, "A workflow can have at most {max} schedules"),
     "RUN_EXPIRED": (410, "This run waited too long for a response and expired"),
     "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
     "NOTIFICATION_NOT_FOUND": (404, "Notification not found"),
@@ -60,6 +68,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "CALLBACK_URL_INVALID": (400, "callback_url must be a public http(s) URL"),
     "NODE_FAILED": (500, "Node failed"),
     "HTTP_TOOL_URL_BLOCKED": (400, "HTTP Tool node {node}: the URL must be a public http(s) address"),
+    "TEMPLATE_REF_INVALID": (400, "Template error: {reason}"),
     # approval channels (TASK-0022)
     "CHANNEL_KIND_UNSUPPORTED": (400, "Unsupported approval channel: {kind}"),
     "CHANNEL_CONFIG_INVALID": (400, "Channel setting {field} is missing or invalid"),
@@ -152,7 +161,27 @@ CATALOG: dict[str, tuple[int, str]] = {
     "PROVIDER_EMBEDDINGS_UNSUPPORTED": (400, "{provider} does not provide embeddings; choose another credential for this knowledge base"),
     "KB_EMBEDDING_DIMENSION_MISMATCH": (409, "The embedding model returns {got}-dimensional vectors but this knowledge base stores {expected}-dimensional ones; re-index the knowledge base"),
     "CREDENTIAL_HEADER_UNSUPPORTED": (400, "{provider} does not accept the header {header}"),
+    # Send email nodes and SMTP credentials (TASK-0051)
+    "CREDENTIAL_SETTINGS_INVALID": (400, "Check the setting {field}"),
+    "EMAIL_HOST_BLOCKED": (400, "The SMTP host {host} is a private or local address (allowed only with STUDIO_SMTP_ALLOW_PRIVATE=1)"),
+    "EMAIL_AUTH_FAILED": (400, "The SMTP server rejected the sign-in: {reason}"),
+    "EMAIL_SEND_FAILED": (502, "The e-mail could not be sent: {reason}"),
+    "EMAIL_CREDENTIAL_INVALID": (400, "Send email node {node}: choose an SMTP credential"),
+    "EMAIL_RECIPIENT_INVALID": (400, "Send email node {node}: '{address}' is not an e-mail address"),
+    "EMAIL_RECIPIENTS_MISSING": (400, "Send email node {node}: there is no recipient (To, Cc or Bcc)"),
+    "EMAIL_TOO_MANY_RECIPIENTS": (400, "Send email node {node}: at most {max} recipients"),
+    "EMAIL_RATE_LIMITED": (429, "Send email nodes may reach {limit} recipients per hour; try again in {retry} s"),
     "ORG_RESOURCE_NOT_ALLOWED": (403, "Your role may not use organization-wide resources at run time ({kind})"),
+    # Tool node Code mode (TASK-0053)
+    "CODE_RUNTIME_OFF": (400, "Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES)"),
+    "CODE_RUNTIME_UNAVAILABLE": (503, "Code nodes cannot run on this server: {reason}"),
+    "CODE_INVALID": (400, "Code node {node}: {reason}"),
+    "CODE_FAILED": (400, "Code node {node} raised {error}"),
+    "CODE_TIMEOUT": (400, "Code node {node} was stopped after {seconds} s"),
+    "CODE_MEMORY": (400, "Code node {node} ran out of memory (limit {limit})"),
+    "CODE_RESULT_NOT_JSON": (400, "Code node {node}: main() returned {type}, which cannot be stored as JSON"),
+    "CODE_TOO_LARGE": (413, "Code node {node}: the {what} is larger than {max_kb} KB"),
+    "CODE_WRITE_FORBIDDEN": (403, "Your role may not add Code nodes or change their code (code.write)"),
 }
 
 

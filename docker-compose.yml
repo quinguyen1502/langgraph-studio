@@ -78,6 +78,13 @@ services:
       STUDIO_IMPORT_CPUS: ${STUDIO_IMPORT_CPUS:-1}
       STUDIO_IMPORT_MAX_AGE_HOURS: ${STUDIO_IMPORT_MAX_AGE_HOURS:-72}
       STUDIO_IMPORT_NETWORK: ${STUDIO_IMPORT_NETWORK:-bridge}
+      # Tool nodes in Code mode (TASK-0053): off by default. Build the image first:
+      # docker build -t studio-code:1 docker/studio-code. The code runs with no network and no mounts.
+      STUDIO_ENABLE_CODE_NODES: ${STUDIO_ENABLE_CODE_NODES:-0}
+      STUDIO_CODE_IMAGE: ${STUDIO_CODE_IMAGE:-studio-code:1}
+      STUDIO_CODE_MEMORY: ${STUDIO_CODE_MEMORY:-256m}
+      STUDIO_CODE_CPUS: ${STUDIO_CODE_CPUS:-0.5}
+      STUDIO_CODE_MAX_SECONDS: ${STUDIO_CODE_MAX_SECONDS:-30}
     # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
     # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
     extra_hosts: &host-gw ["host.docker.internal:host-gateway"]

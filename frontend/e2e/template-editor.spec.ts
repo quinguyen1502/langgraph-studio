@@ -1,9 +1,10 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 // TASK-0041: `{{state.field}}` templates show as tags, `{{` suggests fields, the braces button inserts one, and the saved text is unchanged.
 async function login(page: Page, email = 'admin@example.com', password = 'admin123') {
   await page.goto('/login'); await page.getByLabel('Email').fill(email); await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
   await page.locator('#auth-submit').click(); await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page, email, password)}` }
 }
 const n = (id: string, type: string, x: number, data: Record<string, unknown> = {}) => ({ id, type, position: { x, y: 120 }, data: { label: id, ...data } })
 // CodeMirror ignores Enter for 75ms after the list opens (interactionDelay), so a picked option waits for that
@@ -32,10 +33,11 @@ test('template editor: tags, suggestions, insert menu, one-line URL, saved text,
   await expect(prompt.locator('.template-tag[data-field="answer"]')).toBeVisible()
 
   // the braces button inserts at the cursor; Backspace removes the whole tag
-  await page.locator('#llm-prompt-insert').click(); await page.getByRole('menuitem', { name: 'reply' }).click()
-  await expect(prompt.locator('.template-tag[data-field="reply"]')).toBeVisible()
-  await expect(prompt).toBeFocused()  // the closed menu hands focus back to the editor
-  await page.keyboard.press('Backspace'); await expect(prompt.locator('.template-tag[data-field="reply"]')).toHaveCount(0)
+  // focus is back in the editor as soon as an item is picked: keys typed straight after go into the field, not to the canvas (TASK-0043)
+  await page.locator('#llm-prompt-insert').click(); await page.getByRole('menuitem', { name: 'reply' }).click(); await page.keyboard.type('Z')
+  await expect(prompt.locator('.template-tag[data-field="reply"]')).toBeVisible(); await expect(prompt).toContainText('replyZ')
+  await page.keyboard.press('Backspace'); await page.keyboard.press('Backspace')
+  await expect(prompt.locator('.template-tag[data-field="reply"]')).toHaveCount(0); await expect(page.locator('.react-flow__node[data-id="ask"]')).toBeVisible()
 
   // the URL stays on one line
   await page.locator('.react-flow__node[data-id="call"]').click()

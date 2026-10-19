@@ -35,6 +35,10 @@ class AccessService:
     def require(self, uid: str, permission: str) -> None:
         if not self.can(uid, permission): raise AppError("PERMISSION_DENIED", permission=permission)
 
+    def require_code(self, uid: str, before: Optional[dict], after: Optional[dict]) -> None:
+        """Adding a Code node or changing its source needs `code.write` (TASK-0054); anything else about it does not."""
+        if P.code_written(before, after) and not self.can(uid, P.CODE_WRITE): raise AppError("CODE_WRITE_FORBIDDEN")
+
     def access_of(self, w: Workflow, uid: str, role: Optional[str] = None) -> Optional[str]:
         role = role if role is not None else self.role(uid)
         if role is None: return None

@@ -1,10 +1,11 @@
 import { test, expect, type Page } from '@playwright/test'
+import { apiToken } from './helpers'
 import { confirmDelete } from './confirm'
 // TASK-0029: teams + team share, ownership transfer, activity log, delete user with reassignment, org-resource policy, dependents on delete.
 async function login(page: Page, email = 'admin@example.com', password = 'admin123') {
   await page.goto('/login'); await page.getByLabel('Email').fill(email); await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
   await page.locator('#auth-submit').click(); await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page, email, password)}` }
 }
 const N = (id: string, type: string, x: number, data: Record<string, unknown> = {}) => ({ id, type, position: { x, y: 120 }, data: { label: id, ...data } })
 const WF = (name: string, mid: ReturnType<typeof N>[] = []) => ({ name, state: [{ name: 'message', type: 'string' }],

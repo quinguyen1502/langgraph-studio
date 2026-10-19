@@ -5,6 +5,7 @@ from urllib.parse import unquote, urlsplit
 import httpx
 from ..core import config
 from ..core.net import pinned_request, public_address
+from . import code_runtime, decisions, emails, foreach
 from .effects import Effects, call_tool
 from .errors import Interrupt
 from .llm import LLMError, TokenBuffer, call_llm
@@ -22,6 +23,17 @@ def token_stream(nid: str) -> Optional[TokenBuffer]:
     try: from langgraph.config import get_stream_writer; write = get_stream_writer()
     except Exception: return None
     return TokenBuffer(lambda delta: write({"node": nid, "delta": delta}))
+
+
+def code_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], ports: Ports) -> Any:
+    """Tool node Code mode (TASK-0053): main(state) in the sandbox. What it printed goes to the trace (`code_output`)."""
+    if config.code_runtime() == "subprocess" and ports.code_audit is not None and code_runtime.claim_first_unisolated_call():
+        try: ports.code_audit()  # first unisolated call since this process started (TASK-0056)
+        except Exception: pass
+    res = code_runtime.run_code(d.get("code") or "", dict(state), node=nid, timeout=d.get("timeout"), cancelled=ports.cancelled)
+    try: from langgraph.config import get_stream_writer; get_stream_writer()({"node": nid, "code_output": res.trace()})
+    except Exception: pass  # outside a streamed run
+    return res.value
 
 
 def http_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], extra: Dict[str, str]) -> Any:
@@ -67,6 +79,8 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
         def fn(state):
             if d.get("mode") == "http":
                 res = http_call(node["id"], d, state, effects.headers(node["id"]) if effects else {})
+            elif d.get("mode") == "code":
+                res = code_call(node["id"], d, state, ports)
             else:
                 res = call_tool(TOOLS[d["function"]], state, effects.key(node["id"]) if effects else None)
             return {d["output_field"]: res}
@@ -79,6 +93,12 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
         def fn(state):
             if ports.mcp_call is None: raise RuntimeError("MCP nodes need the MCP service")
             return {d["output_field"]: ports.mcp_call(d["server_id"], d["tool"], render_args(d.get("arguments") or {}, state))}
+    elif t == "decision":
+        fn = decisions.node_fn(node, resolve, usage)
+    elif t == "foreach":
+        fn = foreach.node_fn(node)
+    elif t == "email":
+        fn = emails.node_fn(node, resolve, (lambda: effects.key(node["id"])) if effects else (lambda: None), ports)
     else:  # start, condition, end, join, subgraph entry/exit -> passthrough
         def fn(state):
             return {}

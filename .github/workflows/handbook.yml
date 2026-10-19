@@ -1,0 +1,59 @@
+name: Handbook
+
+# Builds the handbook (Zensical, en and vi) on every change to it, and publishes it to GitHub
+# Pages from main. Publishing needs Settings → Pages → Source: GitHub Actions.
+on:
+  pull_request:
+    branches: [main, develop]
+    paths: ['handbook/**', 'docs/api-errors.md', '.github/workflows/handbook.yml']
+  push:
+    branches: [main]
+    paths: ['handbook/**', 'docs/api-errors.md', '.github/workflows/handbook.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: handbook-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Strict build (en, vi)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: handbook
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: handbook/requirements.txt
+      - name: Install toolchain
+        run: pip install -r requirements.txt
+      - name: Check both languages have the same pages
+        run: |
+          pages() { (cd "docs/$1" && find . -name '*.md' | sort); }
+          diff <(pages en) <(pages vi) || { echo "docs/en and docs/vi differ (< en only, > vi only)"; exit 1; }
+      - name: Build
+        run: zensical build && zensical build -f mkdocs.vi.yml
+      - name: Check images and videos
+        run: python check_images.py site
+      - if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: handbook/site
+
+  deploy:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

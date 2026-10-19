@@ -7,7 +7,7 @@
 - Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-18
+- Updated: 2026-10-19
 - Source: project-specs.md (Post-MVP Scope)
 
 ## Summary
@@ -66,7 +66,7 @@ Runs emit structured traces and metrics (LangSmith and/or OpenTelemetry) and the
 
 ## Open Questions
 
-- LangSmith, OTel collector, or both?
+- Resolved 2026-10-16: both, with OpenTelemetry as the standard: OTLP when `OTEL_EXPORTER_OTLP_*` is set, and LangSmith as one more OTLP destination when `LANGSMITH_API_KEY` and `LANGSMITH_TRACING` are set (DEC-0012).
 
 ## Related Artifacts
 

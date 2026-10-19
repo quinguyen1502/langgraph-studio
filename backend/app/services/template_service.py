@@ -67,6 +67,7 @@ class TemplateService:
         self.access.require(uid, P.WORKFLOWS_CREATE)
         errs = T.problems(payload)
         if errs: raise AppError("TEMPLATE_INVALID", details=errs)
+        self.access.require_code(uid, None, payload["workflow"])  # a file can bring new Code nodes (TASK-0054)
         return self._add(uid, payload.get("name"), payload.get("description"), scope, payload["workflow"])
 
     def export(self, tid: str, uid: str) -> dict:

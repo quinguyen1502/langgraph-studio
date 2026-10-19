@@ -1,11 +1,13 @@
 /** Settings → Users (TASK-0014, admins): every account with its role and status, and the roles matrix. */
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Check, Minus, Trash2 } from 'lucide-react'
+import { AlertCircle, Check, KeyRound, Minus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ConfirmDeleteDialog } from '@/components/confirm-delete-dialog'
+import { CopyField } from '@/components/copy-field'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
@@ -17,6 +19,8 @@ import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import { can, useMe, type AdminUser, type Policy, type RoleMatrix } from '@/lib/rbac'
 import { useOnChange } from '@/lib/use-when'
+import { Tip } from '@/components/tip'
+import { CodeRuntimeCard } from '@/components/code-runtime-card'
 
 type Data = RoleMatrix & { users: AdminUser[] }
 
@@ -43,6 +47,18 @@ function DeleteUserDialog({ user, onClose, onDone }: { user: AdminUser | null; o
   </ConfirmDeleteDialog>
 }
 
+/** A one-time password reset link for another account (TASK-0045). The admin sends it to the user. */
+function ResetLinkDialog({ user, onClose }: { user: AdminUser | null; onClose: () => void }) {
+  const { t } = useTranslation(); const [link, setLink] = useState<{ path: string; url: string | null; expires_in: number } | null>(null); const [err, setErr] = useState('')
+  useOnChange(user, u => { setLink(null); setErr(''); if (u) api<{ path: string; url: string | null; expires_in: number }>(`/api/admin/users/${u.id}/password-reset`, { method: 'POST' }).then(setLink).catch(e => setErr(e.message)) })
+  return <Dialog open={!!user} onOpenChange={o => !o && onClose()}><DialogContent id="reset-link-dialog">
+    <DialogHeader><DialogTitle>{t('users.resetTitle', { email: user?.email })}</DialogTitle>
+      <DialogDescription>{t('users.resetIntro', { minutes: Math.round((link?.expires_in ?? 3600) / 60) })}</DialogDescription></DialogHeader>
+    {err ? <p role="alert" className="text-sm text-destructive">{err}</p>
+      : link ? <CopyField id="reset-link" label={t('users.resetLink')} value={link.url ?? location.origin + link.path} /> : <Skeleton className="h-9 w-full" />}
+  </DialogContent></Dialog>
+}
+
 /** Which roles may use org-wide approval channels and MCP servers at run time (TASK-0029). */
 function PolicyCard() {
   const { t } = useTranslation(); const [p, setP] = useState<Policy | null>(null); const [err, setErr] = useState('')
@@ -65,7 +81,7 @@ function PolicyCard() {
 export function UsersSection() {
   const { t } = useTranslation(); const me = useMe()
   const [data, setData] = useState<Data | null>(null); const [err, setErr] = useState(''); const [busy, setBusy] = useState<string | null>(null)
-  const [del, setDel] = useState<AdminUser | null>(null); const [notice, setNotice] = useState('')
+  const [del, setDel] = useState<AdminUser | null>(null); const [notice, setNotice] = useState(''); const [reset, setReset] = useState<AdminUser | null>(null)
   const load = () => api<Data>('/api/admin/users').then(d => { setData(d); setErr('') }).catch(e => setErr(e.message))
   useEffect(() => { if (can(me, 'users.manage')) load() }, [me])
   const patch = async (u: AdminUser, json: Partial<AdminUser>) => {
@@ -81,7 +97,7 @@ export function UsersSection() {
     {err && <Alert variant="destructive" id="users-error"><AlertCircle /><AlertDescription>{err}</AlertDescription></Alert>}
     <Card className="overflow-hidden p-0"><Table id="users-table">
       <TableHeader><TableRow><TableHead className="pl-4">{t('users.email')}</TableHead><TableHead>{t('users.role')}</TableHead><TableHead>{t('users.workflows')}</TableHead>
-        <TableHead>{t('users.created')}</TableHead><TableHead>{t('users.active')}</TableHead><TableHead className="w-12 pr-4" /></TableRow></TableHeader>
+        <TableHead>{t('users.created')}</TableHead><TableHead>{t('users.active')}</TableHead><TableHead className="w-24 pr-4" /></TableRow></TableHeader>
       <TableBody>{data.users.map(u => { const self = u.id === me?.id
         return <TableRow key={u.id} className="user-row" data-email={u.email}>
           <TableCell className="pl-4 font-medium"><div className="flex items-center gap-2">{u.email}{self && <Badge variant="secondary">{t('users.you')}</Badge>}</div></TableCell>
@@ -92,7 +108,9 @@ export function UsersSection() {
           <TableCell className="text-muted-foreground">{u.created ? fmtDate(u.created) : '—'}</TableCell>
           <TableCell><div className="flex items-center gap-2"><Switch checked={u.active} disabled={self || busy === u.id} aria-label={t('users.activeFor', { email: u.email })} onCheckedChange={v => patch(u, { active: v })} />
             <span className={u.active ? 'text-sm' : 'text-sm text-muted-foreground'}>{t(u.active ? 'users.statusActive' : 'users.statusDisabled')}</span></div></TableCell>
-          <TableCell className="pr-4"><Button variant="ghost" size="icon" disabled={self} aria-label={t('users.deleteFor', { email: u.email })} className="user-delete" onClick={() => setDel(u)}><Trash2 /></Button></TableCell>
+          <TableCell className="pr-4"><div className="flex gap-1">
+            <Tip tip={t('users.resetFor', { email: u.email })}><Button variant="ghost" size="icon" disabled={!u.active} aria-label={t('users.resetFor', { email: u.email })} className="user-reset" onClick={() => setReset(u)}><KeyRound /></Button></Tip>
+            <Button variant="ghost" size="icon" disabled={self} aria-label={t('users.deleteFor', { email: u.email })} className="user-delete" onClick={() => setDel(u)}><Trash2 /></Button></div></TableCell>
         </TableRow> })}</TableBody></Table></Card>
     <Card id="roles-matrix"><CardHeader><CardTitle>{t('users.matrixTitle')}</CardTitle><CardDescription>{t('users.matrixIntro')}</CardDescription></CardHeader>
       <CardContent className="space-y-4">
@@ -105,6 +123,8 @@ export function UsersSection() {
           <p className="text-xs text-muted-foreground">{t('users.accessNote')}</p></div>
       </CardContent></Card>
     <PolicyCard />
+    <CodeRuntimeCard />
+    <ResetLinkDialog user={reset} onClose={() => setReset(null)} />
     <DeleteUserDialog user={del} onClose={() => setDel(null)} onDone={m => { setDel(null); setNotice(m); load() }} />
   </div>
 }

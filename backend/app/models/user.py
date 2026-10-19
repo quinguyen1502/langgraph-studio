@@ -17,6 +17,8 @@ class User(Base):
     # RBAC (TASK-0014): global role (core.permissions.ROLES) and whether the account may sign in
     role: Mapped[str] = mapped_column(Text, default="editor", server_default="editor")
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default=true())
+    # TASK-0045: when the password last changed; tokens issued before it no longer work
+    password_changed: Mapped[Optional[float]] = mapped_column(Float)
 
     @property
     def is_admin(self) -> bool:  # replaces the users.is_admin column of TASK-0022 (migration 0021)

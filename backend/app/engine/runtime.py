@@ -4,6 +4,7 @@ import json, time
 from typing import Any, Dict, List, Optional
 from langgraph.checkpoint.memory import InMemorySaver
 from .compiler import compile_workflow
+from . import foreach
 from .effects import Effects
 from .errors import Interrupt, ValidationError
 from .limits import safe_error
@@ -57,6 +58,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     ports: user-bound services for Retriever / MCP nodes (engine.ports.Ports)."""
     if resume is None and (bad := check_input(wf, inputs)): raise ValidationError(bad)
     usage: Dict[str, Dict[str, Any]] = {}  # node id -> usage since its last node_finished (TASK-0010)
+    code_out: Dict[str, Dict[str, Any]] = {}  # node id -> Code node stdout/runtime since its last node_finished (TASK-0053)
     held = {"node": resume["node"], "value": resume["value"]} if resume and "value" in resume else None
     counts: Dict[str, int] = {k: int(v) for k, v in ((resume or {}).get("counts") or {}).items()}
     if effects is not None: effects.counts = counts  # node iterations feed the idempotency keys
@@ -76,7 +78,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
 
     t0 = time.perf_counter(); pending: List[str] = []; done_steps = 0; finished_ids: set[str] = set()
-    cfg = {"recursion_limit": recursion_limit(), "configurable": {"thread_id": "run"}}
+    cfg = {"recursion_limit": recursion_limit() + foreach.step_budget(wf), "configurable": {"thread_id": "run"}}  # For each loops add steps
 
     def counts_as_step(ids: List[str]) -> bool:
         return any(nodes[n]["type"] not in ("start", "end") for n in ids)
@@ -84,7 +86,9 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
     try:
         for mode, chunk in app.stream(inputs, cfg, stream_mode=["updates", "checkpoints", "custom"]):
             if mode == "custom":  # live LLM text (TASK-0030): sent to the client, never stored (node_finished has the result)
-                if isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("delta"):
+                if isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("code_output"):
+                    code_out[chunk["node"]] = chunk["code_output"]  # Code node stdout (TASK-0053), stored on node_finished
+                elif isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("delta"):
                     yield {"type": "node_token", "node": chunk["node"], "iteration": counts.get(chunk["node"], 1), "delta": chunk["delta"]}
                 continue
             if mode == "checkpoints":  # superstep boundary: the nodes that run next, all inputs settled
@@ -113,7 +117,8 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
                 yield {"type": "node_finished", **meta(nid), "iteration": counts.get(nid, 1),
                        "duration_ms": round((time.perf_counter() - t0) * 1000, 2),
                        "input": cap_payload(before), "delta": cap_payload(delta),
-                       **({"usage": usage.pop(nid)} if nid in usage else {}), **({"reused": True} if reused else {})}
+                       **({"usage": usage.pop(nid)} if nid in usage else {}), **({"reused": True} if reused else {}),
+                       **({"code_output": cap_payload(code_out.pop(nid))} if nid in code_out else {})}
     except Interrupt as i:  # a Human node is waiting: hand back a checkpoint instead of an error
         # parallel siblings of the Human node resume with it (their results come from the ledger when recorded)
         yield {"type": "run_waiting", **meta(i.node), "prompt": i.prompt, "state": cap_payload(dict(state)),
@@ -124,14 +129,15 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         nid = pending[-1] if pending else None
         yield {"type": "error", **(meta(nid) if nid in nodes else {}), "iteration": counts.get(nid, 1) if nid else None,
                "duration_ms": round((time.perf_counter() - t0) * 1000, 2), "input": cap_payload(dict(state)),
-               "code": getattr(e, "code", "NODE_FAILED"), "errors": [safe_error(e)]}
+               "code": getattr(e, "code", "NODE_FAILED"), "errors": [safe_error(e)],
+               **({"code_output": cap_payload(e.output)} if getattr(e, "output", None) else {})}
         return
     if until and until not in finished_ids:
         msg = f"The run finished without reaching node '{until}'"
         yield {"type": "error", "node": until, "code": "RUN_NODE_NOT_REACHED", "errors": [msg],
                "error": {"code": "RUN_NODE_NOT_REACHED", "message": msg, "details": {"node": until}}}
         return
-    yield {"type": "run_finished", "state": state}
+    yield {"type": "run_finished", "state": foreach.visible(state)}
 
 
 def resume_nodes(resume: Dict[str, Any]) -> List[str]:

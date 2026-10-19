@@ -1,4 +1,4 @@
-"""Fake Slack + Telegram Web APIs for the e2e suite (TASK-0022). Records every call; GET /_messages lists them.
+"""Fake Slack + Telegram Web APIs and a Teams webhook (/teams/…, TASK-0047) for the e2e suite (TASK-0022). Records every call; GET /_messages lists them.
 
 Run: python mock_chat_api.py [port]  (default 8111). Point SLACK_API_URL=http://127.0.0.1:8111/slack and
 TELEGRAM_API_URL=http://127.0.0.1:8111/telegram at it. A bot token xoxb-<n>-<TEAM>-... answers auth.test with team <TEAM>.
@@ -61,6 +61,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send({"ok": True, "team": f"Workspace {team}", "team_id": team, "user_id": "UBOT", "bot_id": "BBOT"})
             if method == "chat.postMessage": return self._send({"ok": True, "channel": body.get("channel"), "ts": f"{time.time():.6f}"})
             return self._send({"ok": True})
+        if self.path.startswith("/teams/"): return self._send({"ok": True}, 202)  # a Teams Workflows webhook (TASK-0047)
         if self.path.startswith("/telegram/"):
             if method == "getMe": return self._send({"ok": True, "result": {"id": 1, "is_bot": True, "username": "studio_e2e_bot", "first_name": "Studio"}})
             if method == "sendMessage": return self._send({"ok": True, "result": {"message_id": len(CALLS), "chat": {"id": body.get("chat_id")}}})

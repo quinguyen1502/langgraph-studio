@@ -58,13 +58,26 @@ def secret_grace() -> float: return max(0.0, float(os.environ.get("STUDIO_SECRET
 def job_visibility() -> int: return max(3, _int("STUDIO_JOB_VISIBILITY_TIMEOUT", 30))  # lease of a taken job
 def job_reap_every() -> float: return max(0.2, float(os.environ.get("STUDIO_JOB_REAP_EVERY", 15)))
 def public_url() -> str: return (os.environ.get("STUDIO_PUBLIC_URL") or "").rstrip("/")  # links in e-mails
+# --- TASK-0045: sign-in hardening ---
+def login_max_failures() -> int: return max(1, _int("STUDIO_LOGIN_MAX_FAILURES", 5))  # failed sign-ins per e-mail before a lockout
+def login_window() -> int: return max(1, _int("STUDIO_LOGIN_WINDOW", 15 * 60))  # s in which failures are counted
+def login_lock() -> int: return max(1, _int("STUDIO_LOGIN_LOCK", 15 * 60))  # s an e-mail stays locked
+def password_reset_ttl() -> int: return max(60, _int("STUDIO_PASSWORD_RESET_TTL", 3600))  # s a reset link works
+def cookie_secure() -> bool:  # the session cookie needs HTTPS; production defaults to on, STUDIO_COOKIE_SECURE=0 for plain-HTTP setups
+    return os.environ.get("STUDIO_COOKIE_SECURE", "1" if IS_PROD else "0").lower() in ("1", "true", "yes", "on")
+def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
-    """SMTP settings for notification e-mail; None (no-op) when SMTP_HOST is unset."""
+    """The studio's own SMTP server (notification, approval and password reset e-mail; core/smtp.py settings); None
+    (no-op) when SMTP_HOST is unset. The admin chose it, so private addresses are allowed and STARTTLS is used when offered."""
     host = os.environ.get("SMTP_HOST", "").strip()
     if not host: return None
-    return {"host": host, "port": _int("SMTP_PORT", 587), "user": os.environ.get("SMTP_USER") or None,
+    security = "ssl" if os.environ.get("SMTP_SSL") == "1" else "starttls" if os.environ.get("SMTP_STARTTLS", "1") != "0" else "none"
+    return {"host": host, "port": _int("SMTP_PORT", 587), "username": os.environ.get("SMTP_USER") or None,
             "password": os.environ.get("SMTP_PASSWORD") or None, "sender": os.environ.get("SMTP_FROM") or "studio@localhost",
-            "starttls": os.environ.get("SMTP_STARTTLS", "1") != "0", "ssl": os.environ.get("SMTP_SSL") == "1"}
+            "security": security, "allow_private": True, "tls_optional": True}
+# --- TASK-0051: Send email nodes ---
+def email_node_allow_private() -> bool: return os.environ.get("STUDIO_SMTP_ALLOW_PRIVATE") == "1"  # SMTP credentials may use private/loopback hosts
+def email_node_hourly_limit() -> int: return max(1, _int("STUDIO_EMAIL_NODE_HOURLY_LIMIT", 100))  # e-mails Send email nodes may send per resource owner per hour
 def notify_webhook() -> tuple[str, str | None] | None:
     url = os.environ.get("STUDIO_NOTIFY_WEBHOOK_URL", "").strip()
     return (url, os.environ.get("STUDIO_NOTIFY_WEBHOOK_SECRET") or None) if url else None
@@ -79,6 +92,7 @@ def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET"
 def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
 SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write"  # same as the manual setup (README)
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
+def whatsapp_api_url() -> str: return (os.environ.get("WHATSAPP_API_URL") or "https://graph.facebook.com/v21.0").rstrip("/")  # TASK-0047
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
 # --- TASK-0022 follow-up: identity verification codes sent by the bot ---
 def identity_code_ttl() -> float: return max(60.0, float(os.environ.get("STUDIO_IDENTITY_CODE_TTL", 600)))  # a code is valid (s)
@@ -124,3 +138,23 @@ def import_network() -> str:
 def import_host_dir() -> str | None:
     value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
     return value or None
+# --- TASK-0053: Tool node Code mode (REQ-0039, DEC-0041); off until STUDIO_ENABLE_CODE_NODES=1 ---
+CODE_RUNTIMES = ("docker", "subprocess")  # subprocess (TASK-0056) is NOT isolation; only when set explicitly
+def code_runtime() -> str:
+    """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
+    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
+    choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
+    return choice if choice in CODE_RUNTIMES else "off"
+def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
+def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
+def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"
+def code_pids() -> int: return max(16, _int("STUDIO_CODE_PIDS", 64))
+def code_max_seconds() -> int: return max(1, _int("STUDIO_CODE_MAX_SECONDS", 30))  # per call, also caps the node timeout
+def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))  # containers at once per process
+def code_test_per_minute() -> int: return max(1, _int("STUDIO_CODE_TEST_PER_MINUTE", 20))  # Test with sample state, per user
+CODE_DEFAULT_PACKAGES = ["pydantic", "python-dateutil"]  # what docker/studio-code adds to the standard library
+def code_packages() -> list[str]:
+    """STUDIO_CODE_PACKAGES (comma-separated) when set; the default image's packages for that image; else unknown ([])."""
+    raw = os.environ.get("STUDIO_CODE_PACKAGES")
+    if raw is not None: return [p.strip() for p in raw.split(",") if p.strip()]
+    return list(CODE_DEFAULT_PACKAGES) if code_image() == "studio-code:1" else []

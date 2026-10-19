@@ -1,12 +1,14 @@
 import { useContext, useEffect, useRef } from 'react'
 import { Handle, Position, useReactFlow, type NodeProps } from '@xyflow/react'
-import { Loader2, CheckCircle2, XCircle, Sparkles, UserCheck, Square } from 'lucide-react'
+import { Loader2, CheckCircle2, XCircle, Sparkles, UserCheck, Square, ShieldAlert } from 'lucide-react'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { META } from './meta'
 import { CanvasEdit } from './canvas-edit'
+import { Tip } from '@/components/tip'
+import { useCodeRuntime } from '@/lib/code-runtime'
 
 export const LOCK_CLOSED = 'M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0 8 0 4.571 3.429 4.571 7.619v3.048H3.048A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047zm4.724-13.866H7.467V7.619c0-2.59 2.133-4.724 4.723-4.724 2.591 0 4.724 2.133 4.724 4.724v3.048z'
 export const LOCK_OPEN = 'M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0c-4.114 1.828-1.37 2.133.305 2.438 1.676.305 4.42 2.59 4.42 5.181v3.048H3.047A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047z'
@@ -28,6 +30,13 @@ export function StatusBadge({ s }: { s?: string }) {
   return null
 }
 
+/** Tool node in Code mode while the server runs code without isolation (TASK-0056). */
+function UnisolatedBadge() {
+  const { t } = useTranslation(); const rt = useCodeRuntime()
+  if (rt?.code_runtime !== 'subprocess') return null
+  return <Tip tip={t('code.notIsolated')}><Badge variant="warning" className="h-4 px-1 text-[9px] gap-0.5 mt-0.5" data-testid="node-unisolated"><ShieldAlert className="size-2.5" />{t('code.notIsolatedShort')}</Badge></Tip>
+}
+
 export function StudioNode({ data, type, selected }: NodeProps) {
   const d = data as any; const m = META[type!]; const I = m.icon
   return <div className="relative">
@@ -40,6 +49,7 @@ export function StudioNode({ data, type, selected }: NodeProps) {
       <div className="flex-1 min-w-0">
         <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</div>
         <div className="text-sm font-medium truncate">{d.label}</div>
+        {type === 'tool' && d.mode === 'code' && <UnisolatedBadge />}
         {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" className="h-4 px-1 text-[9px] gap-0.5"><Sparkles className="size-2.5" />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
       </div>
     </div>

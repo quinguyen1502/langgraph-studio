@@ -118,7 +118,7 @@ def test_channel_settings_are_validated_encrypted_and_masked(c):
     o = user(c)
     r = c.post("/api/approvals/channels", json={"kind": "slack", "bot_token": "nope"}, headers=H(o["token"]))
     assert r.status_code == 400 and r.json()["error"] == {"code": "CHANNEL_CONFIG_INVALID", "message": "Channel setting bot_token is missing or invalid", "details": {"field": "bot_token"}}
-    assert c.post("/api/approvals/channels", json={"kind": "whatsapp"}, headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_KIND_UNSUPPORTED"
+    assert c.post("/api/approvals/channels", json={"kind": "signal"}, headers=H(o["token"])).json()["error"]["code"] == "CHANNEL_KIND_UNSUPPORTED"
     ch = connect(c, o, "slack")
     assert ch["hint"] == "••••efgh" and ch["scope"] == "user" and ch["editable"] and ch["callback_path"] == f"/api/approvals/callback/slack/{ch['id']}" and "bot_token" not in json.dumps(ch)
     assert connect(c, o, "slack")["id"] == ch["id"]  # saving again replaces the secrets, same callback URL
@@ -128,7 +128,7 @@ def test_channel_settings_are_validated_encrypted_and_masked(c):
     from app.api.deps import get_db
     row = ApprovalRepository(get_db()).channel(ch["id"]); assert SLACK["bot_token"] not in row.secrets  # Fernet at rest
     listed = c.get("/api/approvals/channels", headers=H(o["token"])).json()["data"]
-    assert [k["kind"] for k in listed["kinds"]] == ["slack", "telegram"] and listed["is_admin"] is False
+    assert [k["kind"] for k in listed["kinds"]] == ["slack", "telegram", "whatsapp", "email", "teams"] and listed["is_admin"] is False
     assert {x["id"] for x in listed["channels"] if x["scope"] == "user"} == {ch["id"], tg["id"]}
     assert c.put(f"/api/approvals/channels/{ch['id']}", json={"name": "Ops"}, headers=H(o["token"])).json()["data"]["name"] == "Ops"
     other = user(c)
@@ -224,7 +224,8 @@ def test_identity_is_verified_with_a_one_time_code(c, api, monkeypatch):
     # no Slack workspace the user could use yet: nothing to link to
     assert ident(c, a, "slack", uid).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
     assert c.get("/api/approvals/identities", headers=H(a["token"])).json()["data"] == {"slots": [
-        {"kind": "telegram", "team_id": None, "team_name": None, "available": False, "external_id": None, "verified": False, "code_pending": False, "code_expires": None}]}
+        {"kind": k, "team_id": None, "team_name": None, "available": False, "external_id": None, "verified": False, "code_pending": False, "code_expires": None}
+        for k in ("telegram", "whatsapp")]}  # e-mail and Teams are link channels: no identity (TASK-0047)
     connect(c, a, "slack")
     assert ident(c, a, "slack", "lower").json()["error"]["code"] == "IDENTITY_INVALID"
     assert c.post("/api/approvals/identities/slack/send-code", headers=H(a["token"])).json()["error"]["code"] == "IDENTITY_NOT_LINKED"

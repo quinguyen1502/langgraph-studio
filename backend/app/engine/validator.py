@@ -1,14 +1,52 @@
 """Static workflow validation: returns a list of human-readable errors (empty = valid)."""
 from __future__ import annotations
-import json
+
 from typing import Any, Dict, List
+from . import code_runtime, decisions, emails, foreach
 from .node_policy import errors as policy_errors
-from .templating import VAR_RE
+from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach", "decision", "email")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
+
+
+def templates_of(t: Any, d: Dict[str, Any]) -> List[str]:
+    """The template texts a node renders at run time (engine/nodes.py)."""
+    if t in ("llm", "human"): return [d.get("prompt") or ""]
+    if t == "retriever": return [d.get("query") or ""]
+    if t == "tool" and d.get("mode") == "http": return [d.get("url") or "", d.get("body") or ""]
+    if t == "mcp": return _strings(d.get("arguments") or {})
+    if t == "decision": return decisions.templates(d)
+    if t == "email": return emails.templates(d)
+    return []
+
+
+def written(n: Dict[str, Any]) -> List[str]:
+    """State fields a node writes when it runs."""
+    t, d = n.get("type"), n.get("data") or {}
+    if t in WRITERS: return [d["output_field"]] if d.get("output_field") else []
+    if t == "decision": return decisions.fields(d)
+    if t == "email": return emails.fields(d)
+    if t == "foreach": return [f for f in (d.get("item_field"), d.get("index_field")) if f]
+    return []
+
+
+def _strings(v: Any) -> List[str]:
+    if isinstance(v, str): return [v]
+    if isinstance(v, dict): return [s for x in v.values() for s in _strings(x)]
+    if isinstance(v, list): return [s for x in v for s in _strings(x)]
+    return []
+
+
+def template_errors(nid: str, t: Any, d: Dict[str, Any], fields: set) -> List[str]:
+    out = []
+    for text in templates_of(t, d):
+        for r in refs(text):
+            if fields and r.field not in fields: out.append(f"Node {nid}: variable state.{r.field} is not in the state")
+            out += [f"Node {nid}: {e} in {{{{state.{r.field}}}}}" for e in ref_errors(r)]
+    return list(dict.fromkeys(out))
 
 
 def validate(wf: Dict[str, Any]) -> List[str]:
@@ -33,6 +71,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     schema = [f for f in wf.get("state", []) if isinstance(f, dict) and f.get("name")]
     fields = {f["name"] for f in schema}
     for f in schema: errs += field_errors(f)
+    errs += [f"State field {n}: names starting with '{foreach.PREFIX}' are reserved for For each loops" for n in sorted(fields) if n.startswith(foreach.PREFIX)]
     for e in edges:
         missing = [x for x in (e["source"], e["target"]) if x not in ids]
         if missing:
@@ -41,6 +80,14 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             errs.append(f"Node {e['source']}: cannot connect to itself (only a Condition may create a loop)")
     edges = [e for e in edges if e["source"] in ids and e["target"] in ids]
     out = {i: [e for e in edges if e["source"] == i] for i in ids}
+    def reaches(a: str, b: str) -> bool:
+        seen, stack = set(), [a]
+        while stack:
+            x = stack.pop()
+            if x == b: return True
+            if x in seen: continue
+            seen.add(x); stack += [e["target"] for e in out.get(x, [])]
+        return False
     for n in nodes:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
         if t not in TYPES:
@@ -64,6 +111,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
                 errs.append(f"Node {nid}: function '{d.get('function')}' is not registered")
             if d.get("mode") == "http" and not d.get("url"):
                 errs.append(f"Node {nid}: URL is missing")
+            if d.get("mode") == "code":
+                errs.extend(f"Node {nid}: {why}" for why in code_runtime.problems(d.get("code")))
         if t == "join":
             inc = [e for e in edges if e["target"] == nid]
             if len(inc) < 2: errs.append(f"Join node {nid}: needs at least two incoming edges (the branches it waits for)")
@@ -73,46 +122,43 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if not d.get("knowledge_base_id"): errs.append(f"Retriever node {nid}: choose a knowledge base")
             k = d.get("top_k", 4)
             if not isinstance(k, int) or isinstance(k, bool) or not 1 <= k <= 20: errs.append(f"Retriever node {nid}: top_k must be 1-20")
-            for v in VAR_RE.findall(d.get("query", "")):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "mcp":
             if not d.get("server_id"): errs.append(f"MCP node {nid}: choose a server")
             if not d.get("tool"): errs.append(f"MCP node {nid}: choose a tool")
             if not isinstance(d.get("arguments", {}), dict): errs.append(f"MCP node {nid}: arguments must be an object")
-            for v in VAR_RE.findall(json.dumps(d.get("arguments") or {})):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")
+        if t == "foreach": errs += foreach.errors(nid, d, out.get(nid, []), schema, reaches)
+        if t == "decision": errs += decisions.errors(nid, d, schema)
+        if t == "email": errs += emails.errors(nid, d, schema)
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]
             if any(not l for l in labels): errs.append(f"Node {nid}: every outgoing Condition edge needs a label")
             if len(set(labels)) != len(labels): errs.append(f"Node {nid}: duplicate labels")
-        if t == "llm":
-            for v in VAR_RE.findall(d.get("prompt", "")):
-                if fields and v not in fields: errs.append(f"Node {nid}: variable state.{v} is not in the state")
+        errs += template_errors(nid, t, d, fields)
         errs += policy_errors(nid, d, fields)
     # parallel branches (several outgoing edges, no Condition) that write the same field need a reducer
     red = {f["name"]: reducer_of(f) for f in schema}
     for n in nodes:
-        if n.get("type") == "condition" or len(out.get(n["id"], [])) < 2: continue
+        if n.get("type") in ("condition", "foreach") or len(out.get(n["id"], [])) < 2: continue  # one route at a time
         writes: Dict[str, List[str]] = {}
         for e in out[n["id"]]:
             tgt = next((x for x in nodes if x["id"] == e["target"]), None)
-            of = (tgt or {}).get("data", {}).get("output_field") if (tgt or {}).get("type") in WRITERS else None
-            if of: writes.setdefault(of, []).append(tgt["id"])
+            for of in dict.fromkeys(written(tgt or {})): writes.setdefault(of, []).append(tgt["id"])
         for of, who in writes.items():
             if len(who) > 1 and red.get(of, "replace") == "replace":
                 errs.append(f"Parallel nodes {', '.join(who)} all write state.{of}: give the field a reducer (append, merge or add) or use different fields")
-    # cycles must pass through a Condition node (otherwise the loop can never exit)
-    plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) != "condition" and e["target"] != i] for i in ids if types.get(i) != "condition"}
+    # cycles must pass through a Condition or For each node (otherwise the loop can never exit)
+    exits = ("condition", "foreach")
+    plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) not in exits and e["target"] != i] for i in ids if types.get(i) not in exits}
     state_: Dict[str, int] = {}
     def dfs(u, path):
         state_[u] = 1; path.append(u)
         for v in plain.get(u, []):
             if state_.get(v) == 1:
                 cyc = path[path.index(v):] + [v]
-                errs.append(f"Loop without a Condition: {' → '.join(cyc)}")
+                errs.append(f"Loop without a Condition or For each: {' → '.join(cyc)}")
                 return True
             elif not state_.get(v) and dfs(v, path): return True
         path.pop(); state_[u] = 2; return False
@@ -128,4 +174,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         for n in nodes:
             if n.get("type") == "note": continue
             if n["id"] not in seen: errs.append(f"Node {n['id']} is not reachable from Start")
+    if any(n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code" for n in nodes):
+        why = code_runtime.unavailable()  # Docker and the image, checked at most every 30 s (TASK-0053)
+        if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)")
+        elif why: errs.append(f"Code nodes cannot run on this server: {why}")
     return errs

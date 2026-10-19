@@ -3,7 +3,18 @@ import { expect, type Page } from '@playwright/test'
 export async function login(page: Page, email = 'admin@example.com', password = 'admin123') {
   await page.goto('/login'); await page.getByLabel('Email').fill(email); await page.getByLabel('Mật khẩu', { exact: true }).fill(password)
   await page.locator('#auth-submit').click(); await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
+  return { Authorization: `Bearer ${await apiToken(page, email, password)}` }
+}
+/** A Bearer token for API calls from a spec. The browser holds the session in an HttpOnly cookie (TASK-0045), so scripts cannot read it. */
+export async function apiToken(page: Page, email = 'admin@example.com', password = 'admin123'): Promise<string> {
+  return (await (await page.request.post('/api/auth/login', { data: { email, password } })).json()).data.token
+}
+/** Sign the page in without the form: the cookie (page.request shares the browser's jar) plus the page's session record.
+ * The page must already be on the app's origin. Returns a Bearer token for API calls. */
+export async function signIn(page: Page, email: string, password: string): Promise<string> {
+  const s = (await (await page.request.post('/api/auth/login', { data: { email, password } })).json()).data
+  await page.evaluate(([exp, u]) => { localStorage.setItem('session_exp', String(exp)); localStorage.setItem('user', JSON.stringify(u)) }, [s.expires_at, s.user] as const)
+  return s.token
 }
 export const N = (id: string, type: string, x: number, data: Record<string, unknown> = {}, y = 120) => ({ id, type, position: { x, y }, data: { label: id, ...data } })
 export const SIMPLE = (name: string) => ({ name, state: [{ name: 'message', type: 'string' }, { name: 'answer', type: 'string' }],

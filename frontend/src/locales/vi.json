@@ -17,7 +17,8 @@
     "expand": "Mở rộng",
     "items": "{{count}} phần tử",
     "keys": "{{count}} khoá",
-    "newWorkflow": "Workflow mới"
+    "newWorkflow": "Workflow mới",
+    "copy": "Sao chép"
   },
   "status": {
     "ok": "ok",
@@ -47,7 +48,10 @@
     "login": "Đăng nhập",
     "register": "Đăng ký",
     "noAccount": "Chưa có tài khoản? ",
-    "haveAccount": "Đã có tài khoản? "
+    "haveAccount": "Đã có tài khoản? ",
+    "loginPlain": "Dùng e-mail và mật khẩu tài khoản của bạn",
+    "forgot": "Quên mật khẩu?",
+    "resetDone": "Đã đổi mật khẩu. Đăng nhập bằng mật khẩu mới."
   },
   "list": {
     "count": "{{count}} workflow của bạn",
@@ -196,7 +200,19 @@
     "unlockCanvas": "Mở khoá canvas",
     "notePlaceholder": "Viết ghi chú…",
     "noteHint": "Sửa chữ ngay trên ghi chú.",
-    "deleteWorkflow": "Xoá workflow"
+    "deleteWorkflow": "Xoá workflow",
+    "loopItems": "Danh sách cần lặp",
+    "loopItem": "Ghi phần tử hiện tại vào",
+    "loopIndex": "Ghi số thứ tự (0, 1, 2…) vào",
+    "loopIndexNone": "Không lưu",
+    "loopMax": "Số phần tử tối đa",
+    "loopHint": "Nối hai cạnh: \"each\" vào các bước cần lặp, bước cuối nối ngược về node này, và \"done\" cho phần sau phần tử cuối. Các phần tử chạy lần lượt từng cái. Muốn gom kết quả, ghi vào một trường list có reducer append.",
+    "loopEdge": "Vai trò của cạnh",
+    "loop": {
+      "each": "each: chạy phần thân cho phần tử tiếp theo",
+      "done": "done: sau phần tử cuối"
+    },
+    "pythonCode": "Code Python"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -209,7 +225,10 @@
     "join": "Chờ mọi nhánh song song",
     "subgraph": "Chạy một workflow đã lưu",
     "retriever": "Tìm trong kho tri thức",
-    "mcp": "Gọi công cụ trên máy chủ MCP"
+    "mcp": "Gọi công cụ trên máy chủ MCP",
+    "foreach": "Lặp lại một nhánh cho từng phần tử của danh sách",
+    "decision": "Hỏi TypeSafe Jev các câu hỏi có kiểu",
+    "email": "Gửi email qua SMTP"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -263,8 +282,8 @@
   },
   "creds": {
     "button": "Credentials",
-    "title": "LLM credentials",
-    "desc": "API key được mã hoá khi lưu (Fernet) và không bao giờ được trả về trình duyệt.",
+    "title": "Credentials",
+    "desc": "API key và mật khẩu được mã hoá khi lưu (Fernet) và không bao giờ được trả về trình duyệt.",
     "empty": "Chưa có credential. Không có credential → LLM node chạy mock.",
     "name": "Tên",
     "namePh": "OpenAI cá nhân",
@@ -291,14 +310,47 @@
       "ollama": "Ollama (cục bộ)",
       "lmstudio": "LM Studio (cục bộ)",
       "openai_compatible": "Tương thích OpenAI (vLLM / llama.cpp / LocalAI)",
-      "openrouter": "OpenRouter"
+      "openrouter": "OpenRouter",
+      "smtp": "SMTP (email)"
     },
     "testOk_one": "Đã kết nối · {{count}} model · {{ms}} ms",
     "testOk_other": "Đã kết nối · {{count}} model · {{ms}} ms",
     "editAria": "Sửa {{name}}",
     "editTitle": "Sửa credential {{name}}",
     "keyKeep": "Giữ key đã lưu {{hint}}; nhập key mới để thay",
-    "clearKey": "Xoá key đã lưu"
+    "clearKey": "Xoá key đã lưu",
+    "smtp": {
+      "preset": "Máy chủ",
+      "presets": {
+        "gmail": "Gmail",
+        "outlook": "Outlook / Microsoft 365",
+        "sendgrid": "SendGrid",
+        "resend": "Resend",
+        "mailgun": "Mailgun",
+        "custom": "Máy chủ khác"
+      },
+      "presetHint": {
+        "gmail": "Bật xác minh 2 bước, rồi tạo mật khẩu ứng dụng (Tài khoản Google → Bảo mật → Mật khẩu ứng dụng) và dùng nó làm mật khẩu.",
+        "outlook": "Dùng địa chỉ email đầy đủ làm tên đăng nhập. Admin Microsoft 365 phải bật SMTP AUTH cho hộp thư.",
+        "sendgrid": "Tên đăng nhập là \"apikey\", mật khẩu là API key SendGrid có quyền Mail Send.",
+        "resend": "Tên đăng nhập là \"resend\", mật khẩu là API key Resend. Địa chỉ gửi phải thuộc domain đã xác minh.",
+        "mailgun": "Dùng tên đăng nhập và mật khẩu SMTP của domain Mailgun."
+      },
+      "host": "Máy chủ SMTP",
+      "port": "Cổng",
+      "security": "Bảo mật",
+      "securityOpts": {
+        "starttls": "STARTTLS",
+        "ssl": "SSL/TLS",
+        "none": "Không mã hóa"
+      },
+      "username": "Tên đăng nhập",
+      "password": "Mật khẩu (không bắt buộc)",
+      "fromEmail": "Địa chỉ gửi",
+      "fromName": "Tên người gửi (không bắt buộc)",
+      "fromNamePh": "Acme Support",
+      "testOk": "Đăng nhập được · {{ms}} ms (chưa gửi gì)"
+    }
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -318,6 +370,11 @@
     "AUTH_PASSWORD_TOO_SHORT": "Mật khẩu phải có ít nhất {{min}} ký tự",
     "AUTH_PASSWORD_TOO_LONG": "Mật khẩu tối đa {{max}} ký tự",
     "AUTH_PASSWORD_WEAK": "Mật khẩu phải có cả chữ và số",
+    "AUTH_LOCKED": "Đăng nhập sai quá nhiều lần. Thử lại sau {{minutes}} phút",
+    "AUTH_PASSWORD_WRONG": "Mật khẩu hiện tại không đúng",
+    "AUTH_PASSWORD_SAME": "Mật khẩu mới phải khác mật khẩu hiện tại",
+    "AUTH_CSRF": "Thiếu header X-Requested-With",
+    "PASSWORD_RESET_INVALID": "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
     "WORKFLOW_NOT_FOUND": "Không tìm thấy workflow",
     "WORKFLOW_FORBIDDEN": "Không có quyền với workflow này",
     "WORKFLOW_NAME_REQUIRED": "Tên workflow không được để trống",
@@ -334,6 +391,7 @@
     "RUN_NODE_NOT_REACHED": "Run chạy xong mà không tới node '{{node}}'",
     "NODE_FAILED": "Node bị lỗi",
     "HTTP_TOOL_URL_BLOCKED": "Node HTTP Tool {{node}}: URL phải là địa chỉ http(s) công khai",
+    "TEMPLATE_REF_INVALID": "Lỗi template: {{reason}}",
     "CREDENTIAL_NOT_FOUND": "Credential không tồn tại hoặc không thuộc về bạn",
     "CREDENTIAL_PROVIDER_UNSUPPORTED": "Provider không hỗ trợ: {{provider}}",
     "CREDENTIAL_KEY_REQUIRED": "API key trống",
@@ -349,6 +407,9 @@
     "RUN_RESPONSE_INVALID": "Phản hồi phải là văn bản (tối đa {{max}} ký tự)",
     "TRIGGER_TOKEN_INVALID": "Token workflow bị thiếu, không hợp lệ hoặc đã thu hồi",
     "TOKEN_NOT_FOUND": "Không tìm thấy token",
+    "SCHEDULE_NOT_FOUND": "Không tìm thấy lịch chạy",
+    "SCHEDULE_CRON_INVALID": "Lịch chạy: {{reason}}",
+    "SCHEDULE_LIMIT": "Một workflow có tối đa {{max}} lịch chạy",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
@@ -433,7 +494,25 @@
     "TEMPLATE_READ_ONLY": "Không thể xoá mẫu này",
     "TEMPLATE_INVALID": "Tệp mẫu không hợp lệ",
     "TEMPLATE_NAME_REQUIRED": "Cần nhập tên mẫu",
-    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức"
+    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức",
+    "CREDENTIAL_SETTINGS_INVALID": "Kiểm tra lại mục {{field}}",
+    "EMAIL_HOST_BLOCKED": "Máy chủ SMTP {{host}} là địa chỉ nội bộ hoặc cục bộ (chỉ được dùng khi bật STUDIO_SMTP_ALLOW_PRIVATE=1)",
+    "EMAIL_AUTH_FAILED": "Máy chủ SMTP từ chối đăng nhập: {{reason}}",
+    "EMAIL_SEND_FAILED": "Không gửi được email: {{reason}}",
+    "EMAIL_CREDENTIAL_INVALID": "Node Send email {{node}}: hãy chọn một credential SMTP",
+    "EMAIL_RECIPIENT_INVALID": "Node Send email {{node}}: '{{address}}' không phải địa chỉ email",
+    "EMAIL_RECIPIENTS_MISSING": "Node Send email {{node}}: chưa có người nhận (Đến, Cc hoặc Bcc)",
+    "EMAIL_TOO_MANY_RECIPIENTS": "Node Send email {{node}}: tối đa {{max}} người nhận",
+    "EMAIL_RATE_LIMITED": "Node Send email chỉ được gửi tới {{limit}} người nhận mỗi giờ; thử lại sau {{retry}} giây",
+    "CODE_RUNTIME_OFF": "Code node đang tắt trên server này (STUDIO_ENABLE_CODE_NODES)",
+    "CODE_RUNTIME_UNAVAILABLE": "Server này chưa chạy được Code node: {{reason}}",
+    "CODE_INVALID": "Code node {{node}}: {{reason}}",
+    "CODE_FAILED": "Code node {{node}} báo lỗi {{error}}",
+    "CODE_TIMEOUT": "Code node {{node}} bị dừng sau {{seconds}} giây",
+    "CODE_MEMORY": "Code node {{node}} dùng quá bộ nhớ cho phép ({{limit}})",
+    "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() trả về {{type}}, không lưu được dưới dạng JSON",
+    "CODE_TOO_LARGE": "Code node {{node}}: {{what}} lớn hơn {{max_kb}} KB",
+    "CODE_WRITE_FORBIDDEN": "Vai trò của bạn không được thêm Code node hay sửa code của nó (code.write)"
   },
   "lang": {
     "en": "English",
@@ -453,7 +532,8 @@
     "source": "Mã nguồn",
     "url": "URL",
     "humanPrompt": "Câu hỏi cho người duyệt ({{field}})",
-    "queryTemplate": "Câu truy vấn ({{field}})"
+    "queryTemplate": "Câu truy vấn ({{field}})",
+    "code": "Code"
   },
   "samples": {
     "input": "{\n  \"message\": \"Đơn hàng A100 của tôi đâu rồi?\"\n}",
@@ -492,7 +572,7 @@
     "example": "Ví dụ",
     "modes": "mode \"sync\" chờ kết quả; \"async\" (mặc định) trả 202 kèm run_id — gọi GET …/runs/{run_id} hoặc truyền callback_url để nhận kết quả.",
     "signingSecret": "Khoá ký webhook",
-    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem README).",
+    "signingHelp": "Callback có header X-Studio-Signature: t=<timestamp>,v1=<HMAC-SHA256(secret, \"<timestamp>.<body>\")>. Hãy kiểm tra chữ ký và từ chối timestamp quá cũ (xem handbook, mục API trigger).",
     "rotate": "Đổi khoá ký",
     "rotateAria": "Đổi khoá ký của {{name}}",
     "rotated": "Đã tạo khoá ký mới. Khoá cũ vẫn ký callback đến {{when}} để bên nhận kịp chuyển đổi.",
@@ -571,18 +651,31 @@
   "approvals": {
     "kind": {
       "slack": "Slack",
-      "telegram": "Telegram"
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "email": "E-mail",
+      "teams": "Microsoft Teams"
     },
     "optional": "không bắt buộc",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
       "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",
-      "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai)."
+      "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai).",
+      "whatsapp": "Trong một Meta app có sản phẩm WhatsApp, sao chép access token, phone number ID và app secret, rồi tự chọn một verify token. Sau đó đặt webhook trong Meta dashboard là callback URL bên dưới với verify token đó, và đăng ký sự kiện \"messages\". Tin có nút chỉ tới được người đã nhắn cho số này trong 24 giờ qua; ngoài khung đó, hãy nhập một template đã duyệt có hai nút trả lời nhanh (Duyệt, Từ chối).",
+      "email": "Gửi yêu cầu qua cấu hình SMTP của studio (SMTP_HOST) kèm link Duyệt / Từ chối. Người trả lời đăng nhập vào studio nên không cần liên kết tài khoản. Cần STUDIO_PUBLIC_URL.",
+      "teams": "Trong Teams, thêm template Workflows \"Post to a channel when a webhook request is received\" rồi dán URL của nó vào đây. Nút trên card mở studio, người duyệt đăng nhập ở đó. Cần STUDIO_PUBLIC_URL."
     },
     "field": {
       "bot_token": "Bot token",
       "signing_secret": "Signing secret",
-      "webhook_secret": "Webhook secret"
+      "webhook_secret": "Webhook secret",
+      "access_token": "Access token",
+      "phone_number_id": "Phone number ID",
+      "app_secret": "App secret",
+      "verify_token": "Verify token",
+      "template_name": "Tên template (tuỳ chọn)",
+      "template_lang": "Ngôn ngữ template (tuỳ chọn, ví dụ en, vi)",
+      "webhook_url": "URL webhook của Workflows"
     },
     "callbackUrl": "URL callback",
     "copy": "Sao chép",
@@ -595,15 +688,18 @@
     "identitiesHelp": "Liên kết tài khoản chat để nút bạn bấm trên Slack hoặc Telegram được tính là của bạn. Tài khoản Slack được liên kết theo từng workspace. Bot gửi mã một lần tới tài khoản đó; nhập mã ở đây để xác minh. Chỉ chủ lượt chạy và người duyệt được liệt kê ở node Human mới phê duyệt được.",
     "identity": {
       "slack": "Slack member ID",
-      "telegram": "Telegram user ID"
+      "telegram": "Telegram user ID",
+      "whatsapp": "Số WhatsApp"
     },
     "identityPh": {
       "slack": "U0123ABCD",
-      "telegram": "123456789"
+      "telegram": "123456789",
+      "whatsapp": "84901234567"
     },
     "identityHow": {
       "slack": "Slack: hồ sơ của bạn → ⋮ → Copy member ID.",
-      "telegram": "Telegram: nhắn @userinfobot để xem ID dạng số."
+      "telegram": "Telegram: nhắn @userinfobot để xem ID dạng số.",
+      "whatsapp": "WhatsApp: số của bạn ở dạng quốc tế, chỉ gồm chữ số (không có +)."
     },
     "auditEmpty": "Chưa có yêu cầu phê duyệt nào.",
     "col": {
@@ -630,14 +726,21 @@
       "addChannel": "Thêm ở Kênh",
       "target": {
         "slack": "Slack channel ID",
-        "telegram": "Telegram chat ID"
+        "telegram": "Telegram chat ID",
+        "whatsapp": "Số WhatsApp",
+        "email": "Địa chỉ e-mail",
+        "teams": "Nơi nhận"
       },
       "targetPh": {
         "slack": "C0123ABCD",
-        "telegram": "-1001234567890"
+        "telegram": "-1001234567890",
+        "whatsapp": "84901234567",
+        "email": "lead@example.com, ops@example.com",
+        "teams": ""
       },
       "approvers": "Người duyệt (e-mail)",
-      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi."
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
+      "noTarget": "Webhook đăng vào kênh Teams của nó."
     },
     "verified": "Đã xác minh",
     "unverified": "Chưa xác minh",
@@ -666,7 +769,9 @@
     "removeTitle": "Gỡ kết nối {{name}}?",
     "removeBody": "Node Human dùng kết nối này sẽ ngừng gửi yêu cầu phê duyệt tới đây. Không thể hoàn tác.",
     "unlinkTitle": "Huỷ liên kết {{name}}?",
-    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại."
+    "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại.",
+    "whatsappWindow": "WhatsApp chỉ gửi mã nếu bạn đã nhắn cho số doanh nghiệp trong 24 giờ qua.",
+    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ."
   },
   "settings": {
     "title": "Cài đặt",
@@ -675,6 +780,7 @@
     "clear": "Xoá tìm kiếm",
     "toggle": "Hiện hoặc ẩn",
     "nav": {
+      "profile": "Hồ sơ",
       "channels": "Kênh",
       "accounts": "Tài khoản của tôi",
       "audit": "Nhật ký",
@@ -685,6 +791,7 @@
       "activity": "Hoạt động"
     },
     "intro": {
+      "profile": "Tài khoản, ngôn ngữ và mật khẩu của bạn.",
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
       "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
@@ -700,7 +807,10 @@
     },
     "platform": {
       "slack": "Nút bấm trong kênh Slack. Mỗi workspace một kết nối.",
-      "telegram": "Nút bấm trong group hoặc chat riêng Telegram, qua bot của bạn."
+      "telegram": "Nút bấm trong group hoặc chat riêng Telegram, qua bot của bạn.",
+      "whatsapp": "Nút trả lời trong chat WhatsApp, gửi từ số doanh nghiệp của bạn.",
+      "email": "Một e-mail có link Duyệt / Từ chối tới studio.",
+      "teams": "Một Adaptive Card trong kênh Teams, nút bấm mở studio."
     },
     "scopeHelp": {
       "org": "Kết nối toàn tổ chức do admin thiết lập, mọi người đều dùng được.",
@@ -828,7 +938,8 @@
       "org_manage": "Kênh và máy chủ MCP của tổ chức",
       "workflows_all": "Toàn quyền với mọi workflow",
       "workflows_create": "Tạo, nhập và nhân bản workflow",
-      "resources_manage": "Thông tin xác thực, kho tri thức, máy chủ MCP và kênh riêng"
+      "resources_manage": "Thông tin xác thực, kho tri thức, máy chủ MCP và kênh riêng",
+      "code_write": "Viết và sửa code trong Code node"
     },
     "yes": "Được phép",
     "no": "Không được phép",
@@ -850,7 +961,11 @@
     "reassign_other": "Sở hữu {{count}} workflow: email chủ sở hữu mới",
     "reassignHelp": "Người chỉnh sửa hoặc quản trị viên. Tham chiếu họ không dùng được sẽ được đánh dấu trong từng workflow.",
     "deleted_one": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
-    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu)."
+    "deleted_other": "Đã xoá {{email}}; chuyển {{count}} workflow ({{flagged}} tham chiếu được đánh dấu).",
+    "resetFor": "Tạo link đặt lại mật khẩu cho {{email}}",
+    "resetTitle": "Link đặt lại cho {{email}}",
+    "resetIntro": "Gửi link này cho người dùng. Link dùng được một lần trong {{minutes}} phút và đăng xuất các phiên khác của họ.",
+    "resetLink": "Link đặt lại"
   },
   "share": {
     "button": "Chia sẻ",
@@ -946,6 +1061,9 @@
       "user_deactivate": "Vô hiệu hoá tài khoản",
       "user_anonymize": "Ẩn danh hoá tài khoản",
       "user_delete": "Xoá tài khoản",
+      "user_password_changed": "Đổi mật khẩu",
+      "user_password_reset_link": "Tạo link đặt lại",
+      "user_password_reset": "Đặt lại mật khẩu",
       "share_add": "Chia sẻ với người dùng",
       "share_role": "Đổi quyền chia sẻ",
       "share_remove": "Gỡ chia sẻ",
@@ -958,7 +1076,8 @@
       "team_member_remove": "Gỡ thành viên",
       "workflow_transfer": "Chuyển quyền sở hữu",
       "workflow_delete": "Xoá workflow",
-      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức"
+      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức",
+      "system_code_runtime_subprocess": "Code node chạy không cách ly"
     },
     "types": {
       "user": "Người dùng",
@@ -1034,7 +1153,7 @@
       "escape": "Bỏ chọn / đóng bảng",
       "run": "Chạy workflow",
       "stop": "Dừng lần chạy",
-      "delete": "Xoá phần đang chọn (trừ Start/End)",
+      "delete": "Xoá phần đang chọn (luôn giữ một Start và một End)",
       "selectAll": "Chọn tất cả",
       "fitView": "Vừa khung nhìn",
       "zoomIn": "Phóng to",
@@ -1123,6 +1242,194 @@
     "noFields": "State schema chưa có trường nào",
     "placeholder": "Gõ {{open}} để chèn trường state",
     "tagTitle": "Trường state {{field}}",
-    "unknownTitle": "{{field}} không có trong state schema"
+    "unknownTitle": "{{field}} không có trong state schema",
+    "badFilter": "Filter không tồn tại hoặc sai tham số: {{filter}}",
+    "editHint": "Double-click để sửa",
+    "filters": {
+      "upper": "CHỮ HOA",
+      "lower": "chữ thường",
+      "trim": "bỏ khoảng trắng hai đầu",
+      "json": "dạng JSON",
+      "length": "số phần tử hoặc ký tự",
+      "first": "phần tử đầu",
+      "last": "phần tử cuối",
+      "default": "dùng text này khi rỗng",
+      "join": "nối list bằng text này",
+      "truncate": "cắt còn ngần này ký tự"
+    }
+  },
+  "reset": {
+    "forgotTitle": "Đặt lại mật khẩu",
+    "forgotHint": "Nhập e-mail. Nếu e-mail có tài khoản, chúng tôi gửi link để chọn mật khẩu mới.",
+    "askAdmin": "Hãy nhờ quản trị viên tạo link đặt lại (Settings → Users). Máy chủ này không gửi e-mail.",
+    "sent": "Nếu e-mail này có tài khoản, link đặt lại đang được gửi. Hãy kiểm tra hộp thư.",
+    "send": "Gửi link đặt lại",
+    "back": "Quay lại đăng nhập",
+    "newTitle": "Chọn mật khẩu mới",
+    "newHint": "Các phiên khác của tài khoản này sẽ bị đăng xuất.",
+    "newPassword": "Mật khẩu mới",
+    "save": "Lưu mật khẩu"
+  },
+  "profile": {
+    "account": "Tài khoản",
+    "role": "Vai trò",
+    "emailHint": "Tên đăng nhập của bạn. Không đổi được ở đây.",
+    "languageHint": "Dùng cho giao diện và tin nhắn chat gửi tới bạn.",
+    "manage": "Tuỳ chỉnh",
+    "passwordTitle": "Đổi mật khẩu",
+    "passwordIntro": "Các phiên khác của tài khoản này sẽ bị đăng xuất; phiên này vẫn giữ đăng nhập.",
+    "currentPassword": "Mật khẩu hiện tại",
+    "passwordChanged": "Đã đổi mật khẩu. Các phiên khác đã bị đăng xuất."
+  },
+  "schedules": {
+    "button": "Lịch chạy",
+    "title": "Lịch chạy",
+    "desc": "Chạy workflow này theo lịch. Run được bắt đầu dưới tên bạn, dùng credential của bạn, và hiện trong History.",
+    "badge": "Lịch",
+    "empty": "Chưa có lịch chạy nào.",
+    "add": "Lịch mới",
+    "name": "Tên",
+    "defaultName": "Lịch chạy",
+    "preset": "Lặp lại",
+    "cron": "Cron (phút giờ ngày tháng thứ)",
+    "timezone": "Múi giờ",
+    "preview": "Lần tới: {{times}}",
+    "input": "Input của run (JSON)",
+    "create": "Thêm lịch",
+    "enabledFor": "Chạy {{name}} theo lịch",
+    "next": "Lần tới {{when}} ({{tz}})",
+    "off": "Tắt",
+    "last": "lần chạy trước {{when}}",
+    "stopped": "Đã dừng",
+    "deleteFor": "Xoá lịch {{name}}",
+    "deleteTitle": "Xoá lịch {{name}}?",
+    "deleteBody": "Các run đã chạy vẫn được giữ.",
+    "badJson": "Input của run không phải JSON hợp lệ.",
+    "help": "Lần chạy bị lỡ khi server tắt sẽ chạy một lần khi server lên lại. Preset dày nhất là 15 phút một lần; biểu thức cron nào cũng được.",
+    "notes": {
+      "access": "Đã dừng: bạn không còn quản lý workflow này.",
+      "invalid": "Đã dừng: biểu thức không còn thời điểm tiếp theo."
+    },
+    "presets": {
+      "0 * * * *": "Mỗi giờ",
+      "*/15 * * * *": "Mỗi 15 phút",
+      "0 9 * * *": "Mỗi ngày lúc 09:00",
+      "0 9 * * 1-5": "Ngày thường lúc 09:00",
+      "0 9 * * 1": "Thứ Hai lúc 09:00",
+      "0 0 1 * *": "Ngày đầu tháng",
+      "custom": "Tuỳ chỉnh"
+    }
+  },
+  "approve": {
+    "title": "Yêu cầu phê duyệt",
+    "approveQ": "Duyệt yêu cầu này?",
+    "rejectQ": "Từ chối yêu cầu này?",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "workflow": "Workflow",
+    "step": "Bước",
+    "question": "Câu hỏi",
+    "expires": "Hết hạn",
+    "done": {
+      "approved": "Đã duyệt. Run sẽ chạy tiếp.",
+      "rejected": "Đã từ chối. Run sẽ chạy tiếp với kết quả từ chối."
+    },
+    "decided": "Đã được trả lời{{by}}.",
+    "by": " bởi {{who}}",
+    "openRun": "Mở run",
+    "expired": "Yêu cầu này đã hết hạn.",
+    "status": {
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "expired": "Hết hạn",
+      "superseded": "Đã trả lời ở nơi khác"
+    }
+  },
+  "decision": {
+    "credential": "Credential TypeSafe",
+    "credentialNone": "Không có",
+    "mockHint": "Khi không chọn credential, node dùng TYPESAFE_API_KEY của server. Nếu server cũng không có, node trả câu trả lời mẫu offline để bạn dựng luồng trước.",
+    "model": "Model",
+    "text": "Văn bản cho Jev đọc (dùng {{field}})",
+    "questions": "Câu hỏi",
+    "id": "Id",
+    "type": "Loại",
+    "types": {
+      "choice": "Lựa chọn",
+      "score": "Chấm điểm",
+      "noul": "Có / không"
+    },
+    "typeHint": {
+      "choice": "Chọn một phương án và cho biết xác suất của từng phương án.",
+      "score": "Xếp văn bản vào các mức của bạn, từ thấp đến cao. Câu trả lời là một số từ 0 đến mức cuối, có thể nằm giữa hai mức.",
+      "noul": "Mức độ đúng của câu phát biểu, từ 0 (sai) đến 1 (đúng)."
+    },
+    "instructions": "Hướng dẫn",
+    "options": "Phương án",
+    "optionLabel": "Nhãn",
+    "optionDesc": "Ý nghĩa (tùy chọn)",
+    "addOption": "Thêm phương án",
+    "levels": "Các mức, từ thấp đến cao",
+    "levelPh": "Mô tả mức này",
+    "addLevel": "Thêm mức",
+    "field": "Ghi câu trả lời vào",
+    "fieldNone": "Không ghi",
+    "addQuestion": "Thêm câu hỏi",
+    "removeQuestion": "Xóa câu hỏi {{id}}",
+    "removeItem": "Xóa",
+    "outputField": "Ghi mọi câu trả lời kèm xác suất vào (trường object)",
+    "hint": "Ghi câu trả lời lựa chọn vào một trường văn bản, rồi dùng Condition trên trường đó để rẽ nhánh. Câu trả lời chấm điểm và có/không cần trường kiểu số. Ctrl+Z để hoàn tác khi lỡ xóa."
+  },
+  "email": {
+    "credential": "Credential SMTP",
+    "dryRun": "Không có: chạy thử (không gửi)",
+    "dryRunHint": "Không có credential SMTP, node chỉ hiện email lẽ ra sẽ gửi trong trace và trường kết quả. Thêm một credential SMTP trong Credentials để gửi thật.",
+    "to": "Đến",
+    "cc": "Cc",
+    "bcc": "Bcc",
+    "replyTo": "Trả lời đến",
+    "more": "Cc, Bcc, Trả lời đến",
+    "addressHint": "Các địa chỉ cách nhau bằng dấu phẩy. {{field}} có thể chứa một địa chỉ, nhiều địa chỉ hoặc một danh sách. Tối đa 50 người nhận.",
+    "subject": "Tiêu đề",
+    "format": "Định dạng",
+    "formats": {
+      "text": "Văn bản thuần",
+      "html": "HTML"
+    },
+    "body": "Nội dung",
+    "htmlHint": "Giá trị từ {{field}} được escape nên hiện ra dạng chữ. App kèm thêm bản văn bản thuần cho ứng dụng mail không hiển thị HTML.",
+    "outputField": "Trường kết quả (không bắt buộc, object)",
+    "outputNone": "Không có",
+    "hint": "Mỗi lần chạy chỉ gửi tối đa một lần: run được khôi phục sẽ dùng lại kết quả thay vì gửi lại. Đặt một node Human approval trước node này để duyệt email trước khi gửi."
+  },
+  "code": {
+    "off": "Code node đang tắt trên server này. Admin có thể bật bằng STUDIO_ENABLE_CODE_NODES=1.",
+    "unavailable": "Server hiện chưa chạy được Code node: {{problem}}",
+    "readOnly": "Chỉ role có code.write mới sửa được code này. Bạn vẫn chạy được workflow.",
+    "locked": "Viết code cần quyền code.write (admin).",
+    "packages": "Có sẵn: {{packages}}.",
+    "stdlib": "thư viện chuẩn",
+    "limits": "Không có mạng; dừng sau {{seconds}} giây hoặc khi dùng quá {{memory}} bộ nhớ.",
+    "test": "Chạy thử với state mẫu",
+    "testHint": "Chạy main(state) một lần với input ở run panel. Không lưu gì.",
+    "result": "Kết quả ({{ms}} ms)",
+    "stdout": "Output đã in",
+    "traceback": "Traceback",
+    "notIsolated": "Code chạy trực tiếp trên server này, không cách ly: nó có thể dùng mạng và đọc các file mà server đọc được.",
+    "notIsolatedShort": "Không cách ly",
+    "runUnisolated": "Code node trong run này đã chạy trên server mà không cách ly (runtime subprocess).",
+    "runtimeLabel": "runtime: {{runtime}}",
+    "adminTitle": "Code node",
+    "adminIntro": "Tool node ở chế độ Code chạy ở đâu và với giới hạn nào.",
+    "adminRuntime": "Runtime",
+    "adminImage": "Image",
+    "adminLimits": "Giới hạn",
+    "adminLimitsValue": "{{seconds}} giây, {{memory}} bộ nhớ, {{cpus}} CPU, {{pids}} process",
+    "adminRisk": "Runtime subprocess trên máy chủ không phải sandbox. Code của người dùng ra được mạng và đọc được các file mà user của server đọc được; trên macOS giới hạn bộ nhớ không có tác dụng. Hãy dùng Docker, trừ khi chỉ dùng nội bộ và tin cậy.",
+    "runtimes": {
+      "docker": "Sandbox Docker",
+      "subprocess": "Subprocess trên máy chủ (không cách ly)",
+      "off": "Tắt"
+    }
   }
 }

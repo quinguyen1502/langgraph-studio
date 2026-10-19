@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
-import { AlertTriangle, Ban, CheckCircle2, Clock, Hand, Pause, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon } from 'lucide-react'
+import { AlertTriangle, Ban, CheckCircle2, Clock, Hand, Pause, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -10,9 +10,11 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CodeConsole } from '@/components/code-settings'
 import { JsonView } from '@/components/json-view'
 import { fmtCost, fmtMs, stateDiff, type RunEvent, type Span, type Trace } from '@/lib/trace'
 import { cn } from '@/lib/utils'
+import { Tip } from '@/components/tip'
 
 type Meta = (type: string) => { icon: LucideIcon; color: string; label: string }
 
@@ -59,6 +61,7 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
       <span className={cn('rounded p-0.5', m.color)}><I className="size-3" /></span>
       <span className={cn('truncate font-medium shrink-0 max-w-[45%]', s.status === 'error' && 'text-destructive')}>{s.label}</span>
       {s.iter > 1 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">#{s.iter}</Badge>}
+      {s.code?.runtime === 'subprocess' && <Badge variant="warning" className="h-4 px-1 text-[10px]" data-testid="span-unisolated">{t('code.runtimeLabel', { runtime: s.code.runtime })}</Badge>}
       <span className="truncate shrink-0 max-w-[25%] text-muted-foreground font-mono text-[10px]">{s.node}</span>
       {s.tokens != null && <Tooltip><TooltipTrigger asChild><span className="text-muted-foreground text-[10px]" data-testid="span-tokens">· {t('trace.tokensShort', { count: s.tokens })}{s.cost ? ` · ${fmtCost(s.cost)}` : ''}</span></TooltipTrigger>
         <TooltipContent>{t('trace.usageDetail', { model: s.usage?.model ?? '—', tin: s.usage?.tokens_in ?? 0, tout: s.usage?.tokens_out ?? 0, cost: fmtCost(s.cost) })}{s.usage?.estimated ? ` ${t('trace.estimated')}` : ''}</TooltipContent></Tooltip>}
@@ -81,7 +84,7 @@ function DiffView({ s }: { s: Span }) {
     {rows.map(r => <div key={r.key} data-kind={r.kind} className={cn('grid grid-cols-[16px_120px_1fr] gap-2 px-2 py-1',
       r.kind === 'added' && 'bg-success/10', r.kind === 'changed' && 'bg-warning/10', r.kind === 'removed' && 'bg-destructive/10', r.kind === 'same' && 'text-muted-foreground')}>
       <span className={cn(r.kind === 'added' && 'text-success', r.kind === 'changed' && 'text-warning', r.kind === 'removed' && 'text-destructive')}>{{ added: '+', changed: '~', removed: '−', same: ' ' }[r.kind]}</span>
-      <span className="truncate font-semibold" title={r.key}>{r.key}</span>
+      <Tip tip={r.key}><span className="truncate font-semibold">{r.key}</span></Tip>
       <span className="break-all whitespace-pre-wrap">{r.kind === 'changed' ? <><span className="line-through opacity-60">{v(r.before)}</span>{' → '}<span>{v(r.after)}</span></> : v(r.kind === 'removed' ? r.before : r.after)}</span>
     </div>)}
   </div>
@@ -106,7 +109,8 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
         <TabsContent value="output">{s.status === 'running' && s.live
           ? <div className="space-y-1" id="trace-live"><div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Loader2 className="size-3 animate-spin" />{t('trace.streaming')}</div>
               <pre className="whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{s.live}</pre></div>
-          : <JsonView value={s.output} />}</TabsContent>
+          : <div className="space-y-2">{s.status !== 'error' && <JsonView value={s.output} />}<CodeConsole stdout={s.code?.stdout} traceback={s.code?.traceback} id="trace-code-output" />
+              {s.status === 'error' && !s.code && <JsonView value={s.output} />}</div>}</TabsContent>
         <TabsContent value="diff"><DiffView s={s} /></TabsContent>
         <TabsContent value="raw"><JsonView value={s.events} /></TabsContent>
       </div></ScrollArea>
@@ -124,10 +128,11 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
     <Summary trace={trace} replay={replay} onExitReplay={onExitReplay} raw={raw} setRaw={setRaw} />
     <div className="flex-1 min-h-0 flex">
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
-        {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('break-all', e.type === 'error' && 'text-destructive')}><span className="text-muted-foreground">{i}</span> {JSON.stringify(e)}</div>)}</div>
+        {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('flex gap-2', e.type === 'error' && 'text-destructive')}><span className="w-6 shrink-0 select-none text-right text-muted-foreground tabular-nums">{i}</span><span className="min-w-0 break-all">{JSON.stringify(e)}</span></div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
           {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'warning' : 'destructive'} id="trace-run-error" className="mx-3 my-1 w-auto py-2">{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
           {trace.status === 'cancelled' && <Alert variant="warning" className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
+          {trace.spans.some(s => s.code?.runtime === 'subprocess') && <Alert variant="warning" className="mx-3 my-1 w-auto py-2" id="trace-code-unisolated"><ShieldAlert /><AlertDescription className="text-xs">{t('code.runUnisolated')}</AlertDescription></Alert>}
           {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">{t('trace.done', { count: Object.keys(trace.final || {}).length })}</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}

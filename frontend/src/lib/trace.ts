@@ -2,13 +2,16 @@ import i18n, { eventErrors, type ApiErrorBody } from '@/lib/i18n'
 // Turns the run event stream into one span per node execution (LangSmith/Langfuse-style trace).
 export type RunEvent = { type: string; node?: string; label?: string; node_type?: string; iteration?: number; duration_ms?: number
   input?: any; delta?: any; state?: any; errors?: string[]; error?: ApiErrorBody; ts?: number; tokens?: number; usage?: Usage & { total_tokens?: number }; run_id?: string; status?: string; reason?: string
-  metrics?: RunMetrics | null; trace_id?: string | null; trace_url?: string | null; prompt?: string; response?: string }
+  metrics?: RunMetrics | null; trace_id?: string | null; trace_url?: string | null; prompt?: string; response?: string
+  code_output?: CodeOutput }
+/** What a Tool node in Code mode printed, its traceback and where it ran (TASK-0053/0055). */
+export type CodeOutput = { stdout?: string; traceback?: string; runtime?: string; duration_ms?: number }
 // TASK-0010: token usage on node_finished, per-run metrics on the final run_summary event (and in run history)
 export type Usage = { provider?: string; model?: string; tokens?: number; tokens_in?: number; tokens_out?: number; cost_usd?: number | null; estimated?: boolean }
 export type RunMetrics = { duration_ms: number; tokens: number; tokens_in: number; tokens_out: number; cost_usd: number | null; error_count: number }
 export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled' | 'waiting'
   start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; cost?: number | null; usage?: Usage; events: RunEvent[]
-  live?: string }  // TASK-0030: LLM text streamed so far (node_token deltas; not stored in run history)
+  live?: string; code?: CodeOutput }  // TASK-0030: LLM text streamed so far (node_token deltas; not stored in run history)
 export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout' | 'waiting' | 'expired' | 'paused'; start?: number; end?: number; total?: number
   tokens?: number; errors: string[]; final?: any; metrics?: RunMetrics; traceUrl?: string
   waiting?: { runId?: string; node?: string; label?: string; prompt?: string }
@@ -34,12 +37,12 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
     } else if (e.type === 'node_finished' && n) {
       let s = open(n)
       if (!s) { const it = (counts[n] = (counts[n] || 0) + 1); s = { key: `${n}#${it}`, node: n, label: e.label || meta(n).label || n, type: e.node_type || meta(n).type || 'code', iter: it, status: 'running', start: t(e, i) - (e.duration_ms || 0) / 1000, events: [] }; spans.push(s) }
-      Object.assign(s, { status: 'done', end: t(e, i), duration: e.duration_ms, input: e.input, output: e.delta, tokens: e.tokens ?? e.usage?.tokens ?? e.usage?.total_tokens, cost: e.usage?.cost_usd, usage: e.usage })
+      Object.assign(s, { status: 'done', end: t(e, i), duration: e.duration_ms, input: e.input, output: e.delta, tokens: e.tokens ?? e.usage?.tokens ?? e.usage?.total_tokens, cost: e.usage?.cost_usd, usage: e.usage, code: e.code_output })
       s.events.push(e)
     } else if (e.type === 'error') {
       st.v = e.status === 'timeout' ? 'timeout' : 'error'; const msg = eventErrors(e).join('; ') || i18n.t('trace.error'); errors.push(msg)
       const s = (n ? open(n) ?? [...spans].reverse().find(x => x.node === n) : undefined) ?? (e.status === 'timeout' ? undefined : [...spans].reverse().find(x => x.status === 'running'))
-      if (s) { Object.assign(s, { status: 'error', end: t(e, i), duration: e.duration_ms ?? s.duration, error: msg, input: e.input ?? s.input }); s.events.push(e) }
+      if (s) { Object.assign(s, { status: 'error', end: t(e, i), duration: e.duration_ms ?? s.duration, error: msg, input: e.input ?? s.input, code: e.code_output ?? s.code }); s.events.push(e) }
     } else if (e.type === 'run_cancelled') { st.v = 'cancelled'
     } else if (e.type === 'run_expired') { st.v = 'expired'; waitingEv = undefined; spans.forEach(s => { if (s.status === 'waiting') s.status = 'cancelled' })
     } else if (e.type === 'run_finished') { if (st.v !== 'error') st.v = 'ok'; final = e.state

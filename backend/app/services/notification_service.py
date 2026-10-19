@@ -9,15 +9,14 @@ External channels run in a background thread so recording a run never waits on S
 TASK-0021: new in-app notifications are pushed live (NotificationHub -> WebSocket /ws/notifications); e-mail is
 multipart (plain text + HTML template); per-user preferences switch the in-app and e-mail channels off/on.
 """
-import html, json, smtplib, ssl, threading, time, uuid
-from email.message import EmailMessage
+import html, json, threading, time, uuid
 from typing import Optional
 from ..core import config
 from ..core.errors import AppError
 from ..core.logging import get_logger
 from ..models import Notification
 from ..repositories import NotificationRepository, UserRepository, WorkflowRepository
-from . import webhooks
+from . import mailer, webhooks
 from .approval_channels.messages import LANGS, lang_of
 
 log = get_logger("notify")
@@ -68,20 +67,8 @@ class NotificationService:
     @staticmethod
     def _email(smtp: dict, to: str, n: Notification) -> bool:
         p = json.loads(n.params or "{}")
-        msg = EmailMessage(); msg["From"] = smtp["sender"]; msg["To"] = to
-        msg["Subject"] = f"[LangGraph Studio] {n.title}" + (f": {p['workflow_name']}" if p.get("workflow_name") else "")
-        msg.set_content(email_text(n, p)); msg.add_alternative(email_html(n, p), subtype="html")
-        try:
-            cls = smtplib.SMTP_SSL if smtp["ssl"] else smtplib.SMTP
-            with cls(smtp["host"], smtp["port"], timeout=10) as s:
-                if smtp["starttls"] and not smtp["ssl"]:
-                    s.ehlo()
-                    if s.has_extn("starttls"): s.starttls(context=ssl.create_default_context()); s.ehlo()
-                if smtp["user"]: s.login(smtp["user"], smtp["password"] or "")
-                s.send_message(msg)
-            return True
-        except (OSError, smtplib.SMTPException) as e:
-            log.warning("notification e-mail to user %s failed: %s", n.user_id, type(e).__name__); return False
+        subject = f"[LangGraph Studio] {n.title}" + (f": {p['workflow_name']}" if p.get("workflow_name") else "")
+        return mailer.send(smtp, to, subject, email_text(n, p), email_html(n, p))
 
     # ---- owner API ----
     def list(self, uid: str, unread_only: bool = False) -> dict:

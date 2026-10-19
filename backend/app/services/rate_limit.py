@@ -1,6 +1,6 @@
 """Fixed-window rate limiter (TASK-0019). Redis (shared by all processes, async client so the event loop
 never blocks) when REDIS_URL is set, otherwise in-memory (single process)."""
-import asyncio, math, time
+import asyncio, math, threading, time
 from .redis_async import async_redis
 from typing import Optional, Protocol
 
@@ -45,3 +45,40 @@ class RedisRateLimiter:
 
 def make_rate_limiter(url: Optional[str]) -> RateLimiter:
     return RedisRateLimiter(url) if url else InMemoryRateLimiter()
+
+
+# --- TASK-0051: a blocking counter for quotas checked inside a run (the engine runs in a worker thread) ---
+class Counter(Protocol):
+    kind: str
+    def add(self, key: str, n: int, window: int) -> tuple[int, int]: ...  # (count in this window after adding, retry_after_s)
+
+
+class InMemoryCounter:
+    kind = "memory"
+    def __init__(self): self._counts: dict[str, tuple[int, int]] = {}; self._lock = threading.Lock()
+    def add(self, key, n, window):
+        start, retry = _window(window, time.time())
+        with self._lock:
+            w, c = self._counts.get(key, (start, 0))
+            c = c + n if w == start else n
+            self._counts[key] = (start, c)
+        return c, retry
+
+
+class RedisCounter:
+    kind = "redis"
+    def __init__(self, url: str, client=None):
+        if client is None:
+            import redis
+            client = redis.Redis.from_url(url, decode_responses=True, socket_connect_timeout=2, socket_timeout=10)
+        self.r = client
+    def add(self, key, n, window):
+        start, retry = _window(window, time.time())
+        k = f"{PREFIX}{key}:{start}"
+        with self.r.pipeline(transaction=True) as p:
+            c, _ = p.incrby(k, n).expire(k, window + 1).execute()
+        return int(c), retry
+
+
+def make_counter(url: Optional[str]) -> Counter:
+    return RedisCounter(url) if url else InMemoryCounter()

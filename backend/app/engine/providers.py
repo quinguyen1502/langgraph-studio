@@ -9,7 +9,8 @@ Errors are raised as `ProviderError(code, **params)`; codes live in core/errors.
 from __future__ import annotations
 from typing import Any, Callable, ClassVar, Dict, List, Optional, Tuple
 import httpx
-from ..core.errors import CATALOG
+from ..core import config, smtp
+from ..core.errors import CATALOG, AppError
 from .usage import estimate_tokens, make_usage
 
 
@@ -62,12 +63,18 @@ class Provider:
     header_fields: ClassVar[Tuple[str, ...]] = ()   # optional extra HTTP headers stored on the credential
     supports_tools: ClassVar[bool] = True
     local: ClassVar[bool] = False                    # runs on the user's machine (Docker: host.docker.internal)
+    kind: ClassVar[str] = "chat"                     # "chat" (LLM nodes), "decision" (Decision nodes, TASK-0050), "email" (TASK-0051)
+    settings_fields: ClassVar[Tuple[str, ...]] = ()  # non-secret settings stored on the credential (SMTP host, port, ...)
 
     def info(self) -> Dict[str, Any]:
         return {"id": self.id, "label": self.label, "default_base_url": self.default_base_url, "default_model": self.default_model,
-                "key_required": self.key_required, "header_fields": list(self.header_fields),
-                "supports_tools": self.supports_tools, "streaming": True, "local": self.local,
+                "key_required": self.key_required, "header_fields": list(self.header_fields), "settings_fields": list(self.settings_fields),
+                "supports_tools": self.supports_tools, "streaming": self.kind == "chat", "local": self.local, "kind": self.kind,
                 "supports_embeddings": self.supports_embeddings, "default_embedding_model": self.default_embedding_model}
+
+    def clean_settings(self, raw: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Validated `settings` for a credential of this provider (raises CREDENTIAL_SETTINGS_INVALID)."""
+        return {}
 
     @staticmethod
     def base(cred: Dict[str, Any], default: str) -> str:
@@ -251,7 +258,64 @@ class Anthropic(PlainHTTP):
         return out, make_usage(self.id, data.get("model") or model, u.get("input_tokens", 0), u.get("output_tokens", 0))
 
 
-REGISTRY: Dict[str, Provider] = {p.id: p for p in (OpenAI(), Anthropic(), Ollama(), LMStudio(), OpenAICompatible(), OpenRouter())}
+class TypeSafe(Provider):
+    """TypeSafe System One (TASK-0050, DEC-0039). Jev returns typed decisions (choice, score, noul) with probabilities,
+    not text, so it serves Decision nodes only. The key check sends one tiny question (there is no model list endpoint)."""
+    id, label, default_base_url, default_model, key_required = "typesafe", "TypeSafe (Jev)", "https://api.typesafe.ai", "jev-latest", True
+    kind, supports_tools, supports_embeddings = "decision", False, False
+
+    def chat_model(self, cred, model, **kw):
+        raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "TypeSafe answers Decision nodes, not prompts")
+
+    def decide(self, body: Dict[str, Any], cred: Dict[str, Any]) -> Dict[str, Any]:
+        data = request(self.id, "POST", self.base(cred, self.default_base_url) + "/v1/systemone", self.auth_headers(cred), body, model=body.get("model", ""))
+        if not isinstance(data.get("answers"), dict): raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "no answers in the response")
+        return data
+
+    def list_models(self, cred):
+        data = self.decide({"state": "ping", "model": self.default_model, "questions": {"ok": {"type": "noul", "instructions": "This is a connection test."}}}, cred)
+        return sorted({self.default_model, str(data.get("model") or self.default_model)})
+
+
+class Smtp(Provider):
+    """An SMTP server for Send email nodes (TASK-0051, DEC-0040). The password is the credential's secret; host, port,
+    security, username and sender are its settings. The check connects, upgrades to TLS and signs in, then quits."""
+    id, label, default_base_url = "smtp", "SMTP (e-mail)", ""
+    kind, supports_tools, supports_embeddings = "email", False, False
+    settings_fields = ("host", "port", "security", "username", "from_email", "from_name")
+
+    def chat_model(self, cred, model, **kw):
+        raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "an SMTP credential sends e-mail, it does not answer prompts")
+
+    def clean_settings(self, raw):
+        r = raw or {}
+        def bad(field: str): return AppError("CREDENTIAL_SETTINGS_INVALID", field=field)
+        host = str(r.get("host") or "").strip().lower()
+        if not host or len(host) > 253 or any(ch.isspace() or ch in "/@:" for ch in host): raise bad("host")
+        try: port = int(r.get("port") or 587)
+        except (TypeError, ValueError): raise bad("port") from None
+        if not 1 <= port <= 65535: raise bad("port")
+        security = r.get("security") or "starttls"
+        if security not in smtp.SECURITY: raise bad("security")
+        sender = str(r.get("from_email") or "").strip()
+        if not smtp.ADDRESS_RE.match(sender) or len(sender) > 254: raise bad("from_email")
+        user, name = str(r.get("username") or "").strip(), " ".join(str(r.get("from_name") or "").split())
+        if len(user) > 256: raise bad("username")
+        if len(name) > 100: raise bad("from_name")
+        return {"host": host, "port": port, "security": security, "username": user, "from_email": sender, "from_name": name}
+
+    def smtp_settings(self, cred: Dict[str, Any]) -> Dict[str, Any]:
+        """core/smtp.py settings for this credential; private hosts only with STUDIO_SMTP_ALLOW_PRIVATE=1."""
+        s = cred.get("settings") or {}
+        return {"host": s.get("host"), "port": s.get("port") or 587, "security": s.get("security") or "starttls",
+                "username": s.get("username") or None, "password": cred.get("api_key") or None, "sender": s.get("from_email"),
+                "from_name": s.get("from_name") or "", "allow_private": config.email_node_allow_private()}
+
+    def list_models(self, cred):
+        smtp.check(self.smtp_settings(cred)); return []
+
+
+REGISTRY: Dict[str, Provider] = {p.id: p for p in (OpenAI(), Anthropic(), Ollama(), LMStudio(), OpenAICompatible(), OpenRouter(), TypeSafe(), Smtp())}
 
 
 def get(provider_id: str) -> Optional[Provider]:

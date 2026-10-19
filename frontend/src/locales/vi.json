@@ -226,7 +226,8 @@
     "retriever": "Tìm trong kho tri thức",
     "mcp": "Gọi công cụ trên máy chủ MCP",
     "foreach": "Lặp lại một nhánh cho từng phần tử của danh sách",
-    "decision": "Hỏi TypeSafe Jev các câu hỏi có kiểu"
+    "decision": "Hỏi TypeSafe Jev các câu hỏi có kiểu",
+    "email": "Gửi email qua SMTP"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -280,8 +281,8 @@
   },
   "creds": {
     "button": "Credentials",
-    "title": "LLM credentials",
-    "desc": "API key được mã hoá khi lưu (Fernet) và không bao giờ được trả về trình duyệt.",
+    "title": "Credentials",
+    "desc": "API key và mật khẩu được mã hoá khi lưu (Fernet) và không bao giờ được trả về trình duyệt.",
     "empty": "Chưa có credential. Không có credential → LLM node chạy mock.",
     "name": "Tên",
     "namePh": "OpenAI cá nhân",
@@ -308,14 +309,47 @@
       "ollama": "Ollama (cục bộ)",
       "lmstudio": "LM Studio (cục bộ)",
       "openai_compatible": "Tương thích OpenAI (vLLM / llama.cpp / LocalAI)",
-      "openrouter": "OpenRouter"
+      "openrouter": "OpenRouter",
+      "smtp": "SMTP (email)"
     },
     "testOk_one": "Đã kết nối · {{count}} model · {{ms}} ms",
     "testOk_other": "Đã kết nối · {{count}} model · {{ms}} ms",
     "editAria": "Sửa {{name}}",
     "editTitle": "Sửa credential {{name}}",
     "keyKeep": "Giữ key đã lưu {{hint}}; nhập key mới để thay",
-    "clearKey": "Xoá key đã lưu"
+    "clearKey": "Xoá key đã lưu",
+    "smtp": {
+      "preset": "Máy chủ",
+      "presets": {
+        "gmail": "Gmail",
+        "outlook": "Outlook / Microsoft 365",
+        "sendgrid": "SendGrid",
+        "resend": "Resend",
+        "mailgun": "Mailgun",
+        "custom": "Máy chủ khác"
+      },
+      "presetHint": {
+        "gmail": "Bật xác minh 2 bước, rồi tạo mật khẩu ứng dụng (Tài khoản Google → Bảo mật → Mật khẩu ứng dụng) và dùng nó làm mật khẩu.",
+        "outlook": "Dùng địa chỉ email đầy đủ làm tên đăng nhập. Admin Microsoft 365 phải bật SMTP AUTH cho hộp thư.",
+        "sendgrid": "Tên đăng nhập là \"apikey\", mật khẩu là API key SendGrid có quyền Mail Send.",
+        "resend": "Tên đăng nhập là \"resend\", mật khẩu là API key Resend. Địa chỉ gửi phải thuộc domain đã xác minh.",
+        "mailgun": "Dùng tên đăng nhập và mật khẩu SMTP của domain Mailgun."
+      },
+      "host": "Máy chủ SMTP",
+      "port": "Cổng",
+      "security": "Bảo mật",
+      "securityOpts": {
+        "starttls": "STARTTLS",
+        "ssl": "SSL/TLS",
+        "none": "Không mã hóa"
+      },
+      "username": "Tên đăng nhập",
+      "password": "Mật khẩu (không bắt buộc)",
+      "fromEmail": "Địa chỉ gửi",
+      "fromName": "Tên người gửi (không bắt buộc)",
+      "fromNamePh": "Acme Support",
+      "testOk": "Đăng nhập được · {{ms}} ms (chưa gửi gì)"
+    }
   },
   "errors": {
     "VALIDATION_ERROR": "Dữ liệu không hợp lệ",
@@ -457,7 +491,16 @@
     "TEMPLATE_READ_ONLY": "Không thể xoá mẫu này",
     "TEMPLATE_INVALID": "Tệp mẫu không hợp lệ",
     "TEMPLATE_NAME_REQUIRED": "Cần nhập tên mẫu",
-    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức"
+    "TEMPLATE_SCOPE_FORBIDDEN": "Chỉ quản trị viên mới được chia sẻ mẫu cho toàn tổ chức",
+    "CREDENTIAL_SETTINGS_INVALID": "Kiểm tra lại mục {{field}}",
+    "EMAIL_HOST_BLOCKED": "Máy chủ SMTP {{host}} là địa chỉ nội bộ hoặc cục bộ (chỉ được dùng khi bật STUDIO_SMTP_ALLOW_PRIVATE=1)",
+    "EMAIL_AUTH_FAILED": "Máy chủ SMTP từ chối đăng nhập: {{reason}}",
+    "EMAIL_SEND_FAILED": "Không gửi được email: {{reason}}",
+    "EMAIL_CREDENTIAL_INVALID": "Node Send email {{node}}: hãy chọn một credential SMTP",
+    "EMAIL_RECIPIENT_INVALID": "Node Send email {{node}}: '{{address}}' không phải địa chỉ email",
+    "EMAIL_RECIPIENTS_MISSING": "Node Send email {{node}}: chưa có người nhận (Đến, Cc hoặc Bcc)",
+    "EMAIL_TOO_MANY_RECIPIENTS": "Node Send email {{node}}: tối đa {{max}} người nhận",
+    "EMAIL_RATE_LIMITED": "Node Send email chỉ được gửi tới {{limit}} người nhận mỗi giờ; thử lại sau {{retry}} giây"
   },
   "lang": {
     "en": "English",
@@ -1305,5 +1348,27 @@
     "removeItem": "Xóa",
     "outputField": "Ghi mọi câu trả lời kèm xác suất vào (trường object)",
     "hint": "Ghi câu trả lời lựa chọn vào một trường văn bản, rồi dùng Condition trên trường đó để rẽ nhánh. Câu trả lời chấm điểm và có/không cần trường kiểu số. Ctrl+Z để hoàn tác khi lỡ xóa."
+  },
+  "email": {
+    "credential": "Credential SMTP",
+    "dryRun": "Không có: chạy thử (không gửi)",
+    "dryRunHint": "Không có credential SMTP, node chỉ hiện email lẽ ra sẽ gửi trong trace và trường kết quả. Thêm một credential SMTP trong Credentials để gửi thật.",
+    "to": "Đến",
+    "cc": "Cc",
+    "bcc": "Bcc",
+    "replyTo": "Trả lời đến",
+    "more": "Cc, Bcc, Trả lời đến",
+    "addressHint": "Các địa chỉ cách nhau bằng dấu phẩy. {{field}} có thể chứa một địa chỉ, nhiều địa chỉ hoặc một danh sách. Tối đa 50 người nhận.",
+    "subject": "Tiêu đề",
+    "format": "Định dạng",
+    "formats": {
+      "text": "Văn bản thuần",
+      "html": "HTML"
+    },
+    "body": "Nội dung",
+    "htmlHint": "Giá trị từ {{field}} được escape nên hiện ra dạng chữ. App kèm thêm bản văn bản thuần cho ứng dụng mail không hiển thị HTML.",
+    "outputField": "Trường kết quả (không bắt buộc, object)",
+    "outputNone": "Không có",
+    "hint": "Mỗi lần chạy chỉ gửi tối đa một lần: run được khôi phục sẽ dùng lại kết quả thay vì gửi lại. Đặt một node Human approval trước node này để duyệt email trước khi gửi."
   }
 }

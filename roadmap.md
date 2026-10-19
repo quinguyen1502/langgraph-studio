@@ -129,4 +129,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Decision models
 
-- TASK-0050 Decision (Jev) node: typed questions to TypeSafe System One, answers to state (REQ-0036, DEC-0039, Implemented 2026-10-19): **done**. REV-0047, QA-0047. Not merged.
+- TASK-0050 Decision (Jev) node: typed questions to TypeSafe System One, answers to state (REQ-0036, DEC-0039, Implemented 2026-10-19): **done**. REV-0047, QA-0047. Merged (PR #55).
+
+## E-mail
+
+- TASK-0051 SMTP credentials and Send email node: dry run without a credential, effectively-once sending, hourly recipient quota (REQ-0037, DEC-0040, Implemented 2026-10-19): **done**. REV-0048, QA-0048. Not merged.

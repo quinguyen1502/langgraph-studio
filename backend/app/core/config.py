@@ -67,12 +67,17 @@ def cookie_secure() -> bool:  # the session cookie needs HTTPS; production defau
     return os.environ.get("STUDIO_COOKIE_SECURE", "1" if IS_PROD else "0").lower() in ("1", "true", "yes", "on")
 def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
-    """SMTP settings for notification e-mail; None (no-op) when SMTP_HOST is unset."""
+    """The studio's own SMTP server (notification, approval and password reset e-mail; core/smtp.py settings); None
+    (no-op) when SMTP_HOST is unset. The admin chose it, so private addresses are allowed and STARTTLS is used when offered."""
     host = os.environ.get("SMTP_HOST", "").strip()
     if not host: return None
-    return {"host": host, "port": _int("SMTP_PORT", 587), "user": os.environ.get("SMTP_USER") or None,
+    security = "ssl" if os.environ.get("SMTP_SSL") == "1" else "starttls" if os.environ.get("SMTP_STARTTLS", "1") != "0" else "none"
+    return {"host": host, "port": _int("SMTP_PORT", 587), "username": os.environ.get("SMTP_USER") or None,
             "password": os.environ.get("SMTP_PASSWORD") or None, "sender": os.environ.get("SMTP_FROM") or "studio@localhost",
-            "starttls": os.environ.get("SMTP_STARTTLS", "1") != "0", "ssl": os.environ.get("SMTP_SSL") == "1"}
+            "security": security, "allow_private": True, "tls_optional": True}
+# --- TASK-0051: Send email nodes ---
+def email_node_allow_private() -> bool: return os.environ.get("STUDIO_SMTP_ALLOW_PRIVATE") == "1"  # SMTP credentials may use private/loopback hosts
+def email_node_hourly_limit() -> int: return max(1, _int("STUDIO_EMAIL_NODE_HOURLY_LIMIT", 100))  # e-mails Send email nodes may send per resource owner per hour
 def notify_webhook() -> tuple[str, str | None] | None:
     url = os.environ.get("STUDIO_NOTIFY_WEBHOOK_URL", "").strip()
     return (url, os.environ.get("STUDIO_NOTIFY_WEBHOOK_SECRET") or None) if url else None

@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 from pydantic import BaseModel
 
 
@@ -8,6 +8,7 @@ class CredentialIn(BaseModel):
     api_key: str = ""                          # optional for local providers (Ollama, LM Studio, ...)
     base_url: Optional[str] = None
     headers: Optional[Dict[str, str]] = None   # provider-specific extra headers (OpenRouter: HTTP-Referer, X-Title)
+    settings: Optional[Dict[str, Any]] = None  # provider settings that are not secret (SMTP host, port, ...; TASK-0051)
 
 
 class ProviderProbeIn(BaseModel):
@@ -15,6 +16,7 @@ class ProviderProbeIn(BaseModel):
     api_key: str = ""
     base_url: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
+    settings: Optional[Dict[str, Any]] = None
     credential_id: Optional[str] = None  # editing: test with this saved credential's key when none is typed
 
 
@@ -26,6 +28,7 @@ class CredentialUpdate(BaseModel):
     headers: Optional[Dict[str, str]] = None
     api_key: Optional[str] = None
     clear_key: bool = False
+    settings: Optional[Dict[str, Any]] = None
 
 
 class EmbeddingTestIn(BaseModel):

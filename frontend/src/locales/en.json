@@ -225,7 +225,8 @@
     "subgraph": "Run another saved workflow",
     "retriever": "Search a knowledge base",
     "mcp": "Call a tool on an MCP server",
-    "foreach": "Repeat a branch for each list item"
+    "foreach": "Repeat a branch for each list item",
+    "decision": "Ask TypeSafe Jev typed questions"
   },
   "trace": {
     "idle": "Not run",
@@ -1269,5 +1270,40 @@
       "expired": "Expired",
       "superseded": "Answered elsewhere"
     }
+  },
+  "decision": {
+    "credential": "TypeSafe credential",
+    "credentialNone": "None",
+    "mockHint": "Without a credential the node uses the server's TYPESAFE_API_KEY. Without that it gives offline sample answers, so you can build the flow first.",
+    "model": "Model",
+    "text": "Text for Jev to read (use {{field}})",
+    "questions": "Questions",
+    "id": "Id",
+    "type": "Type",
+    "types": {
+      "choice": "Choice",
+      "score": "Score",
+      "noul": "Yes / no"
+    },
+    "typeHint": {
+      "choice": "Picks one option and gives each option a probability.",
+      "score": "Places the text on your levels from low to high. The answer is a number from 0 to the last level, and can fall between levels.",
+      "noul": "How true the statement is, from 0 (false) to 1 (true)."
+    },
+    "instructions": "Instructions",
+    "options": "Options",
+    "optionLabel": "Label",
+    "optionDesc": "What it means (optional)",
+    "addOption": "Add option",
+    "levels": "Levels, low to high",
+    "levelPh": "Describe this level",
+    "addLevel": "Add level",
+    "field": "Write the answer to",
+    "fieldNone": "Do not write",
+    "addQuestion": "Add question",
+    "removeQuestion": "Remove question {{id}}",
+    "removeItem": "Remove",
+    "outputField": "All answers with probabilities go to (object field)",
+    "hint": "Write a choice to a text field, then use a Condition on that field to branch. Score and yes/no answers need a number field. Ctrl+Z undoes a removal."
   }
 }

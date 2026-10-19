@@ -15,6 +15,7 @@ import { ModelPicker } from '@/components/model-picker'
 import { SubgraphSettings } from '@/components/subgraph-settings'
 import { RetrieverSettings } from '@/components/retriever-settings'
 import { McpSettings } from '@/components/mcp-settings'
+import { DecisionSettings } from '@/components/decision-settings'
 import { TemplateEditor } from '@/components/template-editor'
 import { META, RUNTIME, LOOP_LABELS } from './meta'
 import { Sel, F } from './parts'
@@ -24,6 +25,7 @@ import { useStudioCtx } from './studio-context'
 export function EditorConfig() {
   const { t } = useTranslation()
   const { nodes, setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state } = useStudioCtx()
+  const chatCreds = creds.filter(c => providers.find(p => p.id === c.provider)?.kind !== 'decision')  // TypeSafe keys belong to Decision nodes
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0">
       <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
@@ -46,8 +48,8 @@ export function EditorConfig() {
             <F label={t('editor.credential')}><Select value={d.credential_id || 'none'} onValueChange={v => upd('credential_id', v === 'none' ? '' : v)}>
               <SelectTrigger className="w-full" id="llm-credential"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="none">{t('editor.credentialDefault')}</SelectItem>
-                {creds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select>
-              {!creds.length && <p className="text-[11px] text-muted-foreground" id="llm-no-credential">{t('editor.credentialNone')} <CredentialsDialog onChanged={() => { api<Credential[]>('/api/credentials').then(setCreds).catch(() => {}) }} trigger={<TextButton id="llm-add-credential">{t('editor.credentialAdd')}</TextButton>} /></p>}</F>
+                {chatCreds.map(c => <SelectItem key={c.id} value={c.id}>{c.name} · {c.provider} {c.hint}</SelectItem>)}</SelectContent></Select>
+              {!chatCreds.length && <p className="text-[11px] text-muted-foreground" id="llm-no-credential">{t('editor.credentialNone')} <CredentialsDialog onChanged={() => { api<Credential[]>('/api/credentials').then(setCreds).catch(() => {}) }} trigger={<TextButton id="llm-add-credential">{t('editor.credentialAdd')}</TextButton>} /></p>}</F>
             <F label={t('field.model')}><ModelPicker credentialId={d.credential_id || undefined} value={d.model || ''} onChange={v => upd('model', v)} placeholder={providers.find(p => p.id === creds.find(c => c.id === d.credential_id)?.provider)?.default_model || 'gpt-4o-mini'} /></F>
             <F label={t('field.promptTemplate', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={7} id="llm-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
@@ -89,6 +91,7 @@ export function EditorConfig() {
             <F label={t('editor.condDefault')}><Input value={d.default || ''} onChange={e => upd('default', e.target.value)} /></F>
             <p className="text-[11px] text-muted-foreground">{t('editor.condHint')}</p>
           </>}
+          {selNode.type === 'decision' && <DecisionSettings data={d} fields={state} creds={creds} providers={providers} readOnly={!edit} onChange={p => mark(selNode.id, p)} />}
           {selNode.type === 'foreach' && <>
             <F label={t('editor.loopItems')}><Sel value={d.items_field} onChange={v => upd('items_field', v)} opts={state.filter(f => f.type === 'list').map(f => f.name)} /></F>
             <F label={t('editor.loopItem')}><Sel value={d.item_field} onChange={v => upd('item_field', v)} opts={state.filter(f => !f.reducer || f.reducer === 'replace').map(f => f.name)} /></F>

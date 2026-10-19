@@ -125,4 +125,8 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Loops
 
-- TASK-0049 For each node: run a branch once per list item, one at a time (REQ-0035, DEC-0038, Implemented 2026-10-19): **done**. REV-0046, QA-0046. Not merged.
+- TASK-0049 For each node: run a branch once per list item, one at a time (REQ-0035, DEC-0038, Implemented 2026-10-19): **done**. REV-0046, QA-0046. Merged (PR #54).
+
+## Decision models
+
+- TASK-0050 Decision (Jev) node: typed questions to TypeSafe System One, answers to state (REQ-0036, DEC-0039, Implemented 2026-10-19): **done**. REV-0047, QA-0047. Not merged.

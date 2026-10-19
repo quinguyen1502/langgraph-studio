@@ -225,7 +225,8 @@
     "subgraph": "Chạy một workflow đã lưu",
     "retriever": "Tìm trong kho tri thức",
     "mcp": "Gọi công cụ trên máy chủ MCP",
-    "foreach": "Lặp lại một nhánh cho từng phần tử của danh sách"
+    "foreach": "Lặp lại một nhánh cho từng phần tử của danh sách",
+    "decision": "Hỏi TypeSafe Jev các câu hỏi có kiểu"
   },
   "trace": {
     "idle": "Chưa chạy",
@@ -1269,5 +1270,40 @@
       "expired": "Hết hạn",
       "superseded": "Đã trả lời ở nơi khác"
     }
+  },
+  "decision": {
+    "credential": "Credential TypeSafe",
+    "credentialNone": "Không có",
+    "mockHint": "Khi không chọn credential, node dùng TYPESAFE_API_KEY của server. Nếu server cũng không có, node trả câu trả lời mẫu offline để bạn dựng luồng trước.",
+    "model": "Model",
+    "text": "Văn bản cho Jev đọc (dùng {{field}})",
+    "questions": "Câu hỏi",
+    "id": "Id",
+    "type": "Loại",
+    "types": {
+      "choice": "Lựa chọn",
+      "score": "Chấm điểm",
+      "noul": "Có / không"
+    },
+    "typeHint": {
+      "choice": "Chọn một phương án và cho biết xác suất của từng phương án.",
+      "score": "Xếp văn bản vào các mức của bạn, từ thấp đến cao. Câu trả lời là một số từ 0 đến mức cuối, có thể nằm giữa hai mức.",
+      "noul": "Mức độ đúng của câu phát biểu, từ 0 (sai) đến 1 (đúng)."
+    },
+    "instructions": "Hướng dẫn",
+    "options": "Phương án",
+    "optionLabel": "Nhãn",
+    "optionDesc": "Ý nghĩa (tùy chọn)",
+    "addOption": "Thêm phương án",
+    "levels": "Các mức, từ thấp đến cao",
+    "levelPh": "Mô tả mức này",
+    "addLevel": "Thêm mức",
+    "field": "Ghi câu trả lời vào",
+    "fieldNone": "Không ghi",
+    "addQuestion": "Thêm câu hỏi",
+    "removeQuestion": "Xóa câu hỏi {{id}}",
+    "removeItem": "Xóa",
+    "outputField": "Ghi mọi câu trả lời kèm xác suất vào (trường object)",
+    "hint": "Ghi câu trả lời lựa chọn vào một trường văn bản, rồi dùng Condition trên trường đó để rẽ nhánh. Câu trả lời chấm điểm và có/không cần trường kiểu số. Ctrl+Z để hoàn tác khi lỡ xóa."
   }
 }

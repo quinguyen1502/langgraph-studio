@@ -62,11 +62,12 @@ class Provider:
     header_fields: ClassVar[Tuple[str, ...]] = ()   # optional extra HTTP headers stored on the credential
     supports_tools: ClassVar[bool] = True
     local: ClassVar[bool] = False                    # runs on the user's machine (Docker: host.docker.internal)
+    kind: ClassVar[str] = "chat"                     # "chat" (LLM nodes) or "decision" (Decision nodes, TASK-0050)
 
     def info(self) -> Dict[str, Any]:
         return {"id": self.id, "label": self.label, "default_base_url": self.default_base_url, "default_model": self.default_model,
                 "key_required": self.key_required, "header_fields": list(self.header_fields),
-                "supports_tools": self.supports_tools, "streaming": True, "local": self.local,
+                "supports_tools": self.supports_tools, "streaming": self.kind == "chat", "local": self.local, "kind": self.kind,
                 "supports_embeddings": self.supports_embeddings, "default_embedding_model": self.default_embedding_model}
 
     @staticmethod
@@ -251,7 +252,26 @@ class Anthropic(PlainHTTP):
         return out, make_usage(self.id, data.get("model") or model, u.get("input_tokens", 0), u.get("output_tokens", 0))
 
 
-REGISTRY: Dict[str, Provider] = {p.id: p for p in (OpenAI(), Anthropic(), Ollama(), LMStudio(), OpenAICompatible(), OpenRouter())}
+class TypeSafe(Provider):
+    """TypeSafe System One (TASK-0050, DEC-0039). Jev returns typed decisions (choice, score, noul) with probabilities,
+    not text, so it serves Decision nodes only. The key check sends one tiny question (there is no model list endpoint)."""
+    id, label, default_base_url, default_model, key_required = "typesafe", "TypeSafe (Jev)", "https://api.typesafe.ai", "jev-latest", True
+    kind, supports_tools, supports_embeddings = "decision", False, False
+
+    def chat_model(self, cred, model, **kw):
+        raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "TypeSafe answers Decision nodes, not prompts")
+
+    def decide(self, body: Dict[str, Any], cred: Dict[str, Any]) -> Dict[str, Any]:
+        data = request(self.id, "POST", self.base(cred, self.default_base_url) + "/v1/systemone", self.auth_headers(cred), body, model=body.get("model", ""))
+        if not isinstance(data.get("answers"), dict): raise ProviderError("PROVIDER_BAD_RESPONSE", self.id, "no answers in the response")
+        return data
+
+    def list_models(self, cred):
+        data = self.decide({"state": "ping", "model": self.default_model, "questions": {"ok": {"type": "noul", "instructions": "This is a connection test."}}}, cred)
+        return sorted({self.default_model, str(data.get("model") or self.default_model)})
+
+
+REGISTRY: Dict[str, Provider] = {p.id: p for p in (OpenAI(), Anthropic(), Ollama(), LMStudio(), OpenAICompatible(), OpenRouter(), TypeSafe())}
 
 
 def get(provider_id: str) -> Optional[Provider]:

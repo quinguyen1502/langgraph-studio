@@ -63,8 +63,8 @@ def test_runtime_is_off_until_enabled(monkeypatch):
     assert cr.unavailable() == "off"
     with pytest.raises(AppError) as e: cr.run_code(UPPER, {"message": "x"})
     assert e.value.code == "CODE_RUNTIME_OFF"
-    monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1"); monkeypatch.setenv("STUDIO_CODE_RUNTIME", "subprocess")
-    assert cr.unavailable() == "off"  # not supported here: never a silent fallback
+    monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1"); monkeypatch.setenv("STUDIO_CODE_RUNTIME", "gvisor")
+    assert cr.unavailable() == "off"  # an unknown runtime is off: never a silent fallback
 
 
 def test_container_has_no_network_mounts_or_server_env():

@@ -9,6 +9,7 @@ from .core import config
 from .api.error_handlers import register_error_handlers
 from .api.routes import ROUTERS
 from .core.security import check_secret
+from .engine import code_runtime
 from .schemas.envelope import EnvelopeResponse
 from .services.seed import bootstrap
 
@@ -26,6 +27,7 @@ async def expire_waiting_loop() -> None:
 
 def create_app() -> FastAPI:
     check_secret()
+    code_runtime.warn_if_unisolated()  # TASK-0056: once at start-up
     bootstrap(get_db())  # alembic upgrade head + demo user + example workflow
     @asynccontextmanager
     async def lifespan(_app):

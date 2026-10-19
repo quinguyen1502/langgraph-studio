@@ -10,6 +10,7 @@ Retrieve = Callable[[str, str, int], List[Dict[str, Any]]]   # (knowledge_base_i
 McpCall = Callable[[str, str, Dict[str, Any]], Any]          # (server_id, tool, arguments) -> result
 EmailQuota = Callable[[int], None]                           # (recipients) -> None, raises EMAIL_RATE_LIMITED (TASK-0051)
 Cancelled = Callable[[], bool]                               # True once the run was cancelled or timed out (TASK-0053)
+CodeAudit = Callable[[], None]                               # records that Code nodes ran without isolation (TASK-0056)
 
 
 @dataclass
@@ -18,3 +19,4 @@ class Ports:
     mcp_call: Optional[McpCall] = None
     email_quota: Optional[EmailQuota] = None
     cancelled: Optional[Cancelled] = None
+    code_audit: Optional[CodeAudit] = None

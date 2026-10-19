@@ -139,7 +139,7 @@ def import_host_dir() -> str | None:
     value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
     return value or None
 # --- TASK-0053: Tool node Code mode (REQ-0039, DEC-0041); off until STUDIO_ENABLE_CODE_NODES=1 ---
-CODE_RUNTIMES = ("docker",)
+CODE_RUNTIMES = ("docker", "subprocess")  # subprocess (TASK-0056) is NOT isolation; only when set explicitly
 def code_runtime() -> str:
     """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
     if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"

@@ -1076,7 +1076,8 @@
       "team_member_remove": "Member removed",
       "workflow_transfer": "Ownership transferred",
       "workflow_delete": "Workflow deleted",
-      "policy_org_resources": "Org resource policy changed"
+      "policy_org_resources": "Org resource policy changed",
+      "system_code_runtime_subprocess": "Code nodes ran without isolation"
     },
     "types": {
       "user": "User",
@@ -1413,6 +1414,22 @@
     "testHint": "Runs main(state) once with the run panel's input. Nothing is saved.",
     "result": "Result ({{ms}} ms)",
     "stdout": "Printed output",
-    "traceback": "Traceback"
+    "traceback": "Traceback",
+    "notIsolated": "Code runs directly on this server, without isolation: it can use the network and read files the server can read.",
+    "notIsolatedShort": "Not isolated",
+    "runUnisolated": "Code nodes in this run ran on the server without isolation (subprocess runtime).",
+    "runtimeLabel": "runtime: {{runtime}}",
+    "adminTitle": "Code nodes",
+    "adminIntro": "Where Tool nodes in Code mode run, and with which limits.",
+    "adminRuntime": "Runtime",
+    "adminImage": "Image",
+    "adminLimits": "Limits",
+    "adminLimitsValue": "{{seconds}} s, {{memory}} memory, {{cpus}} CPU, {{pids}} processes",
+    "adminRisk": "The host subprocess runtime is not a sandbox. User code can reach the network and read files the server user can read; on macOS the memory limit does not apply. Use Docker for anything but trusted local use.",
+    "runtimes": {
+      "docker": "Docker sandbox",
+      "subprocess": "Host subprocess (not isolated)",
+      "off": "Off"
+    }
   }
 }

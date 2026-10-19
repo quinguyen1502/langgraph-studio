@@ -75,6 +75,12 @@ def _normalise(ev: dict) -> dict:
 
 RESPONSE_MAX = 10_000  # characters of a human response
 log = get_logger("runs")
+def code_runtime_of(events: list) -> Optional[str]:
+    """Where this run's Code nodes ran (TASK-0056): `subprocess` if any call ran unisolated, else `docker`, else None."""
+    seen = {(e.get("code_output") or {}).get("runtime") for e in events if isinstance(e, dict) and isinstance(e.get("code_output"), dict)}
+    return "subprocess" if "subprocess" in seen else ("docker" if "docker" in seen else None)
+
+
 CANCEL_API = object()  # worker -> loop marker: the bus reported a cancel request
 FENCED = object()      # worker -> loop marker: another worker claimed this run (stale lease, TASK-0021)
 RESUME_KEYS = ("node", "nodes", "state", "counts", "blob")  # what a progress checkpoint stores to continue from
@@ -111,7 +117,7 @@ def _parse_until(req: dict) -> Optional[str]:
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None, audit=None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -123,6 +129,7 @@ class RunService:
         self.deliveries = deliveries  # -> DeliveryService (optional): callback_url webhook when an API run settles
         self.approvals = approvals  # ApprovalService (optional): Slack/Telegram approval requests of Human nodes (TASK-0022)
         self.knowledge = knowledge  # KnowledgeService (optional): Retriever nodes (TASK-0012)
+        self.audit = audit  # AuditService (optional): Code nodes running without isolation (TASK-0056)
         self.mcp = mcp  # McpService (optional): MCP tool nodes (TASK-0013)
         self.policy = policy  # PolicyService (optional): org resources at run time (TASK-0029)
         self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
@@ -179,7 +186,12 @@ class RunService:
         policy for the person running (`actor`, TASK-0029)."""
         org = self.policy.org_allowed(actor or uid) if self.policy is not None else True
         return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid, org) if self.mcp else None,
-                     email_quota=self.email_quota(uid))
+                     email_quota=self.email_quota(uid), code_audit=self.code_audit(actor or uid))
+
+    def code_audit(self, uid: str) -> Optional[Callable[[], None]]:
+        """Audit entry for the first Code call that runs on the host without isolation (TASK-0056)."""
+        if self.audit is None: return None
+        return lambda: self.audit.record(uid or None, "system.code_runtime_subprocess", "system", None, "Code nodes", runtime="subprocess")
 
     def email_quota(self, uid: str) -> Optional[Callable[[int], None]]:
         """Send email nodes of `uid`'s workflows reach at most STUDIO_EMAIL_NODE_HOURLY_LIMIT recipients an hour."""
@@ -311,7 +323,7 @@ class RunService:
                  "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui", "version": r.workflow_version,
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
-                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id)}
+                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id), "code_runtime": r.code_runtime}
                 for r in self.runs.list_for_workflow(wid) if everyone or r.owner == uid]
 
     def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui",
@@ -346,7 +358,7 @@ class RunService:
             except Exception: log.exception("approval request for run %s failed", rid)  # never fails a run
         events = cap_run([cap_event(e) for e in events])
         final = cap_event({"state": final})["state"] if final is not None else None
-        self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events),
+        self.runs.add(Run(id=rid, workflow_id=wid or "adhoc", input=_dumps(inp), events=_dumps(events), code_runtime=code_runtime_of(events),
                           final_state=_dumps(final), status=status, started=t0, ended=t1, trace_id=trace_id, owner=uid or None, source=source, workflow_version=version,
                           checkpoint=_dumps(checkpoint) if checkpoint else None, **metrics), **({"fence": fence} if fence is not None else {}))
         if self.ledger is not None and status not in ("waiting", "paused"):

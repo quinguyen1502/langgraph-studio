@@ -27,6 +27,9 @@ def token_stream(nid: str) -> Optional[TokenBuffer]:
 
 def code_call(nid: str, d: Dict[str, Any], state: Dict[str, Any], ports: Ports) -> Any:
     """Tool node Code mode (TASK-0053): main(state) in the sandbox. What it printed goes to the trace (`code_output`)."""
+    if config.code_runtime() == "subprocess" and ports.code_audit is not None and code_runtime.claim_first_unisolated_call():
+        try: ports.code_audit()  # first unisolated call since this process started (TASK-0056)
+        except Exception: pass
     res = code_runtime.run_code(d.get("code") or "", dict(state), node=nid, timeout=d.get("timeout"), cancelled=ports.cancelled)
     try: from langgraph.config import get_stream_writer; get_stream_writer()({"node": nid, "code_output": res.trace()})
     except Exception: pass  # outside a streamed run

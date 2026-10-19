@@ -104,6 +104,17 @@ def main(state):
 - **Editor:** chọn **Code Python** làm mode của Tool. Ô code có tô màu cú pháp Python, kèm danh sách gói trong image và các giới hạn. **Chạy thử với state mẫu** chạy `main(state)` một lần với input ở run panel và không lưu gì (`POST /api/code/test`, mỗi user tối đa `STUDIO_CODE_TEST_PER_MINUTE` lần mỗi phút, mặc định 20). Kết quả hiện giá trị trả về, output đã in và traceback. Không có `code.write` thì code chỉ đọc và nút chạy thử bị ẩn. `GET /api/meta/runtime` cho editor biết server có chạy được code không.
 - **Mỗi lần gọi là một container mới.** Container không có mạng (`--network none`), root chỉ đọc với `/tmp` 64 MB, không mount thư mục nào của host. Môi trường không có biến nào của server hay credential. State là một bản sao JSON; code chỉ thay đổi run qua giá trị trả về.
 - **Giới hạn:** bộ nhớ `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5), số process `STUDIO_CODE_PIDS` (64). Mỗi lần gọi bị dừng sau timeout của node, tối đa `STUDIO_CODE_MAX_SECONDS` (30). Mỗi process server chạy cùng lúc tối đa `STUDIO_CODE_CONCURRENCY` (4) container. Huỷ run thì container bị kill.
+- **Không có Docker** (`STUDIO_CODE_RUNTIME=subprocess`): code chạy như một process con của server. Process này có môi trường trống và thư mục tạm riêng. Trên Linux còn có giới hạn bộ nhớ, thời gian CPU, số file mở và số process. Quá giờ thì cả nhóm process bị kill. **Đây không phải sandbox.** Code dùng được mạng, đọc được mọi file mà user của server đọc được (kể cả file database và `secret.key` khi dùng SQLite), và trên macOS giới hạn bộ nhớ không có tác dụng. Studio báo điều này ở mọi nơi:
+  - một `WARNING` trong log lúc khởi động;
+  - `code_runtime: "subprocess"` trong `GET /api/meta/runtime`;
+  - Alert trong phần cấu hình Code;
+  - badge "Không cách ly" trên node và trong ô chọn mode;
+  - `runtime: subprocess` trên các dòng trace, kèm một cảnh báo cho mỗi run;
+  - dấu trong lịch sử run (`code_runtime` của từng run);
+  - thẻ Code node trong **Settings → Users**;
+  - một mục audit `system.code_runtime_subprocess` ở lần gọi đầu tiên sau mỗi lần khởi động.
+
+  Chế độ này không bao giờ tự bật: với runtime mặc định `docker` mà không có Docker, Code node sẽ không qua được bước kiểm tra. Chỉ dùng cho việc nội bộ và tin cậy.
 - **Kích thước:** source tối đa 64 KB, state và kết quả mỗi thứ tối đa 1 MB, stdout tối đa 64 KB (dài hơn thì bị cắt).
 - **Trace:** output của `print()`, runtime và thời gian chạy nằm trong `code_output` của node. Khi lỗi, trace có traceback và cấu hình retry của node vẫn áp dụng. Mã lỗi là `CODE_*` ([docs/api-errors.md](docs/api-errors.md)).
 - **Tốc độ:** mỗi lần gọi khoảng 0,3 giây khi image đã có sẵn.

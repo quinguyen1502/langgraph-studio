@@ -1,6 +1,7 @@
 // Renders the intro video frame by frame and muxes the music bed.
+// The frames come from the quickstart spec: HANDBOOK_SHOTS=1 npm run e2e -- quickstart (in frontend/).
 //
-//   node render.mjs --lang en                 -> handbook/docs/assets/video/studio-intro-en.mp4 (+ .jpg poster)
+//   node render.mjs --lang en                 -> handbook/docs/en/assets/video/studio-intro-en.mp4 (+ .jpg poster)
 //   node render.mjs --lang vi --fps 30
 //   node render.mjs --lang en --stills 15,31  -> build/stills/*.jpg, no video
 //   node render.mjs --audio path/to/track.m4a -> a supplied track instead of music.mjs
@@ -9,7 +10,7 @@
 import { spawn, execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { chromePath, promoDir, repoRoot, buildDir, videoDir } from './paths.mjs'
+import { chromePath, promoDir, repoRoot, buildDir, videoDir, framesDir } from './paths.mjs'
 
 const { chromium } = await import(path.join(repoRoot, 'frontend/node_modules/playwright/index.mjs'))
 
@@ -19,10 +20,13 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
 }, []))
 const lang = args.lang === 'vi' ? 'vi' : 'en'
 const fps = Number(args.fps || 30)
-const POSTER_AT = 31
+const POSTER_AT = 44.6  // the run waiting at the Human node
 
 const browser = await chromium.launch({ executablePath: chromePath(), args: ['--allow-file-access-from-files', '--force-color-profile=srgb', '--hide-scrollbars'] })
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
+const flowFile = path.join(framesDir(lang), 'flow.json')
+if (!fs.existsSync(flowFile)) throw new Error(`${flowFile} is missing: run HANDBOOK_SHOTS=1 npm run e2e -- quickstart in frontend/`)
+await page.addInitScript(flow => { window.FLOW = flow }, JSON.parse(fs.readFileSync(flowFile, 'utf8')))
 await page.goto(`file://${path.join(promoDir, 'video.html')}?lang=${lang}`, { waitUntil: 'load', timeout: 120000 })
 await page.evaluate(async () => {
   await document.fonts.ready
@@ -47,8 +51,8 @@ if (args.stills) {
   process.exit(0)
 }
 
-fs.mkdirSync(videoDir, { recursive: true })
-const out = path.resolve(args.out || path.join(videoDir, `studio-intro-${lang}.mp4`))
+fs.mkdirSync(videoDir(lang), { recursive: true })
+const out = path.resolve(args.out || path.join(videoDir(lang), `studio-intro-${lang}.mp4`))
 const silent = path.join(buildDir, `silent-${lang}.mp4`)
 
 await at(POSTER_AT)

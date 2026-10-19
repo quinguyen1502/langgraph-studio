@@ -1,65 +1,91 @@
 # LangGraph Studio
 
+[![CI](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml)
+[![Handbook](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/langgraph-studio/)
+
 **English** · [Tiếng Việt](README.vi.md)
 
-A self-hosted workbench for LangGraph. Draw a workflow in the browser,
-configure each node, and run it with live per-node events. The FastAPI backend
-compiles the saved JSON into a LangGraph `StateGraph`; the same workflow can be
-triggered over HTTP, run on a schedule, or paused for a human decision.
+LangGraph Studio is a self-hosted platform for building LangGraph workflows in
+the browser and running them as services. Workflows are JSON documents that
+the FastAPI backend validates and compiles into a LangGraph `StateGraph`. Each
+one can run from the editor with a live per-node trace, from another service
+over HTTP, on a cron schedule, and pause for a human decision in between.
 
-[![LangGraph Studio intro video, 90 s](handbook/docs/assets/video/studio-intro-en.jpg)](https://quinguyen1502.github.io/langgraph-studio/#video)
+[![Quickstart video: build, run, approve and trigger a workflow](handbook/docs/en/assets/video/studio-intro-en.jpg)](https://quinguyen1502.github.io/langgraph-studio/#video)
 
-▶ [Watch the intro video](https://quinguyen1502.github.io/langgraph-studio/#video)
-([Tiếng Việt](https://quinguyen1502.github.io/langgraph-studio/vi/#video)) ·
-📖 **Handbook:** <https://quinguyen1502.github.io/langgraph-studio/>
-
-## What it does
-
-- **Editor:** 13 node types (LLM, Tool, Condition, For each, Join, Subgraph,
-  MCP, Retriever, Decision, Send email, Human, …), a typed state with reducers,
-  `{{state.field}}` references checked before a run, undo, clipboard, auto
-  layout, command palette.
-- **Runs:** live trace with duration, tokens and cost per node, state diffs,
-  step and run-to-node, cancel, history per version.
-- **Operations:** API triggers with signed webhooks, cron schedules, human
-  approval in the studio or over Slack, Telegram, WhatsApp, e-mail and Teams,
-  checkpoints and effectively-once side effects, versions, roles and sharing.
-- **Integrations:** OpenAI, Anthropic, OpenRouter, Ollama, LM Studio and
-  OpenAI-compatible servers; knowledge bases with pgvector; MCP servers;
-  OpenTelemetry and LangSmith.
-- **Sandboxes:** Python code in Tool nodes, and imported LangGraph repos, run in
-  locked Docker containers.
+[Documentation](https://quinguyen1502.github.io/langgraph-studio/) ·
+[Quickstart](https://quinguyen1502.github.io/langgraph-studio/start/quickstart/) ·
+[HTTP API](https://quinguyen1502.github.io/langgraph-studio/reference/api/) ·
+[Architecture](https://quinguyen1502.github.io/langgraph-studio/reference/architecture/)
 
 ## Quick start
 
 ```bash
-./dev.sh
+git clone https://github.com/quinguyen1502/langgraph-studio.git
+cd langgraph-studio && ./dev.sh
 ```
 
-The first run creates `backend/.venv` and installs the frontend. The UI is at
-<http://localhost:5173>, the API docs at <http://localhost:8000/docs>. Sign in
-with `admin@example.com` / `admin123` (seeded outside production). Without a
-model credential, LLM nodes use a deterministic offline mock.
+Open <http://localhost:5173> and sign in as `admin@example.com` / `admin123`
+(seeded outside production). The API docs are at <http://localhost:8000/docs>.
+LLM nodes answer from a deterministic offline mock until you add a model
+credential. The [Quickstart](https://quinguyen1502.github.io/langgraph-studio/start/quickstart/)
+builds, runs, approves and triggers a first workflow in about ten minutes.
 
-Full stack (Postgres with pgvector, Redis, API, worker, nginx):
+The full stack (Postgres with pgvector, Redis, API, worker, nginx):
 
 ```bash
-cp .env.example .env   # set JWT_SECRET and POSTGRES_PASSWORD
-docker compose up --build   # UI: http://localhost:8080
+cp .env.example .env        # set JWT_SECRET and POSTGRES_PASSWORD
+docker compose up --build   # http://localhost:8080
 ```
+
+## Features
+
+1. **Visual editor:** 13 node types (LLM, Tool, Condition, For each, Join,
+   Subgraph, MCP, Retriever, Decision, Send email, Human, Start, End), a typed
+   state with reducers, and `{{state.field}}` references checked before a run.
+2. **Run traces:** duration, tokens and cost per node, the input, output and
+   state diff of every step, step-by-step and run-to-node debugging.
+3. **Human in the loop:** a Human node pauses a run from a checkpoint; approve
+   in the studio, or from Slack, Telegram, WhatsApp, e-mail or Teams.
+4. **Triggers:** per-workflow API tokens, sync and async runs, signed result
+   webhooks with retries, and cron schedules with time zones.
+5. **Reliability:** checkpoints in the database, leased worker jobs, and
+   effectively-once side effects through idempotency keys and a result ledger.
+6. **Models and tools:** OpenAI, Anthropic, OpenRouter, Ollama, LM Studio and
+   OpenAI-compatible servers; pgvector knowledge bases; MCP servers; Python
+   code in a locked Docker container.
+7. **Operations:** immutable versions with diff and restore, admin, editor
+   and viewer roles, shares and teams, an audit log, and OpenTelemetry traces
+   to OTLP or LangSmith.
+
+## How it works
+
+```mermaid
+flowchart LR
+  UI[Editor<br/>React Flow] -- REST + WebSocket --> API[FastAPI]
+  SVC[Other services] -- "POST /api/hooks/…/runs" --> API
+  API --> DB[(SQLite or<br/>Postgres + pgvector)]
+  API -- jobs --> Q[(Memory or Redis)] --> W[Worker]
+  API & W --> G[LangGraph StateGraph]
+  G --> M[LLM providers] & T[HTTP · MCP · SMTP] & S[Docker sandbox]
+```
+
+Editor runs execute in the API process and stream events over WebSocket. API
+triggers, schedules and recovered runs go through the queue to a worker.
+Details: [Architecture](https://quinguyen1502.github.io/langgraph-studio/reference/architecture/).
 
 ## Documentation
 
-| Topic | Handbook page |
+| Topic | Handbook section |
 | --- | --- |
-| Install and a first workflow | [Getting started](https://quinguyen1502.github.io/langgraph-studio/start/) |
-| Editor, nodes, state, Code mode | [Build](https://quinguyen1502.github.io/langgraph-studio/guide/) |
-| Traces, approvals, API triggers, schedules | [Run](https://quinguyen1502.github.io/langgraph-studio/run/) |
+| Install, quickstart, concepts | [Get started](https://quinguyen1502.github.io/langgraph-studio/start/) |
+| Editor, nodes, state, Code mode, knowledge, MCP | [Build](https://quinguyen1502.github.io/langgraph-studio/guide/) |
+| Traces, human approval, API triggers, schedules | [Run](https://quinguyen1502.github.io/langgraph-studio/run/) |
 | Deployment, accounts, roles, providers, channels | [Operate](https://quinguyen1502.github.io/langgraph-studio/operate/) |
 | Configuration, HTTP API, error codes, architecture | [Reference](https://quinguyen1502.github.io/langgraph-studio/reference/) |
 
 The handbook source is in [`handbook/`](handbook/README.md). Every variable is
-listed in [`.env.example`](.env.example) and every error code in
+in [`.env.example`](.env.example) and every error code in
 [`docs/api-errors.md`](docs/api-errors.md).
 
 ## Development
@@ -74,6 +100,14 @@ cd frontend && npm run e2e
 | --- | --- |
 | `backend/app/` | FastAPI app: routers → services → repositories and the LangGraph engine ([layers](docs/backend-architecture.md)) |
 | `frontend/` | React, TypeScript, Vite, React Flow, Tailwind v4, shadcn/ui ([UI rules](docs/ui-conventions.md)) |
-| `handbook/` | The MkDocs handbook |
-| `scripts/promo/` | The intro video renderer |
-| `.factory-state/` | Requirements, decisions, tasks, reviews and QA ([workflow](AGENTS.md)) |
+| `handbook/` | The documentation site (Zensical) |
+| `scripts/promo/` | The quickstart video renderer |
+| `.factory-state/` | Requirements, decisions, tasks, reviews and QA |
+
+## Contributing
+
+Changes follow the delivery workflow in [`AGENTS.md`](AGENTS.md): a
+requirement and a task in `.factory-state/`, a branch
+`factory/task-<id>-<name>`, checks, a review, and a merge after human
+approval. See [Development](https://quinguyen1502.github.io/langgraph-studio/reference/development/)
+for the test setup and the conventions each layer follows.

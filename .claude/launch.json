@@ -25,7 +25,7 @@
       "runtimeExecutable": "bash",
       "runtimeArgs": [
         "-c",
-        "cd handbook && exec .venv/bin/mkdocs serve -a 127.0.0.1:8001"
+        "cd handbook && exec .venv/bin/zensical serve -a 127.0.0.1:8001"
       ],
       "port": 8001
     }

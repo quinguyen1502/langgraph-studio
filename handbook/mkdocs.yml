@@ -1,39 +1,15 @@
-site_name: LangGraph Studio
+# English site, at the root. mkdocs.vi.yml builds the Vietnamese one into site/vi/.
+#   zensical build && zensical build -f mkdocs.vi.yml
+INHERIT: mkdocs.base.yml
+
 site_description: Design, run and operate LangGraph workflows in the browser
-
-# mkdocs-static-i18n derives the language switcher and canonical URLs from this.
 site_url: https://quinguyen1502.github.io/langgraph-studio/
-repo_url: https://github.com/quinguyen1502/langgraph-studio
-repo_name: langgraph-studio
-edit_uri: edit/develop/handbook/docs/
-
-docs_dir: docs
+edit_uri: edit/develop/handbook/docs/en/
+docs_dir: docs/en
 site_dir: site
-strict: true
-validation:
-  anchors: warn
-  unrecognized_links: warn
 
 theme:
-  name: material
   language: en
-  logo: assets/logo.svg
-  favicon: assets/logo.svg
-  icon:
-    repo: fontawesome/brands/github
-  features:
-    - navigation.tabs
-    - navigation.tabs.sticky
-    - navigation.indexes
-    - navigation.top
-    - navigation.path
-    - navigation.footer
-    - search.highlight
-    - search.suggest
-    - toc.follow
-    - content.code.copy
-    - content.code.annotate
-    - content.tabs.link
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
@@ -50,100 +26,12 @@ theme:
         icon: material/weather-sunny
         name: Light mode
 
-extra_css:
-  - stylesheets/extra.css
-
-copyright: LangGraph Studio · Qui Nguyen · 2026
-
-plugins:
-  - search
-  - i18n:
-      docs_structure: suffix
-      fallback_to_default: true
-      reconfigure_material: true
-      reconfigure_search: true
-      languages:
-        - locale: en
-          default: true
-          name: English
-          build: true
-        - locale: vi
-          name: Tiếng Việt
-          build: true
-          site_description: Thiết kế, chạy và vận hành workflow LangGraph trên trình duyệt
-          nav_translations:
-            Home: Trang chủ
-            Getting started: Bắt đầu
-            Install: Cài đặt
-            Your first workflow: Workflow đầu tiên
-            Concepts: Khái niệm
-            Build: Xây dựng
-            The editor: Trình soạn thảo
-            Nodes: Các loại node
-            State and references: State và tham chiếu
-            Workflow templates: Mẫu workflow
-            Versions: Phiên bản
-            Code mode: Chế độ Code
-            Knowledge bases: Kho tri thức
-            MCP servers: Máy chủ MCP
-            Run: Chạy
-            Runs and traces: Run và trace
-            Human approval: Duyệt bởi người
-            API triggers and webhooks: API trigger và webhook
-            Schedules: Lịch chạy
-            Operate: Vận hành
-            Deploy with Compose: Triển khai bằng Compose
-            Accounts and security: Tài khoản và bảo mật
-            Roles and sharing: Vai trò và chia sẻ
-            LLM providers: Nhà cung cấp LLM
-            Approval channels: Kênh duyệt
-            Code runtime: Môi trường chạy Code
-            Observability: Quan sát hệ thống
-            Import a LangGraph repo: Import repo LangGraph
-            Reference: Tham chiếu
-            Configuration: Cấu hình
-            HTTP API: HTTP API
-            Error codes: Mã lỗi
-            Architecture: Kiến trúc
-            Keyboard shortcuts: Phím tắt
-            Development: Phát triển
-            FAQ: Câu hỏi thường gặp
-
-markdown_extensions:
-  - abbr
-  - admonition
-  - attr_list
-  - def_list
-  - footnotes
-  - md_in_html
-  - tables
-  - toc:
-      permalink: true
-  - pymdownx.details
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.keys
-  - pymdownx.snippets:
-      base_path: [..]
-      check_paths: true
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
-  - pymdownx.superfences:
-      custom_fences:
-        - name: mermaid
-          class: mermaid
-          format: !!python/name:pymdownx.superfences.fence_code_format
-  - pymdownx.tabbed:
-      alternate_style: true
-
 nav:
   - Home: index.md
   - Getting started:
       - start/index.md
+      - Quickstart: start/quickstart.md
       - Install: start/install.md
-      - Your first workflow: start/first-workflow.md
       - Concepts: start/concepts.md
   - Build:
       - guide/index.md

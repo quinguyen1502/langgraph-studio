@@ -1,4 +1,4 @@
-// Screenshots for the handbook and the intro video (handbook/docs/images/<lang>/*.png).
+// Screenshots for the handbook (handbook/docs/<lang>/images/*.png).
 // Run: HANDBOOK_SHOTS=1 npm run e2e -- handbook
 // The Code node shots need Docker and the studio-code:1 image; they are skipped otherwise.
 import { test, expect, type Page } from '@playwright/test'
@@ -79,7 +79,7 @@ const PAYLOAD = JSON.stringify({ payload: { id: 'evt_1042', type: 'ORDER.PAID', 
 
 async function shot(page: Page, lang: Lang, name: string) {
   await page.mouse.move(2, 898); await page.waitForTimeout(450)
-  await page.screenshot({ path: `../handbook/docs/images/${lang}/${name}.png` })
+  await page.screenshot({ path: `../handbook/docs/${lang}/images/${name}.png` })
 }
 async function setInput(page: Page, json: string) {
   await page.getByRole('tab', { name: /^(Input|Đầu vào)$/ }).first().click()
@@ -99,7 +99,6 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       const s = T[lang]
       await page.addInitScript(([l]) => { localStorage.setItem('lang', l); localStorage.setItem('theme', 'light') }, [lang])
       await page.goto('/login'); await expect(page.locator('#auth-submit')).toBeVisible()
-      await shot(page, lang, 'login')
       const token = await signIn(page, 'admin@example.com', 'admin123')
       const H = { Authorization: `Bearer ${token}` }
       // Start from a clean list: the other language's run shares this database
@@ -113,8 +112,6 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       // Hero: the seeded Customer Support graph, after a run
       await page.goto('/workflows/example'); await expect(page.locator('.react-flow__node').first()).toBeVisible(); await fit(page)
       await shot(page, lang, 'editor')
-      await page.locator('.react-flow__node[data-id="classify"]').click(); await shot(page, lang, 'node-config')
-      await page.locator('.react-flow__pane').click({ position: { x: 30, y: 30 } })
       await setInput(page, JSON.stringify({ message: lang === 'en' ? 'Where is order A100?' : 'Đơn A100 của tôi đang ở đâu?' }, null, 2))
       await run(page)
       await shot(page, lang, 'run-trace')

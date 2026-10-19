@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url'
 export const promoDir = path.dirname(fileURLToPath(import.meta.url))
 export const repoRoot = path.resolve(promoDir, '../..')
 export const buildDir = path.join(promoDir, 'build')
-export const videoDir = path.join(repoRoot, 'handbook/docs/assets/video')
+/** Where the video of one language goes: next to that site's pages. */
+export const videoDir = lang => path.join(repoRoot, `handbook/docs/${lang}/assets/video`)
+export const framesDir = lang => path.join(buildDir, 'frames', lang)
 
 const candidates = [
   process.env.CHROME_PATH,

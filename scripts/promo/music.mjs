@@ -1,9 +1,9 @@
 // Synthesises the intro video's music bed (44.1 kHz stereo WAV): node music.mjs out.wav
-// Section times follow the scene timeline in video.html: brand reveal, product tour, platform, finale.
+// Section times follow video.html: the window enters (BRAND), the walkthrough (TOUR to PLATFORM), the closing card (FINALE).
 import fs from 'node:fs';
 
-const SR = 44100, DUR = 90, N = SR * DUR;
-const BRAND = 6.5, TOUR = 11.5, PLATFORM = 66.0, FINALE = 81;
+const SR = 44100, DUR = 87, N = SR * DUR;
+const BRAND = 4.6, TOUR = 5.4, PLATFORM = 77.8, FINALE = 78.2;
 const L = new Float32Array(N), R = new Float32Array(N);
 const BPM = 96, BEAT = 60 / BPM, BAR = BEAT * 4;
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);

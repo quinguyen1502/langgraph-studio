@@ -1,6 +1,6 @@
 name: Handbook
 
-# Builds the MkDocs handbook on every change to it, and publishes it to GitHub
+# Builds the handbook (Zensical, en and vi) on every change to it, and publishes it to GitHub
 # Pages from main. Publishing needs Settings → Pages → Source: GitHub Actions.
 on:
   pull_request:
@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   build:
-    name: MkDocs strict build
+    name: Strict build (en, vi)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -31,18 +31,14 @@ jobs:
           cache-dependency-path: handbook/requirements.txt
       - name: Install toolchain
         run: pip install -r requirements.txt
-      - name: Check every page has an en/vi pair
+      - name: Check both languages have the same pages
         run: |
-          missing=0
-          for f in $(find docs -name '*.en.md'); do
-            [ -f "${f%.en.md}.vi.md" ] || { echo "missing ${f%.en.md}.vi.md"; missing=1; }
-          done
-          for f in $(find docs -name '*.vi.md'); do
-            [ -f "${f%.vi.md}.en.md" ] || { echo "missing ${f%.vi.md}.en.md"; missing=1; }
-          done
-          exit $missing
+          pages() { (cd "docs/$1" && find . -name '*.md' | sort); }
+          diff <(pages en) <(pages vi) || { echo "docs/en and docs/vi differ (< en only, > vi only)"; exit 1; }
       - name: Build
-        run: mkdocs build --strict
+        run: zensical build && zensical build -f mkdocs.vi.yml
+      - name: Check images and videos
+        run: python check_images.py site
       - if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:

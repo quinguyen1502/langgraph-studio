@@ -45,7 +45,7 @@ def test_validation_rejections(mutate, frag):
 def test_cycle_without_condition_rejected_but_through_condition_ok():
     a = N("a", "llm", prompt="x", output_field="out"); b = N("b", "llm", prompt="x", output_field="out")
     bad = wf([N("s", "start"), a, b, N("e", "end")], [E("1", "s", "a"), E("2", "a", "b"), E("3", "b", "a")])
-    assert has(validate(bad), "Loop without a Condition: a → b → a")[0]
+    assert has(validate(bad), "Loop without a Condition or For each: a → b → a")[0]
     good = wf([N("s", "start"), a, N("c", "condition", field="intent", default="again"), N("e", "end")],
               [E("1", "s", "a"), E("2", "a", "c"), E("3", "c", "a", "again"), E("4", "c", "e", "done")])
     assert validate(good) == []

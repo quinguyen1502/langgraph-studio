@@ -1,11 +1,7 @@
-import { test, expect, type Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
+import { login } from './helpers'
 // TASK-0044: template paths and filters: `|` suggests filters, tags show the chain, a bad filter is marked and refused on save,
 // double-click turns a tag back into text, and a run renders the result.
-async function login(page: Page) {
-  await page.goto('/login'); await page.getByLabel('Mật khẩu', { exact: true }).fill('admin123'); await page.locator('#auth-submit').click()
-  await expect(page).toHaveURL(/\/workflows$/)
-  return { Authorization: `Bearer ${await page.evaluate(() => localStorage.getItem('token'))}` }
-}
 const WF = (name: string) => ({ name, state: [{ name: 'order', type: 'object' }, { name: 'decision', type: 'string' }],
   nodes: [{ id: 's', type: 'start', position: { x: 40, y: 120 }, data: { label: 'Start' } },
     { id: 'ask', type: 'human', position: { x: 280, y: 120 }, data: { label: 'Ask', prompt: 'Refund {{state.order.id}}?', output_field: 'decision' } },

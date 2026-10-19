@@ -2,12 +2,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
+from . import foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
 
 
@@ -58,6 +59,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     schema = [f for f in wf.get("state", []) if isinstance(f, dict) and f.get("name")]
     fields = {f["name"] for f in schema}
     for f in schema: errs += field_errors(f)
+    errs += [f"State field {n}: names starting with '{foreach.PREFIX}' are reserved for For each loops" for n in sorted(fields) if n.startswith(foreach.PREFIX)]
     for e in edges:
         missing = [x for x in (e["source"], e["target"]) if x not in ids]
         if missing:
@@ -66,6 +68,14 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             errs.append(f"Node {e['source']}: cannot connect to itself (only a Condition may create a loop)")
     edges = [e for e in edges if e["source"] in ids and e["target"] in ids]
     out = {i: [e for e in edges if e["source"] == i] for i in ids}
+    def reaches(a: str, b: str) -> bool:
+        seen, stack = set(), [a]
+        while stack:
+            x = stack.pop()
+            if x == b: return True
+            if x in seen: continue
+            seen.add(x); stack += [e["target"] for e in out.get(x, [])]
+        return False
     for n in nodes:
         t, d, nid = n.get("type"), n.get("data", {}), n["id"]
         if t not in TYPES:
@@ -104,6 +114,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if not isinstance(d.get("arguments", {}), dict): errs.append(f"MCP node {nid}: arguments must be an object")
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")
+        if t == "foreach": errs += foreach.errors(nid, d, out.get(nid, []), schema, reaches)
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]
@@ -114,7 +125,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
     # parallel branches (several outgoing edges, no Condition) that write the same field need a reducer
     red = {f["name"]: reducer_of(f) for f in schema}
     for n in nodes:
-        if n.get("type") == "condition" or len(out.get(n["id"], [])) < 2: continue
+        if n.get("type") in ("condition", "foreach") or len(out.get(n["id"], [])) < 2: continue  # one route at a time
         writes: Dict[str, List[str]] = {}
         for e in out[n["id"]]:
             tgt = next((x for x in nodes if x["id"] == e["target"]), None)
@@ -123,15 +134,16 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         for of, who in writes.items():
             if len(who) > 1 and red.get(of, "replace") == "replace":
                 errs.append(f"Parallel nodes {', '.join(who)} all write state.{of}: give the field a reducer (append, merge or add) or use different fields")
-    # cycles must pass through a Condition node (otherwise the loop can never exit)
-    plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) != "condition" and e["target"] != i] for i in ids if types.get(i) != "condition"}
+    # cycles must pass through a Condition or For each node (otherwise the loop can never exit)
+    exits = ("condition", "foreach")
+    plain = {i: [e["target"] for e in out.get(i, []) if types.get(e["target"]) not in exits and e["target"] != i] for i in ids if types.get(i) not in exits}
     state_: Dict[str, int] = {}
     def dfs(u, path):
         state_[u] = 1; path.append(u)
         for v in plain.get(u, []):
             if state_.get(v) == 1:
                 cyc = path[path.index(v):] + [v]
-                errs.append(f"Loop without a Condition: {' → '.join(cyc)}")
+                errs.append(f"Loop without a Condition or For each: {' → '.join(cyc)}")
                 return True
             elif not state_.get(v) and dfs(v, path): return True
         path.pop(); state_[u] = 2; return False

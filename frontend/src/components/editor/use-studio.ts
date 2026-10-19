@@ -19,7 +19,7 @@ import { buildTrace, withSummary } from '@/lib/trace'
 import { useShortcuts } from '@/lib/use-shortcuts'
 import { useGraphHistory } from '@/lib/use-graph-history'
 import { removeElements, selectionIds, spliceNode } from '@/lib/graph-ops'
-import { META, INSERTABLE, DEFAULTS, MENU_OF, MENU_IDS, ACTION_ICONS, canvasId, styleEdges, defaultInput, type Field, type LogItem } from './meta'
+import { META, INSERTABLE, DEFAULTS, MENU_OF, MENU_IDS, ACTION_ICONS, canvasId, styleEdges, defaultInput, LOOP_LABELS, type Field, type LogItem } from './meta'
 
 /** Editor state and actions (TASK-0040: moved out of pages/Editor.tsx). Panels read it through StudioContext. */
 export function useStudio() {
@@ -255,7 +255,11 @@ export function useStudio() {
       setTraceSel(spans[cur >= 0 ? (cur + 1) % spans.length : spans.length - 1].key); setTab('logs')
     }
   }
-  const onConnect = useCallback((c: Connection) => setEdges(es => addEdge({ ...c, id: 'e' + Date.now() }, es)), [setEdges])
+  const onConnect = useCallback((c: Connection) => setEdges(es => {
+    // a For each node's first edge is its loop body, the second leaves the loop (TASK-0049)
+    const loop = rf.getNode(c.source)?.type === 'foreach' ? LOOP_LABELS.find(l => !es.some(e => e.source === c.source && e.label === l)) : undefined
+    return addEdge({ ...c, id: 'e' + Date.now(), ...(loop ? { label: loop } : {}) }, es)
+  }), [setEdges, rf])
   const onDrop = (ev: React.DragEvent) => {
     ev.preventDefault(); if (!edit) return; const t = ev.dataTransfer.getData('nodetype'); if (!t) return
     addNode(t, rf.screenToFlowPosition({ x: ev.clientX, y: ev.clientY }))

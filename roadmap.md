@@ -122,3 +122,7 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 ## Records
 
 - TASK-0048 Close the open questions of REQ-0001, 0002, 0003, 0004, 0008 and 0010; accept DEC-0006; DEC-0033 addendum on release merges to main: **done**. Merged (PR #52).
+
+## Loops
+
+- TASK-0049 For each node: run a branch once per list item, one at a time (REQ-0035, DEC-0038, Implemented 2026-10-19): **done**. REV-0046, QA-0046. Not merged.

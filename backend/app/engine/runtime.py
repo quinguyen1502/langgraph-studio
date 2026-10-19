@@ -4,6 +4,7 @@ import json, time
 from typing import Any, Dict, List, Optional
 from langgraph.checkpoint.memory import InMemorySaver
 from .compiler import compile_workflow
+from . import foreach
 from .effects import Effects
 from .errors import Interrupt, ValidationError
 from .limits import safe_error
@@ -76,7 +77,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         return {"type": "node_started", **meta(nid), "iteration": counts[nid]}
 
     t0 = time.perf_counter(); pending: List[str] = []; done_steps = 0; finished_ids: set[str] = set()
-    cfg = {"recursion_limit": recursion_limit(), "configurable": {"thread_id": "run"}}
+    cfg = {"recursion_limit": recursion_limit() + foreach.step_budget(wf), "configurable": {"thread_id": "run"}}  # For each loops add steps
 
     def counts_as_step(ids: List[str]) -> bool:
         return any(nodes[n]["type"] not in ("start", "end") for n in ids)
@@ -131,7 +132,7 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
         yield {"type": "error", "node": until, "code": "RUN_NODE_NOT_REACHED", "errors": [msg],
                "error": {"code": "RUN_NODE_NOT_REACHED", "message": msg, "details": {"node": until}}}
         return
-    yield {"type": "run_finished", "state": state}
+    yield {"type": "run_finished", "state": foreach.visible(state)}
 
 
 def resume_nodes(resume: Dict[str, Any]) -> List[str]:

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { removeElements, selectionIds, spliceNode } from '../graph-ops'
+import { removable, removeElements, selectionIds, spliceNode } from '../graph-ops'
 
 const N = (id: string, type = 'llm', selected = false) => ({ id, type, position: { x: 0, y: 0 }, data: {}, selected }) as any
 const E = (id: string, s: string, t: string, selected = false) => ({ id, source: s, target: t, selected }) as any
@@ -7,10 +7,16 @@ const nodes = [N('start', 'start'), N('a', 'llm', true), N('b'), N('end', 'end',
 const edges = [E('e1', 'start', 'a'), E('e2', 'a', 'b'), E('e3', 'b', 'end', true)]
 
 describe('removeElements', () => {
-  it('drops nodes with their edges but never Start/End', () => {
+  it('drops nodes with their edges but never the last Start/End', () => {
     const r = removeElements(nodes, edges, ['a', 'end'])
     expect(r.nodes.map(n => n.id)).toEqual(['start', 'b', 'end'])
     expect(r.edges.map(e => e.id)).toEqual(['e3'])
+  })
+  it('drops extra Start/End nodes and keeps one of each', () => {
+    const many = [N('s1', 'start'), N('s2', 'start'), N('e1', 'end'), N('e2', 'end'), N('a')]
+    expect([...removable(many, ['s2', 'e1'])].sort()).toEqual(['e1', 's2'])
+    expect([...removable(many, ['s1', 's2', 'e1', 'e2', 'a'])].sort()).toEqual(['a', 'e2', 's2'])  // the first of each stays
+    expect(removeElements(many, [], ['s1', 's2']).nodes.map(n => n.id)).toEqual(['s1', 'e1', 'e2', 'a'])
   })
   it('drops selected edges', () => {
     expect(removeElements(nodes, edges, [], ['e2']).edges.map(e => e.id)).toEqual(['e1', 'e3'])

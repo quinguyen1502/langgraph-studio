@@ -16,6 +16,7 @@ import { credentialModels, probeProvider, useProviders, type ProbeResult } from 
 import { useLoadWhen } from '@/lib/use-when'
 import { SmtpFields } from '@/components/smtp-fields'
 import { SMTP_DEFAULTS, type SmtpSettings } from '@/lib/smtp'
+import { Tip } from '@/components/tip'
 
 export type Credential = { id: string; name: string; provider: string; base_url: string | null; hint: string; headers?: Record<string, string>; settings?: SmtpSettings; created: number }
 type Status = { busy?: boolean; ok?: ProbeResult; err?: string }
@@ -76,7 +77,7 @@ export function CredentialsDialog({ trigger, onChanged }: { trigger?: React.Reac
             <Badge variant="secondary" className="shrink-0">{label(c.provider)}</Badge><span className="shrink-0 font-medium">{c.name}</span>
             {c.hint && <span className="shrink-0 font-mono text-xs text-muted-foreground">{c.hint}</span>}
             {c.settings?.host && <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" data-smtp>{c.settings.from_email} · {c.settings.host}:{c.settings.port}</span>}
-            {c.base_url && <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground" title={c.base_url}>{c.base_url}</span>}
+            {c.base_url && <Tip tip={c.base_url}><span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">{c.base_url}</span></Tip>}
             <div className="ml-auto flex shrink-0 items-center gap-1">
               <Button variant="ghost" size="sm" aria-label={t('creds.testAria', { name: c.name })}
                 onClick={() => run(s => setRowTest(r => ({ ...r, [c.id]: s })), () => credentialModels(c.id))}><PlugZap />{t('creds.test')}</Button>

@@ -4,6 +4,7 @@ import { Check, ChevronRight, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { cn } from '@/lib/utils'
+import { Tip } from '@/components/tip'
 
 export function CopyButton({ value, className }: { value: any; className?: string }) {
   const { t } = useTranslation()
@@ -13,7 +14,7 @@ export function CopyButton({ value, className }: { value: any; className?: strin
     try { await navigator.clipboard.writeText(txt) } catch { /* clipboard may be unavailable (http) */ }
     setOk(true); setTimeout(() => setOk(false), 1200)
   }
-  return <Button variant="ghost" size="icon" className={cn('size-6', className)} onClick={copy} aria-label={t('common.copyJson')} title={t('common.copyJson')}>{ok ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}</Button>
+  return <Tip tip={t('common.copyJson')}><Button variant="ghost" size="icon" className={cn('size-6', className)} onClick={copy} aria-label={t('common.copyJson')}>{ok ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}</Button></Tip>
 }
 
 function Leaf({ v }: { v: any }) {

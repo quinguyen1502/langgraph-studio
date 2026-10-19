@@ -211,7 +211,8 @@
     "loop": {
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
-    }
+    },
+    "toolSourceHint": "Python functions are part of the server: they are registered in {{file}} with @register_tool and cannot be edited here. For custom logic without a server change, use an HTTP request or an MCP tool."
   },
   "nodes": {
     "start": "Start point",
@@ -1133,7 +1134,7 @@
       "escape": "Clear selection / close panel",
       "run": "Run workflow",
       "stop": "Stop the run",
-      "delete": "Delete selection (not Start/End)",
+      "delete": "Delete selection (one Start and one End stay)",
       "selectAll": "Select all",
       "fitView": "Fit to view",
       "zoomIn": "Zoom in",

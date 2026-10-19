@@ -9,7 +9,7 @@ import i18n from '@/lib/i18n'
 import { useTranslation } from 'react-i18next'
 import { RunTrace } from '@/components/run-trace'
 import { fmtCost, fmtMs } from '@/lib/trace'
-import { Tip } from './parts'
+import { Tip } from '@/components/tip'
 import { useStudioCtx } from './studio-context'
 
 /** Bottom panel: run input, logs, and history (TASK-0040). */
@@ -38,19 +38,20 @@ export function EditorRunPanel() {
             {!history.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
             {history.map(h => <button key={h.id} data-testid="history-row" onClick={() => openRun(h)}
               className="w-full flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
-              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' || h.status === 'expired' || h.status === 'paused' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
-              <span className="text-muted-foreground w-20">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
-              <span className="font-mono text-muted-foreground">{h.id}</span>
+              <span className="w-16 shrink-0"><Badge variant={h.status === 'ok' ? 'success' : h.status === 'timeout' ? 'warning' : h.status === 'cancelled' || h.status === 'expired' || h.status === 'paused' ? 'secondary' : h.status === 'waiting' ? 'outline' : 'destructive'}>{t(`status.${h.status}`)}</Badge></span>
+              <span className="w-20 shrink-0 text-muted-foreground tabular-nums">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
+              <span className="w-20 shrink-0 font-mono text-muted-foreground">{h.id}</span>
+              <span className="flex w-28 shrink-0 items-center gap-1">
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}
               {h.source === 'schedule' && <Badge variant="outline" data-testid="history-source">{t('schedules.badge')}</Badge>}
               <Tip tip={h.version ? t('versions.runVersion', { n: h.version }) : t('versions.runUnsaved')}>
-                <Badge variant="secondary" data-testid="history-version">{h.version ? `v${h.version}` : t('versions.unsaved')}</Badge></Tip>
-              <span className="truncate">{JSON.stringify(h.input)}</span>
+                <Badge variant="secondary" data-testid="history-version">{h.version ? `v${h.version}` : t('versions.unsaved')}</Badge></Tip></span>
+              <span className="min-w-0 truncate">{JSON.stringify(h.input)}</span>
               <span className="ml-auto flex shrink-0 items-center gap-2 text-muted-foreground tabular-nums">
-                {h.metrics && <span data-testid="history-tokens">{t('trace.tokens', { count: h.metrics.tokens })}</span>}
-                {h.metrics && <span data-testid="history-cost">{fmtCost(h.metrics.cost_usd)}</span>}
-                {h.metrics?.error_count > 0 && <Badge variant="destructive">{t('trace.errorCount', { count: h.metrics.error_count })}</Badge>}
-                <span>{fmtMs(h.metrics?.duration_ms ?? (h.ended - h.started) * 1000)}</span>
+                {h.metrics && <span className="w-20 text-right" data-testid="history-tokens">{t('trace.tokens', { count: h.metrics.tokens })}</span>}
+                {h.metrics && <span className="w-12 text-right" data-testid="history-cost">{fmtCost(h.metrics.cost_usd)}</span>}
+                <span className="flex w-16 justify-end">{h.metrics?.error_count > 0 && <Badge variant="destructive">{t('trace.errorCount', { count: h.metrics.error_count })}</Badge>}</span>
+                <span className="w-14 text-right">{fmtMs(h.metrics?.duration_ms ?? (h.ended - h.started) * 1000)}</span>
                 {h.trace_url && <ExternalLink className="size-3.5" aria-label={t('trace.openTrace')} />}{/* link itself is in the replayed timeline (no <a> inside a button) */}
               </span>
             </button>)}

@@ -82,13 +82,13 @@ test('list: rename / duplicate / delete with confirm, edge cases, not-found', as
   await expect(page.locator('#rename-error')).toHaveText('Tên không được để trống')
   const long = 'Very long workflow name '.repeat(5).trim().slice(0, 100)
   await page.locator('#rename-input').fill(long); await page.locator('#rename-save').click()
-  await expect(page.getByTitle(long)).toBeVisible()
+  await expect(page.getByText(long, { exact: true })).toBeVisible()  // the full name is the text (tooltip on hover)
   // duplicate naming
   await openMenu(0, 'Nhân bản')
   await expect(page.locator('#wf-notice')).toContainText('(copy)')
   await expect(rows).toHaveCount(2)
   // rename to duplicate name rejected
-  const orig = rows.filter({ has: page.locator(`[title="${long}"]`) }).locator('.wf-actions')
+  const orig = rows.filter({ has: page.getByText(long, { exact: true }) }).locator('.wf-actions')
   await expect(page.locator('[role=menu]')).toHaveCount(0); await orig.click(); await page.getByRole('menuitem', { name: 'Đổi tên', exact: true }).click()
   await page.locator('#rename-input').fill(`${long} (copy)`); await page.locator('#rename-save').click()
   await expect(page.locator('#rename-error')).toHaveText('Đã có workflow trùng tên')

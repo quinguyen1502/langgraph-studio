@@ -5,12 +5,13 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useEffect } from 'react'
 import { LANGS } from '@/lib/i18n'
 import { setLanguage, syncLanguage } from '@/lib/language'
+import { Tip } from '@/components/tip'
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation()
   useEffect(() => { syncLanguage() }, [])
   return <DropdownMenu>
-    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="lang-switch" aria-label={t('common.language')} title={t('common.language')}><Languages /></Button></DropdownMenuTrigger>
+    <Tip tip={t('common.language')}><DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="lang-switch" aria-label={t('common.language')}><Languages /></Button></DropdownMenuTrigger></Tip>
     <DropdownMenuContent align="end">
       {LANGS.map(l => <DropdownMenuItem key={l} data-lang={l} onClick={() => setLanguage(l)}>
         <Check className={i18n.resolvedLanguage === l ? '' : 'invisible'} />{t(`lang.${l}`)}</DropdownMenuItem>)}

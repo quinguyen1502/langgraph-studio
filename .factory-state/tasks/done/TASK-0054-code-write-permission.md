@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0054
-- Status: review
+- Status: done
 - Phase: nodes
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -100,6 +100,7 @@ Only users with the new `code.write` permission (admins by default) can add a Co
 - 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
 - 2026-10-19: Started on `factory/task-0054-code-write-permission` (owner: "Làm task 1 chuỗi 54, 55, 56").
 - 2026-10-19: Implemented: one check in `WorkflowService._write` plus template import. Review REV-0051, QA QA-0051 (pass). PR open; not merged.
+- 2026-10-19: Merged in PR #62 (owner: "Merge lần lượt PR #62, #63, #64").
 
 ## Handoff Notes
 

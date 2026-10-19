@@ -36,6 +36,30 @@ variable; the most used ones are in [Configuration](../reference/configuration.m
 An empty `STUDIO_SECRET_KEY` is generated once into the `apidata` volume
 (`/data/secret.key`). That works, but back the volume up with the database.
 
+## Upgrade from v0.1.0
+
+v0.1.0 was called LangGraph Studio, and its Compose project was
+`langgraph-studio`. The project is now `superstep`, but the volumes keep their
+v0.1.0 names (`langgraph-studio_pgdata`, `_redisdata`, `_apidata`), so the
+database, queue and generated secret key carry over. Stop the old stack before
+starting the new one. Otherwise Compose starts a second set of containers on
+the same ports and volumes:
+
+```bash
+docker compose -p langgraph-studio down   # keeps the volumes; never add -v
+git pull && docker compose up -d --build
+```
+
+Also check what still uses the old name:
+
+- **Telemetry:** the default `OTEL_SERVICE_NAME` is now `superstep`. Set it
+  to `langgraph-studio` to keep existing dashboards.
+- **E-mail:** subjects start with `[Superstep]`. Update mail filters.
+- **Local runs (no Docker):** the key and imports move to `~/.superstep/`.
+  `~/.langgraph-studio/` is still used while the new folder does not exist.
+- **Files:** templates exported and nodes copied from v0.1.0 still import and
+  paste.
+
 ## Database
 
 `GET /api/health` reports `database` (`postgresql` or `sqlite`) and `run_bus`

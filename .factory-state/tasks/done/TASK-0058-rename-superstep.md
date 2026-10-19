@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0058
-- Status: doing
+- Status: done (PR #69, REV-0054, QA-0054)
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19

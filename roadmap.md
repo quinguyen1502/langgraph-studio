@@ -150,4 +150,4 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 
 ## Documentation
 
-- Handbook on MkDocs Material (English and Vietnamese), a shorter README, and a 90 s intro video rendered from the handbook screenshots (`handbook/`, `scripts/promo/`, `frontend/e2e/handbook.spec.ts`): **in review**.
+- Handbook on MkDocs Material (English and Vietnamese), a shorter README, and a 90 s intro video rendered from the handbook screenshots (`handbook/`, `scripts/promo/`, `frontend/e2e/handbook.spec.ts`): **in review** (PR #65).

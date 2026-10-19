@@ -140,19 +140,19 @@ class Telemetry:
         if metric_readers is None: metric_readers = self._metric_readers_from_env()
         if exporters or metric_readers:
             from opentelemetry.sdk.resources import Resource
-            res = Resource.create({"service.name": _env("OTEL_SERVICE_NAME") or "langgraph-studio"})
+            res = Resource.create({"service.name": _env("OTEL_SERVICE_NAME") or "superstep"})
         if exporters:
             from opentelemetry.sdk.trace import TracerProvider
             from opentelemetry.sdk.trace.export import BatchSpanProcessor, SimpleSpanProcessor
             self._ids = _IdGenerator()
             self._provider = TracerProvider(resource=res, id_generator=self._ids)  # own provider: never touches the global one
             for ex in exporters: self._provider.add_span_processor(SimpleSpanProcessor(ex) if sync else BatchSpanProcessor(ex))
-            self._tracer = self._provider.get_tracer("langgraph-studio")
+            self._tracer = self._provider.get_tracer("superstep")
             self.exporters = [type(e).__name__ for e in exporters]
         if metric_readers:
             from opentelemetry.sdk.metrics import MeterProvider
             self._meter_provider = MeterProvider(resource=res, metric_readers=metric_readers)
-            m = self._meter_provider.get_meter("langgraph-studio")
+            m = self._meter_provider.get_meter("superstep")
             self._m = {"runs": m.create_counter("studio.runs", unit="{run}", description="Finished runs"),
                        "duration": m.create_histogram("studio.run.duration", unit="ms", description="Active run time"),
                        "tokens": m.create_counter("studio.tokens", unit="{token}", description="LLM tokens"),

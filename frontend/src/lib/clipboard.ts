@@ -4,7 +4,8 @@
 import type { Edge, Node } from '@xyflow/react'
 import { PROTECTED } from '@/lib/graph-ops'
 
-export const CLIP_FORMAT = 'langgraph-studio/nodes', CLIP_VERSION = 1, CLIP_KEY = 'lgs.clipboard'
+export const CLIP_FORMAT = 'superstep/nodes', CLIP_VERSION = 1, CLIP_KEY = 'lgs.clipboard'
+const FORMATS = new Set<string>([CLIP_FORMAT, 'langgraph-studio/nodes'])  // the v0.1.0 name is still pasted (TASK-0058)
 export type ClipNode = { id: string; type: string; position: { x: number; y: number }; data: Record<string, unknown> }
 export type ClipEdge = { id: string; source: string; target: string; label?: unknown; sourceHandle?: string | null; data?: unknown }
 export type Clip = { format: typeof CLIP_FORMAT; version: number; nodes: ClipNode[]; edges: ClipEdge[] }
@@ -30,7 +31,7 @@ export function parseClip(raw: string | null): Clip | null {
   if (!raw) return null
   try {
     const c = JSON.parse(raw)
-    return c && c.format === CLIP_FORMAT && c.version === CLIP_VERSION && Array.isArray(c.nodes) && Array.isArray(c.edges) && c.nodes.length ? c : null
+    return c && FORMATS.has(c.format) && c.version === CLIP_VERSION && Array.isArray(c.nodes) && Array.isArray(c.edges) && c.nodes.length ? c : null
   } catch { return null }
 }
 

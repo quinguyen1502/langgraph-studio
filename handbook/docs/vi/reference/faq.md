@@ -16,10 +16,13 @@ có mô tả định dạng.
 Docker sandbox và các bước của nó hiện trong cùng một trace. Node được import
 chỉ đọc trên canvas.
 
-**Khác gì LangGraph Platform?**
-LangGraph Studio là một project riêng, tự host. Nó dựng graph trực quan dưới
-dạng JSON, có sẵn duyệt, lịch chạy, trigger, phiên bản và phân quyền. Nó không
-thay thế LangGraph Platform.
+**Khác gì các sản phẩm của LangChain?**
+Superstep là một project riêng, tự host, không do LangChain làm. Nó dựng graph
+trực quan dưới dạng JSON, biên dịch sang LangGraph, và có sẵn duyệt, lịch chạy,
+trigger, phiên bản và phân quyền. LangSmith Studio (trước đây là LangGraph
+Studio) dùng để xem graph bạn viết bằng code, còn LangSmith Deployment (trước
+đây là LangGraph Platform) dùng để host chúng. Tới v0.1.0, Superstep có tên là
+LangGraph Studio.
 
 **Vì sao run dừng với lỗi recursion?**
 Một vòng lặp không bao giờ đi qua Condition dẫn ra ngoài, hoặc graph chạy quá

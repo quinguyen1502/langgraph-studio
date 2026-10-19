@@ -11,7 +11,7 @@ root lists every variable Compose passes; this page groups them.
 | `JWT_SECRET` | placeholder | Signs session tokens |
 | `JWT_TTL_SECONDS` | `86400` | Session lifetime |
 | `STUDIO_SECRET_KEY` | generated | Fernet key for stored secrets |
-| `STUDIO_SECRET_KEY_FILE` | `~/.langgraph-studio/secret.key` | Where a generated key is kept |
+| `STUDIO_SECRET_KEY_FILE` | `~/.superstep/secret.key` | Where a generated key is kept |
 | `DATABASE_URL` | SQLite `backend/studio.db` | SQLAlchemy URL, e.g. `postgresql://…` |
 | `STUDIO_DB` | `backend/studio.db` | SQLite path when `DATABASE_URL` is empty |
 | `REDIS_URL` | empty | Run bus, queue and counters; empty keeps them in memory |
@@ -110,7 +110,7 @@ root lists every variable Compose passes; this page groups them.
 | --- | --- | --- |
 | `STUDIO_ENABLE_IMPORT` | `0` | Turn import on |
 | `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` only for tests (not isolated) |
-| `STUDIO_IMPORT_DIR` | `~/.langgraph-studio/imports` | Job directories |
+| `STUDIO_IMPORT_DIR` | `~/.superstep/imports` | Job directories |
 | `STUDIO_IMPORT_HOST_DIR` | empty | Host path of that directory under Compose |
 | `STUDIO_IMPORT_IMAGE` | `python:3.12-slim` | Sandbox image |
 | `STUDIO_IMPORT_MEMORY` | `1g` | Memory |
@@ -148,7 +148,7 @@ root lists every variable Compose passes; this page groups them.
 | --- | --- | --- |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | empty | OTLP/HTTP endpoint; empty turns tracing off |
 | `OTEL_EXPORTER_OTLP_HEADERS` | empty | OTLP headers |
-| `OTEL_SERVICE_NAME` | `langgraph-studio` | Service name |
+| `OTEL_SERVICE_NAME` | `superstep` | Service name |
 | `STUDIO_TRACE_URL` | empty | **Open trace** link template with `{trace_id}` |
 | `STUDIO_OTEL_METRICS` | `0` | Also export metrics |
 | `LANGSMITH_API_KEY`, `LANGSMITH_TRACING` | empty | Export to LangSmith |

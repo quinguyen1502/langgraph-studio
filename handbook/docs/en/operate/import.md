@@ -19,7 +19,7 @@ What happens (`backend/app/engine/repo_import.py`,
 `backend/app/engine/sandbox/container.py`, `backend/app/engine/sandbox/runner.py`):
 
 1. `git clone --depth 1`, or a zip extract that rejects zip-slip paths, into
-   `~/.langgraph-studio/imports/<job_id>/` (`STUDIO_IMPORT_DIR`). This runs on
+   `~/.superstep/imports/<job_id>/` (`STUDIO_IMPORT_DIR`). This runs on
    the API process; the API image includes `git`.
 2. `python -m venv` and `pip` run **inside Docker** (`STUDIO_IMPORT_IMAGE`,
    default `python:3.12-slim`). Packages come from `pyproject.toml` /

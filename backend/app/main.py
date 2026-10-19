@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
         sweeper.cancel()
         if w: await w.stop()
 
-    app = FastAPI(title="LangGraph Studio MVP", default_response_class=EnvelopeResponse, lifespan=lifespan)  # every REST response is an envelope
+    app = FastAPI(title="Superstep", default_response_class=EnvelopeResponse, lifespan=lifespan)  # every REST response is an envelope
     if origins := config.cors_origins():  # STUDIO_CORS_ORIGINS; production default: same-origin only (TASK-0039)
         app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
     redact_tokens("uvicorn.access", "uvicorn.error")  # WebSocket URLs carry ?token=<JWT>

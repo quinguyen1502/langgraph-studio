@@ -203,7 +203,7 @@ def test_chat_texts_follow_the_owner_and_presser_language(c, api):
     assert r.status_code == 422 and r.json()["error"]["code"] == "NOTIFICATION_PREFS_INVALID"
     c.put("/api/notifications/preferences", json={"lang": "vi"}, headers=H(approver["token"]))
     uo, ua, us = (f"U{uuid.uuid4().hex[:8].upper()}" for _ in range(3))
-    link(c, api, owner, "slack", uo); assert "Mã xác minh LangGraph Studio" in [b for b in api.named("chat.postMessage") if b["channel"] == uo][-1]["text"]
+    link(c, api, owner, "slack", uo); assert "Mã xác minh Superstep" in [b for b in api.named("chat.postMessage") if b["channel"] == uo][-1]["text"]
     link(c, api, approver, "slack", ua); link(c, api, stranger, "slack", us)
     assert "verification code" in [b for b in api.named("chat.postMessage") if b["channel"] == us][-1]["text"]
     ch = c.get("/api/approvals/channels", headers=H(owner["token"])).json()["data"]["channels"][0]
@@ -349,7 +349,7 @@ def test_expired_button_and_answer_in_studio_supersede(c, api):
     with c.websocket_connect(f"/ws/run?token={owner['token']}") as w:
         w.send_json({"resume_run_id": rid2, "response": True})
         while w.receive_json()["type"] != "run_summary": pass
-    assert until(lambda: any(b["text"] == "Answered in LangGraph Studio" for b in api.named("chat.update")))
+    assert until(lambda: any(b["text"] == "Answered in Superstep" for b in api.named("chat.update")))
     assert slack_post(c, ch["id"], press(approve2, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
     actions = [e["action"] for e in c.get("/api/approvals/audit", headers=H(owner["token"])).json()["data"] if e["run_id"] == rid2]
     assert "superseded" in actions

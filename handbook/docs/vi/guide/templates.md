@@ -29,7 +29,7 @@ bạn tự chọn lại.
 **Xuất** trên một thẻ ghi ra file `*.template.json`:
 
 ```json
-{"format": "langgraph-studio/template", "version": 1,
+{"format": "superstep/template", "version": 1,
  "name": "…", "description": "…", "workflow": {"state": [], "nodes": [], "edges": []}}
 ```
 

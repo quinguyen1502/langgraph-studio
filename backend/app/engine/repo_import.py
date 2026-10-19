@@ -25,7 +25,7 @@ _PERSIST = ("id", "owner", "kind", "url", "branch", "subdir", "dir", "status", "
 
 
 def root() -> str:
-    return os.path.expanduser(os.environ.get("STUDIO_IMPORT_DIR") or "~/.langgraph-studio/imports")
+    return os.path.expanduser(os.environ.get("STUDIO_IMPORT_DIR") or os.path.join(config.home_dir(), "imports"))
 
 
 def sub_env() -> Dict[str, str]:

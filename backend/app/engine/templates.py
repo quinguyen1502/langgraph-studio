@@ -3,7 +3,8 @@ portable file format. Pure functions; persistence and permissions live in Templa
 from __future__ import annotations
 import copy
 
-FORMAT, VERSION = "langgraph-studio/template", 1
+FORMAT, VERSION = "superstep/template", 1
+FORMATS = (FORMAT, "langgraph-studio/template")  # files exported by v0.1.0 still import (TASK-0058)
 
 # node data fields that point at per-user resources or secrets: never copied into a template
 REF_FIELDS = ("credential_id", "knowledge_base_id", "server_id", "channel_id", "workflow_id")
@@ -33,7 +34,7 @@ def problems(payload) -> list[str]:
     """Why an imported file is not a template (empty = fine). Structural only; the editor validates the graph on save."""
     if not isinstance(payload, dict): return ["not a JSON object"]
     errs = []
-    if payload.get("format") != FORMAT: errs.append(f"format must be {FORMAT!r}")
+    if payload.get("format") not in FORMATS: errs.append(f"format must be {FORMAT!r}")
     if payload.get("version") != VERSION: errs.append(f"unsupported version {payload.get('version')!r}")
     wf = payload.get("workflow")
     if not isinstance(wf, dict): return errs + ["missing workflow"]

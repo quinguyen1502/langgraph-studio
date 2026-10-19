@@ -1,35 +1,35 @@
-# LangGraph Studio
+# Superstep
 
-[![CI](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/ci.yml)
-[![Handbook](https://github.com/quinguyen1502/langgraph-studio/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/langgraph-studio/vi/)
+[![CI](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml)
+[![Handbook](https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/superstep/vi/)
 
 [English](README.md) · **Tiếng Việt**
 
-LangGraph Studio là nền tảng tự host để xây workflow LangGraph trên trình duyệt
+Superstep là nền tảng tự host để xây workflow LangGraph trên trình duyệt
 và chạy chúng như một dịch vụ. Workflow là tài liệu JSON được backend FastAPI
 kiểm tra và biên dịch thành `StateGraph` của LangGraph. Mỗi workflow chạy được
 từ trình soạn thảo kèm trace trực tiếp của từng node, từ dịch vụ khác qua
 HTTP, theo lịch cron, và có thể dừng giữa chừng chờ người quyết định.
 
-[![Video bắt đầu nhanh: dựng, chạy, duyệt và gọi một workflow](handbook/docs/vi/assets/video/studio-intro-vi.jpg)](https://quinguyen1502.github.io/langgraph-studio/vi/#video)
+[![Video bắt đầu nhanh: dựng, chạy, duyệt và gọi một workflow](handbook/docs/vi/assets/video/studio-intro-vi.jpg)](https://quinguyen1502.github.io/superstep/vi/#video)
 
-[Tài liệu](https://quinguyen1502.github.io/langgraph-studio/vi/) ·
-[Bắt đầu nhanh](https://quinguyen1502.github.io/langgraph-studio/vi/start/quickstart/) ·
-[HTTP API](https://quinguyen1502.github.io/langgraph-studio/vi/reference/api/) ·
-[Kiến trúc](https://quinguyen1502.github.io/langgraph-studio/vi/reference/architecture/)
+[Tài liệu](https://quinguyen1502.github.io/superstep/vi/) ·
+[Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/) ·
+[HTTP API](https://quinguyen1502.github.io/superstep/vi/reference/api/) ·
+[Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/)
 
 ## Bắt đầu nhanh
 
 ```bash
-git clone https://github.com/quinguyen1502/langgraph-studio.git
-cd langgraph-studio && ./dev.sh
+git clone https://github.com/quinguyen1502/superstep.git
+cd superstep && ./dev.sh
 ```
 
 Mở <http://localhost:5173> và đăng nhập bằng `admin@example.com` /
 `admin123` (chỉ có khi không chạy production). Tài liệu API ở
 <http://localhost:8000/docs>. Node LLM trả lời bằng bản mock offline cố định
 cho tới khi bạn thêm credential của model. Phần
-[Bắt đầu nhanh](https://quinguyen1502.github.io/langgraph-studio/vi/start/quickstart/)
+[Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/)
 dựng, chạy, duyệt và gọi workflow đầu tiên trong khoảng mười phút.
 
 Chạy đủ stack (Postgres có pgvector, Redis, API, worker, nginx):
@@ -75,17 +75,17 @@ flowchart LR
 Run chạy từ trình soạn thảo thực thi trong process API và gửi sự kiện qua
 WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi qua hàng
 đợi tới worker. Chi tiết:
-[Kiến trúc](https://quinguyen1502.github.io/langgraph-studio/vi/reference/architecture/).
+[Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/).
 
 ## Tài liệu
 
 | Chủ đề | Phần trong handbook |
 | --- | --- |
-| Cài đặt, bắt đầu nhanh, khái niệm | [Bắt đầu](https://quinguyen1502.github.io/langgraph-studio/vi/start/) |
-| Trình soạn thảo, node, state, chế độ Code, kho tri thức, MCP | [Xây dựng](https://quinguyen1502.github.io/langgraph-studio/vi/guide/) |
-| Trace, duyệt bởi người, API trigger, lịch chạy | [Chạy](https://quinguyen1502.github.io/langgraph-studio/vi/run/) |
-| Triển khai, tài khoản, vai trò, nhà cung cấp, kênh duyệt | [Vận hành](https://quinguyen1502.github.io/langgraph-studio/vi/operate/) |
-| Cấu hình, HTTP API, mã lỗi, kiến trúc | [Tham chiếu](https://quinguyen1502.github.io/langgraph-studio/vi/reference/) |
+| Cài đặt, bắt đầu nhanh, khái niệm | [Bắt đầu](https://quinguyen1502.github.io/superstep/vi/start/) |
+| Trình soạn thảo, node, state, chế độ Code, kho tri thức, MCP | [Xây dựng](https://quinguyen1502.github.io/superstep/vi/guide/) |
+| Trace, duyệt bởi người, API trigger, lịch chạy | [Chạy](https://quinguyen1502.github.io/superstep/vi/run/) |
+| Triển khai, tài khoản, vai trò, nhà cung cấp, kênh duyệt | [Vận hành](https://quinguyen1502.github.io/superstep/vi/operate/) |
+| Cấu hình, HTTP API, mã lỗi, kiến trúc | [Tham chiếu](https://quinguyen1502.github.io/superstep/vi/reference/) |
 
 Mã nguồn handbook nằm ở [`handbook/`](handbook/README.md). Mọi biến môi trường
 có trong [`.env.example`](.env.example) và mọi mã lỗi trong
@@ -112,5 +112,5 @@ cd frontend && npm run e2e
 Thay đổi đi theo quy trình trong [`AGENTS.md`](AGENTS.md): một requirement và
 một task trong `.factory-state/`, branch `factory/task-<id>-<name>`, kiểm tra,
 review, và merge sau khi có người duyệt. Xem
-[Phát triển](https://quinguyen1502.github.io/langgraph-studio/vi/reference/development/)
+[Phát triển](https://quinguyen1502.github.io/superstep/vi/reference/development/)
 để biết cách cài môi trường test và quy ước của từng lớp.

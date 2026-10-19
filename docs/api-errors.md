@@ -197,7 +197,7 @@
 | `APPROVAL_TOKEN_INVALID` | 400 | Invalid approval button |
 | `APPROVAL_TOKEN_EXPIRED` | 410 | This approval request has expired |
 | `APPROVAL_ALREADY_DECIDED` | 409 | This request was already answered |
-| `APPROVAL_IDENTITY_UNKNOWN` | 403 | Link and verify your {kind} account in LangGraph Studio (Settings → My accounts) to approve |
+| `APPROVAL_IDENTITY_UNKNOWN` | 403 | Link and verify your {kind} account in Superstep (Settings → My accounts) to approve |
 | `APPROVAL_FORBIDDEN` | 403 | You are not allowed to approve this run |
 
 Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal status for reference.

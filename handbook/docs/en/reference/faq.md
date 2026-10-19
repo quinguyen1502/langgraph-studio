@@ -15,10 +15,13 @@ Yes, with [repo import](../operate/import.md): the original Python graph runs
 in a Docker sandbox and its steps show in the same trace. Imported nodes are
 read-only on the canvas.
 
-**How is this different from LangGraph Platform?**
-LangGraph Studio is a separate, self-hosted project. It builds graphs visually
-as JSON, with approvals, schedules, triggers, versions and roles built in. It
-does not replace LangGraph Platform.
+**How is this different from LangChain's products?**
+Superstep is a separate, self-hosted project, not made by LangChain. It builds
+graphs visually as JSON, compiles them to LangGraph, and has approvals,
+schedules, triggers, versions and roles built in. LangSmith Studio (formerly
+LangGraph Studio) inspects graphs you write in code, and LangSmith Deployment
+(formerly LangGraph Platform) hosts them. Superstep was called LangGraph Studio
+up to v0.1.0.
 
 **Why did my run stop with a recursion error?**
 A loop never passed a Condition that leads out, or the graph took more than

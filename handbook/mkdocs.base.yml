@@ -1,9 +1,9 @@
 # Settings shared by the English (mkdocs.yml) and Vietnamese (mkdocs.vi.yml) sites.
 # Lists such as nav and palette are not merged by INHERIT, so each site file defines its own.
-site_name: LangGraph Studio
+site_name: Superstep
 
-repo_url: https://github.com/quinguyen1502/langgraph-studio
-repo_name: langgraph-studio
+repo_url: https://github.com/quinguyen1502/superstep
+repo_name: superstep
 strict: true
 validation:
   anchors: warn
@@ -33,15 +33,15 @@ theme:
 extra_css:
   - stylesheets/extra.css
 
-copyright: LangGraph Studio · Qui Nguyen · 2026
+copyright: Superstep · Qui Nguyen · 2026
 
 extra:
   alternate:
     - name: English
-      link: /langgraph-studio/
+      link: /superstep/
       lang: en
     - name: Tiếng Việt
-      link: /langgraph-studio/vi/
+      link: /superstep/vi/
       lang: vi
 
 extra_javascript:

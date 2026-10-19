@@ -37,6 +37,29 @@ biến hay dùng nhất có ở [Cấu hình](../reference/configuration.md).
 (`/data/secret.key`). Cách này chạy được, nhưng hãy sao lưu volume cùng với
 database.
 
+## Nâng cấp từ v0.1.0
+
+v0.1.0 có tên LangGraph Studio, và project Compose của nó là
+`langgraph-studio`. Project giờ là `superstep`, nhưng volume vẫn giữ tên của
+v0.1.0 (`langgraph-studio_pgdata`, `_redisdata`, `_apidata`), nên database,
+hàng đợi và khoá bí mật tự sinh được giữ nguyên. Hãy dừng stack cũ trước khi
+chạy stack mới, nếu không Compose sẽ chạy thêm một bộ container thứ hai trên
+cùng cổng và volume:
+
+```bash
+docker compose -p langgraph-studio down   # giữ volume; đừng thêm -v
+git pull && docker compose up -d --build
+```
+
+Kiểm tra thêm những chỗ còn dùng tên cũ:
+
+- **Telemetry:** `OTEL_SERVICE_NAME` mặc định giờ là `superstep`. Đặt
+  thành `langgraph-studio` để giữ các dashboard hiện có.
+- **E-mail:** tiêu đề bắt đầu bằng `[Superstep]`. Hãy cập nhật bộ lọc thư.
+- **Chạy ở máy (không Docker):** khoá và thư mục import chuyển sang
+  `~/.superstep/`. `~/.langgraph-studio/` vẫn được dùng khi thư mục mới chưa có.
+- **File:** template đã export và node đã copy từ v0.1.0 vẫn nhập và dán được.
+
 ## Database
 
 `GET /api/health` cho biết `database` (`postgresql` hoặc `sqlite`) và

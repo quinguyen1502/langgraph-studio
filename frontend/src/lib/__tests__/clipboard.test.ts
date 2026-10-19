@@ -46,4 +46,8 @@ describe('parseClip', () => {
     expect(parseClip(JSON.stringify(c))?.nodes).toHaveLength(1)
     expect(parseClip('hello')).toBeNull(); expect(parseClip(JSON.stringify({ ...c, version: 2 }))).toBeNull(); expect(parseClip(null)).toBeNull()
   })
+  it('still reads nodes copied under the v0.1.0 format name', () => {
+    const c = copySelection(nodes, edges, ['a'])!
+    expect(parseClip(JSON.stringify({ ...c, format: 'langgraph-studio/nodes' }))?.nodes).toHaveLength(1)
+  })
 })

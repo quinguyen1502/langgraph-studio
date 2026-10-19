@@ -33,7 +33,7 @@ export function useStudio() {
   const [input, setInput] = useState(() => i18n.t('samples.input'))
   const [log, setLog] = useState<LogItem[]>([])
   const [errors, setErrors] = useState<string[]>([])
-  const [tools, setTools] = useState<{ name: string; doc?: string }[]>([])
+  const [tools, setTools] = useState<{ name: string }[]>([])
   const [mode, setMode] = useState('')
   const [source, setSource] = useState<any>(null)
   const [creds, setCreds] = useState<Credential[]>([])

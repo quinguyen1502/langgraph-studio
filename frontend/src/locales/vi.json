@@ -211,8 +211,7 @@
     "loop": {
       "each": "each: chạy phần thân cho phần tử tiếp theo",
       "done": "done: sau phần tử cuối"
-    },
-    "toolSourceHint": "Hàm Python nằm trong code server: được đăng ký trong {{file}} bằng @register_tool và không sửa được ở đây. Muốn có logic riêng mà không sửa server, hãy dùng HTTP request hoặc MCP tool."
+    }
   },
   "nodes": {
     "start": "Điểm bắt đầu",

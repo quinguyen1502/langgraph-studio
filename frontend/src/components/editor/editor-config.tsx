@@ -67,9 +67,7 @@ export function EditorConfig() {
               <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
               <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>
               <F label={t('field.bodyTemplate')}><TemplateEditor {...tpl} rows={4} id="http-body" value={d.body || ''} onChange={v => upd('body', v)} /></F>
-            </> : <F label={t('field.function')}><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} />
-              {tools.find(x => x.name === d.function)?.doc && <p className="text-[11px] text-muted-foreground whitespace-pre-line" id="tool-doc">{tools.find(x => x.name === d.function)?.doc}</p>}
-              <p className="text-[11px] text-muted-foreground" id="tool-source-hint">{t('editor.toolSourceHint', { file: 'backend/app/engine/tools.py' })}</p></F>}
+            </> : <F label={t('field.function')}><Sel value={d.function} onChange={v => upd('function', v)} opts={tools.map(t => t.name)} /></F>}
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
           </>}
           {selNode.type === 'code' && <>

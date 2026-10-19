@@ -141,9 +141,9 @@ Added on 2026-10-17 at the owner's request. Status: done (PRs #26–#31 merged i
 
 ## Code nodes
 
-REQ-0039, Accepted 2026-10-19; CLAR-0001 answered; DEC-0041 Accepted 2026-10-19; tasks approved by the owner.
+REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Accepted 2026-10-19; tasks approved by the owner.
 
 - TASK-0053 Code mode runtime: Docker sandbox with no network, `studio-code` image, node mode and validation. **merged** (PR #61, REV-0050, QA-0050). Independent of TASK-0054.
 - TASK-0054 `code.write` permission, checked on every path that writes a graph. **merged** (PR #62, REV-0051, QA-0051). Independent of TASK-0053.
 - TASK-0055 Editor: Python code field, Test with sample state, trace output. **merged** (PR #63, REV-0052, QA-0052). After TASK-0053 and TASK-0054.
-- TASK-0056 Host subprocess runtime and the eight "not isolated" warnings. **in review** (REV-0053, QA-0053). After TASK-0053 and TASK-0055.
+- TASK-0056 Host subprocess runtime and the eight "not isolated" warnings. **merged** (PR #64, REV-0053, QA-0053). After TASK-0053 and TASK-0055.

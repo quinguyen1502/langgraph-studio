@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0039
-- Status: Accepted
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
 - Updated: 2026-10-19
@@ -205,6 +205,7 @@ Closed 2026-10-19 (owner in chat):
 ## Owner Acceptance
 
 - 2026-10-19: the owner accepted REQ-0039 with the CLAR-0001 answers, the default image packages and the Host Subprocess Mode warnings. Planned 2026-10-19 as TASK-0053 to TASK-0056 (DEC-0041); the owner approved the tasks and accepted DEC-0041 the same day.
+- 2026-10-19: Implemented and merged into `develop` by the owner's request: TASK-0053 (PR #61), TASK-0054 (PR #62), TASK-0055 (PR #63) and TASK-0056 (PR #64). The accepted residual risk is the Host Subprocess Mode: it is not a sandbox, and the README and the eight warnings say so.
 
 ## Related Artifacts
 

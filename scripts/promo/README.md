@@ -1,6 +1,6 @@
 # Quickstart video
 
-Renders the 98 s video on the handbook home page. It follows the
+Renders the 70 s video on the handbook home page. It follows the
 [Quickstart](../../handbook/docs/en/start/quickstart.md) step by step: create a
 blank workflow, drag an LLM and a Human node, wire and configure them, send
 the approval request to Slack, run and approve, read the state diff, create an API token, call it with `curl`, add a
@@ -39,8 +39,12 @@ The spec takes about a minute, each render a few minutes. To check a layout
 without encoding, render stills at chosen seconds:
 
 ```bash
-node render.mjs --lang en --stills 13,55.6,75
+node render.mjs --lang en --stills 9,40,55
 ```
+
+Stills and `renderAt` take seconds of the output video. The script in
+`video.html` is written at 1x and played at `SPEED` (1.4): change that one
+number to make the whole video faster or slower; `music.mjs` follows it.
 
 To inspect one moment, open `video.html?lang=vi` in Chrome started with
 `--allow-file-access-from-files` and call `renderAt(seconds)` in the console.

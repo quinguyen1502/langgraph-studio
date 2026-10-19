@@ -257,7 +257,11 @@ camAt(83.4, 84.0, 1, home)
 show('history', 84.0)
 camAt(84.3, 85.1, 1.5, [480, 740]); cap('history', 4, 84.0, 88.4)
 const WIN = { tin: 4.6, tout: 88.8 }, CURSOR = { tin: 5.4, tout: 88.4 }
-window.DURATION = 97.6
+// The script is written in seconds at 1x; SPEED plays it faster (cursor, camera, captions and fades alike)
+const SPEED = 1.4, BASE = 97.6
+window.SPEED = SPEED
+window.DURATION = +(BASE / SPEED).toFixed(2)
+window.POSTER_AT = 55.6 / SPEED  // the run waiting at the Human node, with the approval channels
 
 // ---- build the DOM ------------------------------------------------------------------------------
 document.querySelectorAll('[data-t]').forEach(el => { el.textContent = S[el.dataset.t] })
@@ -304,7 +308,8 @@ function pointer(t) {
 // The cursor starts in the middle of the page
 CUR.unshift({ p: [720, 470], t0: 0, t1: 0 })
 
-window.renderAt = function (t) {
+window.renderAt = function (seconds) {
+  const t = seconds * SPEED
   setFx(document.getElementById('win'), fadeIO(t, WIN.tin, WIN.tout, 0.9), 220 * (1 - easeOut(clamp((t - WIN.tin) / 0.9))) - 160 * easeOut(clamp((t - WIN.tout + 0.8) / 0.8)))
   setFx(rail, fadeIO(t, WIN.tin + 0.3, WIN.tout, 0.6))
   const chapter = [...CAPS].reverse().find(c => t >= c.t0)?.chapter ?? -1
@@ -347,7 +352,7 @@ window.renderAt = function (t) {
   setFx(term.resp, clamp((t - TERM.resp) / 0.3))
 
   for (const f of fixed) setFx(f.el, fadeIO(t, f.a, f.b, 0.6), 30 * (1 - easeOut(clamp((t - f.a) / 0.6))))
-  document.getElementById('fade').style.opacity = clamp((t - (window.DURATION - 1.2)) / 1.2).toFixed(4)
+  document.getElementById('fade').style.opacity = clamp((t - (BASE - 1.2)) / 1.2).toFixed(4)
 }
 renderAt(0)
 </script>

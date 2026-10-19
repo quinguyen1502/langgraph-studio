@@ -20,7 +20,6 @@ const args = Object.fromEntries(process.argv.slice(2).reduce((acc, a, i, all) =>
 }, []))
 const lang = args.lang === 'vi' ? 'vi' : 'en'
 const fps = Number(args.fps || 30)
-const POSTER_AT = 55.6  // the run waiting at the Human node, with the approval channels
 
 const browser = await chromium.launch({ executablePath: chromePath(), args: ['--allow-file-access-from-files', '--force-color-profile=srgb', '--hide-scrollbars'] })
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 } })
@@ -55,10 +54,11 @@ fs.mkdirSync(videoDir(lang), { recursive: true })
 const out = path.resolve(args.out || path.join(videoDir(lang), `studio-intro-${lang}.mp4`))
 const silent = path.join(buildDir, `silent-${lang}.mp4`)
 
-await at(POSTER_AT)
+await at(await page.evaluate(() => window.POSTER_AT))
 await page.screenshot({ path: out.replace(/\.mp4$/, '.jpg'), type: 'jpeg', quality: 80 })
 
 const duration = await page.evaluate(() => window.DURATION)
+const speed = await page.evaluate(() => window.SPEED)
 const frames = Math.round(duration * fps)
 const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(fps), '-c:v', 'mjpeg', '-i', '-',
   '-c:v', 'libx264', '-preset', 'slow', '-crf', '24', '-pix_fmt', 'yuv420p', silent], { stdio: ['pipe', 'inherit', 'inherit'] })
@@ -74,8 +74,8 @@ const code = await new Promise(r => ff.on('close', r))
 await browser.close()
 if (code !== 0) throw new Error(`ffmpeg exited ${code}`)
 
-const audio = args.audio ? path.resolve(args.audio) : path.join(buildDir, 'music.wav')
-if (!args.audio && !fs.existsSync(audio)) execFileSync('node', [path.join(promoDir, 'music.mjs'), audio], { stdio: 'inherit' })
+const audio = args.audio ? path.resolve(args.audio) : path.join(buildDir, `music-${speed}x.wav`)
+if (!args.audio && !fs.existsSync(audio)) execFileSync('node', [path.join(promoDir, 'music.mjs'), audio, String(speed)], { stdio: 'inherit' })
 execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-i', silent, '-i', audio,
   '-af', `afade=t=out:st=${duration - 3}:d=3`, '-c:v', 'copy', '-c:a', 'aac', '-b:a', '160k',
   '-t', String(duration), '-movflags', '+faststart', out], { stdio: 'inherit' })

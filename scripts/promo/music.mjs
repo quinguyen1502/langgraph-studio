@@ -1,9 +1,11 @@
-// Synthesises the intro video's music bed (44.1 kHz stereo WAV): node music.mjs out.wav
-// Section times follow video.html: the window enters (BRAND), the walkthrough (TOUR to PLATFORM), the closing card (FINALE).
+// Synthesises the intro video's music bed (44.1 kHz stereo WAV): node music.mjs out.wav [speed]
+// Section times follow video.html at 1x: the window enters (BRAND), the walkthrough (TOUR to PLATFORM), the closing card
+// (FINALE). `speed` is video.html's SPEED: the sections move with the picture, the tempo stays.
 import fs from 'node:fs';
 
-const SR = 44100, DUR = 98, N = SR * DUR;
-const BRAND = 4.6, TOUR = 5.4, PLATFORM = 88.8, FINALE = 89.2;
+const SPEED = Number(process.argv[3] || 1);
+const SR = 44100, DUR = Math.ceil(98 / SPEED), N = SR * DUR;
+const [BRAND, TOUR, PLATFORM, FINALE] = [4.6, 5.4, 88.8, 89.2].map(t => t / SPEED);
 const L = new Float32Array(N), R = new Float32Array(N);
 const BPM = 96, BEAT = 60 / BPM, BAR = BEAT * 4;
 const midi = m => 440 * Math.pow(2, (m - 69) / 12);

@@ -370,6 +370,8 @@
     "AUTH_PASSWORD_TOO_LONG": "Password must be at most {{max}} characters",
     "AUTH_PASSWORD_WEAK": "Password must contain both letters and digits",
     "AUTH_LOCKED": "Too many failed sign-ins. Try again in {{minutes}} min",
+    "AUTH_PASSWORD_WRONG": "The current password is incorrect",
+    "AUTH_PASSWORD_SAME": "The new password must be different from the current one",
     "AUTH_CSRF": "Missing X-Requested-With header",
     "PASSWORD_RESET_INVALID": "This reset link is invalid or has expired",
     "WORKFLOW_NOT_FOUND": "Workflow not found",
@@ -767,6 +769,7 @@
     "clear": "Clear search",
     "toggle": "Show or hide",
     "nav": {
+      "profile": "Profile",
       "channels": "Channels",
       "accounts": "My accounts",
       "audit": "Audit log",
@@ -777,6 +780,7 @@
       "activity": "Activity"
     },
     "intro": {
+      "profile": "Your account, language and password.",
       "channels": "Approve or reject waiting runs from Slack or Telegram. Tokens are stored encrypted.",
       "accounts": "Your chat accounts. A button press counts as you only after the account is verified with a one-time code.",
       "audit": "Every approval request and decision made through a chat channel.",
@@ -1045,6 +1049,9 @@
       "user_deactivate": "Account deactivated",
       "user_anonymize": "Account anonymized",
       "user_delete": "Account deleted",
+      "user_password_changed": "Password changed",
+      "user_password_reset_link": "Reset link created",
+      "user_password_reset": "Password reset",
       "share_add": "Shared with user",
       "share_role": "Share role changed",
       "share_remove": "Share removed",
@@ -1249,6 +1256,17 @@
     "newHint": "Other sessions of this account are signed out.",
     "newPassword": "New password",
     "save": "Save password"
+  },
+  "profile": {
+    "account": "Account",
+    "role": "Role",
+    "emailHint": "Your sign-in name. It cannot be changed here.",
+    "languageHint": "Used across the studio and for chat messages sent to you.",
+    "manage": "Manage",
+    "passwordTitle": "Change password",
+    "passwordIntro": "Other sessions of this account are signed out; this one stays signed in.",
+    "currentPassword": "Current password",
+    "passwordChanged": "Password changed. Other sessions were signed out."
   },
   "schedules": {
     "button": "Schedules",

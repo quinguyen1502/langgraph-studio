@@ -34,6 +34,8 @@ Sai mật khẩu 5 lần trong 15 phút thì e-mail đó bị khoá 15 phút, k�
 
 Để đặt lại mật khẩu, admin mở **Settings → Users**, tạo link một lần (biểu tượng chìa khoá) rồi gửi cho người dùng. Khi đã đặt `SMTP_HOST` và `STUDIO_PUBLIC_URL`, nút **Quên mật khẩu?** ở trang đăng nhập sẽ gửi link qua e-mail; nút này trả lời giống nhau với mọi địa chỉ. Link dùng được một lần, trong `STUDIO_PASSWORD_RESET_TTL` giây (mặc định 3600). Đặt mật khẩu mới sẽ đăng xuất mọi phiên cũ của tài khoản và gỡ khoá.
 
+Mỗi người xem tài khoản của mình ở **Settings → Hồ sơ** (có cả trong menu người dùng): e-mail, vai trò, ngày tham gia, ngôn ngữ và cài đặt thông báo. **Đổi mật khẩu** ở đó cần mật khẩu hiện tại (`POST /api/me/password` với `current_password` và `new_password`). Nhập sai mật khẩu hiện tại được tính vào giới hạn đăng nhập sai (`AUTH_PASSWORD_WRONG`, rồi `AUTH_LOCKED`); mật khẩu mới theo cùng quy tắc và phải khác mật khẩu cũ (`AUTH_PASSWORD_SAME`). Sau khi đổi, mọi phiên khác của tài khoản bị đăng xuất, trình duyệt này được cấp phiên mới và vẫn đăng nhập, các link đặt lại còn mở bị huỷ, và nhật ký hoạt động ghi `user.password_changed`. Không đổi được địa chỉ e-mail.
+
 Khi production (`STUDIO_ENV=production`), tài khoản demo không được tạo. Nếu tài khoản này đã có sẵn và còn dùng mật khẩu demo, nó bị vô hiệu hoá lúc khởi động; dùng `STUDIO_ADMIN_EMAILS` để có admin đầu tiên.
 
 ## Trình soạn thảo

@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Requirement ID: REQ-0038
-- Status: Draft
+- Status: Implemented
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
 - Updated: 2026-10-19
@@ -44,4 +44,4 @@ A signed-in user can see their own profile and change their password, without as
 
 ## Open Questions
 
-- Add a display name (needs a migration), or keep e-mail only?
+- Add a display name (needs a migration), or keep e-mail only? Answered in TASK-0052: e-mail only for now.

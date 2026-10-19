@@ -370,6 +370,8 @@
     "AUTH_PASSWORD_TOO_LONG": "Mật khẩu tối đa {{max}} ký tự",
     "AUTH_PASSWORD_WEAK": "Mật khẩu phải có cả chữ và số",
     "AUTH_LOCKED": "Đăng nhập sai quá nhiều lần. Thử lại sau {{minutes}} phút",
+    "AUTH_PASSWORD_WRONG": "Mật khẩu hiện tại không đúng",
+    "AUTH_PASSWORD_SAME": "Mật khẩu mới phải khác mật khẩu hiện tại",
     "AUTH_CSRF": "Thiếu header X-Requested-With",
     "PASSWORD_RESET_INVALID": "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn",
     "WORKFLOW_NOT_FOUND": "Không tìm thấy workflow",
@@ -767,6 +769,7 @@
     "clear": "Xoá tìm kiếm",
     "toggle": "Hiện hoặc ẩn",
     "nav": {
+      "profile": "Hồ sơ",
       "channels": "Kênh",
       "accounts": "Tài khoản của tôi",
       "audit": "Nhật ký",
@@ -777,6 +780,7 @@
       "activity": "Hoạt động"
     },
     "intro": {
+      "profile": "Tài khoản, ngôn ngữ và mật khẩu của bạn.",
       "channels": "Duyệt hoặc từ chối các lượt chạy đang chờ ngay trên Slack hoặc Telegram. Token được lưu mã hoá.",
       "accounts": "Tài khoản chat của bạn. Nút bạn bấm chỉ được tính sau khi tài khoản được xác minh bằng mã một lần.",
       "audit": "Mọi yêu cầu phê duyệt và quyết định qua kênh chat.",
@@ -1045,6 +1049,9 @@
       "user_deactivate": "Vô hiệu hoá tài khoản",
       "user_anonymize": "Ẩn danh hoá tài khoản",
       "user_delete": "Xoá tài khoản",
+      "user_password_changed": "Đổi mật khẩu",
+      "user_password_reset_link": "Tạo link đặt lại",
+      "user_password_reset": "Đặt lại mật khẩu",
       "share_add": "Chia sẻ với người dùng",
       "share_role": "Đổi quyền chia sẻ",
       "share_remove": "Gỡ chia sẻ",
@@ -1249,6 +1256,17 @@
     "newHint": "Các phiên khác của tài khoản này sẽ bị đăng xuất.",
     "newPassword": "Mật khẩu mới",
     "save": "Lưu mật khẩu"
+  },
+  "profile": {
+    "account": "Tài khoản",
+    "role": "Vai trò",
+    "emailHint": "Tên đăng nhập của bạn. Không đổi được ở đây.",
+    "languageHint": "Dùng cho giao diện và tin nhắn chat gửi tới bạn.",
+    "manage": "Tuỳ chỉnh",
+    "passwordTitle": "Đổi mật khẩu",
+    "passwordIntro": "Các phiên khác của tài khoản này sẽ bị đăng xuất; phiên này vẫn giữ đăng nhập.",
+    "currentPassword": "Mật khẩu hiện tại",
+    "passwordChanged": "Đã đổi mật khẩu. Các phiên khác đã bị đăng xuất."
   },
   "schedules": {
     "button": "Lịch chạy",

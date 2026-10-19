@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, Optional
 PRICES: Dict[str, tuple[float, float]] = {
     "gpt-4o-mini": (0.15, 0.60), "gpt-4o": (2.50, 10.00), "gpt-4.1-mini": (0.40, 1.60), "gpt-4.1": (2.00, 8.00),
     "claude-3-5-haiku": (0.80, 4.00), "claude-3-5-sonnet": (3.00, 15.00), "claude-3-7-sonnet": (3.00, 15.00),
+    "jev": (0.042, 0.0),  # TypeSafe Jev (TASK-0050): output tokens are free
 }
 
 UsageSink = Callable[[str, Dict[str, Any]], None]  # (node_id, usage) -> None

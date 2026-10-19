@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from . import foreach
+from . import decisions, foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
 from .tools import TOOLS
 
-TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach")
+TYPES = ("start", "llm", "tool", "condition", "end", "human", "join", "subgraph", "subgraph_exit", "retriever", "mcp", "note", "foreach", "decision")
 WRITERS = ("llm", "tool", "human", "retriever", "mcp")
 
 
@@ -18,6 +18,16 @@ def templates_of(t: Any, d: Dict[str, Any]) -> List[str]:
     if t == "retriever": return [d.get("query") or ""]
     if t == "tool" and d.get("mode") == "http": return [d.get("url") or "", d.get("body") or ""]
     if t == "mcp": return _strings(d.get("arguments") or {})
+    if t == "decision": return decisions.templates(d)
+    return []
+
+
+def written(n: Dict[str, Any]) -> List[str]:
+    """State fields a node writes when it runs."""
+    t, d = n.get("type"), n.get("data") or {}
+    if t in WRITERS: return [d["output_field"]] if d.get("output_field") else []
+    if t == "decision": return decisions.fields(d)
+    if t == "foreach": return [f for f in (d.get("item_field"), d.get("index_field")) if f]
     return []
 
 
@@ -115,6 +125,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "subgraph" and not d.get("workflow_id"):
             errs.append(f"Subgraph node {nid}: choose a workflow")
         if t == "foreach": errs += foreach.errors(nid, d, out.get(nid, []), schema, reaches)
+        if t == "decision": errs += decisions.errors(nid, d, schema)
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]
@@ -129,8 +140,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         writes: Dict[str, List[str]] = {}
         for e in out[n["id"]]:
             tgt = next((x for x in nodes if x["id"] == e["target"]), None)
-            of = (tgt or {}).get("data", {}).get("output_field") if (tgt or {}).get("type") in WRITERS else None
-            if of: writes.setdefault(of, []).append(tgt["id"])
+            for of in dict.fromkeys(written(tgt or {})): writes.setdefault(of, []).append(tgt["id"])
         for of, who in writes.items():
             if len(who) > 1 and red.get(of, "replace") == "replace":
                 errs.append(f"Parallel nodes {', '.join(who)} all write state.{of}: give the field a reducer (append, merge or add) or use different fields")

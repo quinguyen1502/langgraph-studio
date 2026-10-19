@@ -13,7 +13,7 @@ from langgraph.errors import NodeTimeoutError
 from langgraph.types import CachePolicy, RetryPolicy
 from .errors import Interrupt
 
-RUNTIME_TYPES = ("llm", "tool", "retriever", "mcp", "human")
+RUNTIME_TYPES = ("llm", "tool", "retriever", "mcp", "human", "decision")
 ATTEMPTS = (1, 10)
 WAIT = (0, 120)          # seconds, exclusive minimum
 TIMEOUT = (0, 3600)

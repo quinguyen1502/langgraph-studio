@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 
 export type ProviderInfo = { id: string; label: string; default_base_url: string; default_model: string; key_required: boolean
   header_fields: string[]; supports_tools: boolean; streaming: boolean; local: boolean
-  supports_embeddings: boolean; default_embedding_model: string }
+  supports_embeddings: boolean; default_embedding_model: string; kind: 'chat' | 'decision' }
 export type ProbeResult = { ok: true; provider: string; base_url: string; models: string[]; latency_ms: number }
 
 let cache: Promise<ProviderInfo[]> | null = null

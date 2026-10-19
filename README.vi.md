@@ -82,6 +82,7 @@ UI có tiếng Anh và tiếng Việt (`frontend/src/locales/en.json` và `vi.js
 - **Subgraph.** `workflow_id` của một workflow đã lưu của bạn. Node bên trong hiện trên trace dạng `Subgraph › node` (id `sub/node`). State dùng chung theo tên trường. Vòng tham chiếu, workflow con không tồn tại hoặc là bản import, và lồng quá năm cấp đều lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`).
 - **MCP tool.** `server_id`, `tool`, `arguments` (chuỗi là template; đúng `{{state.x}}` thì giữ kiểu), `output_field`.
 - **Retriever.** `knowledge_base_id`, `query`, `top_k` (1–20), `output_field`. Kết quả là danh sách `{text, score, filename, …}`.
+- **Decision (Jev).** Hỏi Jev của [TypeSafe](https://typesafe.ai) các câu hỏi có kiểu về `text` (một template; nếu chỉ có đúng một `{{state.x}}` thì giá trị được gửi nguyên kiểu). Mỗi câu hỏi có `id`, `instructions` và một loại. `choice` nhận 2–255 `options` và trả về một nhãn. `score` nhận 2–10 `levels` từ thấp đến cao và trả về một số từ 0 đến chỉ số của mức cuối; số này có thể nằm giữa hai mức. `noul` trả về một số từ 0 (sai) đến 1 (đúng). `field` của câu hỏi nhận câu trả lời đó, nên Condition có thể rẽ nhánh theo lựa chọn. `output_field` (kiểu object) nhận mọi câu trả lời kèm xác suất và độ tin cậy. Node dùng credential TypeSafe, nếu không có thì dùng `TYPESAFE_API_KEY`, nếu vẫn không có thì trả câu trả lời mẫu offline: câu hỏi lựa chọn chọn phương án đầu tiên có tên xuất hiện trong văn bản. Chi phí tính $0.042 cho mỗi triệu token input; token output miễn phí. Node có cài đặt retry, timeout và cache, và run được khôi phục sẽ dùng lại câu trả lời cũ.
 - **Human.** `prompt` và `output_field`. Run dừng chờ. Xem [Phê duyệt](#phê-duyệt).
 - **Code.** Node chỉ đọc do import repo tạo ra. Panel phải hiện source gốc. Sửa trên canvas không đổi file đã import.
 
@@ -108,6 +109,7 @@ Ví dụ **Customer Support** được seed sẵn: Start → Classify intent →
 | OpenAI-compatible (vLLM, llama.cpp, LocalAI) | `http://localhost:8000/v1` | tuỳ server | `/v1/models` |
 | OpenRouter | `https://openrouter.ai/api/v1` | bắt buộc, thêm header tuỳ chọn `HTTP-Referer` và `X-Title` | `/api/v1/models` |
 | OpenAI, Anthropic | như trước | bắt buộc | `/models`, `/v1/models` |
+| TypeSafe (Jev), chỉ cho node Decision | `https://api.typesafe.ai` | bắt buộc | không có danh sách: **Test connection** gửi một câu hỏi nhỏ |
 
 **Test connection** lấy danh sách model, trước hoặc sau khi lưu. Lỗi dùng `PROVIDER_UNREACHABLE`, `PROVIDER_AUTH_FAILED` (HTTP 400, để UI không coi đó là phiên hết hạn), `PROVIDER_BAD_RESPONSE`, và `MODEL_NOT_FOUND`. Xem `docs/api-errors.md`.
 

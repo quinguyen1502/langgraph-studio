@@ -82,6 +82,7 @@ The UI is English and Vietnamese (`frontend/src/locales/en.json` and `vi.json`).
 - **Subgraph.** `workflow_id` of one of your saved workflows. Inner nodes appear in the trace as `Subgraph › node` (id `sub/node`). State is shared by field name. Cycles, a missing or imported child, and nesting deeper than five levels fail on save and on run (`WORKFLOW_INVALID`).
 - **MCP tool.** `server_id`, `tool`, `arguments` (strings are templates; an exact `{{state.x}}` keeps its type), `output_field`.
 - **Retriever.** `knowledge_base_id`, `query`, `top_k` (1–20), `output_field`. The result is a list of `{text, score, filename, …}`.
+- **Decision (Jev).** Asks [TypeSafe](https://typesafe.ai)'s Jev typed questions about `text` (a template; an exact `{{state.x}}` sends the value with its type). Each question has an `id`, `instructions`, and a type. `choice` takes 2–255 `options` and answers with a label. `score` takes 2–10 `levels` from low to high and answers with a number from 0 to the last level index; the number can fall between levels. `noul` answers with a number from 0 (false) to 1 (true). A question's `field` receives its answer, so a Condition can branch on a choice. `output_field` (an object) receives every answer with its probabilities and confidence. The node uses a TypeSafe credential, else `TYPESAFE_API_KEY`, else offline sample answers: a choice picks the first option named in the text. Usage is priced at $0.042 per million input tokens; output tokens are free. The node takes retry, timeout, and cache settings, and a recovered run reuses its answers.
 - **Human.** `prompt` and `output_field`. The run waits. See [Human approval](#human-approval).
 - **Code.** Read-only nodes produced by repo import. The right panel shows the original source. Editing the canvas does not change the imported file.
 
@@ -108,6 +109,7 @@ The seeded **Customer Support** example is Start → Classify intent → Route o
 | OpenAI-compatible (vLLM, llama.cpp, LocalAI) | `http://localhost:8000/v1` | depends on the server | `/v1/models` |
 | OpenRouter | `https://openrouter.ai/api/v1` | required, plus optional `HTTP-Referer` and `X-Title` | `/api/v1/models` |
 | OpenAI, Anthropic | as before | required | `/models`, `/v1/models` |
+| TypeSafe (Jev), for Decision nodes only | `https://api.typesafe.ai` | required | no list: **Test connection** sends one tiny question |
 
 **Test connection** lists models, before or after save. Failures use `PROVIDER_UNREACHABLE`, `PROVIDER_AUTH_FAILED` (HTTP 400, so the UI does not treat it as an expired session), `PROVIDER_BAD_RESPONSE`, and `MODEL_NOT_FOUND`. See `docs/api-errors.md`.
 

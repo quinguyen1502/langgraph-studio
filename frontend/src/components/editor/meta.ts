@@ -1,5 +1,5 @@
 import { type Edge } from '@xyflow/react'
-import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square, Repeat } from 'lucide-react'
+import { Keyboard, Redo2, Undo2, Play, Save, Brain, Wrench, GitBranch, Flag, CirclePlay, Trash2, Code2, UserCheck, Merge, Layers, Database, Plug, type LucideIcon, CopyPlus, Network, Maximize, Copy, Scissors, ClipboardPaste, BoxSelect, ZoomIn, ZoomOut, Square, Repeat, Scale } from 'lucide-react'
 import i18n from '@/lib/i18n'
 
 export type Field = { name: string; type: string; reducer?: string }
@@ -19,10 +19,11 @@ META.subgraph_exit = META.subgraph
 META.mcp = { label: 'MCP tool', icon: Plug, color: 'bg-node-mcp-muted text-node-mcp', accent: 'bg-node-mcp' }
 META.retriever = { label: 'Retriever', icon: Database, color: 'bg-node-retriever-muted text-node-retriever', accent: 'bg-node-retriever' }
 META.foreach = { label: 'For each', icon: Repeat, color: 'bg-node-foreach-muted text-node-foreach', accent: 'bg-node-foreach' }
+META.decision = { label: 'Decision (Jev)', icon: Scale, color: 'bg-node-decision-muted text-node-decision', accent: 'bg-node-decision' }
 META.code = { label: 'Code', icon: Code2, color: 'bg-node-code-muted text-node-code', accent: 'bg-node-code' }
-export const TYPES = ['start', 'llm', 'retriever', 'tool', 'mcp', 'condition', 'foreach', 'human', 'join', 'subgraph', 'end']
+export const TYPES = ['start', 'llm', 'decision', 'retriever', 'tool', 'mcp', 'condition', 'foreach', 'human', 'join', 'subgraph', 'end']
 export const INSERTABLE = TYPES.filter(t => t !== 'start' && t !== 'end')
-export const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human'])
+export const RUNTIME = new Set(['llm', 'retriever', 'tool', 'mcp', 'human', 'decision'])
 /** Reducers per field type (TASK-0011): how parallel writes combine. */
 export const REDUCERS: Record<string, string[]> = { list: ['replace', 'append'], object: ['replace', 'merge'], number: ['replace', 'add'], integer: ['replace', 'add'] }
 /** Trace events of nodes inside a subgraph carry `sub/inner` ids: the canvas shows them on the subgraph node. */
@@ -40,6 +41,8 @@ export const DEFAULTS: Record<string, any> = {
   llm: { label: 'LLM', model: 'gpt-4o-mini', prompt: '', output_field: '' }, // prompt comes from i18n `samples.prompt` on drop
   tool: { label: 'Tool', mode: 'function', function: 'lookup_order', method: 'GET', url: '', body: '', output_field: '' },
   condition: { label: 'Condition', field: '', default: '' },
+  decision: { label: 'Decision', credential_id: '', model: 'jev-latest', text: '{{state.message}}', output_field: '',
+    questions: [{ id: 'q1', type: 'choice', instructions: '', options: [{ label: '', description: '' }, { label: '', description: '' }], field: '' }] },
   foreach: { label: 'For each', items_field: '', item_field: '', index_field: '', max_items: 100 },
   human: { label: 'Approval', prompt: '', output_field: '' },
   mcp: { label: 'MCP tool', server_id: '', tool: '', arguments: {}, output_field: '' },

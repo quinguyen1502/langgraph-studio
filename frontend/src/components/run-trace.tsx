@@ -10,6 +10,7 @@ import { Separator } from '@/components/ui/separator'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { CodeConsole } from '@/components/code-settings'
 import { JsonView } from '@/components/json-view'
 import { fmtCost, fmtMs, stateDiff, type RunEvent, type Span, type Trace } from '@/lib/trace'
 import { cn } from '@/lib/utils'
@@ -107,7 +108,8 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
         <TabsContent value="output">{s.status === 'running' && s.live
           ? <div className="space-y-1" id="trace-live"><div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Loader2 className="size-3 animate-spin" />{t('trace.streaming')}</div>
               <pre className="whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-mono text-[11px]">{s.live}</pre></div>
-          : <JsonView value={s.output} />}</TabsContent>
+          : <div className="space-y-2">{s.status !== 'error' && <JsonView value={s.output} />}<CodeConsole stdout={s.code?.stdout} traceback={s.code?.traceback} id="trace-code-output" />
+              {s.status === 'error' && !s.code && <JsonView value={s.output} />}</div>}</TabsContent>
         <TabsContent value="diff"><DiffView s={s} /></TabsContent>
         <TabsContent value="raw"><JsonView value={s.events} /></TabsContent>
       </div></ScrollArea>

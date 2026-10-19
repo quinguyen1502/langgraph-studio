@@ -9,6 +9,7 @@ from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
 from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
+from ..services.code_service import CodeService
 from ..services.policy_service import PolicyService
 from ..services.team_service import TeamService
 from ..services.ownership_service import OwnershipService
@@ -105,6 +106,9 @@ def workflow_service() -> WorkflowService:
 
 def template_service() -> TemplateService:
     return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service())
+
+def code_service() -> CodeService:
+    return CodeService(access_service(), get_rate_limiter())
 
 def access_service() -> AccessService:
     db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db), TeamRepository(db))

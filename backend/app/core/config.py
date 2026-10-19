@@ -151,3 +151,10 @@ def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5
 def code_pids() -> int: return max(16, _int("STUDIO_CODE_PIDS", 64))
 def code_max_seconds() -> int: return max(1, _int("STUDIO_CODE_MAX_SECONDS", 30))  # per call, also caps the node timeout
 def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))  # containers at once per process
+def code_test_per_minute() -> int: return max(1, _int("STUDIO_CODE_TEST_PER_MINUTE", 20))  # Test with sample state, per user
+CODE_DEFAULT_PACKAGES = ["pydantic", "python-dateutil"]  # what docker/studio-code adds to the standard library
+def code_packages() -> list[str]:
+    """STUDIO_CODE_PACKAGES (comma-separated) when set; the default image's packages for that image; else unknown ([])."""
+    raw = os.environ.get("STUDIO_CODE_PACKAGES")
+    if raw is not None: return [p.strip() for p in raw.split(",") if p.strip()]
+    return list(CODE_DEFAULT_PACKAGES) if code_image() == "studio-code:1" else []

@@ -1076,7 +1076,8 @@
       "team_member_remove": "Gỡ thành viên",
       "workflow_transfer": "Chuyển quyền sở hữu",
       "workflow_delete": "Xoá workflow",
-      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức"
+      "policy_org_resources": "Đổi chính sách tài nguyên tổ chức",
+      "system_code_runtime_subprocess": "Code node chạy không cách ly"
     },
     "types": {
       "user": "Người dùng",
@@ -1413,6 +1414,22 @@
     "testHint": "Chạy main(state) một lần với input ở run panel. Không lưu gì.",
     "result": "Kết quả ({{ms}} ms)",
     "stdout": "Output đã in",
-    "traceback": "Traceback"
+    "traceback": "Traceback",
+    "notIsolated": "Code chạy trực tiếp trên server này, không cách ly: nó có thể dùng mạng và đọc các file mà server đọc được.",
+    "notIsolatedShort": "Không cách ly",
+    "runUnisolated": "Code node trong run này đã chạy trên server mà không cách ly (runtime subprocess).",
+    "runtimeLabel": "runtime: {{runtime}}",
+    "adminTitle": "Code node",
+    "adminIntro": "Tool node ở chế độ Code chạy ở đâu và với giới hạn nào.",
+    "adminRuntime": "Runtime",
+    "adminImage": "Image",
+    "adminLimits": "Giới hạn",
+    "adminLimitsValue": "{{seconds}} giây, {{memory}} bộ nhớ, {{cpus}} CPU, {{pids}} process",
+    "adminRisk": "Runtime subprocess trên máy chủ không phải sandbox. Code của người dùng ra được mạng và đọc được các file mà user của server đọc được; trên macOS giới hạn bộ nhớ không có tác dụng. Hãy dùng Docker, trừ khi chỉ dùng nội bộ và tin cậy.",
+    "runtimes": {
+      "docker": "Sandbox Docker",
+      "subprocess": "Subprocess trên máy chủ (không cách ly)",
+      "off": "Tắt"
+    }
   }
 }

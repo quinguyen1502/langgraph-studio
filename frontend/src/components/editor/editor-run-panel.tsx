@@ -1,4 +1,4 @@
-import { ExternalLink, AlertTriangle } from 'lucide-react'
+import { ExternalLink, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { JsonEditor } from '@/components/json-editor'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -44,6 +44,7 @@ export function EditorRunPanel() {
               <span className="flex w-28 shrink-0 items-center gap-1">
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}
               {h.source === 'schedule' && <Badge variant="outline" data-testid="history-source">{t('schedules.badge')}</Badge>}
+              {h.code_runtime === 'subprocess' && <Tip tip={t('code.runUnisolated')}><Badge variant="warning" data-testid="history-unisolated"><ShieldAlert className="size-3" /></Badge></Tip>}
               <Tip tip={h.version ? t('versions.runVersion', { n: h.version }) : t('versions.runUnsaved')}>
                 <Badge variant="secondary" data-testid="history-version">{h.version ? `v${h.version}` : t('versions.unsaved')}</Badge></Tip></span>
               <span className="min-w-0 truncate">{JSON.stringify(h.input)}</span>

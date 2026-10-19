@@ -104,6 +104,17 @@ def main(state):
 - **Editor:** pick **Python code** as the Tool mode. The code field highlights Python. It also lists the packages in the image and the limits. **Test with sample state** runs `main(state)` once with the run panel's input and saves nothing (`POST /api/code/test`, at most `STUDIO_CODE_TEST_PER_MINUTE` calls per user per minute, default 20). The result shows the value, the printed output and the traceback. Without `code.write` the code is read-only and the test button is hidden. `GET /api/meta/runtime` tells the editor whether the server can run code.
 - **Every call gets a new container.** It has no network (`--network none`), a read-only root with a 64 MB `/tmp`, and no host mounts. Its environment holds no server variable or credential. The state is a JSON copy; the code changes the run only through its return value.
 - **Limits:** memory `STUDIO_CODE_MEMORY` (256m), CPU `STUDIO_CODE_CPUS` (0.5) and processes `STUDIO_CODE_PIDS` (64). A call is stopped after the node's timeout, capped by `STUDIO_CODE_MAX_SECONDS` (30). At most `STUDIO_CODE_CONCURRENCY` (4) containers run at once per server process. A cancelled run kills its container.
+- **Without Docker** (`STUDIO_CODE_RUNTIME=subprocess`): the code runs as a child process of the server. It gets an empty environment and its own temporary folder. On Linux it also gets limits on memory, CPU time, open files and processes. The time limit kills the whole process group. **This is not a sandbox.** The code can use the network, can read any file the server user can read (including the database file and `secret.key` of a SQLite setup), and on macOS the memory limit does not apply. The studio says so everywhere:
+  - a start-up `WARNING` in the log;
+  - `code_runtime: "subprocess"` in `GET /api/meta/runtime`;
+  - an Alert in the Code config;
+  - a "Not isolated" badge on the node and in the mode picker;
+  - `runtime: subprocess` on trace rows, plus one warning per run;
+  - a mark in run history (`code_runtime` on each run);
+  - the Code nodes card in **Settings → Users**;
+  - a `system.code_runtime_subprocess` audit entry on the first call after each start.
+
+  It never takes over by itself: with the default `docker` runtime and no Docker, Code nodes fail validation. Use it only for trusted local work.
 - **Size limits:** the source is at most 64 KB, the state and the result at most 1 MB each, and stdout at most 64 KB (longer output is cut).
 - **Trace:** `print()` output, the runtime and the duration are in the node's `code_output`. A failure shows the traceback, and the node's retry settings apply. The error codes are `CODE_*` ([docs/api-errors.md](docs/api-errors.md)).
 - **Speed:** a call takes about 0.3 s on a warm image.

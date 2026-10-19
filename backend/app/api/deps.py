@@ -108,7 +108,7 @@ def template_service() -> TemplateService:
     return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service())
 
 def code_service() -> CodeService:
-    return CodeService(access_service(), get_rate_limiter())
+    return CodeService(access_service(), get_rate_limiter(), audit_service())
 
 def access_service() -> AccessService:
     db = get_db(); return AccessService(UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db), TeamRepository(db))
@@ -140,7 +140,7 @@ def auth_service() -> AuthService:
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
                       knowledge=knowledge_service(), mcp=mcp_service(), access=access_service(),
-                      policy=policy_service(), quota=get_counter())
+                      policy=policy_service(), quota=get_counter(), audit=audit_service())
 
 def channel_service() -> ChannelService:
     db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed)

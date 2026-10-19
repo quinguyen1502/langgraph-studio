@@ -4,7 +4,7 @@
 
 - Project: langgraph-studio
 - Task ID: TASK-0056
-- Status: todo
+- Status: done
 - Phase: nodes
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
@@ -105,6 +105,9 @@ Allow Code nodes on servers without Docker through an explicit host subprocess r
 
 - 2026-10-19: Created from REQ-0039; not started.
 - 2026-10-19: Task set and DEC-0041 approved by the owner ("Duyệt bộ task và DEC-0041").
+- 2026-10-19: Started on `factory/task-0056-code-subprocess-runtime`, branched from TASK-0055 (owner: "Làm task 1 chuỗi 54, 55, 56").
+- 2026-10-19: Implemented: the subprocess runtime and all eight warnings, plus migration `0029_run_code_runtime`. Review REV-0053, QA QA-0053 (pass). PR open; not merged.
+- 2026-10-19: Merged in PR #64 (owner: "Merge lần lượt PR #62, #63, #64").
 
 ## Handoff Notes
 

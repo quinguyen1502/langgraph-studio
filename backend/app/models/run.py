@@ -29,4 +29,5 @@ class Run(Base):
     lease_gen: Mapped[int] = mapped_column(Integer, default=0, server_default="0")  # fencing token of the worker that owns it (TASK-0021)
     # API runs (TASK-0022 follow-up): the result callback survives a pause, so a resume from a chat channel delivers it too
     callback_url: Mapped[Optional[str]] = mapped_column(Text)
+    code_runtime: Mapped[Optional[str]] = mapped_column(Text)  # where Code nodes ran: docker | subprocess; NULL = none (TASK-0056)
     callback_token_id: Mapped[Optional[str]] = mapped_column(Text)  # signs the callback (the token's secret)

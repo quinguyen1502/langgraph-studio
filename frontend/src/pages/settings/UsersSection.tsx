@@ -20,6 +20,7 @@ import { fmtDate } from '@/lib/i18n'
 import { can, useMe, type AdminUser, type Policy, type RoleMatrix } from '@/lib/rbac'
 import { useOnChange } from '@/lib/use-when'
 import { Tip } from '@/components/tip'
+import { CodeRuntimeCard } from '@/components/code-runtime-card'
 
 type Data = RoleMatrix & { users: AdminUser[] }
 
@@ -122,6 +123,7 @@ export function UsersSection() {
           <p className="text-xs text-muted-foreground">{t('users.accessNote')}</p></div>
       </CardContent></Card>
     <PolicyCard />
+    <CodeRuntimeCard />
     <ResetLinkDialog user={reset} onClose={() => setReset(null)} />
     <DeleteUserDialog user={del} onClose={() => setDel(null)} onDone={m => { setDel(null); setNotice(m); load() }} />
   </div>

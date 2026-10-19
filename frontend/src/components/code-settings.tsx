@@ -1,7 +1,7 @@
 /** Tool node Code mode (TASK-0055, REQ-0039): the Python source, what the server provides, and Test with sample state. */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertTriangle, FlaskConical, Info, Loader2, Lock } from 'lucide-react'
+import { AlertTriangle, FlaskConical, Info, Loader2, Lock, ShieldAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { JsonView } from '@/components/json-view'
@@ -39,6 +39,8 @@ export function CodeSettings({ value, onChange, runtime, canWrite, editable, inp
     catch (e: any) { setError(e.message) } finally { setBusy(false) }
   }
   return <div className="space-y-2" id="code-settings">
+    {runtime?.code_runtime === 'subprocess' && <Alert variant="warning" id="code-not-isolated" className="py-2"><ShieldAlert />
+      <AlertDescription className="text-xs">{t('code.notIsolated')}</AlertDescription></Alert>}
     {runtime && !ready && <Alert variant="warning" id="code-runtime-off" className="py-2"><AlertTriangle />
       <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t('code.off') : t('code.unavailable', { problem: runtime.problem || '' })}</AlertDescription></Alert>}
     {!canWrite && <p className="flex items-start gap-1.5 text-[11px] text-muted-foreground" id="code-read-only"><Lock className="mt-0.5 size-3 shrink-0" />{t('code.readOnly')}</p>}

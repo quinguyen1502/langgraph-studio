@@ -11,8 +11,8 @@ from .rate_limit import RateLimiter
 
 
 class CodeService:
-    def __init__(self, access: AccessService, limiter: RateLimiter):
-        self.access, self.limiter = access, limiter
+    def __init__(self, access: AccessService, limiter: RateLimiter, audit=None):
+        self.access, self.limiter, self.audit = access, limiter, audit
 
     def runtime(self) -> dict:
         """The one source the UI reads for the Code mode: runtime, whether it can run now, image, limits and packages."""
@@ -29,6 +29,8 @@ class CodeService:
         ok, retry = await self.limiter.hit(f"code-test:{uid}", config.code_test_per_minute(), 60)
         if not ok: raise AppError("RATE_LIMITED", headers={"Retry-After": str(retry)}, retry_after=retry)
         if not isinstance(state, dict): state = {}
+        if config.code_runtime() == "subprocess" and self.audit is not None and code_runtime.claim_first_unisolated_call():
+            self.audit.record(uid, "system.code_runtime_subprocess", "system", None, "Code nodes", runtime="subprocess")
         try: res = await asyncio.to_thread(code_runtime.run_code, source, state, node=node or "test", timeout=timeout)
         except code_runtime.CodeFailure as e: return {"ok": False, "error": e.to_dict(), **e.output}
         return {"ok": True, "value": res.value, **res.trace()}

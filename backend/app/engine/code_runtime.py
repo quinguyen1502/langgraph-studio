@@ -1,14 +1,18 @@
-"""Tool node Code mode (TASK-0053, REQ-0039, DEC-0041): user Python runs in a sandbox, never in this process.
+"""Tool node Code mode (TASK-0053, REQ-0039, DEC-0041): user Python runs in a separate process, never in this one.
 
 `run_code` sends {source, state} to `sandbox/code_runner.py` on stdin and reads one JSON result line. The server only
-parses the source (`problems`); it never executes it. Docker is the runtime: no network, no mounts, an empty
-environment, and memory, CPU and process limits. A call is killed at its time limit or when the run is cancelled."""
+parses the source (`problems`); it never executes it. A call is killed at its time limit or when the run is cancelled.
+- docker (default): a fresh container with no network, no mounts, an empty environment, memory/CPU/process limits.
+- subprocess (TASK-0056, STUDIO_CODE_RUNTIME=subprocess): a child of this server with an empty environment, a temporary
+  working directory and (on Linux) rlimits. It is NOT isolation: the code can use the network and read what the server
+  user can read. It exists only for servers without Docker, and every surface labels it."""
 from __future__ import annotations
-import ast, json, os, subprocess, threading, time
+import ast, json, os, re, signal, subprocess, sys, tempfile, threading, time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 from ..core import config
 from ..core.errors import AppError
+from ..core.logging import get_logger
 from .sandbox import container
 
 RUNNER = os.path.join(os.path.dirname(__file__), "sandbox", "code_runner.py")
@@ -53,9 +57,29 @@ def problems(source: Any) -> List[str]:
     return []
 
 
+_first = threading.Lock(); _announced = False
+
+
+def claim_first_unisolated_call() -> bool:
+    """True exactly once per server process: the first Code call while the runtime is `subprocess` (for the audit log)."""
+    global _announced
+    with _first:
+        if _announced: return False
+        _announced = True; return True
+
+
+def warn_if_unisolated() -> None:
+    """One start-up WARNING when Code nodes run on the host without isolation (TASK-0056)."""
+    if config.code_runtime() == "subprocess":
+        get_logger("code").warning("Code nodes run on this host WITHOUT isolation (STUDIO_CODE_RUNTIME=subprocess): user code can use "
+                                   "the network and read files the server user can read. Use Docker for anything but trusted local use.")
+
+
 def unavailable() -> Optional[str]:
     """Why Code nodes cannot run here right now, or None. Docker and the image are checked at most every 30 s."""
-    if config.code_runtime() == "off": return "off"
+    runtime = config.code_runtime()
+    if runtime == "off": return "off"
+    if runtime == "subprocess": return None
     image = config.code_image()
     hit = _checked.get(image)
     if hit and time.monotonic() - hit[0] < CHECK_TTL: return hit[1]
@@ -86,10 +110,40 @@ def _command() -> List[str]:
     with open(RUNNER, encoding="utf-8") as fh: return ["python", "-I", "-c", fh.read()]
 
 
+def _bytes(size: str) -> int:
+    m = re.fullmatch(r"\s*(\d+(?:\.\d+)?)\s*([kmg]?)b?\s*", (size or "").lower())
+    if not m: return 256 * 1024 ** 2
+    return int(float(m.group(1)) * 1024 ** "_kmg".index(m.group(2) or "_"))
+
+
+def _rlimits(memory: int, seconds: int, pids: int) -> Callable[[], None]:
+    def apply() -> None:  # runs in the child between fork and exec (Linux only)
+        import resource
+        for lim, val in ((resource.RLIMIT_AS, memory), (resource.RLIMIT_CPU, seconds), (resource.RLIMIT_NOFILE, 64), (resource.RLIMIT_NPROC, pids)):
+            try: resource.setrlimit(lim, (val, val))
+            except (ValueError, OSError): pass
+    return apply
+
+
+def _host_process(workdir: str, seconds: float) -> Dict[str, Any]:
+    """Popen arguments for the subprocess runtime: empty environment, its own folder and process group, rlimits on Linux."""
+    env = {"HOME": workdir, "TMPDIR": workdir, "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    kw: Dict[str, Any] = {"cwd": workdir, "env": env, "start_new_session": True}
+    if sys.platform.startswith("linux"):
+        kw["preexec_fn"] = _rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids())
+    return kw
+
+
+def _kill_group(proc: subprocess.Popen) -> None:
+    try: os.killpg(proc.pid, signal.SIGKILL)  # the code and anything it started
+    except (ProcessLookupError, PermissionError, OSError): pass
+
+
 def _exchange(argv: List[str], name: str, payload: str, seconds: float,
-              cancelled: Optional[Callable[[], bool]]) -> tuple[str, str, int, str]:
-    """Run to completion, or kill at the deadline or on cancel. Returns (stdout, stderr, returncode, stopped)."""
-    try: proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+              cancelled: Optional[Callable[[], bool]], popen: Optional[Dict[str, Any]] = None) -> tuple[str, str, int, str]:
+    """Run to completion, or kill at the deadline or on cancel. Returns (stdout, stderr, returncode, stopped).
+    `popen` set = the subprocess runtime (kill the process group); otherwise a `docker run` named `name`."""
+    try: proc = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, **(popen or {}))
     except FileNotFoundError: raise AppError("CODE_RUNTIME_UNAVAILABLE", reason="Docker is not installed") from None
     box: Dict[str, Any] = {}
     t = threading.Thread(target=lambda: box.update(zip(("out", "err"), proc.communicate(payload))), daemon=True)
@@ -100,8 +154,10 @@ def _exchange(argv: List[str], name: str, payload: str, seconds: float,
         if time.monotonic() >= deadline: stopped = "timeout"
         elif cancelled is not None and cancelled(): stopped = "cancelled"
         if stopped:
-            try: subprocess.run([container.docker_exe(), "kill", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
-            except (OSError, subprocess.TimeoutExpired): pass  # the local kill below still ends the client
+            if popen is not None: _kill_group(proc)
+            else:
+                try: subprocess.run([container.docker_exe(), "kill", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=15)
+                except (OSError, subprocess.TimeoutExpired): pass  # the local kill below still ends the client
             if proc.poll() is None: proc.kill()
             t.join(5); break
     return box.get("out") or "", box.get("err") or "", proc.returncode if proc.returncode is not None else -9, stopped
@@ -116,26 +172,31 @@ def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout:
     if len(data.encode()) > STATE_MAX: raise AppError("CODE_TOO_LARGE", node=node, what="state", max_kb=STATE_MAX // 1024)
     limit = min(float(timeout), config.code_max_seconds()) if timeout else float(config.code_max_seconds())
     payload = json.dumps({"source": source, "stdout_max": STDOUT_MAX, "state": json.loads(data)}, ensure_ascii=False)
-    name = container.container_name()
-    argv = container.build_code(name=name, image=config.code_image(), command=_command(),
-                                memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids())
+    runtime = config.code_runtime(); name = container.container_name()
     slot = _slot(); t0 = time.perf_counter()
     if not slot.acquire(timeout=limit): raise AppError("CODE_TIMEOUT", node=node, seconds=f"{limit:g}")
-    try: out, err, code, stopped = _exchange(argv, name, payload, limit, cancelled)
+    try:
+        if runtime == "subprocess":
+            with tempfile.TemporaryDirectory(prefix="lgs-code-") as tmp:
+                out, err, code, stopped = _exchange([sys.executable, *_command()[1:]], name, payload, limit, cancelled, _host_process(tmp, limit))
+        else:
+            argv = container.build_code(name=name, image=config.code_image(), command=_command(),
+                                        memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids())
+            out, err, code, stopped = _exchange(argv, name, payload, limit, cancelled)
     finally: slot.release()
     ms = round((time.perf_counter() - t0) * 1000, 2)
-    if stopped == "timeout": raise CodeFailure("CODE_TIMEOUT", {"runtime": "docker"}, node=node, seconds=f"{limit:g}")
+    if stopped == "timeout": raise CodeFailure("CODE_TIMEOUT", {"runtime": runtime}, node=node, seconds=f"{limit:g}")
     if stopped == "cancelled": raise AppError("CODE_FAILED", node=node, error="the run was cancelled")
     line = next((x for x in reversed(out.splitlines()) if x.strip()), "")
-    if code == 137 and not line: raise CodeFailure("CODE_MEMORY", {"runtime": "docker"}, node=node, limit=config.code_memory())
+    if code in (137, -9) and not line: raise CodeFailure("CODE_MEMORY", {"runtime": runtime}, node=node, limit=config.code_memory())
     if len(line.encode()) > RESULT_MAX + STDOUT_MAX: raise AppError("CODE_TOO_LARGE", node=node, what="result", max_kb=RESULT_MAX // 1024)
     try: res = json.loads(line)
     except ValueError:
         reason = (err or out).strip().splitlines()[-1:] or [f"exit code {code}"]
         if "Unable to find image" in err or "No such image" in err: _checked.pop(config.code_image(), None)
         raise AppError("CODE_RUNTIME_UNAVAILABLE", reason=reason[0][:300]) from None
-    output = {"stdout": res.get("stdout") or "", "runtime": "docker", "duration_ms": ms}
-    if res.get("ok"): return CodeResult(res.get("value"), output["stdout"], "docker", ms)
+    output = {"stdout": res.get("stdout") or "", "runtime": runtime, "duration_ms": ms}
+    if res.get("ok"): return CodeResult(res.get("value"), output["stdout"], runtime, ms)
     output["traceback"] = res.get("traceback") or ""
     kind = res.get("kind")
     if kind == "not_json": raise CodeFailure("CODE_RESULT_NOT_JSON", output, node=node, type=res.get("type") or "?")

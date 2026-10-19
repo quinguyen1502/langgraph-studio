@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from . import decisions, emails, foreach
+from . import code_runtime, decisions, emails, foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
@@ -111,6 +111,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
                 errs.append(f"Node {nid}: function '{d.get('function')}' is not registered")
             if d.get("mode") == "http" and not d.get("url"):
                 errs.append(f"Node {nid}: URL is missing")
+            if d.get("mode") == "code":
+                errs.extend(f"Node {nid}: {why}" for why in code_runtime.problems(d.get("code")))
         if t == "join":
             inc = [e for e in edges if e["target"] == nid]
             if len(inc) < 2: errs.append(f"Join node {nid}: needs at least two incoming edges (the branches it waits for)")
@@ -172,4 +174,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         for n in nodes:
             if n.get("type") == "note": continue
             if n["id"] not in seen: errs.append(f"Node {n['id']} is not reachable from Start")
+    if any(n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code" for n in nodes):
+        why = code_runtime.unavailable()  # Docker and the image, checked at most every 30 s (TASK-0053)
+        if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)")
+        elif why: errs.append(f"Code nodes cannot run on this server: {why}")
     return errs

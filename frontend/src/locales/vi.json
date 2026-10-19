@@ -502,7 +502,15 @@
     "EMAIL_RECIPIENT_INVALID": "Node Send email {{node}}: '{{address}}' không phải địa chỉ email",
     "EMAIL_RECIPIENTS_MISSING": "Node Send email {{node}}: chưa có người nhận (Đến, Cc hoặc Bcc)",
     "EMAIL_TOO_MANY_RECIPIENTS": "Node Send email {{node}}: tối đa {{max}} người nhận",
-    "EMAIL_RATE_LIMITED": "Node Send email chỉ được gửi tới {{limit}} người nhận mỗi giờ; thử lại sau {{retry}} giây"
+    "EMAIL_RATE_LIMITED": "Node Send email chỉ được gửi tới {{limit}} người nhận mỗi giờ; thử lại sau {{retry}} giây",
+    "CODE_RUNTIME_OFF": "Code node đang tắt trên server này (STUDIO_ENABLE_CODE_NODES)",
+    "CODE_RUNTIME_UNAVAILABLE": "Server này chưa chạy được Code node: {{reason}}",
+    "CODE_INVALID": "Code node {{node}}: {{reason}}",
+    "CODE_FAILED": "Code node {{node}} báo lỗi {{error}}",
+    "CODE_TIMEOUT": "Code node {{node}} bị dừng sau {{seconds}} giây",
+    "CODE_MEMORY": "Code node {{node}} dùng quá bộ nhớ cho phép ({{limit}})",
+    "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() trả về {{type}}, không lưu được dưới dạng JSON",
+    "CODE_TOO_LARGE": "Code node {{node}}: {{what}} lớn hơn {{max_kb}} KB"
   },
   "lang": {
     "en": "English",

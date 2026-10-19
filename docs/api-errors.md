@@ -157,6 +157,14 @@
 | `EMAIL_RECIPIENTS_MISSING` | 400 | Send email node {node}: there is no recipient (To, Cc or Bcc) |
 | `EMAIL_TOO_MANY_RECIPIENTS` | 400 | Send email node {node}: at most {max} recipients |
 | `EMAIL_RATE_LIMITED` | 429 | Send email nodes may reach {limit} recipients per hour; try again in {retry} s |
+| `CODE_RUNTIME_OFF` | 400 | Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES) |
+| `CODE_RUNTIME_UNAVAILABLE` | 503 | Code nodes cannot run on this server: {reason} |
+| `CODE_INVALID` | 400 | Code node {node}: {reason} |
+| `CODE_FAILED` | 400 | Code node {node} raised {error} |
+| `CODE_TIMEOUT` | 400 | Code node {node} was stopped after {seconds} s |
+| `CODE_MEMORY` | 400 | Code node {node} ran out of memory (limit {limit}) |
+| `CODE_RESULT_NOT_JSON` | 400 | Code node {node}: main() returned {type}, which cannot be stored as JSON |
+| `CODE_TOO_LARGE` | 413 | Code node {node}: the {what} is larger than {max_kb} KB |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
 | `TRIGGER_TOKEN_INVALID` | 401 | Missing, invalid or revoked workflow token |
@@ -202,3 +210,7 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 ### Send email nodes (TASK-0051)
 
 `CREDENTIAL_SETTINGS_INVALID` comes from creating, editing or testing an SMTP credential (`details.field` names the setting). `EMAIL_HOST_BLOCKED`, `EMAIL_AUTH_FAILED` and `EMAIL_SEND_FAILED` come from its *Test connection* and, as the `code` of a run `error` event, from Send email nodes, together with the other `EMAIL_*` codes. `EMAIL_AUTH_FAILED` is 400 (not 401) for the same reason as `PROVIDER_AUTH_FAILED`. `EMAIL_RATE_LIMITED` counts recipients per workflow owner in a fixed one-hour window (`STUDIO_EMAIL_NODE_HOURLY_LIMIT`, default 100).
+
+### Code mode of Tool nodes (TASK-0053)
+
+The `CODE_*` codes are the `code` of a run `error` event from a Tool node in Code mode. `CODE_FAILED`, `CODE_INVALID` (raised by the code itself), `CODE_RESULT_NOT_JSON`, `CODE_TIMEOUT` and `CODE_MEMORY` events also carry `code_output` with `stdout`, `traceback` and `runtime`. `CODE_RUNTIME_OFF` and `CODE_RUNTIME_UNAVAILABLE` mean the server cannot run code at all: the mode is off (`STUDIO_ENABLE_CODE_NODES`), Docker is not reachable, or the image (`STUDIO_CODE_IMAGE`, default `studio-code:1`) is missing.

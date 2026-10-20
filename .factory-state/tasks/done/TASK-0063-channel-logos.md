@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0063
-- Status: review (REV-0057, QA-0057)
+- Status: done (PR #83, REV-0057, QA-0057)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
 - Updated: 2026-10-20
@@ -121,4 +121,4 @@ exception to DEC-0008 rule 3 as DEC-0042.
 
 ## Handoff Notes
 
-- Next: owner review of the PR, then merge. TASK-0064 starts after the merge.
+- Merged after the owner's approval (2026-10-21). Next: TASK-0064.

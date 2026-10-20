@@ -178,3 +178,59 @@ def test_readable_422_and_413():
     big = {"name": "big", "nodes": [], "edges": [], "blob": "x" * (1100 * 1024)}
     r = c.post("/api/workflows", json=big, headers=H(t)); assert r.status_code == 413 and r.json()["error"]["code"] == "WORKFLOW_TOO_LARGE"
     assert c.post("/api/validate", json={"nodes": [{"id": "a"}]}, headers=H(t)).status_code == 422
+
+
+
+def _cancel_run_and_close_loop(listen_disconnects: bool, busy_executor: bool):
+    """Drive RunService.execute on its own loop, cancel the handler task and close the loop the way asyncio.Runner and
+    Starlette's TestClient portal do. Returns the runs of the workflow afterwards (TASK-0059)."""
+    import asyncio, concurrent.futures
+    from app.api.deps import get_db
+    from app.repositories.runs import RunRepository
+    from app.repositories.workflows import WorkflowRepository
+    from app.services.run_service import RunService
+    login = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]
+    t, uid = login["token"], login["user"]["id"]; wid = save(t, slow_wf(5))
+    db = get_db(); svc = RunService(WorkflowRepository(db), RunRepository(db))
+    plan = svc.plan(uid, {"workflow_id": wid, "input": {}})
+    loop = asyncio.new_event_loop(); release = threading.Event()
+    if busy_executor:  # one worker, kept busy: the history write waits in the queue, as on a loaded CI runner
+        loop.set_default_executor(concurrent.futures.ThreadPoolExecutor(max_workers=1))
+        loop.run_in_executor(None, release.wait)
+    try:
+        started = asyncio.Event()
+        async def send(ev):
+            if ev.get("type") == "run_started": started.set()
+            return True
+        async def listen():
+            if listen_disconnects: await started.wait(); return "disconnected"
+            await asyncio.Future()  # the client never sends anything
+        task = loop.create_task(svc.execute(plan, send, listen, uid))
+        loop.run_until_complete(started.wait())
+        if listen_disconnects: loop.run_until_complete(asyncio.sleep(0.3))  # the handler reaches the history write
+        task.cancel(); loop.call_soon(loop.stop); loop.run_forever()  # one iteration for the handler to react
+        pending = asyncio.all_tasks(loop)
+        for p in pending: p.cancel()  # what asyncio.Runner does when the loop closes
+        loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+        release.set(); loop.run_until_complete(loop.shutdown_default_executor())
+    finally:
+        release.set(); loop.close()
+    runs = []
+    for _ in range(50):
+        runs = c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()["data"]
+        if runs: break
+        time.sleep(0.1)
+    return runs
+
+
+def test_run_cancelled_while_the_loop_shuts_down_is_still_recorded():
+    """Cancel path: the write used to be a not-yet-started to_thread coroutine that the closing loop cancelled."""
+    runs = _cancel_run_and_close_loop(listen_disconnects=False, busy_executor=False)
+    assert runs and runs[0]["status"] == "cancelled" and runs[0]["events"][-1]["reason"] == "disconnect"
+
+
+def test_disconnected_run_is_recorded_when_the_write_waits_for_a_thread():
+    """Normal path after a disconnect: cancelling `await asyncio.to_thread(record)` also cancelled the queued work item
+    when no executor thread had picked it up yet, so the run was lost (flaky test_disconnect_cancels_run on CI)."""
+    runs = _cancel_run_and_close_loop(listen_disconnects=True, busy_executor=True)
+    assert runs and runs[0]["status"] == "cancelled" and runs[0]["events"][-1]["reason"] == "disconnect"

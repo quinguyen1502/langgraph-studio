@@ -399,8 +399,9 @@ def test_api_run_resumed_from_a_channel_sends_its_callback(c, api, monkeypatch):
     final = until(lambda: [(e, b, r) for e, b, r in got if b["run_id"] == rid and b["status"] == "ok"])[0]
     assert final[0] == "run.finished" and final[1]["final_state"]["decision"] == "approved"
     assert webhooks.verify_signature(tok["signing_secret"], final[2].headers["x-studio-signature"], final[2].content)  # same pipeline: signed
-    log = c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"]
-    assert sorted(d["status"] for d in log if d["run_id"] == rid) == ["ok", "ok"]
+    # the hook sees the request before the worker marks the delivery ok: wait for the log, do not read it once (TASK-0059)
+    statuses = lambda: sorted(d["status"] for d in c.get(f"/api/workflows/{wid}/deliveries", headers=H(owner["token"])).json()["data"] if d["run_id"] == rid)
+    assert until(lambda: statuses() == ["ok", "ok"]), statuses()
 
 
 def test_callbacks_are_rate_limited_per_ip_and_per_channel(c, api, monkeypatch):

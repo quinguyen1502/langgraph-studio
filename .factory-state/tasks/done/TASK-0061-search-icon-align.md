@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0061
-- Status: doing
+- Status: done (PR #77)
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
@@ -41,3 +41,4 @@ the same kind of offset: `top-1` with `size-7` in Workflows, and `top-0.5` with 
   - Audit log: icon 8 px above and 8 px below, clear button 2 / 2 px, both in a 32 px input.
   - Workflows: icon 8 / 8 px.
 - `npm run build`, `npm run lint` and `vitest run` (58 passed).
+- CI on PR #77 (commit `8ac56b8`): all six checks passed.

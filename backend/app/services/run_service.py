@@ -116,9 +116,10 @@ def _parse_until(req: dict) -> Optional[str]:
 
 
 def _write_in_thread(fn, *args, **kwargs) -> asyncio.Future:
-    """Run a history write on a worker thread, submitted now and never cancelled (TASK-0059). Cancelling the task that
-    awaits it (client gone, server or test client shutting its loop down) raises CancelledError there but does not
-    drop the write: plain `await asyncio.to_thread(...)` cancels the queued work item if no thread has picked it up."""
+    """Run a write (run history, run bus entry) on a worker thread, submitted now and never cancelled (TASK-0059/0060).
+    Cancelling the task that awaits it (client gone, server or test client shutting its loop down) raises CancelledError
+    there but does not drop the write: plain `await asyncio.to_thread(...)` cancels the queued work item if no thread
+    has picked it up."""
     call = functools.partial(contextvars.copy_context().run, fn, *args, **kwargs)
     return asyncio.shield(asyncio.get_running_loop().run_in_executor(None, call))
 
@@ -398,7 +399,7 @@ class RunService:
             if status != "fenced": await self.settled(rid)
             return status
         finally:
-            if status != "fenced": await asyncio.shield(self.bus.afinish(rid))  # a fenced worker leaves the new owner's entry alone
+            if status != "fenced": await _write_in_thread(self.bus.finish, rid)  # a fenced worker leaves the new owner's entry alone
 
     async def settled(self, rid: str) -> None:
         """Every run segment ends here (first run, studio/Slack/Telegram resume, recovery): an API run's callback_url

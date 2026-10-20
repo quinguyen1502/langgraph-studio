@@ -138,7 +138,7 @@ Secrets are encrypted in the service before they reach the repository; only `res
   - `resolve` (SSRF check + single DNS resolution), `pinned_request` (connect to the IP, keep Host/SNI);
   - `sign` / `verify_signature` (HMAC-SHA256 over `"<ts>.<body>"`) and `deliver`.
 - `services/rate_limit.py`: fixed-window `RateLimiter`. It uses Redis (async client) when `REDIS_URL` is set and memory otherwise. Called by `TriggerService.check_rate`.
-- `services/redis_async.py`: one `redis.asyncio` client per event loop. Used by `RedisRunBus.astart/afinish/apublish` and the Redis rate limiter.
+- `services/redis_async.py`: one `redis.asyncio` client per event loop. Used by `RedisRunBus.astart/apublish` and the Redis rate limiter. `finish` runs on a worker thread (TASK-0060).
 - `services/job_queue.py`, `RedisJobQueue`:
   - `dequeue` = BLMOVE into `studio:run-jobs:processing:<worker>`; `ack` = LREM;
   - `heartbeat` = `studio:worker:<id>` with a TTL; `recover_stale` requeues dead workers' jobs as `recovered`. *(Replaced by leases + reaper in TASK-0020.)*

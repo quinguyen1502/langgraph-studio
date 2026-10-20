@@ -8,7 +8,7 @@
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-19
-- Updated: 2026-10-19
+- Updated: 2026-10-20
 - Requirement IDs: none (a product rename, no feature change)
 - Design IDs: none
 - Architecture IDs: DEC-0009, DEC-0008
@@ -171,6 +171,15 @@ Answered by the owner on 2026-10-19; the proposals were accepted as written.
 3. **Tagline**: the current definition with only the name changed; "LangGraph" stays as the engine it builds on.
 4. **Old Pages URL**: redirected, not left to 404. The redirect files are part of this task (scope item 8); they are
    served from the user site repo rather than a new `langgraph-studio` repo, for the reason given there.
+
+## Owner Follow-Up (2026-10-20)
+
+- The repository was renamed to `quinguyen1502/superstep` and the handbook redeployed to
+  `quinguyen1502.github.io/superstep/` (checked: home, vi, quickstart and video return 200; the old repo URL returns
+  301).
+- **Decision 4 reversed:** the owner chose not to publish the redirect, because the project has not been shared
+  publicly yet, so nobody holds the old docs links. `quinguyen1502.github.io/langgraph-studio/` stays a 404, and
+  `scripts/pages-redirect/` was removed (branch `factory/task-0058-drop-redirect`).
 
 ## Open Questions
 

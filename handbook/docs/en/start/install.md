@@ -24,9 +24,11 @@ extras, and runs `npm install` in `frontend/`. Then it starts:
 | UI (Vite) | <http://localhost:5173>, which proxies `/api` and `/ws` to the backend |
 | API docs (OpenAPI) | <http://localhost:8000/docs> |
 
-Sign in with the demo account `admin@example.com` / `admin123`. It is seeded
-on start-up outside production, together with the **Customer Support**
-example workflow.
+Create an account with **Sign up**. A new account starts with a copy of the
+**Customer Support** example workflow and the `editor` role. To make it an
+admin, start the studio with `STUDIO_ADMIN_EMAILS` set to that e-mail, for
+example `STUDIO_ADMIN_EMAILS=you@example.com ./dev.sh`, and then sign up (see
+[Roles and sharing](../operate/access.md)).
 
 Local development keeps its data in SQLite (`backend/studio.db`) and the run
 bus in memory. Nothing else needs to be running.

@@ -14,8 +14,8 @@ person to approve it, and can be called from another service over HTTP.
 
 - A running studio: `./dev.sh` from a clone of the repository (see
   [Install](install.md)). The UI is at <http://localhost:5173>.
-- Sign in as `admin@example.com` / `admin123`. That account exists outside
-  production only.
+- An account: create one with **Sign up** on the sign-in page. The default
+  `editor` role is enough for this guide.
 - No model key is needed. Without a credential, LLM nodes answer from a
   deterministic offline mock that echoes the end of the prompt.
 

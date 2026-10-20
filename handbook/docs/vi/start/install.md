@@ -24,9 +24,11 @@ Lần chạy đầu tạo `backend/.venv`, cài backend kèm phần dev, và ch�
 | UI (Vite) | <http://localhost:5173>, chuyển `/api` và `/ws` sang backend |
 | Tài liệu API (OpenAPI) | <http://localhost:8000/docs> |
 
-Đăng nhập bằng tài khoản demo `admin@example.com` / `admin123`. Tài khoản này
-được tạo khi khởi động (trừ môi trường production), cùng với workflow ví dụ
-**Customer Support**.
+Tạo tài khoản bằng **Đăng ký**. Tài khoản mới có sẵn một bản sao của workflow ví
+dụ **Customer Support** và vai trò `editor`. Muốn tài khoản đó là admin, khởi động
+studio với `STUDIO_ADMIN_EMAILS` là e-mail đó, ví dụ
+`STUDIO_ADMIN_EMAILS=you@example.com ./dev.sh`, rồi mới đăng ký (xem
+[Vai trò và chia sẻ](../operate/access.md)).
 
 Khi phát triển, dữ liệu nằm trong SQLite (`backend/studio.db`) và run bus nằm
 trong bộ nhớ. Không cần chạy thêm dịch vụ nào.

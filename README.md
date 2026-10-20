@@ -25,8 +25,7 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Open <http://localhost:5173> and sign in as `admin@example.com` / `admin123`
-(seeded outside production). The API docs are at <http://localhost:8000/docs>.
+Open <http://localhost:5173> and create an account with **Sign up**. The API docs are at <http://localhost:8000/docs>.
 LLM nodes answer from a deterministic offline mock until you add a model
 credential. The [Quickstart](https://quinguyen1502.github.io/superstep/start/quickstart/)
 builds, runs, approves and triggers a first workflow in about ten minutes.

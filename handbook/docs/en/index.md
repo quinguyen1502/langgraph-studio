@@ -26,8 +26,7 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Open <http://localhost:5173> and sign in as `admin@example.com` /
-`admin123`. LLM nodes answer from an offline mock until you add a model
+Open <http://localhost:5173> and create an account with **Sign up**. LLM nodes answer from an offline mock until you add a model
 credential, so nothing else is needed to follow the
 [quickstart](start/quickstart.md): build a workflow, run it, approve it, and
 call it over HTTP in about ten minutes.

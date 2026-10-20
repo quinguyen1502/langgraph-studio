@@ -26,8 +26,7 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Mở <http://localhost:5173> và đăng nhập bằng `admin@example.com` /
-`admin123`. Node LLM trả lời bằng bản mock offline cho tới khi bạn thêm
+Mở <http://localhost:5173> và tạo tài khoản bằng **Đăng ký**. Node LLM trả lời bằng bản mock offline cho tới khi bạn thêm
 credential của model, nên không cần gì thêm để làm theo phần
 [bắt đầu nhanh](start/quickstart.md): dựng một workflow, chạy, duyệt và gọi
 nó qua HTTP trong khoảng mười phút.

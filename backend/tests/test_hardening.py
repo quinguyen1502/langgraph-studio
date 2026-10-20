@@ -174,7 +174,7 @@ def test_async_run_bus_on_real_redis():
     bus = RedisRunBus(REDIS); rid = uuid.uuid4().hex[:8]
     async def go():
         await bus.astart(rid, "u1"); await bus.apublish(rid, {"type": "x"}); owner = bus.owner(rid)
-        await bus.afinish(rid); return owner
+        bus.finish(rid); return owner
     assert asyncio.run(go()) == "u1" and bus.owner(rid) is None
 
 

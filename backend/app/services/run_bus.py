@@ -20,9 +20,9 @@ class RunBus(Protocol):
     def is_cancelled(self, rid: str) -> bool: ...
     def publish(self, rid: str, event: dict) -> None: ...
     def ping(self) -> bool: ...
-    # event-loop variants (TASK-0019): never block the loop on Redis I/O
+    # event-loop variants (TASK-0019): never block the loop on Redis I/O. finish has none: RunService runs it on a
+    # worker thread so a closing loop cannot drop it (TASK-0060)
     async def astart(self, rid: str, owner: str) -> None: ...
-    async def afinish(self, rid: str) -> None: ...
     async def apublish(self, rid: str, event: dict) -> None: ...
 
 
@@ -48,7 +48,6 @@ class InMemoryRunBus:
         for fn in list(self.listeners): fn(rid, event)
     def ping(self): return True
     async def astart(self, rid, owner): self.start(rid, owner)
-    async def afinish(self, rid): self.finish(rid)
     async def apublish(self, rid, event): self.publish(rid, event)
 
 
@@ -81,9 +80,6 @@ class RedisRunBus:
         if not self.url: return await asyncio.to_thread(self.start, rid, owner)
         async with self._a().pipeline(transaction=True) as p:
             await p.set(f"run:{rid}:owner", owner, ex=KEY_TTL).delete(f"run:{rid}:cancel").execute()
-    async def afinish(self, rid):
-        if not self.url: return await asyncio.to_thread(self.finish, rid)
-        await self._a().delete(f"run:{rid}:owner", f"run:{rid}:cancel")
     async def apublish(self, rid, event):
         if not self.url: return await asyncio.to_thread(self.publish, rid, event)
         await self._a().publish(channel(rid), json.dumps(event, ensure_ascii=False, default=str))

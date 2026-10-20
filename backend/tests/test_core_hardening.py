@@ -183,7 +183,7 @@ def test_readable_422_and_413():
 
 def _cancel_run_and_close_loop(listen_disconnects: bool, busy_executor: bool):
     """Drive RunService.execute on its own loop, cancel the handler task and close the loop the way asyncio.Runner and
-    Starlette's TestClient portal do. Returns the runs of the workflow afterwards (TASK-0059)."""
+    Starlette's TestClient portal do. Returns the runs of the workflow afterwards and the service (TASK-0059)."""
     import asyncio, concurrent.futures
     from app.api.deps import get_db
     from app.repositories.runs import RunRepository
@@ -220,17 +220,25 @@ def _cancel_run_and_close_loop(listen_disconnects: bool, busy_executor: bool):
         runs = c.get(f"/api/workflows/{wid}/runs", headers=H(t)).json()["data"]
         if runs: break
         time.sleep(0.1)
-    return runs
+    return runs, svc
 
 
 def test_run_cancelled_while_the_loop_shuts_down_is_still_recorded():
     """Cancel path: the write used to be a not-yet-started to_thread coroutine that the closing loop cancelled."""
-    runs = _cancel_run_and_close_loop(listen_disconnects=False, busy_executor=False)
+    runs, _ = _cancel_run_and_close_loop(listen_disconnects=False, busy_executor=False)
     assert runs and runs[0]["status"] == "cancelled" and runs[0]["events"][-1]["reason"] == "disconnect"
 
 
 def test_disconnected_run_is_recorded_when_the_write_waits_for_a_thread():
     """Normal path after a disconnect: cancelling `await asyncio.to_thread(record)` also cancelled the queued work item
     when no executor thread had picked it up yet, so the run was lost (flaky test_disconnect_cancels_run on CI)."""
-    runs = _cancel_run_and_close_loop(listen_disconnects=True, busy_executor=True)
+    runs, _ = _cancel_run_and_close_loop(listen_disconnects=True, busy_executor=True)
     assert runs and runs[0]["status"] == "cancelled" and runs[0]["events"][-1]["reason"] == "disconnect"
+
+
+@pytest.mark.parametrize("listen_disconnects,busy_executor", [(False, False), (True, True)])
+def test_cancelled_run_leaves_the_run_bus_when_the_loop_shuts_down(listen_disconnects, busy_executor):
+    """The run bus entry is cleared too (TASK-0060): a pending afinish coroutine was cancelled by the closing loop, so
+    the owner key outlived the run and a REST cancel took the recorded run for one still running elsewhere."""
+    runs, svc = _cancel_run_and_close_loop(listen_disconnects, busy_executor)
+    assert runs and svc.bus.owner(runs[0]["id"]) is None

@@ -44,7 +44,8 @@
     - Spans stay emitted at run end (documented).
     - When our LangSmith OTLP exporter is configured, LangChain's native tracer is disabled: `LANGSMITH_TRACING_V2=false`, which outranks `LANGSMITH_TRACING` and is inherited by import sandboxes, plus `langsmith.configure(enabled=False)`.
 13. **Async Redis**:
-    - Event-loop calls (`RunBus.astart/afinish/apublish`, the rate limiter) use `redis.asyncio`, with one client per loop.
+    - Event-loop calls (`RunBus.astart/apublish`, the rate limiter) use `redis.asyncio`, with one client per loop.
+    - `RunBus.finish` at run end runs on a worker thread, submitted at once and shielded, so a closing loop cannot drop it (TASK-0060; `afinish` was removed).
     - Blocking calls (job `BLMOVE`, `is_cancelled` polled from the run thread, REST cancel in threadpool routes) stay synchronous in threads.
 
 ## Deferred

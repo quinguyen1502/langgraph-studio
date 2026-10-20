@@ -1,11 +1,12 @@
 /** Search box + select filters, shared by the settings lists (channels, audit log). */
+import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Search, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
-export type Filter = { id: string; label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }
+export type Filter = { id: string; label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string; icon?: ReactNode }[] }
 
 export function FilterBar({ id, q, onQ, placeholder, filters }: { id: string; q: string; onQ: (v: string) => void; placeholder: string; filters: Filter[] }) {
   const { t } = useTranslation()
@@ -18,7 +19,7 @@ export function FilterBar({ id, q, onQ, placeholder, filters }: { id: string; q:
     </div>
     {filters.map(f => <Select key={f.id} value={f.value} onValueChange={f.onChange}>
       <SelectTrigger className="w-44" id={`${id}-${f.id}`} aria-label={f.label}><SelectValue /></SelectTrigger>
-      <SelectContent>{f.options.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+      <SelectContent>{f.options.map(o => <SelectItem key={o.value} value={o.value}>{o.icon}{o.label}</SelectItem>)}</SelectContent>
     </Select>)}
   </div>
 }

@@ -2,7 +2,8 @@
 
 Kênh duyệt mang yêu cầu của node Human ra ngoài studio. Thiết lập ở **Cài đặt
 → Kênh**; mỗi người tự liên kết tài khoản chat của mình ở **Cài đặt → Tài
-khoản của tôi**.
+khoản của tôi**. Mỗi kênh hiện logo của nền tảng ở đó, trong danh sách kênh
+của node Human và trong **Cài đặt → Nhật ký**.
 
 ![Kênh](../images/settings-channels.png)
 

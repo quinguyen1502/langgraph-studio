@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { channelLabel, type Channels } from '@/lib/approvals'
 
 /** channel_id: the connection (personal or org); channel: its kind (kept for labels and older workflows). */
@@ -27,8 +28,8 @@ export function HumanApprovalSettings({ value, channels, onChange }: { value?: A
       <Select value={chosen?.id || (missing ? 'missing' : 'none')} onValueChange={id => { const c = list.find(x => x.id === id); set(c ? { channel_id: c.id, channel: c.kind } : { channel_id: '', channel: '' }) }}>
         <SelectTrigger className="w-full" id="approval-channel"><SelectValue /></SelectTrigger>
         <SelectContent><SelectItem value="none">{t('approvals.node.studioOnly')}</SelectItem>
-          {missing && <SelectItem value="missing" disabled>{t(`approvals.kind.${v.channel}`)} · {t('approvals.notConnected')}</SelectItem>}
-          {list.map(c => <SelectItem key={c.id} value={c.id}>{channelLabel(t, c)}</SelectItem>)}</SelectContent></Select>
+          {missing && <SelectItem value="missing" disabled><ChannelLogo kind={v.channel || ''} />{t(`approvals.kind.${v.channel}`)} · {t('approvals.notConnected')}</SelectItem>}
+          {list.map(c => <SelectItem key={c.id} value={c.id}><ChannelLogo kind={c.kind} />{channelLabel(t, c)}</SelectItem>)}</SelectContent></Select>
       {!list.length && <p className="text-xs text-muted-foreground" id="approval-no-channels">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels" id="approval-open-channels">{t('approvals.node.addChannel')}</TextLink></p>}</div>
     {v.channel && <>
       {missing && <Alert variant="warning" id="approval-not-connected"><TriangleAlert /><AlertDescription className="text-xs">{t('approvals.node.connectFirst')} <TextLink to="/settings/channels">{t('approvals.node.addChannel')}</TextLink></AlertDescription></Alert>}

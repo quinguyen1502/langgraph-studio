@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { ErrorAlert } from '@/components/approvals/channel-parts'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { FilterBar } from '@/components/settings/filter-bar'
 import { api } from '@/lib/api'
 import i18n, { errorText } from '@/lib/i18n'
@@ -28,7 +29,7 @@ export function AuditSection() {
       { id: 'action', label: t('approvals.col.action'), value: action, onChange: setAction,
         options: [{ value: 'all', label: t('settings.filter.anyAction') }, ...ACTIONS.map(a => ({ value: a, label: t(`approvals.action.${a}`) }))] },
       { id: 'kind', label: t('approvals.platform'), value: kind, onChange: setKind,
-        options: [{ value: 'all', label: t('settings.filter.anyPlatform') }, ...kinds.map(k => ({ value: k, label: t(`approvals.kind.${k}`) }))] },
+        options: [{ value: 'all', label: t('settings.filter.anyPlatform') }, ...kinds.map(k => ({ value: k, label: t(`approvals.kind.${k}`), icon: <ChannelLogo kind={k} /> }))] },
     ]} />
     {err && <ErrorAlert>{err}</ErrorAlert>}
     {items && <p className="text-xs text-muted-foreground" id="audit-count">{t('settings.auditCount', { shown: shown.length, total: items.length })}</p>}
@@ -39,7 +40,7 @@ export function AuditSection() {
           <TableCell className="whitespace-nowrap text-xs text-muted-foreground">{new Date(e.at * 1000).toLocaleString(i18n.resolvedLanguage)}</TableCell>
           <TableCell className="whitespace-normal"><div className="flex max-w-64 flex-col items-start gap-1"><Badge variant={VARIANT[e.action] || 'secondary'}>{t(`approvals.action.${e.action}`)}</Badge>
             {e.code && <span className="text-xs text-muted-foreground">{errorText({ code: e.code, details: { kind: t(`approvals.kind.${e.kind}`) } })}</span>}</div></TableCell>
-          <TableCell className="whitespace-normal text-xs"><div className="max-w-48 truncate">{e.actor || '—'}</div><div className="text-muted-foreground">{t(`approvals.kind.${e.kind}`)}{e.external_id && <span className="font-mono"> · {e.external_id}</span>}</div></TableCell>
+          <TableCell className="whitespace-normal text-xs"><div className="max-w-48 truncate">{e.actor || '—'}</div><div className="flex items-center gap-1 text-muted-foreground"><ChannelLogo kind={e.kind} className="size-3.5" />{t(`approvals.kind.${e.kind}`)}{e.external_id && <span className="font-mono"> · {e.external_id}</span>}</div></TableCell>
           <TableCell className="text-xs"><div className="max-w-48 truncate">{e.workflow_name || '—'}</div><div className="font-mono text-muted-foreground">{e.run_id}</div></TableCell>
         </TableRow>)}
           {items && items.length > 0 && !shown.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">{t('settings.noMatch')}</TableCell></TableRow>}

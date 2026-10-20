@@ -12,6 +12,7 @@ import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import { useAction } from './use-action'
 import { CopyField } from '@/components/copy-field'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 
 export { ErrorAlert } from './error-alert'
 
@@ -39,7 +40,7 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
   const idp = `ch-${c.id}`
   return <div className="space-y-3 rounded-lg border p-4" data-testid={`channel-${c.kind}-${c.scope}`} data-channel-id={c.id}>
     <div className="flex flex-wrap items-center gap-2">
-      <span className="font-medium">{c.name || t(`approvals.kind.${c.kind}`)}</span>
+      <ChannelLogo kind={c.kind} /><span className="font-medium">{c.name || t(`approvals.kind.${c.kind}`)}</span>
       {c.team_id && <span className="font-mono text-xs text-muted-foreground">({c.team_id})</span>}
       <Badge variant="outline" className="font-mono">{c.hint}</Badge>
     </div>

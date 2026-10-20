@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0063
-- Status: todo
+- Status: review (REV-0057, QA-0057)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
 - Updated: 2026-10-20
@@ -116,7 +116,9 @@ exception to DEC-0008 rule 3 as DEC-0042.
 ## Activity Log
 
 - 2026-10-20: planned from REQ-0040.
+- 2026-10-20: started and implemented. The owner allowed downloading the four logo files: Slack and Teams from
+  Wikimedia Commons, Telegram and WhatsApp from Simple Icons 16.35.0. Review REV-0057, QA QA-0057.
 
 ## Handoff Notes
 
-- Next: `task-start TASK-0063` after the owner confirms the plan.
+- Next: owner review of the PR, then merge. TASK-0064 starts after the merge.

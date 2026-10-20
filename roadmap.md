@@ -159,3 +159,10 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 - TASK-0060 Clear the run bus entry of a run cancelled while the loop shuts down (REV-0055 follow-up): **merged** (PR #76, REV-0056, QA-0056).
 - TASK-0061 Center the search icon and clear button in search boxes (owner report): **merged** (PR #77).
 - TASK-0062 Docs tell readers to sign up instead of using the demo account (owner request): **merged** (PR #80).
+
+## Channel templates and logos
+
+REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates).
+
+- TASK-0063 Channel logos in brand colours (Channels, My accounts, Human node select, Audit log, connection items), DEC-0042: **todo**.
+- TASK-0064 Eight built-in templates (five channel approvals, two-level approval, support escalation, batch), built-in names in en and vi, logos on gallery cards: **todo**, after TASK-0063.

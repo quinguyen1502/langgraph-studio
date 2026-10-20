@@ -2,7 +2,7 @@
 
 Transport-agnostic: the WebSocket controller passes `send(ev)` and `listen()` callables.
 """
-import asyncio, json, threading, time, uuid
+import asyncio, contextvars, functools, json, threading, time, uuid
 from dataclasses import dataclass
 from typing import Awaitable, Callable, Iterator, Optional
 from ..core import config
@@ -112,6 +112,15 @@ def _parse_until(req: dict) -> Optional[str]:
     raw = req["until"]
     if not isinstance(raw, str) or not raw: raise AppError("RUN_REQUEST_INVALID")
     return raw
+
+
+
+def _write_in_thread(fn, *args, **kwargs) -> asyncio.Future:
+    """Run a history write on a worker thread, submitted now and never cancelled (TASK-0059). Cancelling the task that
+    awaits it (client gone, server or test client shutting its loop down) raises CancelledError there but does not
+    drop the write: plain `await asyncio.to_thread(...)` cancels the queued work item if no thread has picked it up."""
+    call = functools.partial(contextvars.copy_context().run, fn, *args, **kwargs)
+    return asyncio.shield(asyncio.get_running_loop().run_in_executor(None, call))
 
 
 class RunService:
@@ -499,12 +508,14 @@ class RunService:
         except asyncio.CancelledError:  # handler cancelled (server shutdown / client gone mid-await): still keep history
             cancel.set(); status = "cancelled"
             events.append({"type": "run_cancelled", "ts": time.time(), "reason": "disconnect"})
-            try: await asyncio.shield(asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, None,
-                                                        plan.source, plan.version, span, fence=plan.fence))
-            except StaleLease: self._fenced(rid, span, plan, uid, t0)
+            def keep():
+                try: self.record(rid, plan.workflow_id, plan.input, events, final, status, started, uid, None, plan.source, plan.version, span, fence=plan.fence)
+                except StaleLease: self._fenced(rid, span, plan, uid, t0)
+            try: await _write_in_thread(keep)  # submitted before this await, so a closing loop cannot drop it
+            except asyncio.CancelledError: pass  # cancelled again while waiting: the thread still finishes the write
             raise
-        try: summary = await asyncio.to_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint,
-                                               plan.source, plan.version, span, fence=plan.fence)
+        try: summary = await _write_in_thread(self.record, rid, plan.workflow_id, plan.input, events, final, status, started, uid, checkpoint,
+                                              plan.source, plan.version, span, fence=plan.fence)
         except StaleLease: return self._fenced(rid, span, plan, uid, t0)
         if connected: await send({"type": "run_summary", "run_id": rid, "status": status, "ts": time.time(), **summary})  # not stored as an event
         return status

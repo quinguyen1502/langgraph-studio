@@ -158,3 +158,4 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 - TASK-0059 Never drop the history write of a cancelled run (flaky Postgres CI: `test_disconnect_cancels_run`, `test_timeout`, approval callback): **merged** (PR #73, REV-0055, QA-0055). The Postgres CI job passed 4 consecutive runs before the merge.
 - TASK-0060 Clear the run bus entry of a run cancelled while the loop shuts down (REV-0055 follow-up): **merged** (PR #76, REV-0056, QA-0056).
 - TASK-0061 Center the search icon and clear button in search boxes (owner report): **merged** (PR #77).
+- TASK-0062 Docs tell readers to sign up instead of using the demo account (owner request): **merged** (PR #80).

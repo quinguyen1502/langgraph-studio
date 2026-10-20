@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0059
-- Status: doing
+- Status: done (PR #73, REV-0055, QA-0055)
 - Phase: release
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20

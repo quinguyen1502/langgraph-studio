@@ -36,6 +36,9 @@ test('approval channels: org connection, verified account, Human node, request, 
   await expect(page).toHaveURL(/\/settings\/channels$/)
   const slack = page.locator('[data-testid=channel-card-slack]'), tg = page.locator('[data-testid=channel-card-telegram]')
   await expect(slack.getByTestId('status')).toHaveText('Chưa thiết lập'); await expect(tg.getByTestId('status')).toHaveText('Chưa thiết lập')
+  // each platform card title carries its logo (TASK-0063)
+  for (const k of ['slack', 'telegram', 'whatsapp', 'email', 'teams'])
+    await expect(page.locator(`[data-testid=channel-card-${k}] [data-channel-logo=${k}]`).first()).toBeVisible()
   // connect Slack for the whole organization (the demo user is an admin): Org tab inside the Slack card
   await slack.locator('#channel-card-slack-tab-org').click()
   const add = slack.locator('[data-testid=add-slack-org]'), save = add.locator('#add-slack-org-save'); await expect(save).toBeDisabled()
@@ -62,6 +65,8 @@ test('approval channels: org connection, verified account, Human node, request, 
   await page.locator('#channel-filters-scope').click(); await page.getByRole('option', { name: 'Mọi phạm vi' }).click()
   // my Slack account, inline in the card: link -> the bot DMs a code -> wrong code refused -> right code verifies
   const acct = slack.locator('[data-testid=id-slack-2222]')
+  await expect(acct.locator('[data-channel-logo=slack]')).toBeVisible()  // my account row and the connection carry the logo
+  await expect(slack.locator('[data-testid=channel-slack-org] [data-channel-logo=slack]')).toBeVisible()
   await acct.locator('#id-slack-2222').fill('lower-case'); await acct.locator('#id-slack-2222-link').click()
   await expect(acct.getByRole('alert')).toContainText('Slack')  // IDENTITY_INVALID
   await acct.locator('#id-slack-2222').fill('U0E2EADMIN'); await acct.locator('#id-slack-2222-link').click()
@@ -77,7 +82,10 @@ test('approval channels: org connection, verified account, Human node, request, 
   await page.goto(`/workflows/${wid}`)
   // reopen the editor (channels reload) and configure the node
   await page.locator('.react-flow__node[data-id="ask"]').click()
-  await page.locator('#approval-channel').click(); await page.getByRole('option', { name: 'Slack · Acme · Toàn tổ chức' }).click()
+  await page.locator('#approval-channel').click()
+  await expect(page.getByRole('option', { name: 'Slack · Acme · Toàn tổ chức' }).locator('[data-channel-logo=slack]')).toBeVisible()
+  await page.getByRole('option', { name: 'Slack · Acme · Toàn tổ chức' }).click()
+  await expect(page.locator('#approval-channel [data-channel-logo=slack]')).toBeVisible()
   await expect(page.locator('#approval-not-connected')).toHaveCount(0)
   await page.locator('#approval-target').fill('C0E2E'); await page.locator('#approval-approvers').fill('lead@example.com, ops@example.com')
   await expect(page.locator('#approval-approvers')).toHaveValue('lead@example.com, ops@example.com')
@@ -90,6 +98,7 @@ test('approval channels: org connection, verified account, Human node, request, 
   const ed = page.url()
   await page.goto('/settings/audit'); await expect(page.locator('#settings-nav-audit')).toHaveAttribute('aria-current', 'page')
   await expect(page.locator('[data-testid=audit-row]', { hasText: WF.name }).first()).toContainText('Đã gửi')
+  await expect(page.locator('[data-testid=audit-row]', { hasText: WF.name }).first().locator('[data-channel-logo=slack]')).toBeVisible()
   const post = await sent(page, 'chat.postMessage', b => b.channel === 'C0E2E')
   expect(post.blocks[1].elements.map((e: any) => e.action_id)).toEqual(['approve', 'reject'])
   // in the language this user works in (vi UI -> preferences.lang = vi)
@@ -103,7 +112,9 @@ test('approval channels: org connection, verified account, Human node, request, 
   expect((await sent(page, 'chat.update', b => b.channel === 'C0E2E')).text).toContain('admin@example.com đã duyệt')
   await page.reload()
   await expect(page.locator('[data-testid=audit-row]', { hasText: WF.name }).first()).toContainText('Đã duyệt')
-  // audit filters: decision + text
+  // audit filters: platform (with its logo), decision, text
+  await page.locator('#audit-filters-kind').click()
+  await expect(page.getByRole('option', { name: 'Slack' }).locator('[data-channel-logo=slack]')).toBeVisible(); await page.keyboard.press('Escape')
   await page.locator('#audit-filters-action').click(); await page.getByRole('option', { name: 'Đã duyệt' }).click()
   await expect(page.locator('[data-testid=audit-row]', { hasText: WF.name })).toHaveCount(1)
   await page.locator('#audit-filters-search').fill('no-such-workflow'); await expect(page.locator('[data-testid=audit-row]')).toHaveCount(0)

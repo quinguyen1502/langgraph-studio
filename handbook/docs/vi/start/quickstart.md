@@ -14,8 +14,8 @@ và có thể được dịch vụ khác gọi qua HTTP.
 
 - Studio đang chạy: `./dev.sh` từ bản clone của repo (xem
   [Cài đặt](install.md)). Giao diện ở <http://localhost:5173>.
-- Đăng nhập bằng `admin@example.com` / `admin123`. Tài khoản này chỉ có khi
-  không chạy production.
+- Một tài khoản: tạo bằng **Đăng ký** ở trang đăng nhập. Vai trò mặc định
+  `editor` là đủ cho hướng dẫn này.
 - Không cần key của model. Khi chưa có credential, node LLM trả lời bằng bản
   mock offline cố định, lặp lại phần cuối của prompt.
 

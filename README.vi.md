@@ -25,8 +25,7 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Mở <http://localhost:5173> và đăng nhập bằng `admin@example.com` /
-`admin123` (chỉ có khi không chạy production). Tài liệu API ở
+Mở <http://localhost:5173> và tạo tài khoản bằng **Đăng ký**. Tài liệu API ở
 <http://localhost:8000/docs>. Node LLM trả lời bằng bản mock offline cố định
 cho tới khi bạn thêm credential của model. Phần
 [Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/)

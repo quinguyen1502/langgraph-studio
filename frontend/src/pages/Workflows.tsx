@@ -81,8 +81,8 @@ export function WorkflowsPage() {
         <div><h1 className="text-2xl font-semibold tracking-tight">{t('list.title')}</h1><p className="text-sm text-muted-foreground" id="wf-count">{loading ? t('common.loading') : q.trim() ? t('list.filtered', { shown: shown.length, total: items.length }) : t('list.count', { count: items.length })}</p></div>
         <div className="flex gap-2">
           {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
-          <div className="relative"><Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" /><Input id="wf-search" aria-label={t('list.searchLabel')} className="pl-8 pr-8 w-64" placeholder={t('list.search')} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
-            {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-1 top-1 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
+          <div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="wf-search" aria-label={t('list.searchLabel')} className="pl-8 pr-8 w-64" placeholder={t('list.search')} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
+            {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-0.5 top-0.5 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
           {can(me, 'resources.manage') && <CredentialsDialog />}
           {creates && importsOn && <ImportDialog />}
           {creates && <Button onClick={() => setGallery(true)} id="new-wf"><Plus />{t('common.newWorkflow')}</Button>}

@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0066
-- Status: todo
+- Status: done (PR #87, REV-0060, QA-0060)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -140,5 +140,14 @@ escalate once to other people.
 ## Activity Log
 
 - 2026-10-21: planned from REQ-0041.
+- 2026-10-21: started after PR #86 merged, and implemented. Review REV-0060, QA QA-0060.
+- 2026-10-21: PR #87 check: the timeout now closes only the swept waiting step (REV-0060, QA-0060).
+- 2026-10-21: CI green on PR #87 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
+
+- Parallel branches: the runtime pauses at the first Human node that interrupts, so a run has one waiting step at a
+  time; each later pause writes its own step and starts its own deadline.
+- The social post template approves on timeout: rejecting would loop through Rewrite and wait again every day.
+- The timeout answer is visible on `run_resumed.by` (`{"channel": "deadline", "on_timeout": …}`) and as **Timed out**
+  in the Audit log; there is no dedicated trace label.

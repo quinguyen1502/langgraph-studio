@@ -65,3 +65,28 @@ test('approvals inbox: a listed approver answers in place (TASK-0065)', async ({
   await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}/runs`, { headers: { Authorization: `Bearer ${token}` } })).json()).data[0].final_state?.decision,
     { timeout: 30_000 }).toBe('rejected')
 })
+
+test('human node deadline: settings, due time in the inbox, rejected on time (TASK-0066)', async ({ page }) => {
+  test.setTimeout(150_000)
+  const token = await login(page)
+  const wf = { ...APPROVAL, name: `Deadline e2e ${Date.now()}` }
+  const wid = (await (await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })).json()).data.id
+  await page.goto(`/workflows/${wid}`)
+  await page.locator('.react-flow__node[data-id="ask"]').click()
+  await page.locator('#deadline-on').click(); await expect(page.locator('#deadline-after')).toHaveValue('1')
+  await page.locator('#deadline-action').click(); await page.getByRole('option', { name: 'Chuyển cho người duyệt khác' }).click()
+  await expect(page.locator('#deadline-escalate')).toBeVisible()
+  await page.locator('#deadline-action').click(); await page.getByRole('option', { name: 'Từ chối' }).click()
+  await page.locator('#deadline-after-unit').click(); await page.getByRole('option', { name: 'phút' }).click()
+  await page.locator('#save-btn').click(); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
+  const saved = (await (await page.request.get(`/api/workflows/${wid}`, { headers: { Authorization: `Bearer ${token}` } })).json()).data
+  expect(saved.nodes.find((n: { id: string }) => n.id === 'ask').data.deadline).toEqual({ after: '1m', on_timeout: 'reject' })
+  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order C3"}')
+  await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
+  await page.goto('/approvals')
+  await expect(page.locator('[data-testid=inbox-row]', { hasText: wf.name }).locator('[data-testid=inbox-due]')).toBeVisible()
+  // one minute later the worker's sweep rejects it
+  await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}/runs`, { headers: { Authorization: `Bearer ${token}` } })).json()).data[0].final_state?.decision,
+    { timeout: 100_000, intervals: [5_000] }).toBe('rejected')
+  await page.reload(); await expect(page.locator('[data-testid=inbox-row]', { hasText: wf.name })).toHaveCount(0)
+})

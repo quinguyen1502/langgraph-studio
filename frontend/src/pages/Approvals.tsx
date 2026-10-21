@@ -23,7 +23,8 @@ export function ApprovalsPage() {
   const { t } = useTranslation()
   const [items, setItems] = useState<InboxItem[] | null>(null); const [err, setErr] = useState('')
   const [busy, setBusy] = useState<string | null>(null); const [sent, setSent] = useState<string[]>([])
-  const load = () => api<InboxItem[]>('/api/approvals/inbox').then(xs => { setItems(xs); setErr('') }).catch(e => setErr(e.message))
+  const [now, setNow] = useState(() => Date.now())
+  const load = () => api<InboxItem[]>('/api/approvals/inbox').then(xs => { setItems(xs); setErr(''); setNow(Date.now()) }).catch(e => setErr(e.message))
   useEffect(() => {
     load(); const id = setInterval(load, INBOX_POLL_MS)
     window.addEventListener('focus', load)
@@ -57,6 +58,9 @@ export function ApprovalsPage() {
             <span className="flex items-center gap-1">{it.channel ? <><ChannelLogo kind={it.channel} className="size-3.5" />{t(`approvals.kind.${it.channel}`)}</> : t('inbox.studio')}</span>
             {it.owner_email && <span data-testid="inbox-owner">{t('inbox.from', { email: it.owner_email })}</span>}
             <span className="tabular-nums">{t('inbox.since', { when: fmtDate(it.waiting_since) })}</span>
+            {it.due_at != null && (it.due_at * 1000 < now
+              ? <Badge variant="destructive" data-testid="inbox-overdue">{t('inbox.overdue')}</Badge>
+              : <span className="tabular-nums" data-testid="inbox-due">{t('inbox.due', { when: fmtDate(it.due_at) })}</span>)}
           </CardDescription>
           {it.can_open && it.workflow_id && <CardAction><Button size="sm" variant="outline" asChild>
             <Link to={`/workflows/${it.workflow_id}?run=${it.run_id}`} data-testid="inbox-open">{t('inbox.openRun')}</Link></Button></CardAction>}

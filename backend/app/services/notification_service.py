@@ -20,7 +20,8 @@ from . import mailer, webhooks
 from .approval_channels.messages import LANGS, lang_of
 
 log = get_logger("notify")
-KINDS = {"run_waiting": "A run is waiting for your response", "run_expired": "A waiting run expired"}
+KINDS = {"run_waiting": "A run is waiting for your response", "run_expired": "A waiting run expired",
+         "run_reminder": "A run is still waiting for your response", "run_escalated": "A run was handed to you for approval"}  # TASK-0066
 
 
 class NotificationService:
@@ -34,11 +35,13 @@ class NotificationService:
                 "params": json.loads(n.params or "{}"), "link": n.link, "created": n.created, "read": n.read_at is not None}
 
     # ---- producer ----
-    def run_event(self, kind: str, uid: str, run_id: str, workflow_id: Optional[str], node_event: Optional[dict] = None) -> Notification:
+    def run_event(self, kind: str, uid: str, run_id: str, workflow_id: Optional[str], node_event: Optional[dict] = None,
+                  link: Optional[str] = None) -> Notification:
+        """link: where the notification opens (default: the run in the editor; deadline reminders open /approvals)."""
         w = self.workflows.get(workflow_id) if self.workflows and workflow_id and workflow_id != "adhoc" else None
         ev = node_event or {}
         params = {"workflow_name": w.name if w else None, "label": ev.get("label"), "prompt": ev.get("prompt")}
-        link = f"/workflows/{workflow_id}?run={run_id}" if workflow_id and workflow_id != "adhoc" else None
+        link = link or (f"/workflows/{workflow_id}?run={run_id}" if workflow_id and workflow_id != "adhoc" else None)
         prefs = self.preferences(uid)
         n = Notification(id=uuid.uuid4().hex[:12], user_id=uid, kind=kind, run_id=run_id, workflow_id=workflow_id,
                          title=KINDS[kind], params=json.dumps(params, ensure_ascii=False), link=link, created=time.time())

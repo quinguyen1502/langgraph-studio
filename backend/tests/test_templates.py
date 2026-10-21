@@ -65,6 +65,15 @@ def test_builtin_order_and_channel_kinds():
     assert all(list(a) == ["channel"] for v in kinds.values() for a in v)
 
 
+def test_channel_templates_have_deadlines():
+    """TASK-0066: every Human node on a channel has a deadline that suits the process; only the social post approves on timeout."""
+    from app.engine import deadlines
+    due = {(b["id"], n["id"]): deadlines.parse(n["data"]) for b in T.BUILTINS for n in b["workflow"]["nodes"] if n["type"] == "human" and n["data"].get("approval")}
+    assert len(due) == 7 and all(due.values())
+    assert {k for k, v in due.items() if v["on_timeout"] == "approve"} == {("builtin-social-post", "editor")}
+    assert due[("builtin-leave-request", "manager")] == {"after": 172800.0, "remind_every": 86400.0, "on_timeout": "reject", "escalate_to": []}
+
+
 @pytest.mark.parametrize("tid", [i for i in NEW if i != "builtin-support-escalation"])  # that one needs a knowledge base, like builtin-rag
 def test_new_builtins_run_offline(tid, monkeypatch):
     """Mock LLM and dry-run e-mail: each runs up to its first Human node, or to the end."""

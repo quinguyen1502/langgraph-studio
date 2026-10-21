@@ -57,7 +57,7 @@ const refund = (s: typeof T.en) => ({
   state: [{ name: 'order_id', type: 'string' }, { name: 'amount', type: 'string' }, { name: 'reply', type: 'string' }, { name: 'decision', type: 'string' }],
   nodes: [N('start', 'start', 40, { label: s.start }, 180),
     N('draft', 'llm', 280, { label: s.draft, model: 'gpt-4o-mini', prompt: 'Draft a refund reply for order {{state.order_id}}', output_field: 'reply' }, 180),
-    N('ask', 'human', 540, { label: s.approve, prompt: s.approvePrompt, output_field: 'decision' }, 180),
+    N('ask', 'human', 540, { label: s.approve, prompt: s.approvePrompt, output_field: 'decision', deadline: { after: '1d', remind_every: '4h', on_timeout: 'reject' } }, 180),
     N('route', 'condition', 800, { label: s.approved, field: 'decision', default: 'rejected' }, 180),
     N('mail', 'email', 1060, { label: s.notify, to: 'customer@example.com', subject: 'Your refund', body: '{{state.reply}}', format: 'text' }, 80),
     N('end', 'end', 1060, { label: s.end }, 300)],
@@ -130,6 +130,8 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await setInput(page, JSON.stringify({ order_id: 'A100', amount: '$129.50', reply: '', decision: '' }, null, 2))
       await run(page, 'waiting'); await expect(page.locator('#human-question')).toBeVisible()
       await shot(page, lang, 'human-waiting')
+      await page.locator('.react-flow__node[data-id="ask"]').click(); await page.locator('#human-deadline').scrollIntoViewIfNeeded()
+      await shot(page, lang, 'human-deadline')
 
       // Approvals inbox with the waiting refund, then the workflow list with its link (TASK-0065)
       await page.goto('/approvals'); await expect(page.locator('[data-testid=inbox-row]').first()).toBeVisible()

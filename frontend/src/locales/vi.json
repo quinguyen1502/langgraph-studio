@@ -636,7 +636,9 @@
     "unread_other": "{{count}} thông báo chưa đọc",
     "run_waiting": "{{workflow}} đang chờ bạn: {{label}}",
     "run_expired": "Một run đang chờ của {{workflow}} đã hết hạn",
-    "unknownWorkflow": "Một workflow"
+    "unknownWorkflow": "Một workflow",
+    "run_reminder": "{{workflow}} vẫn đang chờ bạn: {{label}}",
+    "run_escalated": "{{workflow}} được chuyển cho bạn duyệt: {{label}}"
   },
   "notifyPrefs": {
     "open": "Cài đặt thông báo",
@@ -718,7 +720,11 @@
       "expired": "Hết hạn",
       "send_failed": "Gửi thất bại",
       "not_configured": "Chưa cấu hình",
-      "answered": "Đã trả lời"
+      "answered": "Đã trả lời",
+      "reminded": "Đã nhắc",
+      "escalated": "Đã chuyển tiếp",
+      "escalation_skipped": "Bỏ qua chuyển tiếp",
+      "timed_out": "Hết hạn chờ"
     },
     "node": {
       "title": "Kênh phê duyệt",
@@ -1494,6 +1500,29 @@
     "since": "Chờ từ {{when}}",
     "openRun": "Mở lượt chạy",
     "open": "Mở Phê duyệt",
-    "sent": "Đã gửi câu trả lời. Lượt chạy tiếp tục."
+    "sent": "Đã gửi câu trả lời. Lượt chạy tiếp tục.",
+    "due": "Hạn {{when}}",
+    "overdue": "Quá hạn"
+  },
+  "deadline": {
+    "title": "Hạn chờ",
+    "off": "Tắt: bước này chờ đến khi có người trả lời, hoặc đến giới hạn chờ của lượt chạy.",
+    "after": "Chờ tối đa",
+    "unit": "Đơn vị",
+    "units": {
+      "m": "phút",
+      "h": "giờ",
+      "d": "ngày"
+    },
+    "remindEvery": "Nhắc lại mỗi",
+    "remindHelp": "Để trống nếu không cần nhắc. Tối đa 5 lần, trên kênh duyệt và ở chuông thông báo.",
+    "onTimeout": "Khi hết hạn",
+    "actions": {
+      "reject": "Từ chối",
+      "approve": "Duyệt",
+      "escalate": "Chuyển cho người duyệt khác"
+    },
+    "escalateTo": "Chuyển cho (e-mail)",
+    "escalateHelp": "Họ trở thành người duyệt và có thêm một khoảng thời gian như trên. Nếu vẫn không ai trả lời, bước này bị từ chối."
   }
 }

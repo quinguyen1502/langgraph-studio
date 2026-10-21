@@ -172,4 +172,4 @@ REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates), I
 REQ-0041, Accepted 2026-10-21 (the owner chose deadlines with reminders and one inbox for approvals).
 
 - TASK-0065 Approvals inbox: one list of the runs waiting on the user, as owner or listed approver, answered in place; approvers on studio-only nodes; DEC-0043: **merged** (PR #86, REV-0059, QA-0059).
-- TASK-0066 Human node deadlines: reminders, then reject, approve or escalate once; due times in the inbox; deadlines on the six channel templates: **todo** (after TASK-0065).
+- TASK-0066 Human node deadlines: reminders, then reject, approve or escalate once; due times in the inbox; deadlines on the six channel templates: **merged** (PR #87, REV-0060, QA-0060).

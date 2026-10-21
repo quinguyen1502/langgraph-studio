@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
 import { HumanApprovalSettings } from '@/components/human-approval-settings'
+import { HumanDeadlineSettings } from '@/components/human-deadline-settings'
 import { CredentialsDialog, type Credential } from '@/components/credentials-dialog'
 import { TextButton } from '@/components/text-link'
 import { ModelPicker } from '@/components/model-picker'
@@ -63,6 +64,7 @@ export function EditorConfig() {
             <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={4} id="human-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
             <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
+            <HumanDeadlineSettings key={`${selNode.id}-deadline`} value={d.deadline} onChange={v => upd('deadline', v)} />
           </>}
           {selNode.type === 'tool' && <>
             <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, code: codeRt?.starter ?? '' }) : upd('mode', v)}>

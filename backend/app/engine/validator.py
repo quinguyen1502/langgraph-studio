@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List
-from . import code_runtime, decisions, emails, foreach
+from ..core import config
+from . import code_runtime, deadlines, decisions, emails, foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
@@ -131,6 +132,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "foreach": errs += foreach.errors(nid, d, out.get(nid, []), schema, reaches)
         if t == "decision": errs += decisions.errors(nid, d, schema)
         if t == "email": errs += emails.errors(nid, d, schema)
+        if t == "human": errs += deadlines.errors(nid, d, config.wait_ttl())
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]

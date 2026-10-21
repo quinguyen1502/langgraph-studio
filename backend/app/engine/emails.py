@@ -71,11 +71,11 @@ def node_fn(node: Dict[str, Any], resolve=None, key: Callable[[], Optional[str]]
     def fn(state):
         m = build(nid, d, state)
         cred = None
-        if d.get("credential_id"):
+        if d.get("credential_id") and not ports.test:  # a test run never sends (DEC-0044)
             if resolve is None: raise AppError("EMAIL_CREDENTIAL_INVALID", node=nid)
             cred = resolve(d["credential_id"])
         head = {"to": m["to"], "cc": m["cc"], "bcc": m["bcc"], "subject": m["subject"]}
-        if cred is None:  # dry run: show what would have been sent
+        if cred is None:  # dry run (no credential, or a test run): show what would have been sent
             res = {"sent": False, "dry_run": True, **head, "message_id": None,
                    "preview": m["text"][:PREVIEW] + ("…" if len(m["text"]) > PREVIEW else "")}
         else:

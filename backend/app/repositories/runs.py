@@ -1,7 +1,9 @@
 from typing import Optional
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, or_, select, update
 from ..models import Run
 from ..models.database import Database
+
+NOT_TEST = or_(Run.source.is_(None), Run.source != "test")  # every run but workflow test runs (TASK-0067)
 
 
 class StaleLease(Exception):
@@ -58,8 +60,9 @@ class RunRepository:
             s.commit()
 
     def list_waiting(self, owner: str, limit: int = 100) -> list[Run]:
+        """Runs waiting for this user's answer; a workflow test answers its own (TASK-0067)."""
         with self.db.session() as s:
-            return list(s.scalars(select(Run).where(Run.owner == owner, Run.status == "waiting").order_by(Run.started.desc()).limit(limit)))
+            return list(s.scalars(select(Run).where(Run.owner == owner, Run.status == "waiting", NOT_TEST).order_by(Run.started.desc()).limit(limit)))
 
     def list_waiting_before(self, cutoff: float, limit: int = 500) -> list[Run]:
         """Waiting runs (any owner) paused before `cutoff` (Run.ended = time it started waiting)."""
@@ -68,11 +71,13 @@ class RunRepository:
 
     def last_for_workflow(self, wid: str) -> Optional[Run]:
         with self.db.session() as s:
-            return s.scalars(select(Run).where(Run.workflow_id == wid).order_by(Run.started.desc()).limit(1)).first()
+            return s.scalars(select(Run).where(Run.workflow_id == wid, NOT_TEST).order_by(Run.started.desc()).limit(1)).first()
 
-    def list_for_workflow(self, wid: str, limit: int = 50) -> list[Run]:
+    def list_for_workflow(self, wid: str, limit: int = 50, tests: bool = False) -> list[Run]:
+        """tests: workflow test runs (TASK-0067) only; otherwise every other run."""
         with self.db.session() as s:
-            return list(s.scalars(select(Run).where(Run.workflow_id == wid).order_by(Run.started.desc()).limit(limit)))
+            q = select(Run).where(Run.workflow_id == wid, Run.source == "test" if tests else NOT_TEST)
+            return list(s.scalars(q.order_by(Run.started.desc()).limit(limit)))
 
     def delete_for_workflow(self, wid: str) -> None:
         with self.db.session() as s:

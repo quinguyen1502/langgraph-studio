@@ -410,6 +410,12 @@
     "SCHEDULE_NOT_FOUND": "Schedule not found",
     "SCHEDULE_CRON_INVALID": "Schedule: {{reason}}",
     "SCHEDULE_LIMIT": "A workflow can have at most {{max}} schedules",
+    "TEST_NOT_FOUND": "Test case not found",
+    "TEST_CASE_INVALID": "Test case: {{reason}}",
+    "TEST_CASES_LIMIT": "A workflow can have at most {{max}} test cases",
+    "TEST_SUITE_NOT_FOUND": "Test run not found",
+    "TEST_SUITE_RUNNING": "The tests of this workflow are already running",
+    "TEST_NOT_SUPPORTED": "Imported LangGraph workflows cannot have tests",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
@@ -1524,5 +1530,99 @@
     },
     "escalateTo": "Hand to (e-mails)",
     "escalateHelp": "They become approvers and get the same time again. With no answer then, the step is rejected."
+  },
+  "tests": {
+    "tab": "Tests",
+    "badge": "Test",
+    "showRuns": "Test runs",
+    "saveFirst": "Save the workflow to add test cases.",
+    "runAll": "Run all",
+    "runOne": "Run this test",
+    "mock": "Use the offline mock model",
+    "mockBadge": "Mock model",
+    "running": "Running: {{done}} of {{total}} done",
+    "summary": "{{passed}} passed, {{failed}} failed on v{{version}}",
+    "add": "Add test case",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "copyOf": "{{name}} (copy)",
+    "unsaved": "Tests run the saved version. Save to test your latest changes.",
+    "empty": "No test cases yet. Add one with an input and what the run should show.",
+    "emptyViewer": "This workflow has no test cases.",
+    "pick": "Choose a test case to see its checks and last result.",
+    "openRun": "Open run",
+    "check": "Check",
+    "expected": "Expected",
+    "actual": "Actual",
+    "deleteTitle": "Delete test case {{name}}?",
+    "addTitle": "New test case",
+    "editTitle": "Edit test case",
+    "dialogDesc": "A test run sends no e-mail, channel message, notification or callback. Tools, HTTP, MCP and Code nodes run for real.",
+    "name": "Name",
+    "input": "Input",
+    "answers": "Human answers",
+    "answersHelp": "Given in order each time the run waits at the node. With no answer left, the test fails.",
+    "answer": "Answer",
+    "answerText": "Text reply",
+    "addAnswer": "Add answer",
+    "answerKinds": {
+      "approved": "Approve",
+      "rejected": "Reject",
+      "text": "Text reply"
+    },
+    "checks": "Checks",
+    "addCheck": "Add check",
+    "kind": "Check type",
+    "kinds": {
+      "status": "Run status",
+      "field": "State field",
+      "node": "Node",
+      "duration": "Duration",
+      "cost": "Cost"
+    },
+    "field": "Field",
+    "compare": "Comparison",
+    "value": "Value",
+    "node": "Node",
+    "unit": {
+      "duration": "seconds at most",
+      "cost": "US$ at most"
+    },
+    "op": {
+      "equals": "equals",
+      "contains": "contains",
+      "not_contains": "does not contain",
+      "matches": "matches",
+      "empty": "is empty",
+      "not_empty": "is not empty"
+    },
+    "ran": {
+      "ran": "ran",
+      "not_ran": "did not run"
+    },
+    "status": {
+      "queued": "Queued",
+      "running": "Running",
+      "passed": "Passed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "desc": {
+      "status": "Run status is {{value}}",
+      "field": "{{field}} {{op}} “{{value}}”",
+      "fieldNoValue": "{{field}} {{op}}",
+      "ran": "{{node}} ran",
+      "notRan": "{{node}} did not run",
+      "duration": "Takes at most {{max}} s",
+      "cost": "Costs at most ${{max}}"
+    },
+    "reason": {
+      "no_answer": "The run waited at {{node}} with no answer left.",
+      "run_status": "The run ended with status {{status}}.",
+      "field_missing": "This field is not in the state.",
+      "node_missing": "This node is not in the workflow.",
+      "not_evaluated": "Not checked: the run did not finish.",
+      "no_price": "Not checked: the model has no known price."
+    }
   }
 }

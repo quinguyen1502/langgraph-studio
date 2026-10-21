@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0067
-- Status: todo
+- Status: done (PR #89, REV-0061, QA-0061)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -147,5 +147,19 @@ with pass / fail per check, and with no e-mail, channel message, notification or
 ## Activity Log
 
 - 2026-10-21: planned from REQ-0042.
+- 2026-10-21: started after PR #88 merged, and implemented. DEC-0044 written. Review REV-0061, QA QA-0061.
+- 2026-10-21: CI green on PR #89 (Postgres included); the owner reviewed screenshots and approved the merge. A check
+  row in the test case dialog wrapped its delete button onto its own line; fixed before the merge.
 
 ## Handoff Notes
+
+- A test case's Send email node keeps the existing dry-run output (`sent: false, dry_run: true`, recipients, subject,
+  preview), not a new `test` shape, so later nodes read the same fields with or without a credential.
+- Scripted Human answers resume the test run through the `resume` job one second after it settles (the finished segment
+  must leave the run bus first). A case with Human nodes therefore takes about a second longer per answer.
+- `RunService.settled` takes the run's `source`; only `source == "test"` goes to the suite, so other runs get no extra
+  await before their API callback.
+- A suite that stops progressing (in-memory queue lost on restart, or a resume that cannot plan) stays `running` until
+  someone presses Cancel; Cancel always works (DEC-0044).
+- TASK-0068 can compare suites by `workflow_test_results.test_id` and read `workflow_test_suites.version`; each result
+  also stores the version its run ran.

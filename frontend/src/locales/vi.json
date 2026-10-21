@@ -410,6 +410,12 @@
     "SCHEDULE_NOT_FOUND": "Không tìm thấy lịch chạy",
     "SCHEDULE_CRON_INVALID": "Lịch chạy: {{reason}}",
     "SCHEDULE_LIMIT": "Một workflow có tối đa {{max}} lịch chạy",
+    "TEST_NOT_FOUND": "Không tìm thấy test case",
+    "TEST_CASE_INVALID": "Test case: {{reason}}",
+    "TEST_CASES_LIMIT": "Một workflow có tối đa {{max}} test case",
+    "TEST_SUITE_NOT_FOUND": "Không tìm thấy lần chạy test",
+    "TEST_SUITE_RUNNING": "Các test của workflow này đang chạy",
+    "TEST_NOT_SUPPORTED": "Workflow LangGraph được import không có test",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
@@ -1524,5 +1530,99 @@
     },
     "escalateTo": "Chuyển cho (e-mail)",
     "escalateHelp": "Họ trở thành người duyệt và có thêm một khoảng thời gian như trên. Nếu vẫn không ai trả lời, bước này bị từ chối."
+  },
+  "tests": {
+    "tab": "Test",
+    "badge": "Test",
+    "showRuns": "Run test",
+    "saveFirst": "Lưu workflow để thêm test case.",
+    "runAll": "Chạy tất cả",
+    "runOne": "Chạy test này",
+    "mock": "Dùng model mock offline",
+    "mockBadge": "Model mock",
+    "running": "Đang chạy: xong {{done}}/{{total}}",
+    "summary": "{{passed}} đạt, {{failed}} không đạt trên v{{version}}",
+    "add": "Thêm test case",
+    "edit": "Sửa",
+    "duplicate": "Nhân bản",
+    "copyOf": "{{name}} (bản sao)",
+    "unsaved": "Test chạy trên phiên bản đã lưu. Hãy lưu để test các thay đổi mới nhất.",
+    "empty": "Chưa có test case. Hãy thêm một test case với input và kết quả run cần có.",
+    "emptyViewer": "Workflow này chưa có test case.",
+    "pick": "Chọn một test case để xem các điều kiện và kết quả lần chạy gần nhất.",
+    "openRun": "Mở run",
+    "check": "Điều kiện",
+    "expected": "Mong đợi",
+    "actual": "Thực tế",
+    "deleteTitle": "Xoá test case {{name}}?",
+    "addTitle": "Test case mới",
+    "editTitle": "Sửa test case",
+    "dialogDesc": "Run test không gửi e-mail, tin nhắn kênh, thông báo hay callback. Node Tool, HTTP, MCP và Code vẫn chạy thật.",
+    "name": "Tên",
+    "input": "Input",
+    "answers": "Câu trả lời cho Human node",
+    "answersHelp": "Dùng lần lượt mỗi khi run dừng chờ ở node. Hết câu trả lời thì test không đạt.",
+    "answer": "Câu trả lời",
+    "answerText": "Trả lời bằng chữ",
+    "addAnswer": "Thêm câu trả lời",
+    "answerKinds": {
+      "approved": "Duyệt",
+      "rejected": "Từ chối",
+      "text": "Trả lời bằng chữ"
+    },
+    "checks": "Điều kiện",
+    "addCheck": "Thêm điều kiện",
+    "kind": "Loại điều kiện",
+    "kinds": {
+      "status": "Trạng thái run",
+      "field": "Trường state",
+      "node": "Node",
+      "duration": "Thời gian",
+      "cost": "Chi phí"
+    },
+    "field": "Trường",
+    "compare": "Phép so sánh",
+    "value": "Giá trị",
+    "node": "Node",
+    "unit": {
+      "duration": "giây, tối đa",
+      "cost": "US$, tối đa"
+    },
+    "op": {
+      "equals": "bằng",
+      "contains": "chứa",
+      "not_contains": "không chứa",
+      "matches": "khớp mẫu",
+      "empty": "trống",
+      "not_empty": "không trống"
+    },
+    "ran": {
+      "ran": "có chạy",
+      "not_ran": "không chạy"
+    },
+    "status": {
+      "queued": "Đang chờ",
+      "running": "Đang chạy",
+      "passed": "Đạt",
+      "failed": "Không đạt",
+      "cancelled": "Đã huỷ"
+    },
+    "desc": {
+      "status": "Trạng thái run là {{value}}",
+      "field": "{{field}} {{op}} “{{value}}”",
+      "fieldNoValue": "{{field}} {{op}}",
+      "ran": "{{node}} có chạy",
+      "notRan": "{{node}} không chạy",
+      "duration": "Chạy tối đa {{max}} giây",
+      "cost": "Chi phí tối đa ${{max}}"
+    },
+    "reason": {
+      "no_answer": "Run dừng chờ ở {{node}} nhưng đã hết câu trả lời.",
+      "run_status": "Run kết thúc với trạng thái {{status}}.",
+      "field_missing": "Trường này không có trong state.",
+      "node_missing": "Node này không có trong workflow.",
+      "not_evaluated": "Không kiểm tra: run chưa chạy xong.",
+      "no_price": "Không kiểm tra: model chưa có giá."
+    }
   }
 }

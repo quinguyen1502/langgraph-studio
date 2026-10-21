@@ -25,7 +25,7 @@ class FakeRuns:
     def __init__(self): self.rows = []
     def add(self, r): self.rows.append(r)
     def last_for_workflow(self, wid): rs = [r for r in self.rows if r.workflow_id == wid]; return max(rs, key=lambda r: r.started) if rs else None
-    def list_for_workflow(self, wid, limit=50): return [r for r in self.rows if r.workflow_id == wid][:limit]
+    def list_for_workflow(self, wid, limit=50, tests=False): return [r for r in self.rows if r.workflow_id == wid and (r.source == "test") == tests][:limit]
     def delete_for_workflow(self, wid): self.rows = [r for r in self.rows if r.workflow_id != wid]
 
 class FakeUsers:

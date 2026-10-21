@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0065
-- Status: doing (PR pending, REV-0059, QA-0059)
+- Status: done (PR #86, REV-0059, QA-0059)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -147,6 +147,7 @@ them answer in place. Record who may answer from the studio in DEC-0043.
 
 - 2026-10-21: planned from REQ-0041.
 - 2026-10-21: started and implemented. DEC-0043 written. Review REV-0059, QA QA-0059.
+- 2026-10-21: CI green on PR #86 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 

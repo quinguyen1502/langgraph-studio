@@ -41,7 +41,8 @@ class RunWorker:
             if row.status == "running":  # recovered: continue from the last checkpoint (or restart without one)
                 plan = svc.plan_recover(row, gen, attempt)
             else:
-                plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {}})
+                plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {},
+                                               **({"version": job["version"]} if job.get("version") else {})})  # a test suite on a stored version
                 plan.run_id, plan.source, plan.checkpointing, plan.fence, plan.attempt = rid, job.get("source", "api"), True, gen, attempt
             svc.apply_test(plan, job.get("test"))  # a workflow test run (TASK-0067)
             async def send(ev): return True                       # nobody streams; history + webhook carry the result

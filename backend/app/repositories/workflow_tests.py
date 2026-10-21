@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
-from ..models import WorkflowTest, WorkflowTestResult, WorkflowTestSuite
+from ..models import User, WorkflowTest, WorkflowTestResult, WorkflowTestSuite
 from ..models.database import Database
 
 
@@ -46,9 +46,18 @@ class WorkflowTestRepository:
     def suite(self, sid: str) -> Optional[WorkflowTestSuite]:
         with self.db.session() as s: return s.get(WorkflowTestSuite, sid)
 
-    def suites(self, wid: str, limit: int = 20) -> list[WorkflowTestSuite]:
+    def suites(self, wid: str, limit: int = 20) -> list[tuple[WorkflowTestSuite, Optional[str]]]:
+        """Newest first, with the email of who ran each one (None when that user was deleted)."""
         with self.db.session() as s:
-            return list(s.scalars(select(WorkflowTestSuite).where(WorkflowTestSuite.workflow_id == wid).order_by(WorkflowTestSuite.started.desc()).limit(limit)))
+            q = (select(WorkflowTestSuite, User.email).outerjoin(User, User.id == WorkflowTestSuite.owner)
+                 .where(WorkflowTestSuite.workflow_id == wid).order_by(WorkflowTestSuite.started.desc()).limit(limit))
+            return [(t, e) for t, e in s.execute(q)]
+
+    def baseline(self, wid: str, version: int) -> Optional[WorkflowTestSuite]:
+        """The latest finished suite run on a version older than `version` (TASK-0068)."""
+        with self.db.session() as s:
+            return s.scalars(select(WorkflowTestSuite).where(WorkflowTestSuite.workflow_id == wid, WorkflowTestSuite.status == "done",
+                                                             WorkflowTestSuite.version < version).order_by(WorkflowTestSuite.started.desc()).limit(1)).first()
 
     def end_suite(self, sid: str, status: str, passed: int, failed: int, now: float) -> bool:
         with self.db.session() as s:

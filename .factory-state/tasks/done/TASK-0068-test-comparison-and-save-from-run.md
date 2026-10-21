@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0068
-- Status: todo
+- Status: done (PR #90, REV-0062, QA-0062)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -115,5 +115,15 @@ version, and turn a good run into a test case in one click.
 ## Activity Log
 
 - 2026-10-21: planned from REQ-0042.
+- 2026-10-21: started after PR #89 merged, and implemented. DEC-0044 item 8 added. Review REV-0062, QA QA-0062.
+- 2026-10-21: the owner reported the check result icons sitting off the text line; fixed. CI green on PR #90
+  (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
+
+- Every test run plans from its suite's version snapshot (job `version`), including Run all on the latest version
+  and a recovered test run that restarts.
+- The comparison is computed on read against the newest finished suite run on a lower version, so running against
+  an older version later changes what a newer suite is compared with.
+- A draft from a run leaves out Start and End node checks and fields equal to the input; its name is `Run <id>`.
+- TASK-0069 can give template cases the same shape as `POST …/tests/from-run/{run_id}` returns.

@@ -7,10 +7,14 @@ the suite's `mock` option every LLM node uses the offline mock. At most STUDIO_T
 once; when a test run settles (RunService.settled -> `on_settled`) the suite records it, or answers its Human node with
 the next scripted answer, and starts the next case. One suite runs per workflow at a time.
 
+A suite result is compared with the latest finished suite run on an earlier version (TASK-0068): per case regression,
+fixed, still failing, still passing or new. A suite can also run on a stored earlier version, and a draft case can be
+made from a run (its input, its Human answers in order and checks that the run passes).
+
 Permissions: users who can view the workflow see its cases and results; users who can edit it change and run them.
 """
 import json, time, uuid
-from typing import Callable, Optional
+from typing import Callable, List, Optional
 from ..core import config, permissions as P
 from ..core.errors import AppError
 from ..core.logging import get_logger
@@ -26,6 +30,9 @@ NAME_MAX = 120
 ANSWERS_MAX = 20  # scripted answers per Human node
 FINAL = ("passed", "failed", "cancelled")
 RESUME_DELAY = 1.0  # seconds before a scripted Human answer resumes a test run
+CHANGE = {("passed", "failed"): "regression", ("failed", "passed"): "fixed", ("failed", "failed"): "still_failing", ("passed", "passed"): "still_passing"}
+CHANGES = ("regression", "fixed", "still_failing", "still_passing", "new")
+PREFILL_TEXT = 200  # a longer final value is checked with "contains" its first characters
 
 
 def _id() -> str: return uuid.uuid4().hex[:12]
@@ -61,30 +68,48 @@ class WorkflowTestService:
                 "last": {"status": last.status, "suite_id": last.suite_id, "version": last.version, "ended": last.ended} if last else None}
 
     @staticmethod
-    def public_suite(s: WorkflowTestSuite, results: Optional[list[WorkflowTestResult]] = None) -> dict:
+    def public_suite(s: WorkflowTestSuite, results: Optional[list[WorkflowTestResult]] = None, by: Optional[str] = None,
+                     compare: Optional[dict] = None) -> dict:
         out = {"id": s.id, "workflow_id": s.workflow_id, "version": s.version, "status": s.status, "mock": s.mock, "total": s.total,
-               "passed": s.passed, "failed": s.failed, "started": s.started, "ended": s.ended}
+               "passed": s.passed, "failed": s.failed, "started": s.started, "ended": s.ended, "by": by}
         if results is not None:
+            changes = (compare or {}).get("changes", {})
+            out["compare"] = {k: compare[k] for k in ("suite_id", "version", "counts")} if compare else None
             out["results"] = []
             for r in results:
                 case = json.loads(r.case); got = json.loads(r.checks) if r.checks else None
                 out["results"].append({"id": r.id, "test_id": r.test_id, "name": r.name, "status": r.status, "run_id": r.run_id, "version": r.version,
-                                       "reason": r.reason, "detail": r.detail, "ended": r.ended,
+                                       "reason": r.reason, "detail": r.detail, "ended": r.ended, "change": changes.get(r.id),
                                        "checks": [{**c, **(got[i] if got else {})} for i, c in enumerate(case["checks"])]})
         return out
 
     def list(self, wid: str, uid: str) -> dict:
         w = self._workflow(wid, uid)
         cases = self.repo.list_for_workflow(wid); last = self.repo.latest_results([t.id for t in cases])
-        suites = self.repo.suites(wid)
-        return {"items": [self.public(t, last.get(t.id)) for t in cases], "suites": [self.public_suite(s) for s in suites],
+        return {"items": [self.public(t, last.get(t.id)) for t in cases], "suites": self._suites(wid),
                 "can_edit": (self.access is None or self.access.may(wid, uid, P.EDIT)) and not json.loads(w.data or "{}").get("source"),
                 "limit": config.test_cases_max()}
+
+    def history(self, wid: str, uid: str) -> dict:
+        """The workflow's last suite runs, newest first: version, who, when, passed / failed."""
+        self._workflow(wid, uid); return {"items": self._suites(wid)}
+
+    def _suites(self, wid: str) -> List[dict]: return [self.public_suite(s, by=e) for s, e in self.repo.suites(wid)]
 
     def suite(self, wid: str, sid: str, uid: str) -> dict:
         self._workflow(wid, uid); s = self.repo.suite(sid)
         if s is None or s.workflow_id != wid: raise AppError("TEST_SUITE_NOT_FOUND")
-        return self.public_suite(s, self.repo.results(sid))
+        results = self.repo.results(sid)
+        return self.public_suite(s, results, compare=self._compare(s, results))
+
+    def _compare(self, s: WorkflowTestSuite, results: List[WorkflowTestResult]) -> Optional[dict]:
+        """Each finished case against the latest finished suite run on an earlier version, by test id (a case edited in
+        between is the same case; one without an earlier result is new). None when there is no such suite run."""
+        base = self.repo.baseline(s.workflow_id, s.version) if s.version else None
+        if base is None: return None
+        before = {r.test_id: r.status for r in self.repo.results(base.id) if r.status in ("passed", "failed")}
+        changes = {r.id: CHANGE[(before[r.test_id], r.status)] if r.test_id in before else "new" for r in results if r.status in ("passed", "failed")}
+        return {"suite_id": base.id, "version": base.version, "counts": {k: sum(v == k for v in changes.values()) for k in CHANGES}, "changes": changes}
 
     # ---- test cases ----
     @staticmethod
@@ -122,15 +147,19 @@ class WorkflowTestService:
 
     # ---- suite runs ----
     def run(self, wid: str, uid: str, body) -> dict:
-        """Run the cases `test_ids` (all when omitted) on the saved version. TEST_SUITE_RUNNING while one runs."""
+        """Run the cases `test_ids` (all when omitted) on the saved version, or on the stored `version`.
+        TEST_SUITE_RUNNING while one runs."""
         self._editable(wid, uid); body = body if isinstance(body, dict) else {}
         cases = self.repo.list_for_workflow(wid); ids = body.get("test_ids")
         if ids is not None:
             if not isinstance(ids, list) or not ids or any(i not in {t.id for t in cases} for i in ids): raise AppError("TEST_NOT_FOUND")
             cases = [t for t in cases if t.id in ids]
         if not cases: raise AppError("TEST_NOT_FOUND")
-        latest = self.versions.latest(wid); now = time.time()
-        suite = WorkflowTestSuite(id=_id(), workflow_id=wid, version=latest.version if latest else None, owner=uid, status="running",
+        n = body.get("version")
+        if n is None: latest = self.versions.latest(wid); n = latest.version if latest else None
+        elif isinstance(n, bool) or not isinstance(n, int) or self.versions.get(wid, n) is None: raise AppError("VERSION_NOT_FOUND")
+        now = time.time()
+        suite = WorkflowTestSuite(id=_id(), workflow_id=wid, version=n, owner=uid, status="running",
                                   mock=bool(body.get("mock")), total=len(cases), passed=0, failed=0, started=now)
         results = [WorkflowTestResult(id=_id(), suite_id=suite.id, test_id=t.id, name=t.name, position=i, status="queued",
                                       case=json.dumps({"input": json.loads(t.input), "answers": json.loads(t.answers), "checks": json.loads(t.checks)},
@@ -169,10 +198,35 @@ class WorkflowTestService:
         if not self.repo.claim_result(r.id, rid): return False
         inp = json.loads(r.case)["input"]
         self.runs.add(Run(id=rid, workflow_id=s.workflow_id, input=json.dumps(inp, ensure_ascii=False), events="[]", status="queued",
-                          started=time.time(), owner=s.owner, source="test"))
+                          started=time.time(), owner=s.owner, source="test", workflow_version=s.version))
         self.jobs.enqueue({"run_id": rid, "workflow_id": s.workflow_id, "owner": s.owner, "input": inp, "callback_url": None, "token_id": None,
-                           "source": "test", "test": {"mock": bool(s.mock)}})
+                           "source": "test", "test": {"mock": bool(s.mock)}, **({"version": s.version} if s.version else {})})  # that version's snapshot
         return True
+
+    # ---- a draft case from a run ----
+    def from_run(self, wid: str, rid: str, uid: str) -> dict:
+        """A test case (not saved) that replays run `rid`: its input, the Human answers it was given in order, and checks it
+        passes: its status, each node that ran (but Start and End), each field it set (a long value as "contains" its first characters)."""
+        w = self._editable(wid, uid); run = self.runs.get(rid)
+        mine = self.access is None or self.access.access_of(w, uid) == "owner"  # the run history rule: others see only their runs
+        if run is None or run.workflow_id != wid or not (mine or run.owner == uid) or run.status in ("queued", "running"):
+            raise AppError("RUN_NOT_FOUND")
+        events = json.loads(run.events or "[]"); inp = json.loads(run.input or "{}") or {}
+        final = json.loads(run.final_state or "null"); final = final if isinstance(final, dict) else {}
+        answers: dict = {}
+        for e in events:
+            if e.get("type") == "run_resumed" and isinstance(e.get("response"), str): answers.setdefault(e.get("node"), []).append(e["response"])
+        checks = [{"kind": "status", "value": run.status}] if run.status in C.STATUSES else []
+        trivial = {n.get("id") for n in self._graph(run).get("nodes") or [] if isinstance(n, dict) and n.get("type") in ("start", "end")}
+        ran = list(dict.fromkeys(e.get("node") for e in events if e.get("type") == "node_finished" and e.get("node") and e["node"] not in trivial))
+        checks += [{"kind": "node", "node": n, "ran": True} for n in ran]
+        for k, v in final.items():
+            if k in inp and inp[k] == v: continue  # passed through unchanged
+            if v in (None, "", [], {}): checks.append({"kind": "field", "field": k, "op": "empty"}); continue
+            t = C.text(v)
+            checks.append({"kind": "field", "field": k, "op": "equals", "value": t} if len(t) <= PREFILL_TEXT
+                          else {"kind": "field", "field": k, "op": "contains", "value": t[:PREFILL_TEXT]})
+        return {"name": f"Run {rid}", "input": inp, "answers": {k: v[:ANSWERS_MAX] for k, v in answers.items() if k}, "checks": checks[:C.MAX_CHECKS]}
 
     # ---- a test run settled (RunService.settled) ----
     def on_settled(self, rid: str) -> None:

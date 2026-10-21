@@ -66,3 +66,39 @@ test('workflow tests: add a case, run all, see pass and fail with expected and a
   await page.getByTestId('result-open-run').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok')
 })
+
+// TASK-0068: save a case from a run, change the graph so it fails, see Regression against v1, run against v1.
+test('workflow tests: save as test case from a run, regression against the previous version, run against a version', async ({ page }) => {
+  const token = await login(page); const H = { Authorization: `Bearer ${token}` }
+  const wf = { ...APPROVAL, name: `Regression e2e ${Date.now()}` }
+  const wid = (await (await page.request.post('/api/workflows', { headers: H, data: wf })).json()).data.id
+  await page.goto(`/workflows/${wid}`)
+  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order A100"}')
+  await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
+  await page.locator('#human-approve').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
+
+  await page.locator('#trace-save-test').click()
+  const dlg = page.locator('#test-dialog'); await expect(dlg.locator('#test-name')).toHaveValue(/^Run /)
+  await expect(dlg.getByTestId('answer-kind')).toHaveText('Duyệt')  // the answer the run was given
+  await dlg.locator('#test-name').fill('Từ run thật'); await dlg.locator('#test-save').click(); await expect(dlg).toHaveCount(0)
+  await expect(page.locator('#tests-panel')).toBeVisible()
+  await expect(page.getByTestId('test-row').filter({ hasText: 'Từ run thật' })).toHaveClass(/bg-accent/)  // the new case is selected
+  await page.locator('#tests-run-all').click()
+  await expect(page.getByTestId('result-status')).toHaveText('Đạt', { timeout: 30_000 })
+  await expect(page.locator('#tests-no-baseline')).toBeVisible()
+
+  // version 2 writes the answer to another field: the case now fails, marked as a regression against v1
+  const saved = (await (await page.request.get(`/api/workflows/${wid}`, { headers: H })).json()).data
+  saved.nodes.find((n: { id: string }) => n.id === 'ask').data.output_field = 'message'
+  await page.request.post('/api/workflows', { headers: H, data: saved })
+  await page.reload(); await page.locator('#tests-tab').click(); await page.locator('#tests-run-all').click()
+  await expect(page.getByTestId('result-status')).toHaveText('Không đạt', { timeout: 30_000 })
+  await expect(page.getByTestId('result-change')).toHaveText('Hỏng mới')
+  await expect(page.locator('#tests-compare')).toContainText('So với v1'); await expect(page.getByTestId('compare-regression')).toContainText('1')
+
+  // run against v1 again: it passes there, and the history lists the three suite runs
+  await page.locator('#tests-run-version').click(); await page.getByTestId('run-version').filter({ hasText: 'v1' }).click()
+  await expect(page.getByTestId('result-status')).toHaveText('Đạt', { timeout: 30_000 })
+  await expect(page.locator('#tests-summary')).toContainText('trên v1')
+  await page.locator('#tests-history').click(); await expect(page.getByTestId('suite-row')).toHaveCount(3)
+})

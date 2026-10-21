@@ -144,6 +144,7 @@ WS /ws/run
     POST   /api/approvals/identities/{kind}/verify
     GET    /api/approvals/link                  POST   /api/approvals/link
     GET    /api/approvals/audit
+    GET    /api/approvals/inbox                 POST   /api/approvals/inbox/{run_id}
     GET    /api/approvals/slack/oauth           POST   /api/approvals/slack/oauth/start
     GET    /api/approvals/slack/oauth/callback
     ```

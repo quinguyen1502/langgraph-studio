@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { apiToken } from './helpers'
+import { apiToken, signIn } from './helpers'
 // TASK-0006: a run pauses at a Human node, shows up as pending, and resumes from the panel.
 const APPROVAL = {
   name: `Approval e2e ${Date.now()}`, state: [{ name: 'message', type: 'string' }, { name: 'decision', type: 'string' }],
@@ -27,17 +27,41 @@ test('human node: wait, pending list, approve, complete', async ({ page }) => {
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
   await expect(page.locator('#human-question')).toHaveText('Approve refund for order A100?')
-  // pending list on the workflows page links back to the run
+  // the workflows page and the header badge lead to the Approvals inbox (TASK-0065), which links back to the run
   await page.goto('/workflows')
   await expect(page.locator('[data-testid=pending-count]')).toBeVisible()  // header badge (TASK-0019)
   expect(Number(await page.locator('[data-testid=pending-count]').textContent())).toBeGreaterThan(0)
-  const row = page.locator('[data-testid=pending-row]', { hasText: APPROVAL.name }); await expect(row).toBeVisible()
-  await row.getByRole('button').click()
+  await page.locator('#pending-runs-open').click(); await expect(page).toHaveURL(/\/approvals$/)
+  const row = page.locator('[data-testid=inbox-row]', { hasText: APPROVAL.name }); await expect(row).toBeVisible()
+  await expect(row.locator('[data-testid=inbox-question]')).toHaveText('Approve refund for order A100?')
+  await row.locator('[data-testid=inbox-open]').click()
   await expect(page).toHaveURL(new RegExp(`/workflows/${wid}\\?run=`))
   await expect(page.locator('#human-panel')).toBeVisible()
   await page.locator('#human-approve').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
   await expect(page.locator('#human-panel')).toHaveCount(0)
   await expect(page.locator('.trace-row[data-span="ask#1"]')).toHaveCount(1) // the resumed Human node keeps one span
-  await page.goto('/workflows'); await expect(page.locator('[data-testid=pending-row]', { hasText: APPROVAL.name })).toHaveCount(0)
+  await page.goto('/approvals'); await expect(page.locator('[data-testid=inbox-row]', { hasText: APPROVAL.name })).toHaveCount(0)
+})
+
+test('approvals inbox: a listed approver answers in place (TASK-0065)', async ({ page, browser }) => {
+  const token = await login(page); const email = `appr${Date.now()}@example.com`
+  const other = await browser.newPage(); await other.request.post('/api/auth/register', { data: { email, password: 'secret12' } })  // its own session
+  const wf = { ...APPROVAL, name: `Inbox e2e ${Date.now()}`, nodes: APPROVAL.nodes.map(n => n.id === 'ask' ? { ...n, data: { ...n.data, approval: { approvers: [email] } } } : n) }
+  const wid = (await (await page.request.post('/api/workflows', { headers: { Authorization: `Bearer ${token}` }, data: wf })).json()).data.id
+  await page.goto(`/workflows/${wid}`)
+  await page.locator('.react-flow__node[data-id="ask"]').click()
+  await expect(page.locator('#approval-approvers')).toHaveValue(email)  // approvers on a studio-only Human node
+  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order B7"}')
+  await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
+
+  await other.goto('/login'); await signIn(other, email, 'secret12'); await other.goto('/approvals')
+  const row = other.locator('[data-testid=inbox-row]', { hasText: wf.name }); await expect(row).toBeVisible()
+  await expect(row.locator('[data-testid=inbox-owner]')).toContainText('admin@example.com')
+  await expect(row.locator('[data-testid=inbox-open]')).toHaveCount(0)  // the run itself stays the owner's
+  await row.locator('[data-testid=answer-reject]').click()
+  await expect(other.locator('#inbox-sent')).toBeVisible(); await expect(row).toHaveCount(0)
+  await other.close()
+  await expect.poll(async () => (await (await page.request.get(`/api/workflows/${wid}/runs`, { headers: { Authorization: `Bearer ${token}` } })).json()).data[0].final_state?.decision,
+    { timeout: 30_000 }).toBe('rejected')
 })

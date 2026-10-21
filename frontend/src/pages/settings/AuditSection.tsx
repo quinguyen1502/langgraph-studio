@@ -11,7 +11,7 @@ import { api } from '@/lib/api'
 import i18n, { errorText } from '@/lib/i18n'
 
 type Audit = { id: string; at: number; kind: string; action: string; code: string | null; run_id: string | null; workflow_name: string | null; actor: string | null; external_id: string | null }
-const ACTIONS = ['requested', 'approved', 'rejected', 'denied', 'superseded', 'expired', 'send_failed', 'not_configured']
+const ACTIONS = ['requested', 'approved', 'rejected', 'answered', 'denied', 'superseded', 'expired', 'send_failed', 'not_configured']
 const VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = { approved: 'default', rejected: 'destructive', denied: 'outline', send_failed: 'destructive' }
 
 export function AuditSection() {

@@ -13,7 +13,8 @@ import { channelLabel, type Channels } from '@/lib/approvals'
 /** channel_id: the connection (personal or org); channel: its kind (kept for labels and older workflows). */
 export type Approval = { channel_id?: string; channel?: string; target?: string; approvers?: string[] }
 
-/** Per-Human-node approval channel (TASK-0022): where the Approve/Reject message goes and who may answer it. */
+/** Per-Human-node approval channel (TASK-0022): where the Approve/Reject message goes, and who may answer it, on any
+ * Human node, from the channel or the Approvals inbox (TASK-0065). */
 export function HumanApprovalSettings({ value, channels, onChange }: { value?: Approval; channels: Channels | null; onChange: (v: Approval) => void }) {
   const { t } = useTranslation(); const v = value || {}
   const set = (patch: Approval) => onChange({ ...v, ...patch })
@@ -37,10 +38,10 @@ export function HumanApprovalSettings({ value, channels, onChange }: { value?: A
         ? <p className="text-xs text-muted-foreground" id="approval-no-target">{t('approvals.node.noTarget')}</p>
         : <div className="space-y-1.5"><Label htmlFor="approval-target" className="text-xs text-muted-foreground">{t(`approvals.node.target.${v.channel}`)}</Label>
           <Input id="approval-target" className="font-mono text-xs" value={v.target || ''} placeholder={t(`approvals.node.targetPh.${v.channel}`)} onChange={e => set({ target: e.target.value })} /></div>}
-      <div className="space-y-1.5"><Label htmlFor="approval-approvers" className="text-xs text-muted-foreground">{t('approvals.node.approvers')}</Label>
-        <Input id="approval-approvers" className="text-xs" value={raw} placeholder="lead@example.com, ops@example.com"
-          onChange={e => { setRaw(e.target.value); set({ approvers: e.target.value.split(',').map(x => x.trim()).filter(Boolean) }) }} />
-        <p className="text-xs text-muted-foreground">{t('approvals.node.approversHelp')}</p></div>
     </>}
+    <div className="space-y-1.5"><Label htmlFor="approval-approvers" className="text-xs text-muted-foreground">{t('approvals.node.approvers')}</Label>
+      <Input id="approval-approvers" className="text-xs" value={raw} placeholder="lead@example.com, ops@example.com"
+        onChange={e => { setRaw(e.target.value); set({ approvers: e.target.value.split(',').map(x => x.trim()).filter(Boolean) }) }} />
+      <p className="text-xs text-muted-foreground">{t('approvals.node.approversHelp')}</p></div>
   </div>
 }

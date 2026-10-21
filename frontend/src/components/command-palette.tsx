@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { LayoutList, Plus, Settings, Workflow as WorkflowIcon } from 'lucide-react'
+import { LayoutList, Plus, Settings, UserCheck, Workflow as WorkflowIcon } from 'lucide-react'
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
 import { Kbd } from '@/components/shortcut-cheatsheet'
 import { api, signedIn } from '@/lib/api'
@@ -30,6 +30,7 @@ export function CommandPalette() {
     ...page,
     ...wfs.filter(w => w.id !== current).slice(0, 50).map(w => ({ id: `wf:${w.id}`, group: 'workflows' as const, label: w.name, icon: WorkflowIcon, run: () => nav(`/workflows/${w.id}`) })),
     { id: 'nav:workflows', group: 'navigation', label: t('palette.goWorkflows'), icon: LayoutList, run: () => nav('/workflows') },
+    { id: 'nav:approvals', group: 'navigation', label: t('inbox.title'), icon: UserCheck, keywords: ['inbox', 'approve', 'pending'], run: () => nav('/approvals') },
     ...(can(me, 'workflows.create') ? [{ id: 'nav:new', group: 'navigation' as const, label: t('common.newWorkflow'), icon: Plus, keywords: ['template', 'create'], run: () => nav('/workflows?new=1') }] : []),
     ...SECTIONS.filter(s => !s.permission || can(me, s.permission)).map(s => ({ id: `nav:settings:${s.id}`, group: 'navigation' as const, label: `${t('settings.title')} › ${t(`settings.nav.${s.id}`)}`, icon: s.icon ?? Settings, run: () => nav(`/settings/${s.id}`) })),
   ]

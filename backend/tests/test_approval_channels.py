@@ -355,6 +355,21 @@ def test_expired_button_and_answer_in_studio_supersede(c, api):
     assert "superseded" in actions
 
 
+def test_inbox_answer_closes_the_channel_request(c, api):
+    """TASK-0065: an approver answers from the Approvals inbox first; the Slack buttons are refused afterwards."""
+    owner, approver = user(c), user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
+    ch = connect(c, owner, "slack"); link(c, api, approver, "slack", ua)
+    wid = workflow(c, owner, {"channel": "slack", "target": "C1", "approvers": [approver["email"]]})
+    rid = start_waiting(c, owner, wid); approve = until(lambda: api.requests())[-1]["blocks"][1]["elements"][0]["value"]
+    [row] = [x for x in c.get("/api/approvals/inbox", headers=H(approver["token"])).json()["data"] if x["run_id"] == rid]
+    assert row["channel"] == "slack" and row["mine"] is False
+    assert c.post(f"/api/approvals/inbox/{rid}", json={"response": "rejected"}, headers=H(approver["token"])).status_code == 200
+    assert until(lambda: any(b["text"] == "Answered in Superstep" for b in api.named("chat.update")))
+    assert slack_post(c, ch["id"], press(approve, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
+    assert until(lambda: run_row(c, owner, wid, rid)["status"] == "ok")
+    assert run_row(c, owner, wid, rid)["final_state"]["decision"] == "rejected"
+
+
 def test_no_op_without_a_configured_channel(c, api):
     owner = user(c)
     wid = workflow(c, owner, {"channel": "slack", "target": "C1"}); rid = start_waiting(c, owner, wid)

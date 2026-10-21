@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0065
-- Status: todo
+- Status: done (PR #86, REV-0059, QA-0059)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -146,5 +146,14 @@ them answer in place. Record who may answer from the studio in DEC-0043.
 ## Activity Log
 
 - 2026-10-21: planned from REQ-0041.
+- 2026-10-21: started and implemented. DEC-0043 written. Review REV-0059, QA QA-0059.
+- 2026-10-21: CI green on PR #86 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
+
+- Waiting steps live in `approval_waits` / `approval_wait_approvers` (migration `0030`). TASK-0066 adds the deadline
+  columns to `approval_waits` and adds escalation approvers to `approval_wait_approvers`.
+- `ApprovalService.claim(rid)` is the single "first answer wins" gate; a deadline timeout should close the step the
+  same way and then queue the resume job (see `answered_in_studio`).
+- The inbox orders by `created` (longest waiting first); TASK-0066 changes the order to the nearest deadline.
+- The Workflows page card is now a link with the count; the list itself is only on `/approvals`.

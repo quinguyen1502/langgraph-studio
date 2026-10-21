@@ -74,6 +74,14 @@ def _normalise(ev: dict) -> dict:
 
 
 RESPONSE_MAX = 10_000  # characters of a human response
+
+
+def human_response(response) -> str:
+    """A Human node's answer: text, or JSON true / false for approved / rejected (DEC-0013)."""
+    if isinstance(response, bool): response = "approved" if response else "rejected"
+    if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
+    return response
+
 log = get_logger("runs")
 def code_runtime_of(events: list) -> Optional[str]:
     """Where this run's Code nodes ran (TASK-0056): `subprocess` if any call ran unisolated, else `docker`, else None."""
@@ -237,8 +245,13 @@ class RunService:
         r = self.runs.get(rid)
         if r is None or r.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only (DEC-0013)
         if r.status != "waiting" or not r.checkpoint: raise AppError("RUN_NOT_WAITING")
-        if self._is_stale(r): self._expire(r); raise AppError("RUN_EXPIRED")
+        if self.expire_if_stale(r): raise AppError("RUN_EXPIRED")
         return r
+
+    def expire_if_stale(self, r: Run) -> bool:
+        """Expire a waiting run past STUDIO_WAIT_TTL now (lazily on access). True when it did."""
+        if not self._is_stale(r): return False
+        self._expire(r); return True
 
     @staticmethod
     def _is_stale(r: Run, now: float | None = None) -> bool:
@@ -267,11 +280,10 @@ class RunService:
         if row is not None and row.status == "paused" and not via_channel:
             if row.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only, same as a human resume
             return self._plan_paused(row, uid, steps, until)
-        if isinstance(response, bool): response = "approved" if response else "rejected"
-        if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
+        response = human_response(response)
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
         if self.approvals is not None and not via_channel:  # answered in the studio: the channel buttons stop working (TASK-0022)
-            if self.approvals.decided_elsewhere(rid): raise AppError("RUN_NOT_WAITING")
+            if self.approvals.decided_elsewhere(rid) or not self.approvals.claim(rid): raise AppError("RUN_NOT_WAITING")  # first answer wins (DEC-0043)
             self.approvals.close_run(rid, "answered")
         res = self.resources_of(r.workflow_id, uid)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),

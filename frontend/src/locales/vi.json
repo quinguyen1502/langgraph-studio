@@ -654,7 +654,8 @@
       "telegram": "Telegram",
       "whatsapp": "WhatsApp",
       "email": "E-mail",
-      "teams": "Microsoft Teams"
+      "teams": "Microsoft Teams",
+      "studio": "Studio"
     },
     "optional": "không bắt buộc",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
@@ -716,7 +717,8 @@
       "superseded": "Đã trả lời nơi khác",
       "expired": "Hết hạn",
       "send_failed": "Gửi thất bại",
-      "not_configured": "Chưa cấu hình"
+      "not_configured": "Chưa cấu hình",
+      "answered": "Đã trả lời"
     },
     "node": {
       "title": "Kênh phê duyệt",
@@ -739,7 +741,7 @@
         "teams": ""
       },
       "approvers": "Người duyệt (e-mail)",
-      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ trả lời trong trang Phê duyệt của mình, hoặc trên kênh sau khi liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
       "noTarget": "Webhook đăng vào kênh Teams của nó."
     },
     "verified": "Đã xác minh",
@@ -1481,5 +1483,17 @@
       "subprocess": "Subprocess trên máy chủ (không cách ly)",
       "off": "Tắt"
     }
+  },
+  "inbox": {
+    "title": "Phê duyệt",
+    "intro": "Các bước đang chờ bạn trả lời, trong lượt chạy bạn sở hữu hoặc được giao duyệt.",
+    "empty": "Không có gì đang chờ bạn",
+    "emptyHelp": "Khi một lượt chạy dừng ở node Human mà bạn sở hữu hoặc được giao duyệt, nó sẽ hiện ở đây.",
+    "studio": "Trong studio",
+    "from": "Lượt chạy của {{email}}",
+    "since": "Chờ từ {{when}}",
+    "openRun": "Mở lượt chạy",
+    "open": "Mở Phê duyệt",
+    "sent": "Đã gửi câu trả lời. Lượt chạy tiếp tục."
   }
 }

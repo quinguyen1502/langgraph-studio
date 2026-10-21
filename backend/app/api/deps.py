@@ -10,6 +10,7 @@ from ..models.database import Database
 from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.code_service import CodeService
+from ..services.inbox_service import InboxService
 from ..services.policy_service import PolicyService
 from ..services.team_service import TeamService
 from ..services.ownership_service import OwnershipService
@@ -148,6 +149,9 @@ def channel_service() -> ChannelService:
 def approval_service() -> ApprovalService:
     db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
                                          limiter=get_rate_limiter())
+
+def inbox_service() -> InboxService:
+    return InboxService(approval_service(), run_service(), access_service())
 
 def slack_oauth_service() -> SlackOAuthService:
     return SlackOAuthService(channel_service(), access_service())

@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { TemplatePreview } from '@/components/template-preview'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { api } from '@/lib/api'
 import { download, readTemplateFile, type Template } from '@/lib/templates'
 import { useLoadWhen } from '@/lib/use-when'
@@ -32,6 +33,10 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
   const use = (tp: Template) => run(tp.id, async () => { const r = await api<{ id: string }>(`/api/templates/${tp.id}/use`, { method: 'POST', json: {} }); nav(`/workflows/${r.id}`) })
   const exp = (tp: Template) => run(`x-${tp.id}`, async () => download(tp.name, await api(`/api/templates/${tp.id}/export`)))
   const imp = (f?: File) => f && run('import', async () => { await api('/api/templates/import', { method: 'POST', json: { file: await readTemplateFile(f) } }); await load() })
+  // built-ins show their name and description in the UI language (TASK-0064); saved and imported ones keep their author's text
+  const text = (tp: Template) => tp.scope === 'builtin'
+    ? { name: t(`templates.builtin.${tp.id}.name`, { defaultValue: tp.name }), description: t(`templates.builtin.${tp.id}.description`, { defaultValue: tp.description }) }
+    : { name: tp.name, description: tp.description }
   const del = (tp: Template) => confirmDel.ask({ title: t('templates.deleteTitle'), name: tp.name, description: t('templates.deleteBody', { name: tp.name }),
     onConfirm: async () => { await api(`/api/templates/${tp.id}`, { method: 'DELETE' }); await load() } })
 
@@ -55,22 +60,23 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
             <span className="font-medium text-foreground">{t('templates.blank')}</span><span>{t('templates.blankHint')}</span>
           </button>
           {items === null && !err && Array.from({ length: 3 }, (_, i) => <Skeleton key={i} className="min-h-40" aria-busy={i === 0 || undefined} />)}
-          {items?.map(tp => (
+          {items?.map(tp => { const tx = text(tp); return (
             <div key={tp.id} data-testid="tpl-card" data-id={tp.id} className="group relative flex flex-col gap-2 rounded-lg border bg-card p-3 text-card-foreground">
               <button type="button" className="flex flex-col gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md" disabled={!!busy}
-                onClick={() => use(tp)} aria-label={t('templates.useNamed', { name: tp.name })}>
+                onClick={() => use(tp)} aria-label={t('templates.useNamed', { name: tx.name })}>
                 <TemplatePreview tpl={tp} />
-                <div className="flex items-center gap-2"><span className="font-medium truncate">{tp.name}</span>
+                <div className="flex items-center gap-2"><span className="font-medium truncate">{tx.name}</span>
+                  {tp.channels?.map(k => <ChannelLogo key={k} kind={k} standalone />)}
                   {busy === tp.id && <Loader2 className="size-4 animate-spin" />}
                   <Badge variant={tp.scope === 'builtin' ? 'secondary' : 'outline'} className="ml-auto shrink-0">{t(`templates.scope.${tp.scope}`)}</Badge></div>
-                <p className="text-xs text-muted-foreground line-clamp-2 min-h-8">{tp.description || t('templates.noDescription')}</p>
+                <p className="text-xs text-muted-foreground line-clamp-2 min-h-8">{tx.description || t('templates.noDescription')}</p>
               </button>
               <div className="flex gap-1 justify-end">
                 <Button variant="ghost" size="sm" data-testid="tpl-export" onClick={() => exp(tp)}><Download />{t('templates.export')}</Button>
                 {tp.deletable && <Button variant="ghost" size="sm" data-testid="tpl-delete" className="text-destructive hover:text-destructive" onClick={() => del(tp)}><Trash2 />{t('common.delete')}</Button>}
               </div>
             </div>
-          ))}
+          ) })}
         </div>
         {confirmDel.dialog}
       </DialogContent>

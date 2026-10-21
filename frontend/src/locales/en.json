@@ -1195,13 +1195,63 @@
     },
     "saveAs": "Save as template",
     "saveAsTitle": "Save as template",
-    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channels, subgraph links, headers and API keys are removed.",
+    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channel connections and approvers, subgraph links, headers and API keys are removed.",
     "saveAsConfirm": "Save template",
     "unsavedNote": "You have unsaved changes. The template uses the last saved version — save the workflow first to include them.",
     "name": "Name",
     "description": "Description",
     "visibility": "Visible to",
-    "saved": "Template \"{{name}}\" saved. Find it under New workflow."
+    "saved": "Template \"{{name}}\" saved. Find it under New workflow.",
+    "builtin": {
+      "builtin-chatbot": {
+        "name": "Chatbot",
+        "description": "One LLM answers the user's message."
+      },
+      "builtin-rag": {
+        "name": "RAG Q&A",
+        "description": "Retrieve passages from a knowledge base, then answer with them."
+      },
+      "builtin-approval": {
+        "name": "Approval flow",
+        "description": "Draft a reply, ask a human to approve it, then send or revise."
+      },
+      "builtin-router": {
+        "name": "Router",
+        "description": "Classify the request and route it to a specialised branch."
+      },
+      "builtin-approval-slack": {
+        "name": "Approve in Slack",
+        "description": "Draft a reply and ask for approval with Approve / Reject buttons in Slack."
+      },
+      "builtin-approval-telegram": {
+        "name": "Approve in Telegram",
+        "description": "Draft a reply and ask for approval with Approve / Reject buttons in Telegram."
+      },
+      "builtin-approval-whatsapp": {
+        "name": "Approve in WhatsApp",
+        "description": "Draft a reply and ask for approval with reply buttons in WhatsApp."
+      },
+      "builtin-approval-email": {
+        "name": "Approve by e-mail",
+        "description": "Ask for approval by e-mail, then e-mail the requester the result."
+      },
+      "builtin-approval-teams": {
+        "name": "Approve in Microsoft Teams",
+        "description": "Draft a reply and ask for approval with an Adaptive Card in Microsoft Teams."
+      },
+      "builtin-approval-multilevel": {
+        "name": "Two-level approval",
+        "description": "A team lead approves in Slack, then a manager approves by e-mail."
+      },
+      "builtin-support-escalation": {
+        "name": "Support with escalation",
+        "description": "Answer from a knowledge base; a person reviews the answers that are unsure."
+      },
+      "builtin-batch": {
+        "name": "Batch processing",
+        "description": "Summarise each item of a list, then combine the summaries."
+      }
+    }
   },
   "clipboard": {
     "duplicate": "Duplicate",

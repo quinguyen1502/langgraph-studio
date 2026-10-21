@@ -29,7 +29,7 @@ class TemplateService:
     def _summary(tid, name, desc, scope, graph, *, mine=False, owner=None) -> dict:
         return {"id": tid, "name": name, "description": desc or "", "scope": scope, "mine": mine, "owner": owner,
                 "nodes": [{"id": n["id"], "type": n["type"], "position": n.get("position") or {"x": 0, "y": 0}} for n in graph.get("nodes", [])],
-                "edges": [{"source": e["source"], "target": e["target"]} for e in graph.get("edges", [])]}
+                "edges": [{"source": e["source"], "target": e["target"]} for e in graph.get("edges", [])], "channels": T.channels(graph)}
 
     def _can_delete(self, t: WorkflowTemplate, uid: str) -> bool:
         return t.owner == uid if t.scope == "user" else self.access.can(uid, P.ORG_MANAGE)

@@ -1195,13 +1195,63 @@
     },
     "saveAs": "Lưu thành mẫu",
     "saveAsTitle": "Lưu thành mẫu",
-    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kênh phê duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
+    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kết nối kênh phê duyệt và người duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
     "saveAsConfirm": "Lưu mẫu",
     "unsavedNote": "Bạn có thay đổi chưa lưu. Mẫu dùng phiên bản đã lưu gần nhất — hãy lưu workflow trước để bao gồm các thay đổi.",
     "name": "Tên",
     "description": "Mô tả",
     "visibility": "Ai thấy được",
-    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới."
+    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới.",
+    "builtin": {
+      "builtin-chatbot": {
+        "name": "Chatbot",
+        "description": "Một LLM trả lời tin nhắn của người dùng."
+      },
+      "builtin-rag": {
+        "name": "Hỏi đáp RAG",
+        "description": "Tìm các đoạn liên quan trong kho tri thức rồi trả lời dựa trên đó."
+      },
+      "builtin-approval": {
+        "name": "Quy trình duyệt",
+        "description": "Soạn câu trả lời, nhờ người duyệt, rồi gửi hoặc sửa lại."
+      },
+      "builtin-router": {
+        "name": "Định tuyến",
+        "description": "Phân loại yêu cầu rồi chuyển tới nhánh chuyên trách."
+      },
+      "builtin-approval-slack": {
+        "name": "Duyệt qua Slack",
+        "description": "Soạn câu trả lời và xin duyệt bằng nút Approve / Reject trong Slack."
+      },
+      "builtin-approval-telegram": {
+        "name": "Duyệt qua Telegram",
+        "description": "Soạn câu trả lời và xin duyệt bằng nút Approve / Reject trong Telegram."
+      },
+      "builtin-approval-whatsapp": {
+        "name": "Duyệt qua WhatsApp",
+        "description": "Soạn câu trả lời và xin duyệt bằng nút trả lời trong WhatsApp."
+      },
+      "builtin-approval-email": {
+        "name": "Duyệt qua e-mail",
+        "description": "Xin duyệt qua e-mail, rồi gửi e-mail báo kết quả cho người yêu cầu."
+      },
+      "builtin-approval-teams": {
+        "name": "Duyệt qua Microsoft Teams",
+        "description": "Soạn câu trả lời và xin duyệt bằng Adaptive Card trong Microsoft Teams."
+      },
+      "builtin-approval-multilevel": {
+        "name": "Duyệt hai cấp",
+        "description": "Trưởng nhóm duyệt trên Slack, sau đó quản lý duyệt qua e-mail."
+      },
+      "builtin-support-escalation": {
+        "name": "Hỗ trợ có chuyển cấp",
+        "description": "Trả lời từ kho tri thức; câu trả lời chưa chắc chắn được chuyển cho người xem lại."
+      },
+      "builtin-batch": {
+        "name": "Xử lý hàng loạt",
+        "description": "Tóm tắt từng mục trong danh sách, rồi gộp các bản tóm tắt lại."
+      }
+    }
   },
   "clipboard": {
     "duplicate": "Nhân bản",

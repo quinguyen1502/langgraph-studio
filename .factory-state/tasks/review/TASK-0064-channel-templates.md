@@ -4,10 +4,10 @@
 
 - Project: superstep
 - Task ID: TASK-0064
-- Status: todo
+- Status: review (REV-0058, QA-0058)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
-- Updated: 2026-10-20
+- Updated: 2026-10-21
 - Requirement IDs: REQ-0040
 - Design IDs: none (UX direction set in REQ-0040)
 - Architecture IDs: DEC-0009
@@ -114,7 +114,10 @@ built-in template names in en and vi, and show channel logos on gallery cards.
 ## Activity Log
 
 - 2026-10-20: planned from REQ-0040.
+- 2026-10-21: implemented. Two changes beyond the plan, both in REV-0058:
+  - template summaries gain a `channels` field;
+  - `sanitize` now keeps only a Human node's channel kind.
 
 ## Handoff Notes
 
-- Next: `task-start TASK-0064` after TASK-0063 is merged.
+- Next: owner review of the PR, then merge. REQ-0040 is complete after this task.

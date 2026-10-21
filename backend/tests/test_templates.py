@@ -1,8 +1,10 @@
 """TASK-0025: template library: built-ins, save-as (sanitised), import/export, use, scopes, delete."""
 import uuid
+import pytest
 from types import SimpleNamespace as NS
 from fastapi.testclient import TestClient
 from app.engine import templates as T
+from app.engine.runtime import run_stream
 from app.engine.validator import validate
 from app.main import app
 
@@ -41,6 +43,53 @@ def test_builtins_are_well_formed():
     for b in T.BUILTINS:
         assert T.problems(T.export_payload(b["name"], b["description"], b["workflow"])) == []
         assert all("knowledge base" in e for e in validate(b["workflow"]))  # only "pick your KB" may remain
+
+
+NEW = ["builtin-approval-slack", "builtin-approval-telegram", "builtin-approval-whatsapp", "builtin-approval-email", "builtin-approval-teams",
+       "builtin-approval-multilevel", "builtin-support-escalation", "builtin-batch"]
+FIRST_HUMAN = {**{i: "ask" for i in NEW[:5]}, "builtin-approval-multilevel": "lead"}
+INPUTS = {"message": "Where is my order?", "requester": "ann@example.com", "items": ["Release 1.0: new editor", "Release 1.1: faster runs"]}
+
+
+def test_builtin_order_and_channel_kinds():
+    """TASK-0064: 12 built-ins, the eight new ones after the first four. Human nodes on a channel store only its kind."""
+    assert [b["id"] for b in T.BUILTINS] == ["builtin-chatbot", "builtin-rag", "builtin-approval", "builtin-router", *NEW]
+    kinds = {b["id"]: [n["data"]["approval"] for n in b["workflow"]["nodes"] if n["type"] == "human" and "approval" in n["data"]] for b in T.BUILTINS}
+    assert {i: [a["channel"] for a in v] for i, v in kinds.items() if v} == {
+        "builtin-approval-slack": ["slack"], "builtin-approval-telegram": ["telegram"], "builtin-approval-whatsapp": ["whatsapp"],
+        "builtin-approval-email": ["email"], "builtin-approval-teams": ["teams"], "builtin-approval-multilevel": ["slack", "email"]}
+    assert all(list(a) == ["channel"] for v in kinds.values() for a in v)
+    ts = {t["id"]: t["channels"] for t in c.get("/api/templates", headers=H(register().token)).json()["data"]}
+    assert ts["builtin-approval-multilevel"] == ["slack", "email"] and ts["builtin-approval-teams"] == ["teams"] and ts["builtin-chatbot"] == []
+
+
+@pytest.mark.parametrize("tid", [i for i in NEW if i != "builtin-support-escalation"])  # that one needs a knowledge base, like builtin-rag
+def test_new_builtins_run_offline(tid, monkeypatch):
+    """Mock LLM and dry-run e-mail: each runs up to its first Human node, or to the end."""
+    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY"): monkeypatch.delenv(k, raising=False)
+    wf = next(b for b in T.BUILTINS if b["id"] == tid)["workflow"]
+    evs = list(run_stream(wf, {k: v for k, v in INPUTS.items() if any(f["name"] == k for f in wf["state"])}))
+    assert not [e for e in evs if e["type"] == "error"]
+    if tid in FIRST_HUMAN: assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == FIRST_HUMAN[tid]
+    else: assert evs[-1]["type"] == "run_finished" and len(evs[-1]["state"]["summaries"]) == 2 and evs[-1]["state"]["digest"]
+
+
+def test_channel_template_waits_in_the_studio_without_a_connection():
+    """A workflow made from a channel template keeps the kind and, with no connection yet, waits to be approved in the studio."""
+    u = register(); wid = c.post("/api/templates/builtin-approval-slack/use", headers=H(u.token), json={}).json()["data"]["id"]
+    wf = c.get(f"/api/workflows/{wid}", headers=H(u.token)).json()["data"]
+    assert next(n for n in wf["nodes"] if n["id"] == "ask")["data"]["approval"] == {"channel": "slack"}
+    with c.websocket_connect(f"/ws/run?token={u.token}") as ws:
+        ws.send_json({"workflow_id": wid, "input": {"message": "hi"}}); evs = []
+        while not evs or evs[-1]["type"] not in ("run_finished", "run_waiting", "error"): evs.append(ws.receive_json())
+    assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == "ask"
+
+
+def test_sanitize_keeps_only_the_channel_kind():
+    """Saved and exported templates drop a Human node's connection, target and approvers (TASK-0064)."""
+    wf = {"nodes": [{"id": "a", "type": "human", "data": {"approval": {"channel_id": "c1", "channel": "slack", "target": "C1", "approvers": ["x@y.z"]}}},
+                    {"id": "b", "type": "human", "data": {"approval": {"channel_id": "c2"}}}], "edges": []}
+    assert [n["data"]["approval"] for n in T.sanitize(wf)["nodes"]] == [{"channel": "slack"}, {}]
 
 
 def test_problems():

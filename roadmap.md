@@ -150,7 +150,7 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 
 ## Documentation
 
-- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **in review** (PR #65).
+- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **merged** (PR #65).
 
 ## Rename
 
@@ -169,7 +169,15 @@ REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates), I
 
 ## Approval deadlines and inbox
 
-REQ-0041, Accepted 2026-10-21 (the owner chose deadlines with reminders and one inbox for approvals).
+REQ-0041, Accepted 2026-10-21 (the owner chose deadlines with reminders and one inbox for approvals), Implemented 2026-10-21.
 
 - TASK-0065 Approvals inbox: one list of the runs waiting on the user, as owner or listed approver, answered in place; approvers on studio-only nodes; DEC-0043: **merged** (PR #86, REV-0059, QA-0059).
 - TASK-0066 Human node deadlines: reminders, then reject, approve or escalate once; due times in the inbox; deadlines on the six channel templates: **merged** (PR #87, REV-0060, QA-0060).
+
+## Workflow tests
+
+REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a mock option, CI runs later, and test cases only on built-in templates).
+
+- TASK-0067 Test cases (input, Human answers, checks), Run all / run one on the current version, test runs that send no e-mail, channel message, notification or callback, mock model option, Tests panel, DEC-0044: **todo**.
+- TASK-0068 Comparison with the latest suite run on an earlier version (Regression, Fixed, New), Run against version, suite history, Save as test case from a run, stale checks: **todo** (after TASK-0067).
+- TASK-0069 Test cases on every built-in template, copied to workflows made from them; handbook "Workflow tests" page (en, vi): **todo** (after TASK-0067 and TASK-0068).

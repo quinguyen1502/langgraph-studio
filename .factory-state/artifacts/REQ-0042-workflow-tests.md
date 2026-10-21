@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Requirement ID: REQ-0042
-- Status: Proposed (waiting for the owner)
+- Status: Accepted (owner, in chat, 2026-10-21)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
 - Updated: 2026-10-21
@@ -66,7 +66,7 @@
 - **Validation.** A check that names a state field or a node that no longer exists is marked in the panel, and the case
   fails with that reason instead of an unclear error.
 - **Built-in templates** come with one to three test cases each that pass offline with the mock model. A workflow made
-  from a template gets a copy of them.
+  from a built-in template gets a copy of them. A template a user saves does not carry test cases.
 - **Permissions.** Users who can view the workflow see its test cases and results. Users who can edit it add, change and
   run them (a run can cost model credits).
 - **API.** Routes for test cases and suite runs (create, list, run, result), with the shared envelope and new error codes
@@ -78,6 +78,8 @@
 - Checks judged by an LLM ("the answer is polite"), similarity scores, or datasets of hundreds of inputs (evaluation).
 - Running a suite on a schedule or on every save.
 - Running a suite from CI with a workflow API token (the owner chose later, 2026-10-21).
+- Test cases in templates that users save: a saved template does not carry the workflow's test cases, since their
+  inputs may hold personal data, as approvers and escalation addresses are dropped today (owner, 2026-10-21).
 - Faking a tool, HTTP, MCP or Code node with a canned response.
 - Tests for imported LangGraph repositories (`source.kind == "langgraph_import"`).
 - Checks inside a subgraph: a Subgraph node is checked as one node, by its output fields.
@@ -147,7 +149,8 @@
 - The mock-model option runs every LLM node offline.
 - Test runs are hidden from the run history unless the "Tests" filter is on.
 - Viewers see test cases and results but cannot change or run them.
-- Every built-in template has test cases that pass offline; a workflow made from a template gets them.
+- Every built-in template has test cases that pass offline; a workflow made from a built-in template gets them; a
+  template saved by a user carries none.
 - Backend tests cover checks, Human answers, side effects, comparison, permissions and limits; e2e covers the Tests
   panel and Save as test case. The handbook pages (en, vi) build.
 
@@ -173,8 +176,8 @@
 
 ## Open Questions
 
-- When a user saves a workflow as a template, should its test cases go with it (inputs may contain real e-mail
-  addresses), or only built-in templates carry test cases?
+- None. The owner accepted the requirement on 2026-10-21: real models by default (mock as a suite option), CI runs
+  later, and only built-in templates carry test cases.
 
 ## Related Artifacts
 

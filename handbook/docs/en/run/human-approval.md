@@ -9,12 +9,30 @@ branch on it.
 ## Answer in the studio
 
 The Logs tab shows the question with **Approve** (`approved`), **Reject**
-(`rejected`), or a free-text **Send response**. Only the run's owner can answer
-or cancel here; approvers listed on the node answer through an
-[approval channel](#approve-from-chat).
+(`rejected`), or a free-text **Send response**. Only the run's owner can open,
+answer or cancel the run here.
 
-Runs waiting for you are listed at the top of **Workflows** under **Waiting
-for you**, and the header badge counts them. **Respond** opens the run.
+## The Approvals page
+
+**Approvals** (`/approvals`, the person icon in the header) lists every step
+waiting for you, across all workflows: runs you own, and runs where you are an
+**approver** of the waiting Human node. Each row shows the workflow, the step,
+the question, who started the run, how long it has waited and the channel the
+request went to. Answer with **Approve**, **Reject** or a text reply, right in
+the row.
+
+![The Approvals page](../images/approvals.png)
+
+- Name approvers by e-mail in the Human node's **Approvers** field. It works with
+  or without an approval channel. Each address must belong to a studio account.
+- An approver sees only the request: not the workflow, the run trace or its
+  data. **Open run** shows only for the run's owner, and for the workflow's
+  owner or an admin.
+- The first answer wins, wherever it comes from: the editor, the Approvals page
+  or a chat button. Later answers are refused. An answer here closes the chat
+  request and edits its message.
+- The header badge counts the steps waiting for you, and **Workflows** shows a
+  link to the page while any are waiting.
 
 ![Workflows with a waiting run](../images/workflows.png)
 
@@ -24,7 +42,9 @@ than `STUDIO_WAIT_TTL` seconds (default 7 days; `0` never expires) becomes
 `expired`, and resuming then returns `410 RUN_EXPIRED`.
 
 ```text
-GET  /api/runs/pending
+GET  /api/approvals/inbox                       # steps waiting for you, owner or approver
+POST /api/approvals/inbox/{run_id}  {"response": "approved"}
+GET  /api/runs/pending                          # your own waiting runs
 WS   /ws/run   {"resume_run_id": "…", "response": "approved"}
 POST /api/runs/{id}/cancel
 ```

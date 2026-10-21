@@ -11,3 +11,9 @@ export type Channels = { kinds: ChannelKind[]; channels: Channel[]; public_url: 
 export function channelLabel(t: TFunction, c: Channel) {
   return [t(`approvals.kind.${c.kind}`), c.name, t(`approvals.scope.${c.scope}`)].filter(Boolean).join(' · ')
 }
+
+/** A waiting step in the Approvals inbox (TASK-0065): the request only, never the run's state or trace (DEC-0043). */
+export type InboxItem = { run_id: string; workflow_id: string | null; workflow_name: string | null; node: string; label: string | null; prompt: string | null
+  channel: string | null; mine: boolean; owner_email: string | null; waiting_since: number; can_open: boolean }
+
+export const INBOX_POLL_MS = 30_000

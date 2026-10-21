@@ -654,7 +654,8 @@
       "telegram": "Telegram",
       "whatsapp": "WhatsApp",
       "email": "E-mail",
-      "teams": "Microsoft Teams"
+      "teams": "Microsoft Teams",
+      "studio": "Studio"
     },
     "optional": "optional",
     "keepSecret": "Saved, enter a new value to replace",
@@ -716,7 +717,8 @@
       "superseded": "Answered elsewhere",
       "expired": "Expired",
       "send_failed": "Send failed",
-      "not_configured": "Not configured"
+      "not_configured": "Not configured",
+      "answered": "Answered"
     },
     "node": {
       "title": "Approval channel",
@@ -739,7 +741,7 @@
         "teams": ""
       },
       "approvers": "Approvers (e-mails)",
-      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts.",
+      "approversHelp": "Besides you (the run owner). They answer from their Approvals page, or from the channel once they link and verify their account under My accounts.",
       "noTarget": "The webhook posts to its Teams channel."
     },
     "verified": "Verified",
@@ -1481,5 +1483,17 @@
       "subprocess": "Host subprocess (not isolated)",
       "off": "Off"
     }
+  },
+  "inbox": {
+    "title": "Approvals",
+    "intro": "Steps waiting for your answer, in runs you own or approve.",
+    "empty": "Nothing is waiting for you",
+    "emptyHelp": "When a run pauses at a Human node you own or approve, it shows up here.",
+    "studio": "In the studio",
+    "from": "Run by {{email}}",
+    "since": "Waiting since {{when}}",
+    "openRun": "Open run",
+    "open": "Open approvals",
+    "sent": "Answer sent. The run continues."
   }
 }

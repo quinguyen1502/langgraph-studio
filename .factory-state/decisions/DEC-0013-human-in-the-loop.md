@@ -7,7 +7,7 @@
 - Status: Accepted
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-16
-- Updated: 2026-10-16
+- Updated: 2026-10-21
 - Related Requirements: REQ-0003
 - Related Architecture: ARCH-0001
 - Related Tasks: TASK-0006
@@ -18,7 +18,7 @@ REQ-0003: workflows pause at an approval/input node and resume after a human res
 
 ## Decision
 
-1. **Owner only.** Only the user who owns the run (the workflow owner who started it) can see it as pending, resume it or cancel it. Others get `RUN_NOT_FOUND`, the same rule as everything else. Sharing and approval by other users waits for RBAC (TASK-0014).
+1. **Owner only.** Only the user who owns the run (the workflow owner who started it) can see it as pending, resume it or cancel it. Others get `RUN_NOT_FOUND`, the same rule as everything else. Sharing and approval by other users waits for RBAC (TASK-0014). Amended by DEC-0043 (2026-10-21): the approvers of the waiting Human node may also answer it from the Approvals inbox.
 2. **New node type `human`** (`label`, `prompt` template, `output_field`). With no response yet, the run stops with status `waiting`. The WS event is `run_waiting` {node, label, prompt, state}. The human's response (text) is written to `output_field`. The UI buttons send `approved` / `rejected` (a JSON `true` / `false` maps to the same), so a Condition can branch on them.
 3. **Checkpoint stored by the app, not a LangGraph checkpointer (KISS).**
    - Saved in `runs.checkpoint` (JSON {node, state, workflow snapshot}, migration `0004_hitl`).

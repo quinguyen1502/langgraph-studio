@@ -11,7 +11,7 @@ from typing import Callable, Optional
 from ..core import config, crypto
 from ..core.errors import AppError
 from ..core.logging import get_logger
-from ..models import ApprovalAudit, ApprovalRequest
+from ..models import ApprovalAudit, ApprovalRequest, ApprovalWait
 from ..repositories import ApprovalRepository, RunRepository, UserRepository, WorkflowRepository
 from .approval_channels import ApprovalChannel, ApprovalMessage
 from .approval_channels.messages import lang_of, text
@@ -19,6 +19,7 @@ from .channel_service import ChannelService
 
 log = get_logger("approvals")
 DECISIONS = {"a": "approved", "r": "rejected"}
+PROMPT_MAX = 4000  # characters of the question kept on a waiting step (the inbox shows it)
 BACKGROUND = True  # send/edit messages off the request thread; tests switch it off for determinism
 
 
@@ -73,9 +74,30 @@ class ApprovalService:
         cfg = ((node or {}).get("data") or {}).get("approval") or {}
         target = str(cfg.get("target") or "").strip()
         kind = cfg.get("channel"); needs_target = self.adapters[kind].target_required if kind in self.adapters else True
-        if not (cfg.get("channel_id") or kind) or (needs_target and not target): return  # this node does not use an external channel
+        external = bool(cfg.get("channel_id") or kind) and not (needs_target and not target)
+        self._wait(rid, owner, wid, ev, cfg, external)
+        if not external: return  # this node does not use an external channel
         job = lambda: self._request(rid, owner, wid, node, cfg, target, ev)  # noqa: E731
         threading.Thread(target=job, daemon=True).start() if self.background else job()
+
+    def _approver_ids(self, cfg: dict) -> list[str]:
+        """The node's approvers (e-mails) as studio user ids; unknown addresses are dropped."""
+        return [u.id for e in cfg.get("approvers") or [] if isinstance(e, str) and (u := self.users.get_by_email(e.strip().lower()))]
+
+    def _wait(self, rid, owner, wid, ev, cfg, external: bool) -> None:
+        """The waiting step the Approvals inbox lists (TASK-0065), written for every Human node, channel or not."""
+        kind = (cfg.get("channel") or ((ch := self.repo.channel(str(cfg["channel_id"]))) and ch.kind) or None) if external else None
+        self.repo.add_wait(ApprovalWait(id=uuid.uuid4().hex[:12], run_id=rid, node_id=str(ev.get("node") or ""), owner=owner, workflow_id=wid,
+                                        label=ev.get("label") or None, prompt=(ev.get("prompt") or "")[:PROMPT_MAX] or None, channel=kind,
+                                        status="waiting", created=time.time()), self._approver_ids(cfg))
+
+    def may_answer(self, uid: str, w: ApprovalWait) -> bool:
+        return uid == w.owner or uid in self.repo.wait_approvers(w.id)
+
+    def claim(self, rid: str) -> bool:
+        """First answer wins (DEC-0043): close the run's open waiting step. True when this caller closed it, or when the run
+        paused before waiting steps existed (no row at all)."""
+        return self.repo.close_wait(rid, "answered") or self.repo.latest_wait(rid) is None
 
     def _request(self, rid, owner, wid, node, cfg, target, ev) -> Optional[ApprovalRequest]:
         if self.channels.org_denied(owner, cfg):  # admin policy (TASK-0029)
@@ -85,7 +107,7 @@ class ApprovalService:
             kind = cfg.get("channel") or (ch.kind if (ch := self.repo.channel(str(cfg.get("channel_id")))) else "channel")
             self._audit(owner, kind, "not_configured", code="CHANNEL_NOT_FOUND", run_id=rid, wid=wid); return None
         kind = c.kind
-        approvers = [u.id for e in cfg.get("approvers") or [] if isinstance(e, str) and (u := self.users.get_by_email(e.strip().lower()))]
+        approvers = self._approver_ids(cfg)
         r = self.repo.add_request(ApprovalRequest(id=uuid.uuid4().hex[:12], run_id=rid, node_id=node["id"], owner=owner, workflow_id=wid, channel_id=c.id,
                                                   kind=kind, target=target, approvers=json.dumps(approvers), nonce=pysecrets.token_hex(8),
                                                   expires=time.time() + config.approval_ttl(), status="pending", created=time.time()))
@@ -187,7 +209,7 @@ class ApprovalService:
             self._audit(r.owner, kind, "denied", r, code=code, actor=uid, external=external); return code, r, None
         if uid != r.owner and uid not in json.loads(r.approvers or "[]"): return refuse("APPROVAL_FORBIDDEN")
         run = self.runs.get(r.run_id)
-        if run is None or run.status != "waiting":
+        if run is None or run.status != "waiting" or not self.claim(r.run_id):
             self.repo.decide(r.id, "superseded"); return refuse("APPROVAL_ALREADY_DECIDED")
         if not self.repo.decide(r.id, decision, uid, external): return refuse("APPROVAL_ALREADY_DECIDED")  # lost the race: single use
         self._audit(r.owner, kind, decision, r, actor=uid, external=external)
@@ -237,6 +259,15 @@ class ApprovalService:
         try: a.update(sec, json.loads(r.message_ref), text)
         except AppError as e: log.warning("updating the approval message of run %s failed: %s", r.run_id, e.message)
 
+    # ---- the Approvals inbox (TASK-0065) ----
+    def answered_in_studio(self, w: ApprovalWait, uid: str, response: str) -> None:
+        """An inbox answer whose waiting step the caller already closed: close the channel requests, audit it and resume
+        the run like a channel decision (the run stays its owner's)."""
+        self.close_run(w.run_id, "answered")
+        self._audit(w.owner, "studio", response if response in DECISIONS.values() else "answered", actor=uid, run_id=w.run_id, wid=w.workflow_id)
+        if self.enqueue: self.enqueue({"kind": "resume", "run_id": w.run_id, "owner": w.owner, "response": response, "workflow_id": w.workflow_id,
+                                       "by": {"channel": "studio", "user_id": uid}})
+
     # ---- the run went on without the channel (answered in the studio, cancelled, expired) ----
     def decided_elsewhere(self, rid: str) -> bool:
         """True when a channel decision for this run is already queued (the studio must not resume it a second time)."""
@@ -245,7 +276,8 @@ class ApprovalService:
 
     def close_run(self, rid: str, reason: str) -> int:
         """Mark open requests of the run superseded/expired now (compare-and-set, so a late button press is refused) and
-        edit their messages in the background. reason: answered | cancelled | expired | finished."""
+        edit their messages in the background. reason: answered | cancelled | expired | finished. The waiting step closes too."""
+        self.repo.close_wait(rid, reason)
         closed = []
         for r in self.repo.requests_for_run(rid, "pending"):
             action = "expired" if reason == "expired" else "superseded"

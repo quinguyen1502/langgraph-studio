@@ -131,8 +131,10 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await run(page, 'waiting'); await expect(page.locator('#human-question')).toBeVisible()
       await shot(page, lang, 'human-waiting')
 
-      // Workflow list with the pending approval
-      await page.goto('/workflows'); await expect(page.locator('[data-testid=pending-row]').first()).toBeVisible()
+      // Approvals inbox with the waiting refund, then the workflow list with its link (TASK-0065)
+      await page.goto('/approvals'); await expect(page.locator('[data-testid=inbox-row]').first()).toBeVisible()
+      await shot(page, lang, 'approvals')
+      await page.goto('/workflows'); await expect(page.locator('#pending-runs')).toBeVisible()
       await shot(page, lang, 'workflows')
       await page.locator('#new-wf').click(); await expect(page.locator('#template-gallery')).toBeVisible()
       await shot(page, lang, 'templates'); await page.keyboard.press('Escape')

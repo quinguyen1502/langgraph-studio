@@ -17,6 +17,6 @@ from .audit_event import AuditEvent, StudioSetting
 from .template import WorkflowTemplate
 from .auth_security import LoginThrottle, PasswordReset
 from .workflow_schedule import WorkflowSchedule
-from .approval import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
+from .approval import ApprovalAudit, ApprovalChannel, ApprovalRequest, ApprovalWait, ApprovalWaitApprover, ChannelIdentity
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare", "Team", "TeamMember", "WorkflowTeamShare", "AuditEvent", "StudioSetting", "WorkflowTemplate", "LoginThrottle", "PasswordReset", "WorkflowSchedule"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "ApprovalWait", "ApprovalWaitApprover", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare", "Team", "TeamMember", "WorkflowTeamShare", "AuditEvent", "StudioSetting", "WorkflowTemplate", "LoginThrottle", "PasswordReset", "WorkflowSchedule"]

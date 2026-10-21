@@ -9,12 +9,29 @@ nhánh theo nó.
 ## Trả lời trong studio
 
 Tab Logs hiện câu hỏi kèm **Duyệt** (`approved`), **Từ chối** (`rejected`),
-hoặc **Gửi phản hồi** bằng văn bản tự do. Ở đây chỉ chủ của run mới trả lời
-hoặc huỷ được; người duyệt có tên trên node trả lời qua
-[kênh duyệt](#duyet-qua-chat).
+hoặc **Gửi phản hồi** bằng văn bản tự do. Ở đây chỉ chủ của run mới mở, trả lời
+hoặc huỷ run được.
 
-Các run đang chờ bạn hiện ở đầu trang **Workflows**, mục **Đang chờ bạn**, và
-nhãn trên thanh trên đếm số run đó. **Phản hồi** mở run.
+## Trang Phê duyệt
+
+**Phê duyệt** (`/approvals`, biểu tượng hình người trên thanh trên) liệt kê mọi
+bước đang chờ bạn, ở tất cả workflow: run của bạn, và run mà bạn là **người
+duyệt** của node Human đang chờ. Mỗi dòng hiện workflow, bước, câu hỏi, người
+chạy, thời gian đã chờ và kênh đã gửi yêu cầu. Trả lời bằng **Duyệt**, **Từ
+chối** hoặc văn bản, ngay trên dòng đó.
+
+![Trang Phê duyệt](../images/approvals.png)
+
+- Ghi e-mail người duyệt vào ô **Người duyệt** của node Human. Ô này dùng được cả
+  khi node có hoặc không có kênh duyệt. Mỗi địa chỉ phải là một tài khoản trong
+  studio.
+- Người duyệt chỉ thấy yêu cầu: không thấy workflow, trace hay dữ liệu của run.
+  **Mở lượt chạy** chỉ hiện với chủ run, và với chủ workflow hoặc admin.
+- Câu trả lời đầu tiên được tính, dù đến từ editor, trang Phê duyệt hay nút
+  trên chat. Các câu trả lời sau bị từ chối. Trả lời ở đây sẽ đóng yêu cầu trên
+  chat và sửa lại tin nhắn.
+- Nhãn trên thanh trên đếm số bước đang chờ bạn, và trang **Workflows** hiện
+  link tới trang này khi còn bước đang chờ.
 
 ![Workflows có run đang chờ](../images/workflows.png)
 
@@ -24,7 +41,9 @@ chỗ đã dừng. Thời gian chờ không tính vào thời gian chạy của 
 thành `expired`, và tiếp tục khi đó trả về `410 RUN_EXPIRED`.
 
 ```text
-GET  /api/runs/pending
+GET  /api/approvals/inbox                       # các bước đang chờ bạn, chủ run hoặc người duyệt
+POST /api/approvals/inbox/{run_id}  {"response": "approved"}
+GET  /api/runs/pending                          # run của chính bạn đang chờ
 WS   /ws/run   {"resume_run_id": "…", "response": "approved"}
 POST /api/runs/{id}/cancel
 ```

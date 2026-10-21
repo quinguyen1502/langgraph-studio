@@ -28,12 +28,6 @@ def sanitize(wf: dict) -> dict:
     return out
 
 
-def channels(wf: dict) -> list[str]:
-    """The approval channel kinds a graph's Human nodes use, once each, in node order (gallery logos, TASK-0064)."""
-    kinds = [((n.get("data") or {}).get("approval") or {}).get("channel") for n in wf.get("nodes") or [] if n.get("type") == "human"]
-    return list(dict.fromkeys(k for k in kinds if isinstance(k, str) and k))
-
-
 def export_payload(name: str, description: str | None, graph: dict) -> dict:
     return {"format": FORMAT, "version": VERSION, "name": name, "description": description or "", "workflow": sanitize(graph)}
 

@@ -1,7 +1,7 @@
 /** Template library (TASK-0025, DEC-0028): API types, the portable file helpers and the mini-preview geometry. */
 export type TplNode = { id: string; type: string; position: { x: number; y: number } }
 export type Template = { id: string; name: string; description: string; scope: 'builtin' | 'user' | 'org'; mine: boolean; deletable?: boolean
-  nodes: TplNode[]; edges: { source: string; target: string }[]; channels?: string[] }  // channels: approval channel kinds (TASK-0064)
+  nodes: TplNode[]; edges: { source: string; target: string }[] }
 export const TEMPLATE_FORMAT = 'superstep/template'
 
 /** Fit node positions into a w×h box (keeping aspect, with padding); returns centre points per node id. */

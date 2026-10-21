@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Requirement ID: REQ-0040
-- Status: Accepted
+- Status: Implemented (TASK-0063 PR #83, TASK-0064 PR #84)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
 - Updated: 2026-10-21
@@ -13,6 +13,7 @@
   written: brand colours, 8 templates, requirement and tasks before code.
 - Changed 2026-10-21 (owner, in chat on PR #84): the first set had five templates that differed only in the channel.
   They are replaced by the real processes below, one per channel where it fits.
+- Changed 2026-10-21 (owner, before merging PR #84): no channel logos on template cards.
 
 ## Summary
 
@@ -54,7 +55,7 @@
   - Settings → My accounts: each linked account;
   - the Human node's approval channel select;
   - the Audit log: platform filter and rows;
-  - template gallery cards: the logos of the channels the template uses.
+  - not on template gallery cards. The owner removed them on 2026-10-21: the card shows the name only.
 - **Decision.** A new decision record that allows official brand colours for these logos as the one exception to
   DEC-0008 rule 3 (no hard-coded colours). `docs/ui-conventions.md` and its colour check are updated to match.
 - **Docs.** The handbook (en, vi) lists the new templates and shows the logos in the updated screenshots.
@@ -90,7 +91,6 @@
 ## Desired Behavior
 
 - **New workflow** shows 12 built-in templates: the 4 existing ones first, then the 8 new ones.
-- A card for a template with an approval channel shows that channel's logo, or the logos of all its channels.
 - Creating a workflow from a template with a channel opens a graph where the Human node already names the channel kind.
   Running it without a connection waits at the Human node and can be approved in the studio.
 - After connecting a channel and setting a target, the same workflow sends the request to that channel.
@@ -125,13 +125,11 @@
 - The logo appears in the 5 places listed in scope, for all 5 channel kinds, in light and dark themes.
 - The decision record exists, and `docs/ui-conventions.md` and its colour check allow brand colours only in the logo
   file.
-- Backend tests cover the new templates. Unit or e2e tests cover the logo component and the gallery card logos.
+- Backend tests cover the new templates. Unit or e2e tests cover the logo component.
 - The handbook's template and channel pages (en, vi) are updated, and both builds pass.
 
 ## Edge Cases
 
-- A template with two channels (Purchase request) shows both logos once each.
-- A saved or imported template with a Human node on a channel shows the logo too, since it is read from the graph.
 - An unknown channel kind, for example from an older file, shows a generic icon and its raw name.
 - Teams needs no target, so a run of the Teams template with no Teams connection adds a `not_configured` entry
   (`CHANNEL_NOT_FOUND`) to the Audit log. This is existing behaviour and is expected.

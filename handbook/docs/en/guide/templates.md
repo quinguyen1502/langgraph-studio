@@ -11,9 +11,8 @@
 | Only me | Templates you saved. |
 | Organisation | Templates shared with everyone. |
 
-Each card has a preview of the graph, and the logo of each approval channel the
-template uses. Creating from a template copies it into a new workflow you own.
-Built-in names and descriptions follow the UI language.
+Each card has a preview of the graph. Creating from a template copies it into
+a new workflow you own. Built-in names and descriptions follow the UI language.
 
 ## Built-in templates
 

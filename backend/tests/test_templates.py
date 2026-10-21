@@ -63,8 +63,6 @@ def test_builtin_order_and_channel_kinds():
         "builtin-refund-approval": ["slack"], "builtin-leave-request": ["teams"], "builtin-social-post": ["telegram"],
         "builtin-large-order": ["whatsapp"], "builtin-expense-claim": ["email"], "builtin-purchase-request": ["slack", "email"]}
     assert all(list(a) == ["channel"] for v in kinds.values() for a in v)
-    ts = {t["id"]: t["channels"] for t in c.get("/api/templates", headers=H(register().token)).json()["data"]}
-    assert ts["builtin-purchase-request"] == ["slack", "email"] and ts["builtin-leave-request"] == ["teams"] and ts["builtin-chatbot"] == []
 
 
 @pytest.mark.parametrize("tid", [i for i in NEW if i != "builtin-support-escalation"])  # that one needs a knowledge base, like builtin-rag

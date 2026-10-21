@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0064
-- Status: review (REV-0058, QA-0058)
+- Status: done (PR #84, REV-0058, QA-0058)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
 - Updated: 2026-10-21
@@ -15,8 +15,8 @@
 ## Objective
 
 Add 8 built-in templates for real business processes (REQ-0040 table: refund, leave, social post, large order,
-expense claim, purchase request, support escalation, feedback digest). Show built-in template names in en and vi, and
-show channel logos on gallery cards.
+expense claim, purchase request, support escalation, feedback digest). Show built-in template names in en and vi. (Logos on
+gallery cards were built, then removed at the owner's request on 2026-10-21.)
 
 ## Scope
 
@@ -28,13 +28,10 @@ show channel logos on gallery cards.
 - **Frontend.**
   - Built-in names and descriptions come from locale keys `templates.builtin.<id>.name` and `.description`, for all
     12 built-ins. Other templates show the API's name and description.
-  - `template-gallery.tsx`: each card shows the `ChannelLogo` of every distinct `approval.channel` in the template's
-    Human nodes, next to the name.
 - **Tests.**
   - `tests/test_templates.py`: the 12 IDs in order. Every built-in validates. Channel templates hold only the kind.
     Each one runs in mock mode up to its first Human node, or to the end for `builtin-feedback-digest`.
-  - Frontend: unit test for the channel-kind extraction; e2e for the gallery (12 cards, logos on channel cards, the
-    Vietnamese name when the UI is in Vietnamese).
+  - Frontend: e2e for the gallery (12 cards, no channel logos, the Vietnamese and English names).
 - **Docs.** `handbook/docs/*/guide/templates.md` lists the new templates. Retake `templates.png` (en, vi).
 
 ### Out Of Scope
@@ -63,7 +60,6 @@ show channel logos on gallery cards.
 
 - 8 new built-ins in `templates.py`
 - Locale keys `templates.builtin.*` in `en.json` and `vi.json`
-- Gallery card logos
 - Tests and handbook updates
 
 ## Implementation Notes
@@ -88,14 +84,13 @@ show channel logos on gallery cards.
 - Creating from each new template gives a workflow that runs in mock mode, up to the first Human node or to the end.
 - Channel templates store only `approval.channel`.
 - All 12 built-in names and descriptions show in en and vi.
-- Gallery cards show the logos of their channels: one for each single-channel template, two for Purchase request.
 - Backend tests pass on SQLite and Postgres 17 + Redis 7. Frontend build, lint, vitest and e2e pass. The handbook
   builds in en and vi.
 
 ## Validation Plan
 
 - `pytest tests/test_templates.py`, then the full backend suite on SQLite and Postgres.
-- Vitest for the channel-kind helper. E2E for the gallery in en and vi.
+- E2E for the gallery in en and vi.
 - Manual: create a workflow from the Slack template, run it, approve in the studio.
 
 ## Assumptions
@@ -110,10 +105,11 @@ show channel logos on gallery cards.
 
 - 2026-10-20: planned from REQ-0040.
 - 2026-10-21: the owner asked to replace the five channel-only variants with real processes (REQ-0040 updated).
-- 2026-10-21: implemented. Two changes beyond the plan, both in REV-0058:
-  - template summaries gain a `channels` field;
-  - `sanitize` now keeps only a Human node's channel kind.
+- 2026-10-21: implemented. One change beyond the plan (REV-0058): `sanitize` now keeps only a Human node's channel
+  kind.
+- 2026-10-21: the owner asked to remove the channel logos from template cards before merging. The `channels` field
+  added to template summaries for them was removed too.
 
 ## Handoff Notes
 
-- Next: owner review of the PR, then merge. REQ-0040 is complete after this task.
+- Merged on the owner's approval (2026-10-21). REQ-0040 is complete.

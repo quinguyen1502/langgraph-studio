@@ -10,7 +10,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { TemplatePreview } from '@/components/template-preview'
-import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { api } from '@/lib/api'
 import { download, readTemplateFile, type Template } from '@/lib/templates'
 import { useLoadWhen } from '@/lib/use-when'
@@ -66,7 +65,6 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
                 onClick={() => use(tp)} aria-label={t('templates.useNamed', { name: tx.name })}>
                 <TemplatePreview tpl={tp} />
                 <div className="flex items-center gap-2"><span className="font-medium truncate">{tx.name}</span>
-                  {tp.channels?.map(k => <ChannelLogo key={k} kind={k} standalone />)}
                   {busy === tp.id && <Loader2 className="size-4 animate-spin" />}
                   <Badge variant={tp.scope === 'builtin' ? 'secondary' : 'outline'} className="ml-auto shrink-0">{t(`templates.scope.${tp.scope}`)}</Badge></div>
                 <p className="text-xs text-muted-foreground line-clamp-2 min-h-8">{tx.description || t('templates.noDescription')}</p>

@@ -11,8 +11,8 @@
 | Chỉ mình tôi | Các mẫu bạn đã lưu. |
 | Toàn tổ chức | Các mẫu chia sẻ cho mọi người. |
 
-Mỗi thẻ có bản xem trước của graph và logo của từng kênh duyệt mà mẫu dùng.
-Tạo từ mẫu sẽ chép nó thành một workflow mới do bạn sở hữu. Tên và mô tả của
+Mỗi thẻ có bản xem trước của graph. Tạo từ mẫu sẽ chép nó thành một workflow
+mới do bạn sở hữu. Tên và mô tả của
 mẫu có sẵn hiện theo ngôn ngữ giao diện.
 
 ## Mẫu có sẵn

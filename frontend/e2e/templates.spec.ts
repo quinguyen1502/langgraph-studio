@@ -16,16 +16,12 @@ test('blank and built-in templates from the New workflow gallery', async ({ page
   await expect(page).toHaveURL(/\/workflows\/[^/]+$/); await expect(page.locator('.react-flow__node')).toHaveCount(2)
 })
 
-test('process templates: 12 built-ins, names in the UI language, channel logos (TASK-0064)', async ({ page }) => {
+test('process templates: 12 built-ins, names in the UI language (TASK-0064)', async ({ page }) => {
   await login(page)
   await page.locator('#new-wf').click(); const g = page.locator('#template-gallery'); await expect(g).toBeVisible()
   await expect(g.locator('[data-testid=tpl-card][data-id^=builtin-]')).toHaveCount(12)
   await expect(g.locator('[data-id=builtin-refund-approval]')).toContainText('Duyệt hoàn tiền')  // the e2e browser runs in Vietnamese
-  const kinds = { 'refund-approval': 'slack', 'leave-request': 'teams', 'social-post': 'telegram', 'large-order': 'whatsapp', 'expense-claim': 'email' }
-  for (const [id, k] of Object.entries(kinds))
-    await expect(g.locator(`[data-id=builtin-${id}] [data-channel-logo]`)).toHaveAttribute('data-channel-logo', k)
-  await expect(g.locator('[data-id=builtin-purchase-request] [data-channel-logo]')).toHaveCount(2)
-  await expect(g.locator('[data-id=builtin-chatbot] [data-channel-logo]')).toHaveCount(0)
+  await expect(g.locator('[data-channel-logo]')).toHaveCount(0)  // the owner chose names without channel logos on cards
   // a channel template opens with the Human node on that channel, not yet connected
   await g.locator('[data-id=builtin-social-post] button').first().click()
   await expect(page).toHaveURL(/\/workflows\/[^/]+$/); await expect(page.locator('.react-flow__node')).toHaveCount(7)

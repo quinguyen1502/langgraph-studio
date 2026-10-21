@@ -61,12 +61,13 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
     if t == "llm":
         def fn(state):
             cred = None
-            if d.get("credential_id"):
+            if d.get("credential_id") and not ports.mock_models:
                 if resolve is None: raise LLMError("Node uses a credential but no resolver is available")
                 cred = resolve(d["credential_id"])
             report = (lambda u: usage(node["id"], u)) if usage else None
             tokens = token_stream(node["id"])
-            try: return {d["output_field"]: call_llm(render(d.get("prompt", ""), state), d.get("model", "gpt-4o-mini"), cred, report, tokens)}
+            try: return {d["output_field"]: call_llm(render(d.get("prompt", ""), state), d.get("model", "gpt-4o-mini"), cred, report, tokens,
+                                                     mock=ports.mock_models)}
             finally:
                 if tokens: tokens.flush()
     elif t == "human":
@@ -94,7 +95,7 @@ def node_fn(node: Dict[str, Any], resolve: Optional[Resolver] = None, usage: Opt
             if ports.mcp_call is None: raise RuntimeError("MCP nodes need the MCP service")
             return {d["output_field"]: ports.mcp_call(d["server_id"], d["tool"], render_args(d.get("arguments") or {}, state))}
     elif t == "decision":
-        fn = decisions.node_fn(node, resolve, usage)
+        fn = decisions.node_fn(node, resolve, usage, offline=ports.mock_models)
     elif t == "foreach":
         fn = foreach.node_fn(node)
     elif t == "email":

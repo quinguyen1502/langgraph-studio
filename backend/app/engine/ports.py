@@ -20,3 +20,5 @@ class Ports:
     email_quota: Optional[EmailQuota] = None
     cancelled: Optional[Cancelled] = None
     code_audit: Optional[CodeAudit] = None
+    test: bool = False         # a workflow test run (TASK-0067, DEC-0044): Send email nodes do a dry run
+    mock_models: bool = False  # a test run with the offline mock model: LLM and Decision nodes never call a provider

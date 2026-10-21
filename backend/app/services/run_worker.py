@@ -43,6 +43,7 @@ class RunWorker:
             else:
                 plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {}})
                 plan.run_id, plan.source, plan.checkpointing, plan.fence, plan.attempt = rid, job.get("source", "api"), True, gen, attempt
+            svc.apply_test(plan, job.get("test"))  # a workflow test run (TASK-0067)
             async def send(ev): return True                       # nobody streams; history + webhook carry the result
             async def listen(): await asyncio.Event().wait()      # cancel arrives through the RunBus
             status = await svc.execute(plan, send, listen, job["owner"])
@@ -51,7 +52,7 @@ class RunWorker:
                             source=job.get("source", "api"), fence=gen)
             except StaleLease: return "fenced"
             status = "error"
-            await svc.settled(rid)  # execute() did not run: the error result still goes to the callback
+            await svc.settled(rid, job.get("source"))  # execute() did not run: the error result still goes to the callback
         return status  # execute() queued the callback_url webhook (RunService.settled); a fenced worker leaves it to the new owner
 
     async def resume_job(self, svc: RunService, job: dict) -> Optional[str]:
@@ -64,6 +65,7 @@ class RunWorker:
         gen = svc.runs.claim(rid, ("waiting",))
         if gen is None: return None
         plan.fence, plan.checkpointing, plan.resumed_by = gen, True, job.get("by")
+        svc.apply_test(plan, job.get("test"))
         async def send(ev): return True
         async def listen(): await asyncio.Event().wait()
         return await svc.execute(plan, send, listen, owner)  # settles -> callback_url (RunService.settled)

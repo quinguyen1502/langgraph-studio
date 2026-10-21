@@ -66,8 +66,9 @@ def mock(body: Dict[str, Any]) -> Dict[str, Any]:
     return {"model": "jev-mock", "answers": answers, "usage": {"input_tokens": estimate_tokens(str(body)), "output_tokens": 0}}
 
 
-def ask(body: Dict[str, Any], cred: Optional[Dict[str, Any]], report: Callable[[Dict[str, Any]], None]) -> Dict[str, Any]:
-    if cred is None and (key := os.environ.get("TYPESAFE_API_KEY")):
+def ask(body: Dict[str, Any], cred: Optional[Dict[str, Any]], report: Callable[[Dict[str, Any]], None], offline: bool = False) -> Dict[str, Any]:
+    if offline: cred = None  # test run with the offline mock (TASK-0067)
+    elif cred is None and (key := os.environ.get("TYPESAFE_API_KEY")):
         cred = {"provider": "typesafe", "api_key": key, "base_url": os.environ.get("TYPESAFE_BASE_URL")}
     if cred is None:
         data = mock(body); u = data["usage"]
@@ -80,16 +81,16 @@ def ask(body: Dict[str, Any], cred: Optional[Dict[str, Any]], report: Callable[[
     return data
 
 
-def node_fn(node: Dict[str, Any], resolve=None, usage=None) -> Callable[[dict], dict]:
+def node_fn(node: Dict[str, Any], resolve=None, usage=None, offline: bool = False) -> Callable[[dict], dict]:
     nid, d = node["id"], node.get("data") or {}
 
     def fn(state):
         cred = None
-        if d.get("credential_id"):
+        if d.get("credential_id") and not offline:
             if resolve is None: raise providers.LLMError("Node uses a credential but no resolver is available")
             cred = resolve(d["credential_id"])
         body = build(d, state)
-        data = ask(body, cred, (lambda u: usage(nid, u)) if usage else (lambda u: None))
+        data = ask(body, cred, (lambda u: usage(nid, u)) if usage else (lambda u: None), offline)
         answers = data["answers"]; out: Dict[str, Any] = {}
         for q in questions_of(d):
             a = answers.get(q["id"])

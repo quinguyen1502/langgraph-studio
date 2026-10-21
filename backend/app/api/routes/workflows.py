@@ -23,7 +23,7 @@ def dup_wf(wid: str, user=Depends(current_user), svc=Depends(workflow_service)):
 def del_wf(wid: str, force: bool = Query(False), user=Depends(current_user), svc=Depends(workflow_service)): return svc.delete(wid, user["id"], force)
 
 @router.get("/workflows/{wid}/runs")
-def runs(wid: str, user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"])
+def runs(wid: str, tests: bool = Query(False), user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"], tests)
 
 @router.post("/validate", dependencies=[Depends(limit_body)])
 def validate_wf(body: WorkflowIn, user=Depends(current_user), svc=Depends(workflow_service)): return {"errors": svc.validate(body.as_dict(), user["id"])}

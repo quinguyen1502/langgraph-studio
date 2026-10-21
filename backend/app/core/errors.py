@@ -59,6 +59,13 @@ CATALOG: dict[str, tuple[int, str]] = {
     "SCHEDULE_NOT_FOUND": (404, "Schedule not found"),
     "SCHEDULE_CRON_INVALID": (400, "Schedule: {reason}"),
     "SCHEDULE_LIMIT": (400, "A workflow can have at most {max} schedules"),
+    # workflow tests (TASK-0067)
+    "TEST_NOT_FOUND": (404, "Test case not found"),
+    "TEST_CASE_INVALID": (400, "Test case: {reason}"),
+    "TEST_CASES_LIMIT": (400, "A workflow can have at most {max} test cases"),
+    "TEST_SUITE_NOT_FOUND": (404, "Test run not found"),
+    "TEST_SUITE_RUNNING": (409, "The tests of this workflow are already running"),
+    "TEST_NOT_SUPPORTED": (400, "Imported LangGraph workflows cannot have tests"),
     "RUN_EXPIRED": (410, "This run waited too long for a response and expired"),
     "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
     "NOTIFICATION_NOT_FOUND": (404, "Notification not found"),

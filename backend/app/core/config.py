@@ -159,6 +159,8 @@ def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5
 def code_pids() -> int: return max(16, _int("STUDIO_CODE_PIDS", 64))
 def code_max_seconds() -> int: return max(1, _int("STUDIO_CODE_MAX_SECONDS", 30))  # per call, also caps the node timeout
 def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))  # containers at once per process
+def test_cases_max() -> int: return max(1, _int("STUDIO_TEST_CASES_MAX", 50))  # test cases per workflow (TASK-0067)
+def test_parallel() -> int: return max(1, _int("STUDIO_TEST_PARALLEL", 4))     # test runs of one suite at a time (TASK-0067)
 def code_test_per_minute() -> int: return max(1, _int("STUDIO_CODE_TEST_PER_MINUTE", 20))  # Test with sample state, per user
 CODE_DEFAULT_PACKAGES = ["pydantic", "python-dateutil"]  # what docker/studio-code adds to the standard library
 def code_packages() -> list[str]:

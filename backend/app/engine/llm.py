@@ -39,13 +39,14 @@ class TokenBuffer:
 
 
 def call_llm(prompt: str, model: str, cred: Optional[Dict[str, Any]] = None, on_usage=None,
-             on_token: Optional[Callable[[str], None]] = None) -> str:
+             on_token: Optional[Callable[[str], None]] = None, mock: bool = False) -> str:
     """cred: decrypted credential {provider, base_url, api_key, headers}. Without cred falls back to env OPENAI_API_KEY, then mock.
     on_usage(usage): optional callback with the token usage record (engine/usage.make_usage).
-    on_token(delta): optional callback with text deltas as the model streams them (TASK-0030); the return value is unchanged."""
+    on_token(delta): optional callback with text deltas as the model streams them (TASK-0030); the return value is unchanged.
+    mock: always the offline mock, whatever the credential (test runs with the mock option, TASK-0067)."""
     report = on_usage or (lambda u: None)
-    if cred is None:
-        key = os.environ.get("OPENAI_API_KEY")
+    if cred is None or mock:
+        key = None if mock else os.environ.get("OPENAI_API_KEY")
         if not key:
             out = mock_llm(prompt, model)
             if on_token:  # the mock streams word by word so the live trace works offline too

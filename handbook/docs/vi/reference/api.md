@@ -74,7 +74,7 @@ WS /ws/run
 ??? abstract "Runs"
 
     ```text
-    GET    /api/workflows/{wid}/runs
+    GET    /api/workflows/{wid}/runs          (?tests=true: các run test)
     GET    /api/runs/pending
     POST   /api/runs/{run_id}/cancel
     WS     /ws/run
@@ -95,6 +95,15 @@ WS /ws/run
     GET    /api/workflows/{wid}/schedules       POST   /api/workflows/{wid}/schedules
     PATCH  /api/workflows/{wid}/schedules/{sid} DELETE /api/workflows/{wid}/schedules/{sid}
     POST   /api/schedules/preview
+    ```
+
+??? abstract "Kiểm thử workflow"
+
+    ```text
+    GET    /api/workflows/{wid}/tests          POST   /api/workflows/{wid}/tests
+    PUT    /api/workflows/{wid}/tests/{tid}    DELETE /api/workflows/{wid}/tests/{tid}
+    POST   /api/workflows/{wid}/tests/run      GET    /api/workflows/{wid}/tests/runs/{sid}
+    POST   /api/workflows/{wid}/tests/runs/{sid}/cancel
     ```
 
 ??? abstract "Mẫu"

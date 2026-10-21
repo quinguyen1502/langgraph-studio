@@ -4,18 +4,21 @@
 
 - Project: superstep
 - Requirement ID: REQ-0040
-- Status: Accepted
+- Status: Implemented (TASK-0063 PR #83, TASK-0064 PR #84)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-20
-- Updated: 2026-10-20
+- Updated: 2026-10-21
 - Source: owner request in chat, 2026-10-20. The owner asked for more templates in the library and for the logos of
   Slack, Telegram and the other platforms, so the channels are easy to recognise. The owner accepted the proposal as
   written: brand colours, 8 templates, requirement and tasks before code.
+- Changed 2026-10-21 (owner, in chat on PR #84): the first set had five templates that differed only in the channel.
+  They are replaced by the real processes below, one per channel where it fits.
+- Changed 2026-10-21 (owner, before merging PR #84): no channel logos on template cards.
 
 ## Summary
 
-- Add 8 built-in templates. Five show approval through one channel each; three show multi-level approval, support
-  escalation and batch processing.
+- Add 8 built-in templates for real business processes. Six of them ask for approval, each on the channel that suits
+  it, so together they cover all five channels; the other two show support escalation and batch processing.
 - Show each approval channel's logo, in its brand colours, wherever the UI names a channel.
 
 ## Problem Or Opportunity
@@ -31,16 +34,16 @@
 
 - **Templates.** Eight new built-in templates in `backend/app/engine/templates.py`:
 
-  | ID | Name | Graph |
-  | --- | --- | --- |
-  | `builtin-approval-slack` | Approve in Slack | Draft (LLM) → Human, channel `slack` → Condition → Polish (LLM) or End |
-  | `builtin-approval-telegram` | Approve in Telegram | Same, channel `telegram` |
-  | `builtin-approval-whatsapp` | Approve in WhatsApp | Same, channel `whatsapp` |
-  | `builtin-approval-email` | Approve by e-mail | Draft → Human, channel `email` → Condition → Send email with the result |
-  | `builtin-approval-teams` | Approve in Microsoft Teams | Same as Slack, channel `teams` |
-  | `builtin-approval-multilevel` | Two-level approval | Draft → Human (team lead, Slack) → Condition → Human (manager, e-mail) → Condition → End |
-  | `builtin-support-escalation` | Support with escalation | Retriever → LLM answer → Decision (confident?) → End, or Human review → End |
-  | `builtin-batch` | Batch processing | For each over a list → LLM summary per item → joined result → End |
+  | ID | Name | Process | Channel |
+  | --- | --- | --- | --- |
+  | `builtin-refund-approval` | Refund approval | LLM summarises the request → finance approves → e-mail the confirmation, or draft and e-mail a polite decline | Slack |
+  | `builtin-leave-request` | Leave request | LLM reads dates and reason → manager approves → e-mail the employee, cc HR | Microsoft Teams |
+  | `builtin-social-post` | Social post review | LLM writes a post from a brief → editor approves, or replies with notes and the post is rewritten | Telegram |
+  | `builtin-large-order` | Large order check | Decision node rates the order → risky orders wait for a sales manager → confirm or cancel | WhatsApp |
+  | `builtin-expense-claim` | Expense claim | LLM checks the claim against a policy → approver confirms by e-mail link → e-mail the employee | E-mail |
+  | `builtin-purchase-request` | Purchase request | Team lead approves, then finance approves → e-mail the requester | Slack, then e-mail |
+  | `builtin-support-escalation` | Support with escalation | Retriever → LLM answer → Decision (sure?) → End, or a support agent reviews | Studio |
+  | `builtin-feedback-digest` | Customer feedback digest | For each piece of feedback, LLM labels it → report → e-mail the team | None |
 
   - The final labels, prompts and positions are set in the task. The table fixes the intent and the node types.
 - **Channels in templates.** A template stores only the channel **kind** (`data.approval.channel`). It stores no
@@ -52,7 +55,7 @@
   - Settings → My accounts: each linked account;
   - the Human node's approval channel select;
   - the Audit log: platform filter and rows;
-  - template gallery cards: the logos of the channels the template uses.
+  - not on template gallery cards. The owner removed them on 2026-10-21: the card shows the name only.
 - **Decision.** A new decision record that allows official brand colours for these logos as the one exception to
   DEC-0008 rule 3 (no hard-coded colours). `docs/ui-conventions.md` and its colour check are updated to match.
 - **Docs.** The handbook (en, vi) lists the new templates and shows the logos in the updated screenshots.
@@ -88,8 +91,7 @@
 ## Desired Behavior
 
 - **New workflow** shows 12 built-in templates: the 4 existing ones first, then the 8 new ones.
-- A card for a template with an approval channel shows that channel's logo, or the logos of all its channels.
-- Creating a workflow from a channel template opens a graph where the Human node already names the channel kind.
+- Creating a workflow from a template with a channel opens a graph where the Human node already names the channel kind.
   Running it without a connection waits at the Human node and can be approved in the studio.
 - After connecting a channel and setting a target, the same workflow sends the request to that channel.
 - Settings → Channels, My accounts, the Human node select and the Audit log show the logo next to each channel name.
@@ -118,18 +120,16 @@
 
 - The 8 templates are listed, are well formed, pass the validator, and run in mock mode up to their first Human node
   (or to the end, for the batch template).
-- Each channel template stores the channel kind and no `channel_id`, `target` or `approvers`.
+- Each template with an approval channel stores the channel kind and no `channel_id`, `target` or `approvers`.
 - Built-in template names and descriptions show in en and vi, for all 12.
 - The logo appears in the 5 places listed in scope, for all 5 channel kinds, in light and dark themes.
 - The decision record exists, and `docs/ui-conventions.md` and its colour check allow brand colours only in the logo
   file.
-- Backend tests cover the new templates. Unit or e2e tests cover the logo component and the gallery card logos.
+- Backend tests cover the new templates. Unit or e2e tests cover the logo component.
 - The handbook's template and channel pages (en, vi) are updated, and both builds pass.
 
 ## Edge Cases
 
-- A template with two channels (two-level approval) shows both logos once each.
-- A saved or imported template with a Human node on a channel shows the logo too, since it is read from the graph.
 - An unknown channel kind, for example from an older file, shows a generic icon and its raw name.
 - Teams needs no target, so a run of the Teams template with no Teams connection adds a `not_configured` entry
   (`CHANNEL_NOT_FOUND`) to the Audit log. This is existing behaviour and is expected.

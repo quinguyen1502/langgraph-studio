@@ -45,10 +45,14 @@ def test_builtins_are_well_formed():
         assert all("knowledge base" in e for e in validate(b["workflow"]))  # only "pick your KB" may remain
 
 
-NEW = ["builtin-approval-slack", "builtin-approval-telegram", "builtin-approval-whatsapp", "builtin-approval-email", "builtin-approval-teams",
-       "builtin-approval-multilevel", "builtin-support-escalation", "builtin-batch"]
-FIRST_HUMAN = {**{i: "ask" for i in NEW[:5]}, "builtin-approval-multilevel": "lead"}
-INPUTS = {"message": "Where is my order?", "requester": "ann@example.com", "items": ["Release 1.0: new editor", "Release 1.1: faster runs"]}
+NEW = ["builtin-refund-approval", "builtin-leave-request", "builtin-social-post", "builtin-large-order", "builtin-expense-claim",
+       "builtin-purchase-request", "builtin-support-escalation", "builtin-feedback-digest"]
+FIRST_HUMAN = {"builtin-refund-approval": "finance", "builtin-leave-request": "manager", "builtin-social-post": "editor",
+               "builtin-large-order": "manager", "builtin-expense-claim": "approver", "builtin-purchase-request": "lead"}
+INPUTS = {"request": "Refund order 1042, $80, the parcel arrived broken.", "message": "I'd like leave from 3 to 5 March for a family event.",
+          "brief": "Launch of our new dark mode", "order": "Order 77: 40 laptops, new customer, delivery to a new address",
+          "claim": "Hotel $180 x 2 nights, meals $40", "customer_email": "ann@example.com", "employee_email": "bo@example.com",
+          "requester_email": "cy@example.com", "feedback": ["Love the new editor", "Runs are slow on Mondays", "Please add a Discord channel"]}
 
 
 def test_builtin_order_and_channel_kinds():
@@ -56,11 +60,11 @@ def test_builtin_order_and_channel_kinds():
     assert [b["id"] for b in T.BUILTINS] == ["builtin-chatbot", "builtin-rag", "builtin-approval", "builtin-router", *NEW]
     kinds = {b["id"]: [n["data"]["approval"] for n in b["workflow"]["nodes"] if n["type"] == "human" and "approval" in n["data"]] for b in T.BUILTINS}
     assert {i: [a["channel"] for a in v] for i, v in kinds.items() if v} == {
-        "builtin-approval-slack": ["slack"], "builtin-approval-telegram": ["telegram"], "builtin-approval-whatsapp": ["whatsapp"],
-        "builtin-approval-email": ["email"], "builtin-approval-teams": ["teams"], "builtin-approval-multilevel": ["slack", "email"]}
+        "builtin-refund-approval": ["slack"], "builtin-leave-request": ["teams"], "builtin-social-post": ["telegram"],
+        "builtin-large-order": ["whatsapp"], "builtin-expense-claim": ["email"], "builtin-purchase-request": ["slack", "email"]}
     assert all(list(a) == ["channel"] for v in kinds.values() for a in v)
     ts = {t["id"]: t["channels"] for t in c.get("/api/templates", headers=H(register().token)).json()["data"]}
-    assert ts["builtin-approval-multilevel"] == ["slack", "email"] and ts["builtin-approval-teams"] == ["teams"] and ts["builtin-chatbot"] == []
+    assert ts["builtin-purchase-request"] == ["slack", "email"] and ts["builtin-leave-request"] == ["teams"] and ts["builtin-chatbot"] == []
 
 
 @pytest.mark.parametrize("tid", [i for i in NEW if i != "builtin-support-escalation"])  # that one needs a knowledge base, like builtin-rag
@@ -71,18 +75,18 @@ def test_new_builtins_run_offline(tid, monkeypatch):
     evs = list(run_stream(wf, {k: v for k, v in INPUTS.items() if any(f["name"] == k for f in wf["state"])}))
     assert not [e for e in evs if e["type"] == "error"]
     if tid in FIRST_HUMAN: assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == FIRST_HUMAN[tid]
-    else: assert evs[-1]["type"] == "run_finished" and len(evs[-1]["state"]["summaries"]) == 2 and evs[-1]["state"]["digest"]
+    else: assert evs[-1]["type"] == "run_finished" and len(evs[-1]["state"]["labelled"]) == 3 and evs[-1]["state"]["report"] and evs[-1]["state"]["sent"]
 
 
 def test_channel_template_waits_in_the_studio_without_a_connection():
     """A workflow made from a channel template keeps the kind and, with no connection yet, waits to be approved in the studio."""
-    u = register(); wid = c.post("/api/templates/builtin-approval-slack/use", headers=H(u.token), json={}).json()["data"]["id"]
+    u = register(); wid = c.post("/api/templates/builtin-refund-approval/use", headers=H(u.token), json={}).json()["data"]["id"]
     wf = c.get(f"/api/workflows/{wid}", headers=H(u.token)).json()["data"]
-    assert next(n for n in wf["nodes"] if n["id"] == "ask")["data"]["approval"] == {"channel": "slack"}
+    assert next(n for n in wf["nodes"] if n["id"] == "finance")["data"]["approval"] == {"channel": "slack"}
     with c.websocket_connect(f"/ws/run?token={u.token}") as ws:
-        ws.send_json({"workflow_id": wid, "input": {"message": "hi"}}); evs = []
+        ws.send_json({"workflow_id": wid, "input": {"request": "Refund order 1042", "customer_email": "ann@example.com"}}); evs = []
         while not evs or evs[-1]["type"] not in ("run_finished", "run_waiting", "error"): evs.append(ws.receive_json())
-    assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == "ask"
+    assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == "finance"
 
 
 def test_sanitize_keeps_only_the_channel_kind():

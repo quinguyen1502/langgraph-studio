@@ -165,4 +165,4 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates).
 
 - TASK-0063 Channel logos in brand colours (Channels, My accounts, Human node select, Audit log, connection items), DEC-0042: **merged** (PR #83, REV-0057, QA-0057).
-- TASK-0064 Eight built-in templates (five channel approvals, two-level approval, support escalation, batch), built-in names in en and vi, logos on gallery cards: **in review** (REV-0058, QA-0058).
+- TASK-0064 Eight built-in templates for real processes (refund, leave, social post, large order, expense claim, purchase request, support escalation, feedback digest), built-in names in en and vi, logos on gallery cards: **in review** (REV-0058, QA-0058).

@@ -1219,37 +1219,37 @@
         "name": "Định tuyến",
         "description": "Phân loại yêu cầu rồi chuyển tới nhánh chuyên trách."
       },
-      "builtin-approval-slack": {
-        "name": "Duyệt qua Slack",
-        "description": "Soạn câu trả lời và xin duyệt bằng nút Approve / Reject trong Slack."
+      "builtin-refund-approval": {
+        "name": "Duyệt hoàn tiền",
+        "description": "Bộ phận tài chính duyệt yêu cầu hoàn tiền trên Slack; khách hàng nhận e-mail dù kết quả thế nào."
       },
-      "builtin-approval-telegram": {
-        "name": "Duyệt qua Telegram",
-        "description": "Soạn câu trả lời và xin duyệt bằng nút Approve / Reject trong Telegram."
+      "builtin-leave-request": {
+        "name": "Đơn nghỉ phép",
+        "description": "Quản lý duyệt đơn nghỉ phép trên Microsoft Teams; nhân viên và HR nhận kết quả qua e-mail."
       },
-      "builtin-approval-whatsapp": {
-        "name": "Duyệt qua WhatsApp",
-        "description": "Soạn câu trả lời và xin duyệt bằng nút trả lời trong WhatsApp."
+      "builtin-social-post": {
+        "name": "Duyệt bài đăng mạng xã hội",
+        "description": "Biên tập viên duyệt bài trên Telegram, hoặc gửi lại kèm góp ý để viết lại."
       },
-      "builtin-approval-email": {
-        "name": "Duyệt qua e-mail",
-        "description": "Xin duyệt qua e-mail, rồi gửi e-mail báo kết quả cho người yêu cầu."
+      "builtin-large-order": {
+        "name": "Kiểm tra đơn hàng lớn",
+        "description": "Đơn hàng có rủi ro chờ quản lý bán hàng xác nhận trên WhatsApp; các đơn khác đi thẳng."
       },
-      "builtin-approval-teams": {
-        "name": "Duyệt qua Microsoft Teams",
-        "description": "Soạn câu trả lời và xin duyệt bằng Adaptive Card trong Microsoft Teams."
+      "builtin-expense-claim": {
+        "name": "Duyệt chi phí công tác",
+        "description": "Kiểm tra chi phí công tác theo chính sách, duyệt qua e-mail, rồi báo cho nhân viên."
       },
-      "builtin-approval-multilevel": {
-        "name": "Duyệt hai cấp",
-        "description": "Trưởng nhóm duyệt trên Slack, sau đó quản lý duyệt qua e-mail."
+      "builtin-purchase-request": {
+        "name": "Đề nghị mua sắm",
+        "description": "Trưởng nhóm duyệt trên Slack, sau đó tài chính duyệt qua e-mail; người đề nghị nhận kết quả."
       },
       "builtin-support-escalation": {
         "name": "Hỗ trợ có chuyển cấp",
-        "description": "Trả lời từ kho tri thức; câu trả lời chưa chắc chắn được chuyển cho người xem lại."
+        "description": "Trả lời từ kho tri thức; nhân viên hỗ trợ xem lại các câu trả lời chưa chắc chắn."
       },
-      "builtin-batch": {
-        "name": "Xử lý hàng loạt",
-        "description": "Tóm tắt từng mục trong danh sách, rồi gộp các bản tóm tắt lại."
+      "builtin-feedback-digest": {
+        "name": "Tổng hợp phản hồi khách hàng",
+        "description": "Gắn nhãn từng phản hồi, viết báo cáo và gửi e-mail cho team."
       }
     }
   },

@@ -23,16 +23,16 @@ mẫu có sẵn hiện theo ngôn ngữ giao diện.
 | **Hỏi đáp RAG** | Tìm các đoạn liên quan trong kho tri thức rồi trả lời dựa trên đó. |
 | **Quy trình duyệt** | Soạn câu trả lời, nhờ người duyệt trong studio, rồi chỉnh lại hoặc dừng. |
 | **Định tuyến** | Phân loại yêu cầu rồi chuyển tới nhánh chuyên trách. |
-| **Duyệt qua Slack** | Quy trình duyệt, với nút Approve / Reject trong Slack. |
-| **Duyệt qua Telegram** | Như trên, với nút trong Telegram. |
-| **Duyệt qua WhatsApp** | Như trên, với nút trả lời trong WhatsApp. |
-| **Duyệt qua e-mail** | Xin duyệt qua e-mail, rồi node Send email gửi kết quả cho người yêu cầu. |
-| **Duyệt qua Microsoft Teams** | Như trên, với Adaptive Card trong Teams. |
-| **Duyệt hai cấp** | Trưởng nhóm duyệt trên Slack, sau đó quản lý duyệt qua e-mail. |
-| **Hỗ trợ có chuyển cấp** | Trả lời từ kho tri thức; node Decision chuyển câu trả lời chưa chắc chắn cho người xem lại. |
-| **Xử lý hàng loạt** | Vòng For each tóm tắt từng mục trong danh sách, rồi một LLM gộp các bản tóm tắt. |
+| **Duyệt hoàn tiền** | Tài chính duyệt hoàn tiền trên Slack. Khách nhận e-mail xác nhận, hoặc thư từ chối lịch sự do LLM soạn. |
+| **Đơn nghỉ phép** | Quản lý duyệt đơn nghỉ trên Microsoft Teams. Nhân viên nhận kết quả qua e-mail, HR được cc. |
+| **Duyệt bài đăng mạng xã hội** | Biên tập viên duyệt bài trên Telegram, hoặc trả lời kèm góp ý để bài được viết lại và gửi duyệt lại. |
+| **Kiểm tra đơn hàng lớn** | Node Decision đánh giá từng đơn. Đơn có rủi ro chờ quản lý bán hàng xác nhận trên WhatsApp; đơn khác đi thẳng. |
+| **Duyệt chi phí công tác** | LLM đối chiếu khoản chi với chính sách công tác, người duyệt trả lời qua link e-mail, rồi nhân viên được báo kết quả. |
+| **Đề nghị mua sắm** | Trưởng nhóm duyệt trên Slack, sau đó tài chính duyệt qua e-mail. Người đề nghị luôn nhận kết quả. |
+| **Hỗ trợ có chuyển cấp** | Trả lời từ kho tri thức; node Decision chuyển câu trả lời chưa chắc chắn cho nhân viên hỗ trợ trong studio. |
+| **Tổng hợp phản hồi khách hàng** | Vòng For each gắn nhãn từng phản hồi, rồi LLM viết báo cáo và gửi e-mail cho team. |
 
-Mẫu theo kênh chỉ ghi loại kênh. Sau khi tạo, chọn kết nối, người nhận và
+Mẫu có kênh duyệt chỉ ghi loại kênh. Sau khi tạo, chọn kết nối, người nhận và
 người duyệt trên node Human (xem [Kênh duyệt](../operate/channels.md)). Trước
 đó, run sẽ dừng chờ ở node Human và có thể duyệt ngay trong studio. **Hỏi đáp
 RAG** và **Hỗ trợ có chuyển cấp** cần một kho tri thức trước khi chạy.

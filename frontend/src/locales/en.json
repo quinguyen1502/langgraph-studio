@@ -1219,37 +1219,37 @@
         "name": "Router",
         "description": "Classify the request and route it to a specialised branch."
       },
-      "builtin-approval-slack": {
-        "name": "Approve in Slack",
-        "description": "Draft a reply and ask for approval with Approve / Reject buttons in Slack."
+      "builtin-refund-approval": {
+        "name": "Refund approval",
+        "description": "Finance approves a customer's refund in Slack; the customer gets an e-mail either way."
       },
-      "builtin-approval-telegram": {
-        "name": "Approve in Telegram",
-        "description": "Draft a reply and ask for approval with Approve / Reject buttons in Telegram."
+      "builtin-leave-request": {
+        "name": "Leave request",
+        "description": "A manager approves time off in Microsoft Teams; the employee and HR get the answer by e-mail."
       },
-      "builtin-approval-whatsapp": {
-        "name": "Approve in WhatsApp",
-        "description": "Draft a reply and ask for approval with reply buttons in WhatsApp."
+      "builtin-social-post": {
+        "name": "Social post review",
+        "description": "An editor approves a post in Telegram, or sends it back with notes to rewrite."
       },
-      "builtin-approval-email": {
-        "name": "Approve by e-mail",
-        "description": "Ask for approval by e-mail, then e-mail the requester the result."
+      "builtin-large-order": {
+        "name": "Large order check",
+        "description": "Risky orders wait for a sales manager in WhatsApp; the others go straight through."
       },
-      "builtin-approval-teams": {
-        "name": "Approve in Microsoft Teams",
-        "description": "Draft a reply and ask for approval with an Adaptive Card in Microsoft Teams."
+      "builtin-expense-claim": {
+        "name": "Expense claim",
+        "description": "Check a travel expense against the policy, approve it by e-mail, then tell the employee."
       },
-      "builtin-approval-multilevel": {
-        "name": "Two-level approval",
-        "description": "A team lead approves in Slack, then a manager approves by e-mail."
+      "builtin-purchase-request": {
+        "name": "Purchase request",
+        "description": "A team lead approves in Slack, then finance approves by e-mail; the requester hears back."
       },
       "builtin-support-escalation": {
         "name": "Support with escalation",
-        "description": "Answer from a knowledge base; a person reviews the answers that are unsure."
+        "description": "Answer from a knowledge base; a support agent reviews the answers that are unsure."
       },
-      "builtin-batch": {
-        "name": "Batch processing",
-        "description": "Summarise each item of a list, then combine the summaries."
+      "builtin-feedback-digest": {
+        "name": "Customer feedback digest",
+        "description": "Label each piece of feedback, write a report and e-mail it to the team."
       }
     }
   },

@@ -21,9 +21,10 @@ log = get_logger("worker")
 
 class RunWorker:
     def __init__(self, jobs: JobQueue, services: Callable[[], RunService], deliveries: Optional[Callable[[], object]] = None,
-                 schedules: Optional[Callable[[], object]] = None):
+                 schedules: Optional[Callable[[], object]] = None, approvals: Optional[Callable[[], object]] = None):
         self.jobs, self.services, self.deliveries = jobs, services, deliveries  # deliveries: -> DeliveryService
         self.schedules = schedules  # -> ScheduleService (TASK-0046): due cron schedules start runs from maintain()
+        self.approvals = approvals  # -> ApprovalService (TASK-0066): Human node reminders and deadlines from maintain()
         self._tasks: list[asyncio.Task] = []; self._stop = False
 
     async def run_job(self, job: dict) -> Optional[str]:
@@ -106,6 +107,9 @@ class RunWorker:
             if self.schedules is not None:
                 try: await asyncio.to_thread(self.schedules().fire_due)
                 except Exception: log.exception("firing schedules failed")
+            if self.approvals is not None:
+                try: await asyncio.to_thread(self.approvals().fire_deadlines)
+                except Exception: log.exception("firing approval deadlines failed")
             if time.time() - last_reap >= config.job_reap_every():
                 last_reap = time.time(); await self.reap()
             await asyncio.sleep(min(1.0, config.job_reap_every()))

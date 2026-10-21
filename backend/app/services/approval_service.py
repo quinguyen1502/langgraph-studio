@@ -11,6 +11,7 @@ from typing import Callable, Optional
 from ..core import config, crypto
 from ..core.errors import AppError
 from ..core.logging import get_logger
+from ..engine import deadlines
 from ..models import ApprovalAudit, ApprovalRequest, ApprovalWait
 from ..repositories import ApprovalRepository, RunRepository, UserRepository, WorkflowRepository
 from .approval_channels import ApprovalChannel, ApprovalMessage
@@ -19,14 +20,16 @@ from .channel_service import ChannelService
 
 log = get_logger("approvals")
 DECISIONS = {"a": "approved", "r": "rejected"}
+CLOSE_TEXTS = ("answered", "cancelled", "expired", "deadline_approved", "deadline_rejected")  # chat texts close_run edits messages to
 PROMPT_MAX = 4000  # characters of the question kept on a waiting step (the inbox shows it)
 BACKGROUND = True  # send/edit messages off the request thread; tests switch it off for determinism
 
 
 class ApprovalService:
     def __init__(self, repo: ApprovalRepository, users: UserRepository, workflows: WorkflowRepository, runs: RunRepository, channels: ChannelService,
-                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None, limiter=None):
+                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None, limiter=None, notifier=None):
         self.repo, self.users, self.workflows, self.runs, self.channels, self.enqueue = repo, users, workflows, runs, channels, enqueue
+        self.notifier = notifier  # NotificationService (optional): deadline reminders and escalations (TASK-0066)
         self.limiter = limiter  # RateLimiter for the public callbacks (None = no limit)
         self.adapters = channels.adapters
         self.background = BACKGROUND if background is None else background
@@ -75,21 +78,26 @@ class ApprovalService:
         target = str(cfg.get("target") or "").strip()
         kind = cfg.get("channel"); needs_target = self.adapters[kind].target_required if kind in self.adapters else True
         external = bool(cfg.get("channel_id") or kind) and not (needs_target and not target)
-        self._wait(rid, owner, wid, ev, cfg, external)
+        w = self._wait(rid, owner, wid, ev, cfg, external, (node or {}).get("data") or {})
         if not external: return  # this node does not use an external channel
-        job = lambda: self._request(rid, owner, wid, node, cfg, target, ev)  # noqa: E731
+        job = lambda: self._request(rid, owner, wid, node, cfg, target, ev, w.due_at)  # noqa: E731
         threading.Thread(target=job, daemon=True).start() if self.background else job()
 
     def _approver_ids(self, cfg: dict) -> list[str]:
         """The node's approvers (e-mails) as studio user ids; unknown addresses are dropped."""
         return [u.id for e in cfg.get("approvers") or [] if isinstance(e, str) and (u := self.users.get_by_email(e.strip().lower()))]
 
-    def _wait(self, rid, owner, wid, ev, cfg, external: bool) -> None:
-        """The waiting step the Approvals inbox lists (TASK-0065), written for every Human node, channel or not."""
+    def _wait(self, rid, owner, wid, ev, cfg, external: bool, data: dict) -> ApprovalWait:
+        """The waiting step the Approvals inbox lists (TASK-0065), written for every Human node, channel or not, with the
+        node's deadline from the run's own workflow snapshot (TASK-0066)."""
         kind = (cfg.get("channel") or ((ch := self.repo.channel(str(cfg["channel_id"]))) and ch.kind) or None) if external else None
-        self.repo.add_wait(ApprovalWait(id=uuid.uuid4().hex[:12], run_id=rid, node_id=str(ev.get("node") or ""), owner=owner, workflow_id=wid,
-                                        label=ev.get("label") or None, prompt=(ev.get("prompt") or "")[:PROMPT_MAX] or None, channel=kind,
-                                        status="waiting", created=time.time()), self._approver_ids(cfg))
+        now = time.time(); dl = deadlines.parse(data)
+        return self.repo.add_wait(ApprovalWait(
+            id=uuid.uuid4().hex[:12], run_id=rid, node_id=str(ev.get("node") or ""), owner=owner, workflow_id=wid, label=ev.get("label") or None,
+            prompt=(ev.get("prompt") or "")[:PROMPT_MAX] or None, channel=kind, status="waiting", created=now,
+            approval=json.dumps(cfg) if external else None, deadline=json.dumps(dl) if dl else None, reminders=0,
+            due_at=now + dl["after"] if dl else None, next_remind_at=now + dl["remind_every"] if dl and dl["remind_every"] else None),
+            self._approver_ids(cfg))
 
     def may_answer(self, uid: str, w: ApprovalWait) -> bool:
         return uid == w.owner or uid in self.repo.wait_approvers(w.id)
@@ -99,7 +107,8 @@ class ApprovalService:
         paused before waiting steps existed (no row at all)."""
         return self.repo.close_wait(rid, "answered") or self.repo.latest_wait(rid) is None
 
-    def _request(self, rid, owner, wid, node, cfg, target, ev) -> Optional[ApprovalRequest]:
+    def _request(self, rid, owner, wid, node, cfg, target, ev, due: Optional[float] = None) -> Optional[ApprovalRequest]:
+        """Send one approval message. Its buttons expire after STUDIO_APPROVAL_TTL, or at the step's deadline if sooner."""
         if self.channels.org_denied(owner, cfg):  # admin policy (TASK-0029)
             self._audit(owner, cfg.get("channel") or "channel", "not_configured", code="ORG_RESOURCE_NOT_ALLOWED", run_id=rid, wid=wid); return None
         c = self.channels.for_node(owner, cfg)
@@ -110,7 +119,7 @@ class ApprovalService:
         approvers = self._approver_ids(cfg)
         r = self.repo.add_request(ApprovalRequest(id=uuid.uuid4().hex[:12], run_id=rid, node_id=node["id"], owner=owner, workflow_id=wid, channel_id=c.id,
                                                   kind=kind, target=target, approvers=json.dumps(approvers), nonce=pysecrets.token_hex(8),
-                                                  expires=time.time() + config.approval_ttl(), status="pending", created=time.time()))
+                                                  expires=min(time.time() + config.approval_ttl(), due or float("inf")), status="pending", created=time.time()))
         w = self.workflows.get(wid) if wid else None; lang = self._lang(owner)
         lines = [w and text(lang, "workflow", v=w.name), text(lang, "step", v=ev.get("label") or node["id"]), ev.get("prompt") and text(lang, "question", v=ev["prompt"]),
                  text(lang, "run", v=rid), text(lang, "expires", v=time.strftime("%Y-%m-%d %H:%M UTC", time.gmtime(r.expires)))]
@@ -276,17 +285,81 @@ class ApprovalService:
 
     def close_run(self, rid: str, reason: str) -> int:
         """Mark open requests of the run superseded/expired now (compare-and-set, so a late button press is refused) and
-        edit their messages in the background. reason: answered | cancelled | expired | finished. The waiting step closes too."""
+        edit their messages in the background. reason: answered | cancelled | expired | finished | deadline_approved |
+        deadline_rejected. The waiting step closes too."""
         self.repo.close_wait(rid, reason)
+        return self._close_requests(rid, "expired" if reason == "expired" else "superseded", reason if reason in CLOSE_TEXTS else "finished")
+
+    def _close_requests(self, rid: str, action: str, key: str) -> int:
+        """Close the run's pending channel requests and edit their messages to `key` (a chat text)."""
         closed = []
         for r in self.repo.requests_for_run(rid, "pending"):
-            action = "expired" if reason == "expired" else "superseded"
             if self.repo.decide(r.id, action): closed.append(r); self._audit(r.owner, r.kind, action, r)
         if closed:
-            key = reason if reason in ("answered", "cancelled", "expired") else "finished"
             def edit():
                 for r in closed:
                     c = self.repo.channel(r.channel_id)
                     if c is not None and r.kind in self.adapters: self._update(self.adapters[r.kind], self._secrets(c), r, text(self._lang(r.owner), key))
             threading.Thread(target=edit, daemon=True).start() if self.background else edit()
         return len(closed)
+
+    # ---- deadlines (TASK-0066): fired by the worker's maintenance loop ----
+    def fire_deadlines(self, now: Optional[float] = None) -> int:
+        """Send due reminders and act on due deadlines. Each one is claimed with a compare-and-set, so it fires once with
+        several workers and after a restart (a deadline missed during downtime fires on the first sweep). Returns how many fired."""
+        now = time.time() if now is None else now; fired = 0
+        for w in self.repo.due_waits(now):
+            try:
+                if w.due_at is not None and w.due_at <= now: fired += self._timeout(w, now)
+                elif w.next_remind_at is not None and w.next_remind_at <= now: fired += self._remind(w, now)
+            except Exception: log.exception("deadline of run %s failed", w.run_id)
+        return fired
+
+    def _remind(self, w: ApprovalWait, now: float) -> int:
+        dl = json.loads(w.deadline or "{}"); every = dl.get("remind_every"); count = (w.reminders or 0) + 1
+        nxt = now + every if every and count < deadlines.MAX_REMINDERS and now + every < (w.due_at or float("inf")) else None
+        if not self.repo.claim_reminder(w.id, w.next_remind_at, nxt, count): return 0
+        self._audit(w.owner, w.channel or "studio", "reminded", run_id=w.run_id, wid=w.workflow_id)
+        self._reach(w, "run_reminder", [w.owner, *self.repo.wait_approvers(w.id)], "reminded")
+        return 1
+
+    def _timeout(self, w: ApprovalWait, now: float) -> int:
+        dl = json.loads(w.deadline or "{}"); action = dl.get("on_timeout") or "reject"
+        kind = w.channel or "studio"; skipped: list[str] = []
+        def log_skipped():  # only by the sweep that won the step, so two sweeps do not log twice
+            for e in skipped: self._audit(w.owner, kind, "escalation_skipped", run_id=w.run_id, wid=w.workflow_id, external=e)
+        if action == "escalate" and w.escalated_at is None:
+            ids = []
+            for e in dl.get("escalate_to") or []:
+                u = self.users.get_by_email(e)
+                if u is not None: ids.append(u.id)
+                else: skipped.append(e)
+            if ids:
+                every = dl.get("remind_every")
+                if not self.repo.escalate_wait(w.id, w.due_at, now + dl["after"], now + every if every else None, ids, now): return 0
+                log_skipped(); self._audit(w.owner, kind, "escalated", run_id=w.run_id, wid=w.workflow_id)
+                self._reach(w, "run_escalated", ids, "escalated", extra=dl.get("escalate_to") or [], due=now + dl["after"])
+                return 1
+        response = deadlines.RESPONSES.get(action, "rejected")  # a second deadline after an escalation rejects
+        if not self.repo.close_wait(w.run_id, "deadline", w.id): return 0  # this step only: the run may wait at a later one by now
+        log_skipped()
+        self.close_run(w.run_id, f"deadline_{response}")
+        self._audit(w.owner, kind, "timed_out", run_id=w.run_id, wid=w.workflow_id)
+        if self.enqueue: self.enqueue({"kind": "resume", "run_id": w.run_id, "owner": w.owner, "response": response, "workflow_id": w.workflow_id,
+                                       "by": {"channel": "deadline", "on_timeout": action}})
+        return 1
+
+    def _reach(self, w: ApprovalWait, kind: str, uids: list[str], key: str, extra: list[str] = (), due: Optional[float] = None) -> None:
+        """A reminder or an escalation: a notification to `uids` and, on a channel node, a new request message that
+        replaces the open one (its buttons stop working)."""
+        ev = {"node": w.node_id, "label": w.label, "prompt": w.prompt}
+        if self.notifier is not None:
+            for uid in dict.fromkeys(uids):
+                try: self.notifier.run_event(kind, uid, w.run_id, w.workflow_id, ev, link="/approvals")
+                except Exception: log.exception("deadline notification for run %s failed", w.run_id)
+        if not w.approval: return
+        cfg = json.loads(w.approval); cfg = {**cfg, "approvers": [*(cfg.get("approvers") or []), *extra]}
+        def send():
+            self._close_requests(w.run_id, "superseded", key)
+            self._request(w.run_id, w.owner, w.workflow_id, {"id": w.node_id}, cfg, str(cfg.get("target") or "").strip(), ev, due or w.due_at)
+        threading.Thread(target=send, daemon=True).start() if self.background else send()

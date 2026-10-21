@@ -636,7 +636,9 @@
     "unread_other": "{{count}} unread notifications",
     "run_waiting": "{{workflow}} is waiting for you: {{label}}",
     "run_expired": "A waiting run of {{workflow}} expired",
-    "unknownWorkflow": "A workflow"
+    "unknownWorkflow": "A workflow",
+    "run_reminder": "{{workflow}} is still waiting for you: {{label}}",
+    "run_escalated": "{{workflow}} was handed to you: {{label}}"
   },
   "notifyPrefs": {
     "open": "Notification settings",
@@ -718,7 +720,11 @@
       "expired": "Expired",
       "send_failed": "Send failed",
       "not_configured": "Not configured",
-      "answered": "Answered"
+      "answered": "Answered",
+      "reminded": "Reminded",
+      "escalated": "Escalated",
+      "escalation_skipped": "Escalation skipped",
+      "timed_out": "Timed out"
     },
     "node": {
       "title": "Approval channel",
@@ -1494,6 +1500,29 @@
     "since": "Waiting since {{when}}",
     "openRun": "Open run",
     "open": "Open approvals",
-    "sent": "Answer sent. The run continues."
+    "sent": "Answer sent. The run continues.",
+    "due": "Due {{when}}",
+    "overdue": "Overdue"
+  },
+  "deadline": {
+    "title": "Deadline",
+    "off": "Off: the step waits until someone answers, or until the run's wait limit.",
+    "after": "Wait at most",
+    "unit": "Unit",
+    "units": {
+      "m": "minutes",
+      "h": "hours",
+      "d": "days"
+    },
+    "remindEvery": "Remind every",
+    "remindHelp": "Leave empty for no reminders. At most 5, on the channel and in the bell.",
+    "onTimeout": "When time runs out",
+    "actions": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "escalate": "Hand to other approvers"
+    },
+    "escalateTo": "Hand to (e-mails)",
+    "escalateHelp": "They become approvers and get the same time again. With no answer then, the step is rejected."
   }
 }

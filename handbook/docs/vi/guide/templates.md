@@ -37,6 +37,11 @@ người duyệt trên node Human (xem [Kênh duyệt](../operate/channels.md)).
 đó, run sẽ dừng chờ ở node Human và có thể duyệt ngay trong studio. **Hỏi đáp
 RAG** và **Hỗ trợ có chuyển cấp** cần một kho tri thức trước khi chạy.
 
+Mỗi node Human có kênh duyệt còn có [hạn chờ](../run/human-approval.md#han-cho)
+phù hợp với quy trình, ví dụ đơn nghỉ phép chờ 2 ngày, nhắc mỗi ngày, rồi từ chối.
+Duyệt bài đăng mạng xã hội sẽ tự duyệt nếu biên tập viên không trả lời trong một
+ngày. Bạn có thể đổi hoặc tắt hạn chờ trên node.
+
 ## Lưu thành mẫu
 
 **⋯ → Lưu thành mẫu** chép **phiên bản đã lưu gần nhất** của workflow (muốn có
@@ -46,7 +51,7 @@ tổ chức cần quyền `org.manage`.
 Mẫu không bao giờ mang theo credential, kho tri thức, máy chủ MCP, kết nối kênh
 duyệt, người nhận hay người duyệt, liên kết subgraph, header hay API key. Các
 field đó được để trống, sau khi tạo bạn tự chọn lại. Node Human chỉ giữ loại kênh
-mà nó dùng.
+mà nó dùng, và hạn chờ của nó (không kèm địa chỉ chuyển tiếp).
 
 ## Xuất và nhập
 

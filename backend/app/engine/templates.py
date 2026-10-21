@@ -22,6 +22,8 @@ def sanitize(wf: dict) -> dict:
             if f in d: d[f] = ""
         if isinstance(d.get("approval"), dict):  # a Human node keeps only the channel kind, not the connection, target or approvers (TASK-0064)
             d["approval"] = {"channel": d["approval"]["channel"]} if d["approval"].get("channel") else {}
+        if isinstance(d.get("deadline"), dict):  # the timing stays, the escalation addresses go, like approvers (TASK-0066)
+            d["deadline"] = {k: v for k, v in d["deadline"].items() if k != "escalate_to"}
         out["nodes"].append({"id": n["id"], "type": n["type"], "position": n.get("position") or {"x": 0, "y": 0}, "data": d})
     for e in wf.get("edges") or []:
         out["edges"].append({k: e[k] for k in ("id", "source", "target", "label", "conditional", "sourceHandle") if k in e and e[k] not in (None, "")})
@@ -106,9 +108,11 @@ def _s(*fields: str) -> list[dict]:
     return out
 
 
-def _ask(i, x, y, label, prompt, field, kind=None):
-    """A Human node. A channel template stores only the kind; the user picks the connection, target and approvers."""
-    return _n(i, "human", x, y, label=label, prompt=prompt, output_field=field, **({"approval": {"channel": kind}} if kind else {}))
+def _ask(i, x, y, label, prompt, field, kind=None, due=None):
+    """A Human node. A channel template stores only the kind; the user picks the connection, target and approvers.
+    due: (after, remind_every, on_timeout), the node's deadline (TASK-0066)."""
+    return _n(i, "human", x, y, label=label, prompt=prompt, output_field=field, **({"approval": {"channel": kind}} if kind else {}),
+              **({"deadline": dict(zip(("after", "remind_every", "on_timeout"), due))} if due else {}))
 
 
 def _llm(i, x, y, label, prompt, field): return _n(i, "llm", x, y, label=label, model="gpt-4o-mini", output_field=field, prompt=prompt)
@@ -125,7 +129,7 @@ BUILTINS += [
         "state": _s("request", "customer_email", "summary", "decision", "decline", "sent:object"),
         "nodes": [_n("start", "start", 40, 200, label="Start"),
                   _llm("summarize", 260, 200, "Summarise the request", "Summarise this refund request: order number, amount and reason.\n{{state.request}}", "summary"),
-                  _ask("finance", 500, 200, "Finance approval", "Approve this refund?\n{{state.summary}}", "decision", "slack"),
+                  _ask("finance", 500, 200, "Finance approval", "Approve this refund?\n{{state.summary}}", "decision", "slack", due=("1d", "4h", "reject")),
                   _route("route", 740, 200, "Approved?", "decision"),
                   _mail("confirm", 980, 80, "E-mail the confirmation", "{{state.customer_email}}", "Your refund is approved",
                         "Good news: your refund is approved.\n\n{{state.summary}}", output_field="sent"),
@@ -139,7 +143,7 @@ BUILTINS += [
         "state": _s("message", "employee_email", "details", "decision", "sent:object"),
         "nodes": [_n("start", "start", 40, 180, label="Start"),
                   _llm("extract", 260, 180, "Read the request", "List the dates, the number of days and the reason in this leave request:\n{{state.message}}", "details"),
-                  _ask("manager", 500, 180, "Manager approval", "Approve this leave?\n{{state.details}}", "decision", "teams"),
+                  _ask("manager", 500, 180, "Manager approval", "Approve this leave?\n{{state.details}}", "decision", "teams", due=("2d", "1d", "reject")),
                   _mail("notify", 740, 180, "E-mail the employee and HR", "{{state.employee_email}}", "Your leave request: {{state.decision}}",
                         "Your leave request was {{state.decision}}.\n\n{{state.details}}", cc="hr@example.com", output_field="sent"),
                   _n("end", "end", 980, 180, label="End")],
@@ -148,7 +152,7 @@ BUILTINS += [
         "state": _s("brief", "post", "decision", "final"),
         "nodes": [_n("start", "start", 40, 200, label="Start"),
                   _llm("write", 260, 200, "Write the post", "Write a short social media post from this brief:\n{{state.brief}}", "post"),
-                  _ask("editor", 500, 200, "Editor review", "Approve this post, or reply with what to change.\n{{state.post}}", "decision", "telegram"),
+                  _ask("editor", 500, 200, "Editor review", "Approve this post, or reply with what to change.\n{{state.post}}", "decision", "telegram", due=("1d", "4h", "approve")),
                   _route("route", 740, 200, "Approved?", "decision"),
                   _llm("finish", 980, 80, "Add hashtags", "Add two or three fitting hashtags to this post:\n{{state.post}}", "final"),
                   _llm("rewrite", 740, 380, "Rewrite with the notes", "Rewrite this post.\nNotes: {{state.decision}}\nPost: {{state.post}}", "post"),
@@ -162,7 +166,7 @@ BUILTINS += [
                      questions=[_choice("risk", "Does this order need a manager's check before it is processed?",
                                         ("review", "Unusual amount, a new customer or a changed delivery address"), ("auto", "A normal order"))]),
                   _route("risky", 500, 200, "Needs a check?", "risk", "review"),
-                  _ask("manager", 740, 320, "Sales manager check", "Confirm this order?\n{{state.order}}", "decision", "whatsapp"),
+                  _ask("manager", 740, 320, "Sales manager check", "Confirm this order?\n{{state.order}}", "decision", "whatsapp", due=("4h", "1h", "reject")),
                   _route("route", 980, 320, "Confirmed?", "decision"),
                   _llm("confirm", 1220, 80, "Confirm to the customer", "Write a short order confirmation for:\n{{state.order}}", "reply"),
                   _llm("cancel", 1220, 440, "Explain the cancellation", "Write a short, polite message cancelling this order:\n{{state.order}}", "reply"),
@@ -174,7 +178,7 @@ BUILTINS += [
         "state": _s("claim", "employee_email", "check", "decision", "sent:object"),
         "nodes": [_n("start", "start", 40, 180, label="Start"),
                   _llm("check", 260, 180, "Check against the policy", "Check this expense claim against a policy of hotels up to $150 a night and meals up to $50 a day. List anything over the limit.\n{{state.claim}}", "check"),
-                  _ask("approver", 500, 180, "Approve by e-mail", "Approve this expense claim?\n{{state.claim}}\n\nPolicy check: {{state.check}}", "decision", "email"),
+                  _ask("approver", 500, 180, "Approve by e-mail", "Approve this expense claim?\n{{state.claim}}\n\nPolicy check: {{state.check}}", "decision", "email", due=("3d", "1d", "reject")),
                   _mail("notify", 740, 180, "E-mail the employee", "{{state.employee_email}}", "Your expense claim: {{state.decision}}",
                         "Your expense claim was {{state.decision}}.\n\n{{state.check}}", output_field="sent"),
                   _n("end", "end", 980, 180, label="End")],
@@ -183,9 +187,9 @@ BUILTINS += [
         "state": _s("request", "requester_email", "summary", "lead_decision", "decision", "sent:object"),
         "nodes": [_n("start", "start", 40, 220, label="Start"),
                   _llm("summarize", 260, 220, "Summarise the request", "Summarise this purchase request: item, cost, supplier and why it is needed.\n{{state.request}}", "summary"),
-                  _ask("lead", 500, 220, "Team lead approval", "Approve this purchase?\n{{state.summary}}", "lead_decision", "slack"),
+                  _ask("lead", 500, 220, "Team lead approval", "Approve this purchase?\n{{state.summary}}", "lead_decision", "slack", due=("2d", "1d", "reject")),
                   _route("lead_ok", 740, 220, "Lead approved?", "lead_decision"),
-                  _ask("finance", 980, 100, "Finance approval", "The team lead approved this purchase. Approve the budget?\n{{state.summary}}", "decision", "email"),
+                  _ask("finance", 980, 100, "Finance approval", "The team lead approved this purchase. Approve the budget?\n{{state.summary}}", "decision", "email", due=("3d", "1d", "reject")),
                   _route("finance_ok", 1220, 100, "Finance approved?", "decision"),
                   _mail("approved_mail", 1460, 0, "E-mail: approved", "{{state.requester_email}}", "Purchase approved", "Your purchase request is approved.\n\n{{state.summary}}", output_field="sent"),
                   _mail("rejected_mail", 1460, 340, "E-mail: not approved", "{{state.requester_email}}", "Purchase not approved", "Your purchase request was not approved.\n\n{{state.summary}}", output_field="sent"),

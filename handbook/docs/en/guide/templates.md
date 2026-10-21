@@ -37,6 +37,11 @@ connection, the target and the approvers on the Human node (see
 Human node and can be answered in the studio. **RAG Q&A** and **Support with
 escalation** need a knowledge base before they run.
 
+Each Human node on a channel also has a [deadline](../run/human-approval.md#deadlines)
+that suits the process, for example 2 days with a daily reminder for the leave
+request, then rejected. Social post review approves the post when the editor
+says nothing within a day. Change or turn them off on the node.
+
 ## Save a template
 
 **⋯ → Save as template** copies the **last saved version** of the workflow
@@ -46,7 +51,7 @@ sees it. Organisation scope needs `org.manage`.
 Templates never carry credentials, knowledge bases, MCP servers, approval
 connections, targets or approvers, subgraph links, headers or API keys. Those
 fields are emptied, so pick your own after creating. A Human node keeps only
-the kind of channel it uses.
+the kind of channel it uses, and its deadline without the hand-over addresses.
 
 ## Export and import
 

@@ -132,20 +132,47 @@ class ApprovalRepository:
     def wait_approvers(self, wid: str) -> list[str]:
         with self.db.session() as s: return list(s.scalars(select(ApprovalWaitApprover.user_id).where(ApprovalWaitApprover.wait_id == wid)))
 
-    def close_wait(self, rid: str, outcome: str) -> bool:
-        """Compare-and-set the run's open step waiting -> closed. Exactly one caller wins."""
+    def close_wait(self, rid: str, outcome: str, wid: Optional[str] = None) -> bool:
+        """Compare-and-set the run's open step waiting -> closed. Exactly one caller wins. wid: only that step (a deadline
+        must not close a later step of the same run)."""
         with self.db.session() as s:
-            n = s.execute(update(ApprovalWait).where(ApprovalWait.run_id == rid, ApprovalWait.status == "waiting")
+            q = update(ApprovalWait).where(ApprovalWait.run_id == rid, ApprovalWait.status == "waiting")
+            n = s.execute((q.where(ApprovalWait.id == wid) if wid else q)
                           .values(status="closed", outcome=outcome, closed_at=time.time())).rowcount
             s.commit(); return n == 1
 
+    def due_waits(self, now: float, limit: int = 200) -> list[ApprovalWait]:
+        """Open steps of waiting runs whose deadline or next reminder has come (TASK-0066)."""
+        with self.db.session() as s:
+            q = (select(ApprovalWait).join(Run, Run.id == ApprovalWait.run_id)
+                 .where(ApprovalWait.status == "waiting", Run.status == "waiting", or_(ApprovalWait.due_at <= now, ApprovalWait.next_remind_at <= now)))
+            return list(s.scalars(q.order_by(ApprovalWait.created).limit(limit)))
+
+    def claim_reminder(self, wid: str, expected: float, nxt: Optional[float], count: int) -> bool:
+        """Compare-and-set on the step's next reminder time: one sweep sends it, however many workers run."""
+        with self.db.session() as s:
+            n = s.execute(update(ApprovalWait).where(ApprovalWait.id == wid, ApprovalWait.status == "waiting", ApprovalWait.next_remind_at == expected)
+                          .values(next_remind_at=nxt, reminders=count)).rowcount
+            s.commit(); return n == 1
+
+    def escalate_wait(self, wid: str, expected_due: float, due: float, nxt: Optional[float], approvers: list[str], now: float) -> bool:
+        """Compare-and-set the one escalation of a step, adding the new approvers in the same transaction."""
+        with self.db.session() as s:
+            n = s.execute(update(ApprovalWait).where(ApprovalWait.id == wid, ApprovalWait.status == "waiting", ApprovalWait.escalated_at.is_(None),
+                                                     ApprovalWait.due_at == expected_due)
+                          .values(escalated_at=now, due_at=due, next_remind_at=nxt, reminders=0)).rowcount
+            if n == 1:
+                have = set(s.scalars(select(ApprovalWaitApprover.user_id).where(ApprovalWaitApprover.wait_id == wid)))
+                s.add_all(ApprovalWaitApprover(wait_id=wid, user_id=u) for u in dict.fromkeys(approvers) if u not in have)
+            s.commit(); return n == 1
+
     def inbox(self, uid: str, limit: int = 200) -> list[ApprovalWait]:
-        """Open steps of runs still waiting that the user owns or may answer, longest waiting first."""
+        """Open steps of runs still waiting that the user owns or may answer: nearest deadline first, then the longest waiting."""
         with self.db.session() as s:
             mine = select(ApprovalWaitApprover.wait_id).where(ApprovalWaitApprover.user_id == uid)
             q = (select(ApprovalWait).join(Run, Run.id == ApprovalWait.run_id)
                  .where(ApprovalWait.status == "waiting", Run.status == "waiting", or_(ApprovalWait.owner == uid, ApprovalWait.id.in_(mine))))
-            return list(s.scalars(q.order_by(ApprovalWait.created).limit(limit)))
+            return list(s.scalars(q.order_by(ApprovalWait.due_at.is_(None), ApprovalWait.due_at, ApprovalWait.created).limit(limit)))
 
     # ---- audit ----
     def audit(self, e: ApprovalAudit) -> None:

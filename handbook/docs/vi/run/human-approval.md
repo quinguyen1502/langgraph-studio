@@ -48,6 +48,40 @@ WS   /ws/run   {"resume_run_id": "…", "response": "approved"}
 POST /api/runs/{id}/cancel
 ```
 
+## Hạn chờ
+
+Node Human có thể có **Hạn chờ** (công tắc dưới phần kênh duyệt). Nếu không đặt,
+bước này chờ đến khi có người trả lời hoặc đến `STUDIO_WAIT_TTL`.
+
+![Cài đặt hạn chờ trên node Human](../images/human-deadline.png)
+
+| Cài đặt | Tác dụng |
+| --- | --- |
+| **Chờ tối đa** | Bước này chờ bao lâu, tính bằng phút, giờ hoặc ngày. |
+| **Nhắc lại mỗi** | Không bắt buộc. Gửi lời nhắc theo chu kỳ này, tối đa 5 lần. |
+| **Khi hết hạn** | **Từ chối** hoặc **Duyệt**: run đi tiếp như thể đã có câu trả lời đó. **Chuyển cho người duyệt khác**: xem bên dưới. |
+| **Chuyển cho** | E-mail của người dùng studio, dùng với **Chuyển cho người duyệt khác**. |
+
+- **Lời nhắc** đến chủ run và người duyệt dưới dạng thông báo (chuông, và
+  e-mail nếu họ bật). Với node có kênh duyệt, lời nhắc còn là một tin nhắn mới
+  có nút mới; tin nhắn cũ ghi là đã nhắc lại, và nút của nó ngừng hoạt động.
+- **Từ chối** và **Duyệt** khi hết hạn đi theo các nhánh bình thường của node.
+  Trace của run (`run_resumed`, `by: {"channel": "deadline"}`) và Audit log
+  (**Hết hạn chờ**) ghi rõ là do hạn chờ, không phải do người trả lời.
+- **Chuyển cho người duyệt khác** chỉ xảy ra một lần. Những người được ghi tên trở
+  thành người duyệt, nhận yêu cầu trên kênh và trong trang **Phê duyệt** của họ,
+  và có thêm một khoảng thời gian như trên. Nếu vẫn không ai trả lời, bước này bị
+  từ chối. Địa chỉ không có tài khoản studio sẽ bị bỏ qua và ghi vào log.
+- Nút trên chat hết hạn đúng hạn chờ nếu hạn chờ đến trước.
+- Hạn chờ phải ngắn hơn `STUDIO_WAIT_TTL` (gấp đôi nếu có chuyển tiếp); nếu không,
+  bước kiểm tra workflow sẽ báo lỗi.
+- Trang **Phê duyệt** hiện hạn của từng bước, hoặc **Quá hạn**, bước gần hạn nhất
+  lên đầu.
+
+Thời gian tính theo đồng hồ thực, không có giờ làm việc. Hạn chờ được kích hoạt từ
+vòng bảo trì của worker, mỗi mốc một lần, kể cả khi có nhiều worker hoặc sau khi
+khởi động lại. Hạn đã qua trong lúc server tắt sẽ được xử lý ngay khi server chạy lại.
+
 ## Thông báo
 
 Chuông liệt kê thông báo chưa đọc và nhận thông báo trực tiếp qua

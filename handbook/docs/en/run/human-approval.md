@@ -49,6 +49,42 @@ WS   /ws/run   {"resume_run_id": "…", "response": "approved"}
 POST /api/runs/{id}/cancel
 ```
 
+## Deadlines
+
+A Human node can have a **Deadline** (the switch under the approval channel).
+Without one, the step waits until someone answers or until `STUDIO_WAIT_TTL`.
+
+![Deadline settings on a Human node](../images/human-deadline.png)
+
+| Setting | What it does |
+| --- | --- |
+| **Wait at most** | How long the step waits, in minutes, hours or days. |
+| **Remind every** | Optional. Sends a reminder at this interval, at most 5 times. |
+| **When time runs out** | **Reject** or **Approve**: the run continues as if that answer was given. **Hand to other approvers**: see below. |
+| **Hand to** | E-mails of studio users, for **Hand to other approvers**. |
+
+- A **reminder** goes to the run owner and the approvers as a notification
+  (the bell, and e-mail if they turned it on). On a node with an approval
+  channel it is also a new message with new buttons; the old message says a
+  reminder was sent, and its buttons stop working.
+- **Reject** and **Approve** on timeout follow the node's normal branches. The
+  run trace (`run_resumed`, `by: {"channel": "deadline"}`) and the Audit log
+  (**Timed out**) say the deadline answered, not a person.
+- **Hand to other approvers** happens once. The listed people become approvers,
+  get the request in their channel and on their **Approvals** page, and have the
+  same time again. If nobody answers then, the step is rejected. Addresses with
+  no studio account are skipped and logged.
+- Chat buttons expire at the deadline when it comes first.
+- The deadline must be shorter than `STUDIO_WAIT_TTL` (twice the time with a
+  hand-over); the validator says so otherwise.
+- The **Approvals** page shows the due time of each step, or **Overdue**, with
+  the nearest deadline first.
+
+Durations are wall-clock time, with no business hours. Deadlines fire from the
+worker's maintenance loop, once each, also with several workers and after a
+restart. A deadline that passed while the server was down fires right after it
+starts.
+
 ## Notifications
 
 The bell lists unread notifications and receives them live on

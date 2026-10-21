@@ -370,6 +370,25 @@ def test_inbox_answer_closes_the_channel_request(c, api):
     assert run_row(c, owner, wid, rid)["final_state"]["decision"] == "rejected"
 
 
+def test_deadline_reminder_replaces_the_slack_message(c, api):
+    """TASK-0066: a reminder posts a new request and closes the old one; buttons expire at the deadline; a timeout edits it."""
+    owner, approver = user(c), user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
+    ch = connect(c, owner, "slack"); link(c, api, approver, "slack", ua)
+    wf = json.loads(json.dumps(APPROVAL)); wf["name"] = f"Leave {uuid.uuid4().hex[:4]}"
+    wf["nodes"][1]["data"].update(approval={"channel": "slack", "target": "C1", "approvers": [approver["email"]]},
+                                  deadline={"after": "2h", "remind_every": "1h", "on_timeout": "reject"})
+    wid = c.post("/api/workflows", json=wf, headers=H(owner["token"])).json()["data"]["id"]
+    rid = start_waiting(c, owner, wid); first = until(lambda: api.requests())[-1]["blocks"][1]["elements"][0]["value"]
+    svc = approval_service(); w = svc.repo.latest_wait(rid)
+    assert svc.repo.requests_for_run(rid)[0].expires == pytest.approx(w.due_at)  # sooner than STUDIO_APPROVAL_TTL (24 h)
+    assert svc.fire_deadlines(w.created + 3601) == 1
+    assert len(api.requests()) == 2 and any("Reminder sent" in b["text"] for b in api.named("chat.update"))
+    assert slack_post(c, ch["id"], press(first, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
+    assert svc.fire_deadlines(w.created + 7201) == 1
+    assert any("rejected by the deadline" in b["text"] for b in api.named("chat.update"))
+    assert until(lambda: run_row(c, owner, wid, rid)["status"] == "ok")
+
+
 def test_no_op_without_a_configured_channel(c, api):
     owner = user(c)
     wid = workflow(c, owner, {"channel": "slack", "target": "C1"}); rid = start_waiting(c, owner, wid)

@@ -93,9 +93,16 @@ class ApprovalWait(Base):
     prompt: Mapped[Optional[str]] = mapped_column(Text)   # the question, as rendered for this run
     channel: Mapped[Optional[str]] = mapped_column(Text)  # channel kind the node asks on (None = studio only)
     status: Mapped[str] = mapped_column(Text)             # waiting | closed
-    outcome: Mapped[Optional[str]] = mapped_column(Text)  # answered | cancelled | expired | error | timeout
+    outcome: Mapped[Optional[str]] = mapped_column(Text)  # answered | cancelled | expired | error | timeout | superseded | deadline
     created: Mapped[float] = mapped_column(Float)
     closed_at: Mapped[Optional[float]] = mapped_column(Float)
+    # deadlines (TASK-0066): read from the run's own workflow snapshot when the step starts waiting
+    approval: Mapped[Optional[str]] = mapped_column(Text)    # JSON: the node's data.approval (channel, target), for reminders
+    deadline: Mapped[Optional[str]] = mapped_column(Text)    # JSON: engine.deadlines.parse() (seconds)
+    due_at: Mapped[Optional[float]] = mapped_column(Float, index=True)
+    next_remind_at: Mapped[Optional[float]] = mapped_column(Float, index=True)
+    reminders: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    escalated_at: Mapped[Optional[float]] = mapped_column(Float)
 
 
 class ApprovalWaitApprover(Base):

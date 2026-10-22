@@ -27,6 +27,8 @@ test('process templates: 12 built-ins, names in the UI language (TASK-0064)', as
   await expect(page).toHaveURL(/\/workflows\/[^/]+$/); await expect(page.locator('.react-flow__node')).toHaveCount(7)
   await page.locator('.react-flow__node[data-id="editor"]').click()
   await expect(page.locator('#approval-not-connected')).toBeVisible()
+  await expect(page.locator('#approval-channel')).toContainText('chưa kết nối')  // translated, not the raw i18n key (TASK-0073)
+  await expect(page.locator('#approval-channel')).not.toContainText('approvals.')
   // English UI (a new account, so the admin's language stays Vietnamese for parallel specs)
   const email = `tpl${Date.now()}@example.com`; await page.request.post('/api/auth/register', { data: { email, password: 'secret12' } })
   await signIn(page, email, 'secret12'); await page.goto('/workflows')

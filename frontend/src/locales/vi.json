@@ -667,6 +667,7 @@
       "studio": "Studio"
     },
     "optional": "không bắt buộc",
+    "notConnected": "chưa kết nối",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
       "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",

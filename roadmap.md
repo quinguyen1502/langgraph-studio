@@ -166,6 +166,7 @@ REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates), I
 
 - TASK-0063 Channel logos in brand colours (Channels, My accounts, Human node select, Audit log, connection items), DEC-0042: **merged** (PR #83, REV-0057, QA-0057).
 - TASK-0064 Eight built-in templates for real processes (refund, leave, social post, large order, expense claim, purchase request, support escalation, feedback digest), built-in names in en and vi: **merged** (PR #84, REV-0058, QA-0058).
+- TASK-0073 Translate the "not connected" label on a Human node whose channel has no connection yet (owner report: the select showed `approvals.notConnected`): **merged** (PR #95, REV-0066, QA-0066).
 
 ## Approval deadlines and inbox
 

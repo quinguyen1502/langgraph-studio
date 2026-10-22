@@ -415,6 +415,10 @@
     "CHAT_TRIGGER_LIMIT": "A workflow can have at most {{max}} chat triggers",
     "CHAT_TRIGGER_CONFIG_INVALID": "Chat trigger: invalid {{field}}",
     "CHAT_TRIGGER_SCOPE_MISSING": "The Slack app lacks the scopes chat triggers need: {{scopes}}. Reinstall it with them",
+    "CHAT_IDENTITY_UNKNOWN": "Their {{kind}} account is not linked to Superstep",
+    "CHAT_IDENTITY_UNVERIFIED": "Their {{kind}} account is linked but not verified",
+    "CHAT_FORBIDDEN": "They may not run this workflow",
+    "CHAT_TRIGGER_OFF": "The chat trigger is off",
     "TEST_NOT_FOUND": "Test case not found",
     "TEST_CASE_INVALID": "Test case: {{reason}}",
     "TEST_CASES_LIMIT": "A workflow can have at most {{max}} test cases",
@@ -675,7 +679,7 @@
     "notConnected": "not connected",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
-      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
+      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. For chat triggers, also add app_mentions:read and im:history and turn on Event Subscriptions. Each workspace is its own connection.",
       "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL).",
       "whatsapp": "In a Meta app with the WhatsApp product, copy the access token, the phone number ID and the app secret, and choose a verify token. Then set the webhook in the Meta dashboard to the callback URL below with that verify token, and subscribe to \"messages\". Button messages only reach people who wrote to the number in the last 24 hours; outside that window, give an approved template with two quick-reply buttons (Approve, Reject).",
       "email": "Sends the request through the studio's SMTP settings (SMTP_HOST) with Approve / Reject links. Whoever answers signs in to the studio, so there is no account to link. Needs STUDIO_PUBLIC_URL.",
@@ -737,7 +741,9 @@
       "reminded": "Reminded",
       "escalated": "Escalated",
       "escalation_skipped": "Escalation skipped",
-      "timed_out": "Timed out"
+      "timed_out": "Timed out",
+      "chat_started": "Run from chat",
+      "chat_refused": "Chat run refused"
     },
     "node": {
       "title": "Approval channel",
@@ -792,7 +798,16 @@
     "unlinkTitle": "Unlink {{name}}?",
     "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again.",
     "whatsappWindow": "WhatsApp delivers the code only if you messaged the business number in the last 24 hours.",
-    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account."
+    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account.",
+    "chat": {
+      "eventsUrl": "Event Subscriptions Request URL (chat triggers)",
+      "help": {
+        "slack": "Chat triggers: turn on Event Subscriptions with this URL and subscribe the bot to app_mention and message.im. The app needs the scopes app_mentions:read and im:history.",
+        "telegram": "Chat triggers: press Register webhook again so the bot also receives messages. In groups, people write /command, or turn off the bot's privacy mode in @BotFather."
+      },
+      "missing": "Chat triggers need the scopes {{scopes}}: add them in the Slack app settings (or use Add to Slack), reinstall, then press Test.",
+      "unknown": "Press Test to check the scopes chat triggers need."
+    }
   },
   "settings": {
     "title": "Settings",
@@ -1392,6 +1407,53 @@
       "0 0 1 * *": "First day of the month",
       "custom": "Custom"
     }
+  },
+  "chatTriggers": {
+    "button": "Chat triggers",
+    "title": "Chat triggers",
+    "desc": "Start this workflow from a message to your Slack app or Telegram bot. Only people who linked their chat account in Superstep and may run this workflow can start it; runs use your credentials.",
+    "badge": "Chat",
+    "from": "Sent by {{sender}} · trigger {{trigger}}",
+    "empty": "No chat triggers yet.",
+    "add": "New chat trigger",
+    "edit": "Edit chat trigger",
+    "name": "Name",
+    "namePh": "Leave requests",
+    "connection": "Connection",
+    "where": "Listen in",
+    "dm": "Direct messages to the bot",
+    "aChannel": "A Slack channel",
+    "aGroup": "A Telegram group",
+    "inChannel": "channel {{place}}",
+    "inGroup": "group {{place}}",
+    "channelId": "Channel ID (channel details → About, starts with C)",
+    "groupId": "Group chat ID (starts with -)",
+    "command": "Command word",
+    "commandHint": "One word: letters, digits, - or _, up to 32 characters.",
+    "inputField": "Message text goes to",
+    "replyField": "Reply with",
+    "sample": "In {{where}}, people write:",
+    "bot": "bot",
+    "sampleText": "<text>",
+    "create": "Add chat trigger",
+    "save": "Save",
+    "enabledFor": "Turn chat trigger {{name}} on",
+    "editFor": "Edit chat trigger {{name}}",
+    "deleteFor": "Delete chat trigger {{name}}",
+    "deleteTitle": "Delete chat trigger {{name}}?",
+    "deleteBody": "Runs already started are kept.",
+    "last": "last message {{when}}",
+    "stopped": "Stopped",
+    "noConnection": "Connection removed",
+    "needConnection": "Connect a Slack app or a Telegram bot first.",
+    "openChannels": "Open Channels",
+    "missingScopes": "This Slack app lacks the scopes chat triggers need ({{scopes}}). Reinstall it, or save the trigger turned off.",
+    "notes": {
+      "access": "Stopped: its creator no longer manages this workflow.",
+      "channel": "Stopped: its connection was removed.",
+      "scopes": "Stopped: the Slack app lacks scopes."
+    },
+    "help": "The bot answers in the thread: when the run starts, then with the reply field, an error, or the step waiting for approval. Refusals (account not linked, no run right, too many runs) go to the sender only."
   },
   "approve": {
     "title": "Approval request",

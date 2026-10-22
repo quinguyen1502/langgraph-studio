@@ -11,8 +11,8 @@ import { api } from '@/lib/api'
 import i18n, { errorText } from '@/lib/i18n'
 
 type Audit = { id: string; at: number; kind: string; action: string; code: string | null; run_id: string | null; workflow_name: string | null; actor: string | null; external_id: string | null }
-const ACTIONS = ['requested', 'approved', 'rejected', 'answered', 'reminded', 'escalated', 'escalation_skipped', 'timed_out', 'denied', 'superseded', 'expired', 'send_failed', 'not_configured']
-const VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = { approved: 'default', rejected: 'destructive', denied: 'outline', send_failed: 'destructive' }
+const ACTIONS = ['requested', 'approved', 'rejected', 'answered', 'reminded', 'escalated', 'escalation_skipped', 'timed_out', 'denied', 'superseded', 'expired', 'send_failed', 'not_configured', 'chat_started', 'chat_refused']
+const VARIANT: Record<string, 'default' | 'secondary' | 'destructive' | 'outline'> = { approved: 'default', rejected: 'destructive', denied: 'outline', send_failed: 'destructive', chat_refused: 'outline' }
 
 export function AuditSection() {
   const { t } = useTranslation(); const [items, setItems] = useState<Audit[] | null>(null); const [err, setErr] = useState('')

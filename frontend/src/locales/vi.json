@@ -415,6 +415,10 @@
     "CHAT_TRIGGER_LIMIT": "Một workflow có tối đa {{max}} chat trigger",
     "CHAT_TRIGGER_CONFIG_INVALID": "Chat trigger: {{field}} không hợp lệ",
     "CHAT_TRIGGER_SCOPE_MISSING": "App Slack thiếu quyền mà chat trigger cần: {{scopes}}. Hãy cài lại app với các quyền này",
+    "CHAT_IDENTITY_UNKNOWN": "Tài khoản {{kind}} của họ chưa liên kết với Superstep",
+    "CHAT_IDENTITY_UNVERIFIED": "Tài khoản {{kind}} của họ đã liên kết nhưng chưa xác minh",
+    "CHAT_FORBIDDEN": "Họ không có quyền chạy workflow này",
+    "CHAT_TRIGGER_OFF": "Chat trigger đang tắt",
     "TEST_NOT_FOUND": "Không tìm thấy test case",
     "TEST_CASE_INVALID": "Test case: {{reason}}",
     "TEST_CASES_LIMIT": "Một workflow có tối đa {{max}} test case",
@@ -675,7 +679,7 @@
     "notConnected": "chưa kết nối",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
-      "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",
+      "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Để dùng chat trigger, thêm app_mentions:read và im:history rồi bật Event Subscriptions. Mỗi workspace là một kết nối riêng.",
       "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai).",
       "whatsapp": "Trong một Meta app có sản phẩm WhatsApp, sao chép access token, phone number ID và app secret, rồi tự chọn một verify token. Sau đó đặt webhook trong Meta dashboard là callback URL bên dưới với verify token đó, và đăng ký sự kiện \"messages\". Tin có nút chỉ tới được người đã nhắn cho số này trong 24 giờ qua; ngoài khung đó, hãy nhập một template đã duyệt có hai nút trả lời nhanh (Duyệt, Từ chối).",
       "email": "Gửi yêu cầu qua cấu hình SMTP của studio (SMTP_HOST) kèm link Duyệt / Từ chối. Người trả lời đăng nhập vào studio nên không cần liên kết tài khoản. Cần STUDIO_PUBLIC_URL.",
@@ -737,7 +741,9 @@
       "reminded": "Đã nhắc",
       "escalated": "Đã chuyển tiếp",
       "escalation_skipped": "Bỏ qua chuyển tiếp",
-      "timed_out": "Hết hạn chờ"
+      "timed_out": "Hết hạn chờ",
+      "chat_started": "Chạy từ chat",
+      "chat_refused": "Từ chối chạy từ chat"
     },
     "node": {
       "title": "Kênh phê duyệt",
@@ -792,7 +798,16 @@
     "unlinkTitle": "Huỷ liên kết {{name}}?",
     "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại.",
     "whatsappWindow": "WhatsApp chỉ gửi mã nếu bạn đã nhắn cho số doanh nghiệp trong 24 giờ qua.",
-    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ."
+    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ.",
+    "chat": {
+      "eventsUrl": "Request URL cho Event Subscriptions (chat trigger)",
+      "help": {
+        "slack": "Chat trigger: bật Event Subscriptions với URL này và đăng ký cho bot các sự kiện app_mention và message.im. App cần các quyền app_mentions:read và im:history.",
+        "telegram": "Chat trigger: bấm Đăng ký webhook lại để bot nhận cả tin nhắn. Trong nhóm, mọi người gõ /lệnh, hoặc tắt privacy mode của bot trong @BotFather."
+      },
+      "missing": "Chat trigger cần các quyền {{scopes}}: thêm chúng trong cài đặt Slack app (hoặc dùng Add to Slack), cài lại, rồi bấm Kiểm tra.",
+      "unknown": "Bấm Kiểm tra để xem app có đủ quyền cho chat trigger không."
+    }
   },
   "settings": {
     "title": "Cài đặt",
@@ -1392,6 +1407,53 @@
       "0 0 1 * *": "Ngày đầu tháng",
       "custom": "Tuỳ chỉnh"
     }
+  },
+  "chatTriggers": {
+    "button": "Chạy từ chat",
+    "title": "Chạy từ chat",
+    "desc": "Chạy workflow này bằng một tin nhắn gửi tới Slack app hoặc bot Telegram của bạn. Chỉ người đã liên kết tài khoản chat trong Superstep và có quyền chạy workflow mới chạy được; run dùng credential của bạn.",
+    "badge": "Chat",
+    "from": "Gửi bởi {{sender}} · trigger {{trigger}}",
+    "empty": "Chưa có chat trigger nào.",
+    "add": "Chat trigger mới",
+    "edit": "Sửa chat trigger",
+    "name": "Tên",
+    "namePh": "Đơn nghỉ phép",
+    "connection": "Kết nối",
+    "where": "Nghe ở",
+    "dm": "Tin nhắn riêng gửi bot",
+    "aChannel": "Một kênh Slack",
+    "aGroup": "Một nhóm Telegram",
+    "inChannel": "kênh {{place}}",
+    "inGroup": "nhóm {{place}}",
+    "channelId": "ID kênh (chi tiết kênh → About, bắt đầu bằng C)",
+    "groupId": "ID nhóm chat (bắt đầu bằng -)",
+    "command": "Từ lệnh",
+    "commandHint": "Một từ: chữ, số, - hoặc _, tối đa 32 ký tự.",
+    "inputField": "Nội dung tin nhắn vào",
+    "replyField": "Trả lời bằng",
+    "sample": "Ở {{where}}, mọi người gõ:",
+    "bot": "bot",
+    "sampleText": "<nội dung>",
+    "create": "Thêm chat trigger",
+    "save": "Lưu",
+    "enabledFor": "Bật chat trigger {{name}}",
+    "editFor": "Sửa chat trigger {{name}}",
+    "deleteFor": "Xoá chat trigger {{name}}",
+    "deleteTitle": "Xoá chat trigger {{name}}?",
+    "deleteBody": "Các run đã chạy vẫn được giữ.",
+    "last": "tin nhắn gần nhất {{when}}",
+    "stopped": "Đã dừng",
+    "noConnection": "Kết nối đã bị xoá",
+    "needConnection": "Hãy kết nối một Slack app hoặc bot Telegram trước.",
+    "openChannels": "Mở Kênh",
+    "missingScopes": "Slack app này thiếu quyền mà chat trigger cần ({{scopes}}). Hãy cài lại app, hoặc lưu trigger ở trạng thái tắt.",
+    "notes": {
+      "access": "Đã dừng: người tạo không còn quản lý workflow này.",
+      "channel": "Đã dừng: kết nối của nó đã bị xoá.",
+      "scopes": "Đã dừng: Slack app thiếu quyền."
+    },
+    "help": "Bot trả lời trong thread: khi run bắt đầu, rồi bằng field trả lời, một lỗi, hoặc bước đang chờ duyệt. Lời từ chối (chưa liên kết tài khoản, không có quyền chạy, chạy quá nhiều) chỉ người gửi thấy."
   },
   "approve": {
     "title": "Yêu cầu phê duyệt",

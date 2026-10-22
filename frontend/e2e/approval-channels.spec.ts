@@ -49,7 +49,7 @@ test('approval channels: org connection, verified account, Human node, request, 
   const card = slack.locator('[data-testid=channel-slack-org]')
   await expect(card).toContainText('••••oken'); await expect(card).toContainText('Acme')
   await expect(slack.getByTestId('status')).toHaveText('Đã kết nối'); await expect(slack).toContainText('Toàn tổ chức')
-  await expect(card.locator('input[readonly]')).toHaveValue(/\/api\/approvals\/callback\/slack$/)  // shared URL, routed by team_id
+  await expect(card.locator('input[readonly][id$="-shared"]')).toHaveValue(/\/api\/approvals\/callback\/slack$/)  // shared URL, routed by team_id
   await expect(card).toContainText('(2222)')  // workspace id read with auth.test
   const cid = await card.getAttribute('data-channel-id')
   await card.locator(`#ch-${cid}-test`).click(); await expect(card.getByRole('alert')).toContainText('Kết nối hoạt động (Workspace 2222)')

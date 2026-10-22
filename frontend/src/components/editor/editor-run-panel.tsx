@@ -14,6 +14,7 @@ import { useTranslation } from 'react-i18next'
 import { RunTrace } from '@/components/run-trace'
 import { fmtCost, fmtMs } from '@/lib/trace'
 import { Tip } from '@/components/tip'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { api } from '@/lib/api'
 import { EditorTestsPanel, TestCaseDialog, type TestCase } from './editor-tests-panel'
 import { EditorCodePanel } from './editor-code-panel'
@@ -70,6 +71,8 @@ export function EditorRunPanel() {
               <span className="flex w-28 shrink-0 items-center gap-1">
               {h.source === 'api' && <Badge variant="outline" data-testid="history-source">API</Badge>}
               {h.source === 'schedule' && <Badge variant="outline" data-testid="history-source">{t('schedules.badge')}</Badge>}
+              {h.source === 'chat' && <Tip tip={t('chatTriggers.from', { sender: h.chat?.sender ?? '?', trigger: h.chat?.trigger ?? '—' })}>
+                <Badge variant="outline" data-testid="history-source">{h.chat?.kind && <ChannelLogo kind={h.chat.kind} className="size-3" />}{t('chatTriggers.badge')}</Badge></Tip>}
               {h.source === 'test' && <Badge variant="outline" data-testid="history-source">{t('tests.badge')}</Badge>}
               {h.code_runtime === 'subprocess' && <Tip tip={t('code.runUnisolated')}><Badge variant="warning" data-testid="history-unisolated"><ShieldAlert className="size-3" /></Badge></Tip>}
               <Tip tip={h.version ? t('versions.runVersion', { n: h.version }) : t('versions.runUnsaved')}>

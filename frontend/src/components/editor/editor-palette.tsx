@@ -14,21 +14,21 @@ import { useStudioCtx } from './studio-context'
 export function EditorPalette() {
   const { t } = useTranslation()
   const { state, setState, edit } = useStudioCtx()
-  return <aside className="h-full bg-muted/30 min-h-0">
-      <ScrollArea className="h-full"><div className="p-3 space-y-4">
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.palette')}</div>
-          <div className="space-y-2">{TYPES.map(t_ => { const m = META[t_]; const I = m.icon
+  // two halves, each with its own scroll, so a long node list never hides the state schema
+  return <aside className="h-full bg-muted/30 min-h-0 flex flex-col">
+      <section className="flex min-h-0 flex-1 basis-0 flex-col" id="palette-nodes">
+        <div className="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-muted-foreground">{t('editor.palette')}</div>
+        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pb-3 space-y-2">{TYPES.map(t_ => { const m = META[t_]; const I = m.icon
             return <Card key={t_} draggable={edit} onDragStart={e => { e.dataTransfer.setData('nodetype', t_); e.dataTransfer.effectAllowed = 'move' }}
               className="flex-row items-center gap-3 p-2.5 cursor-grab hover:bg-accent transition-colors py-2.5">
               <div className={cn('rounded-md p-1.5', m.color)}><I className="size-4" /></div>
               <div><div className="font-medium leading-tight">{m.label}</div><div className="text-[11px] text-muted-foreground">{t(`nodes.${t_}`)}</div></div>
-            </Card> })}</div>
-        </div>
-        <Separator />
-        <div>
-          <div className="text-xs font-semibold uppercase text-muted-foreground mb-2">{t('editor.stateSchema')}</div>
-          <div className="space-y-1.5">{state.map((f, i) => <div className="space-y-1" key={i}><div className="flex gap-1">
+            </Card> })}</div></ScrollArea>
+      </section>
+      <Separator />
+      <section className="flex min-h-0 flex-1 basis-0 flex-col" id="palette-state">
+        <div className="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-muted-foreground">{t('editor.stateSchema')}</div>
+        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pt-1 pb-2 space-y-1.5">{state.map((f, i) => <div className="space-y-1" key={i}><div className="flex gap-1">
             <Input className="h-8 flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
             <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v, reducer: REDUCERS[v]?.includes(x.reducer || '') ? x.reducer : undefined } : x))}>
               <SelectTrigger size="sm" className="w-24"><SelectValue /></SelectTrigger>
@@ -40,9 +40,10 @@ export function EditorPalette() {
               <SelectTrigger size="sm" className="w-full text-xs" id={`reducer-${f.name}`} aria-label={t('editor.reducer')}><SelectValue /></SelectTrigger>
               <SelectContent>{REDUCERS[f.type].map(r => <SelectItem key={r} value={r}>{t(`editor.reducers.${r}`)}</SelectItem>)}</SelectContent>
             </Select>}
-          </div>)}</div>
-          <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
+          </div>)}</div></ScrollArea>
+        <div className="px-3 pt-1 pb-3">
+          <Button variant="outline" size="sm" className="w-full" onClick={() => setState(s => [...s, { name: 'field' + (s.length + 1), type: 'string' }])}><Plus />{t('editor.addField')}</Button>
         </div>
-      </div></ScrollArea>
+      </section>
     </aside>
 }

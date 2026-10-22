@@ -114,3 +114,7 @@ requirement and a task in `.factory-state/`, a branch
 `factory/task-<id>-<name>`, checks, a review, and a merge after human
 approval. See [Development](https://quinguyen1502.github.io/superstep/reference/development/)
 for the test setup and the conventions each layer follows.
+
+## License
+
+[MIT](LICENSE)

@@ -2,7 +2,8 @@
  *  one connection (config, Test connection, replace secrets, register, remove) and the add-connection form. */
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { KeyRound, PlugZap, Plus, Save, Trash2, Webhook } from 'lucide-react'
+import { KeyRound, MessageSquare, PlugZap, Plus, Save, Trash2, TriangleAlert, Webhook } from 'lucide-react'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,7 +35,7 @@ function SecretFields({ k, vals, setVals, idp, placeholder }: { k: ChannelKind; 
 export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: ChannelKind; publicUrl: string | null; onChange: () => void }) {
   const { t } = useTranslation(); const [vals, setVals] = useState<Vals>({}); const [edit, setEdit] = useState(false)
   const { run, alerts, busy } = useAction(() => { setVals({}); onChange() })
-  const test = useAction(); const confirmDel = useConfirmDelete(); const label = c.name || t(`approvals.kind.${c.kind}`)
+  const test = useAction(onChange); const confirmDel = useConfirmDelete(); const label = c.name || t(`approvals.kind.${c.kind}`)
   const url = c.callback_url || location.origin + c.callback_path
   const shared = c.shared_callback_path ? (c.shared_callback_url || location.origin + c.shared_callback_path) : null
   const idp = `ch-${c.id}`
@@ -50,6 +51,7 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
       <p className="text-xs text-muted-foreground">{t('approvals.sharedHelp', { team: c.team_id })}</p></>
       : <CopyField id={`${idp}-url`} label={t('approvals.callbackUrl')} value={url} />}
     {!publicUrl && <p className="text-xs text-muted-foreground">{t('approvals.publicUrlMissing')}</p>}
+    <ChatSetup c={c} idp={idp} />
     {!c.editable && <p className="text-xs text-muted-foreground">{t('approvals.orgReadOnly')}</p>}
     {edit && <SecretFields k={k} vals={vals} setVals={setVals} idp={idp} placeholder={t('approvals.keepSecret')} />}
     {alerts}{test.alerts}
@@ -67,6 +69,20 @@ export function ConnectionItem({ c, k, publicUrl, onChange }: { c: Channel; k: C
       </>}
     </div>
     {confirmDel.dialog}
+  </div>
+}
+
+/** Chat triggers (TASK-0076): what this connection needs before a message can start a run. Slack: the Event Subscriptions
+ *  URL and the two read scopes (unknown until the next Test); Telegram: Register webhook again, so messages arrive too. */
+function ChatSetup({ c, idp }: { c: Channel; idp: string }) {
+  const { t } = useTranslation()
+  if (!c.chat) return null
+  const missing = c.chat.missing_scopes
+  return <div className="space-y-2" data-testid={`${idp}-chat`}>
+    {c.chat.events_path && <CopyField id={`${idp}-events`} label={t('approvals.chat.eventsUrl')} value={c.chat.events_url || location.origin + c.chat.events_path} />}
+    <p className="text-xs text-muted-foreground"><MessageSquare className="mr-1 inline size-3.5 align-[-2px]" />{t(`approvals.chat.help.${c.kind}`)}</p>
+    {missing && missing.length > 0 && <Alert variant="warning" id={`${idp}-scopes`}><TriangleAlert /><AlertDescription>{t('approvals.chat.missing', { scopes: missing.join(', ') })}</AlertDescription></Alert>}
+    {missing === null && <p className="text-xs text-muted-foreground" id={`${idp}-scopes-unknown`}>{t('approvals.chat.unknown')}</p>}
   </div>
 }
 

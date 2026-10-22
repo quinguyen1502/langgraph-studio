@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0076
-- Status: todo
+- Status: done (PR #100, REV-0070, QA-0070)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -111,6 +111,9 @@ mark chat runs in the run history.
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0044.
+- 2026-10-22: started after PR #99 merged (owner approved).
+- 2026-10-22: implemented. Review REV-0070, QA QA-0070.
+- 2026-10-22: CI green on PR #100 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 

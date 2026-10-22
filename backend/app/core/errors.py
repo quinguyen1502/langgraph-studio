@@ -65,6 +65,11 @@ CATALOG: dict[str, tuple[int, str]] = {
     "CHAT_TRIGGER_LIMIT": (400, "A workflow can have at most {max} chat triggers"),
     "CHAT_TRIGGER_CONFIG_INVALID": (400, "Chat trigger: invalid {field}"),
     "CHAT_TRIGGER_SCOPE_MISSING": (400, "The Slack app lacks the scopes chat triggers need: {scopes}. Reinstall it with them"),
+    # chat-trigger refusals (TASK-0075): answered in the chat and kept in the approval audit log
+    "CHAT_IDENTITY_UNKNOWN": (403, "Their {kind} account is not linked to Superstep"),
+    "CHAT_IDENTITY_UNVERIFIED": (403, "Their {kind} account is linked but not verified"),
+    "CHAT_FORBIDDEN": (403, "They may not run this workflow"),
+    "CHAT_TRIGGER_OFF": (409, "The chat trigger is off"),
     # workflow tests (TASK-0067)
     "TEST_NOT_FOUND": (404, "Test case not found"),
     "TEST_CASE_INVALID": (400, "Test case: {reason}"),

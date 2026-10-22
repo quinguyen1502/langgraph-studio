@@ -1,7 +1,8 @@
 # Lịch chạy
 
 **⋯ → Lịch chạy** trong trình soạn thảo chạy workflow theo lịch cron. Chủ
-workflow là người đặt lịch.
+workflow là người đặt lịch. Để chạy bằng tin nhắn chat, xem
+[Chạy từ chat](chat-triggers.md).
 
 ![Hộp thoại Lịch chạy](../images/schedules.png)
 

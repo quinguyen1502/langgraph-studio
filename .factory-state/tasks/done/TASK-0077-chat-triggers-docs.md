@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0077
-- Status: todo
+- Status: done (PR #101, REV-0071, QA-0071)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -21,7 +21,7 @@ a message can be refused.
 
 ### In Scope
 
-- **New page `guide/chat-triggers.md`** (en "Chat triggers", vi "Chạy từ chat"). It covers:
+- **New page `run/chat-triggers.md`** (en "Chat triggers", vi "Chạy từ chat"). It covers:
   - what a chat trigger is;
   - Slack setup: the scopes, the Event Subscriptions URL, the `app_mention` and `message.im` events, reinstalling;
   - Telegram setup: "Register webhook" again, group privacy mode, the group id;
@@ -29,7 +29,7 @@ a message can be refused.
   - the dialog fields;
   - the replies (started, result, error, waiting) and the private refusals;
   - limits and security: who may run, the owner's credentials, rate limits.
-- **Links:** nav in both `mkdocs*.yml`, the Build or Integrate index, the Channels page, the API trigger and schedules
+- **Links:** nav in both `mkdocs*.yml`, the Run index, the Channels page, the API trigger and schedules
   pages, and the README feature list (en, vi).
 - **Screenshot** `chat-triggers.png` (en, vi) from `e2e/handbook.spec.ts`: the dialog with one trigger. Only the new
   image is kept.
@@ -53,7 +53,7 @@ a message can be refused.
 
 ## Expected Outputs
 
-- `handbook/docs/{en,vi}/guide/chat-triggers.md`, nav, links, README lines, screenshot
+- `handbook/docs/{en,vi}/run/chat-triggers.md`, nav, links, README lines, screenshot
 
 ## Implementation Notes
 
@@ -88,6 +88,9 @@ a message can be refused.
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0044.
+- 2026-10-22: started after PR #100 merged (owner approved).
+- 2026-10-22: implemented; the page is `run/chat-triggers.md` (next to API triggers and Schedules). Review REV-0071, QA QA-0071.
+- 2026-10-22: CI green on PR #101 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 

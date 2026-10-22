@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Requirement ID: REQ-0044
-- Status: Accepted (owner, in chat, 2026-10-22; CLAR-0002 answered the same day)
+- Status: Implemented (TASK-0074 PR #98, TASK-0075 PR #99, TASK-0076 PR #100, TASK-0077 PR #101)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22

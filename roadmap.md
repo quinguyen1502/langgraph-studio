@@ -190,3 +190,12 @@ REQ-0043, Accepted 2026-10-22 (the owner chose a runnable file with the mock by 
 - TASK-0070 Generator: one readable, runnable LangGraph `.py` per workflow version, API route, same-path check against the studio's mock run for every built-in template, DEC-0045. **merged** (PR #93, REV-0064, QA-0064).
 - TASK-0071 Editor "Code" tab ("View as code"; other languages may follow): code beside the canvas, the selected node's function highlighted, Copy and Download. **merged** (PR #94, REV-0065, QA-0065).
 - TASK-0072 Handbook "Export to Python" page (en, vi) with the canvas → code table and a screenshot. **merged** (PR #96, REV-0067, QA-0067).
+
+## Chat triggers
+
+REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts with the run right, a command word, one reply field, one input field).
+
+- TASK-0074 Chat trigger rows per workflow, management API (share right, unique command per connection and place), Slack scopes check, Telegram webhook for messages, DEC-0046. **todo**.
+- TASK-0075 Slack events and Telegram messages start `source="chat"` runs; thread replies (started, result, error, waiting), private refusals, dedupe, rate limit, audit. **todo** (after TASK-0074).
+- TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **todo** (after TASK-0075).
+- TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **todo** (after TASK-0076).

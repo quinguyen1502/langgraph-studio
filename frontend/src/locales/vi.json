@@ -416,6 +416,7 @@
     "TEST_SUITE_NOT_FOUND": "Không tìm thấy lần chạy test",
     "TEST_SUITE_RUNNING": "Các test của workflow này đang chạy",
     "TEST_NOT_SUPPORTED": "Workflow LangGraph được import không có test",
+    "PYTHON_EXPORT_UNAVAILABLE": "Workflow LangGraph được import đã là mã Python: không có gì để xuất.",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",

@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0070
-- Status: todo
+- Status: done (PR #93, REV-0064, QA-0064)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -139,8 +139,15 @@ the test suite that the file compiles and, with the mock model, takes the same p
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0043.
+- 2026-10-22: started after PR #92 merged (owner approved the plan).
+- 2026-10-22: implemented; DEC-0045 written. Review REV-0064 (fixed: graph values written into the code unchecked),
+  QA QA-0064.
+- 2026-10-22: CI green on PR #93 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 
-- TASK-0071 calls the route; it needs the node id → line range map (return it in a JSON variant of the route or as
-  `# node: <id>` markers the panel can find).
+- TASK-0071: `GET /api/workflows/{wid}/python[?version=n]` returns `{filename, version, code, nodes}`; `nodes` maps a
+  top-level node id to 1-based `[first, last]` line ranges, the first one its function (Start and End: their edges;
+  a Note: its comment). Imported repositories get `PYTHON_EXPORT_UNAVAILABLE`.
+- A change to `mock_llm`, `pick_branch`, `templating` or the Jev mock needs the same change in the generator's
+  helpers (`test_helpers_match_the_engine` fails otherwise).

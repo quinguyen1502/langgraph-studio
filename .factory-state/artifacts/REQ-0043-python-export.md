@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Requirement ID: REQ-0043
-- Status: Accepted (owner, in chat, 2026-10-22)
+- Status: Implemented (TASK-0070 PR #93, TASK-0071 PR #94, TASK-0072 PR #96)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22 (the editor entry is named "Code" / "View as code": other languages, e.g. TypeScript, may

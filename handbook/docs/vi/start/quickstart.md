@@ -183,6 +183,8 @@ Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó m
 - Rẽ nhánh theo quyết định bằng node **Condition**: [Các loại node](../guide/nodes.md).
 - Lưu test case với input, câu trả lời Human và những gì run phải cho ra:
   [Kiểm thử workflow](../run/tests.md).
+- Xem workflow dưới dạng Python LangGraph và chạy nó độc lập:
+  [Xuất ra Python](../guide/python-export.md).
 - Gửi yêu cầu duyệt tới Slack, Telegram, WhatsApp, e-mail hoặc Teams:
   [Kênh duyệt](../operate/channels.md).
 - Chạy đủ stack với Postgres, Redis và worker:

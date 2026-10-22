@@ -43,6 +43,7 @@ nav:
       - MCP servers: guide/mcp.md
       - Workflow templates: guide/templates.md
       - Versions: guide/versions.md
+      - Export to Python: guide/python-export.md
   - Run:
       - run/index.md
       - Runs and traces: run/traces.md

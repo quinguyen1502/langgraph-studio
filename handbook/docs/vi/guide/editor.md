@@ -6,11 +6,11 @@
 
 | Vùng | Chứa gì |
 | --- | --- |
-| Thanh trên | Tên, **Lưu**, **Chạy**, **Một bước**, **Chạy tới đây**, undo và redo. Mọi thứ khác nằm trong menu **⋯** (Thao tác khác): bố cục, phiên bản, lịch chạy, API, chia sẻ, lưu thành mẫu, chuyển quyền sở hữu, xoá. |
+| Thanh trên | Tên, **Lưu**, **Chạy**, **Một bước**, **Chạy tới đây**, undo và redo. Mọi thứ khác nằm trong menu **⋯** (Thao tác khác): bố cục, phiên bản, lịch chạy, API, chia sẻ, lưu thành mẫu, workflow JSON, xem dạng code, chuyển quyền sở hữu, xoá. |
 | Trái | **Node palette** và trình sửa **State schema**. |
 | Giữa | Canvas React Flow. |
 | Phải | **Cấu hình** của node hoặc edge đang chọn. |
-| Dưới | **Input** (JSON), **Logs** (trace trực tiếp) và **Lịch sử**. |
+| Dưới | **Input** (JSON), **Logs** (trace trực tiếp), **Lịch sử**, [**Test**](../run/tests.md) và [**Code**](python-export.md) (workflow dưới dạng Python LangGraph). |
 
 Kéo viền của panel trái, phải hoặc dưới để đổi kích thước. Kích thước tối
 thiểu lần lượt là 180 px, 260 px và 140 px, canvas luôn còn ít nhất

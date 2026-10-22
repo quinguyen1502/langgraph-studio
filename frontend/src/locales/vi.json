@@ -1644,5 +1644,17 @@
       "still_passing": "Vẫn đạt",
       "new": "Mới"
     }
+  },
+  "codeView": {
+    "tab": "Code",
+    "button": "Xem dạng code",
+    "saveFirst": "Lưu workflow để xem nó dưới dạng mã LangGraph.",
+    "version": "v{{n}}",
+    "unsaved": "Thay đổi chưa lưu chưa có trong mã",
+    "showing": "Đang chỉ {{node}}",
+    "noCode": "Node này không có mã riêng",
+    "selectHint": "Chọn một node trên canvas để tìm mã của nó",
+    "download": "Tải .py",
+    "language": "Python"
   }
 }

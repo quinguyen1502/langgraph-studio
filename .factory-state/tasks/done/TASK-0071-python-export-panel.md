@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0071
-- Status: todo
+- Status: done (PR #94, REV-0065, QA-0065)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -20,7 +20,8 @@ Show the exported Python next to the canvas, follow the selected node, and let t
 
 ### In Scope
 
-- **View as Python** in the editor header and in the command palette, for workflows (not imported repositories).
+- **View as Python** (named **View as code** and a **Code** tab at the owner's request) in the editor header and in the
+  command palette, for workflows (not imported repositories).
 - A read-only panel beside the canvas (same place and behaviour as the run and tests panels), with CodeMirror Python
   (as the Code node editor), for the version open in the editor (an unsaved graph: the panel says it shows the last
   saved version).
@@ -88,7 +89,13 @@ Show the exported Python next to the canvas, follow the selected node, and let t
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0043.
+- 2026-10-22: started after PR #93 merged (owner approved).
+- 2026-10-22: implemented; Code tab in the bottom panel, "View as code" in the ⋯ menu and palette (named
+  "Code", not "Python", at the owner's request: other languages may follow). Review REV-0065,
+  QA QA-0065.
+- 2026-10-22: CI green on PR #94 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 
-- TASK-0072 takes the handbook screenshot of this panel.
+- TASK-0072 takes the handbook screenshot of this panel: open `#code-tab`, select a node (`.cm-node-mark` lines).
+- `approvals.notConnected` is missing from both locales (Human node approval select); not part of this task.

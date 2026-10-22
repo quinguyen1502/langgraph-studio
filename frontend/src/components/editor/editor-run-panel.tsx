@@ -16,9 +16,10 @@ import { fmtCost, fmtMs } from '@/lib/trace'
 import { Tip } from '@/components/tip'
 import { api } from '@/lib/api'
 import { EditorTestsPanel, TestCaseDialog, type TestCase } from './editor-tests-panel'
+import { EditorCodePanel } from './editor-code-panel'
 import { useStudioCtx } from './studio-context'
 
-/** Bottom panel: run input, logs, and history (TASK-0040). */
+/** Bottom panel: run input, logs, history, tests (TASK-0067) and the workflow as code (TASK-0071). */
 export function EditorRunPanel() {
   const { t } = useTranslation()
   const { input, setInput, log, setLog, errors, history, tab, setTab, running, traceSel, setTraceSel, replay, setReplay, openRun, respond, trace, traceMeta, wid, source, edit } = useStudioCtx()
@@ -38,7 +39,8 @@ export function EditorRunPanel() {
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
         <div className="flex items-center gap-3 px-3 py-2 border-b">
           <TabsList><TabsTrigger value="input">{t('editor.tabInput')}</TabsTrigger><TabsTrigger value="logs">{t('editor.tabLogs')} {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
-            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger>{!source && <TabsTrigger value="tests" id="tests-tab">{t('tests.tab')}</TabsTrigger>}</TabsList>
+            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger>{!source && <TabsTrigger value="tests" id="tests-tab">{t('tests.tab')}</TabsTrigger>}
+            {!source && <TabsTrigger value="code" id="code-tab">{t('codeView.tab')}</TabsTrigger>}</TabsList>
           {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
@@ -85,6 +87,7 @@ export function EditorRunPanel() {
           </div></ScrollArea>
         </TabsContent>
         <TabsContent value="tests" className="flex-1 min-h-0"><EditorTestsPanel select={picked} /></TabsContent>
+        <TabsContent value="code" className="flex-1 min-h-0"><EditorCodePanel /></TabsContent>
       </Tabs>
       {draft && wid && <TestCaseDialog wid={wid} value={draft} onClose={() => setDraft(null)} onSaved={c => { setDraft(null); setPicked(c.id); setTab('tests') }} />}
     </section>

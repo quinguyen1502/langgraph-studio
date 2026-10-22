@@ -1644,5 +1644,17 @@
       "still_passing": "Still passing",
       "new": "New"
     }
+  },
+  "codeView": {
+    "tab": "Code",
+    "button": "View as code",
+    "saveFirst": "Save the workflow to see it as LangGraph code.",
+    "version": "v{{n}}",
+    "unsaved": "Unsaved changes are not in the code yet",
+    "showing": "Showing {{node}}",
+    "noCode": "This node has no code of its own",
+    "selectHint": "Select a node on the canvas to find its code",
+    "download": "Download .py",
+    "language": "Python"
   }
 }

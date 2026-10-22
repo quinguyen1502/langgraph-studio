@@ -181,3 +181,11 @@ REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a moc
 - TASK-0067 Test cases (input, Human answers, checks), Run all / run one on the current version, test runs that send no e-mail, channel message, notification or callback, mock model option, Tests panel, DEC-0044: **merged** (PR #89, REV-0061, QA-0061).
 - TASK-0068 Comparison with the latest suite run on an earlier version (Regression, Fixed, New), Run against version, suite history, Save as test case from a run, stale checks: **merged** (PR #90, REV-0062, QA-0062).
 - TASK-0069 Test cases on every built-in template, copied to workflows made from them; handbook "Workflow tests" page (en, vi): **merged** (PR #91, REV-0063, QA-0063).
+
+## Export to Python
+
+REQ-0043, Accepted 2026-10-22 (the owner chose a runnable file with the mock by default, English comments, and subgraphs as their own graphs).
+
+- TASK-0070 Generator: one readable, runnable LangGraph `.py` per workflow version, API route, same-path check against the studio's mock run for every built-in template, DEC-0045. **todo**.
+- TASK-0071 Editor panel "View as Python": code beside the canvas, the selected node's function highlighted, Copy and Download. **todo**. After TASK-0070.
+- TASK-0072 Handbook "Export to Python" page (en, vi) with the canvas → code table and a screenshot. **todo**. After TASK-0070 and TASK-0071.

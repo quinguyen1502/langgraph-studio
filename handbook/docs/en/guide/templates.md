@@ -37,6 +37,11 @@ connection, the target and the approvers on the Human node (see
 Human node and can be answered in the studio. **RAG Q&A** and **Support with
 escalation** need a knowledge base before they run.
 
+Each built-in template comes with one to three test cases that show what it is
+for, for example "Approved leave" and "Rejected leave". A workflow made from it
+gets them in its **Tests** tab, and they pass with the offline mock model (see
+[Workflow tests](../run/tests.md)). Templates you save carry no test cases.
+
 Each Human node on a channel also has a [deadline](../run/human-approval.md#deadlines)
 that suits the process, for example 2 days with a daily reminder for the leave
 request, then rejected. Social post review approves the post when the editor

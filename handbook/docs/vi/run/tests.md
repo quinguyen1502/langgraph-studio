@@ -1,0 +1,128 @@
+# Kiểm thử workflow
+
+Tab **Test** trong trình soạn thảo lưu các test case của workflow: input, câu
+trả lời cho các node Human, và những gì run phải cho ra. Chạy chúng sau mỗi lần
+sửa để biết cái gì vẫn chạy đúng và thay đổi nào làm hỏng.
+
+![Tab Test sau khi Chạy tất cả](../images/tests.png)
+
+## Trước khi bắt đầu
+
+- Cần quyền sửa workflow để thêm, sửa và chạy test. Người xem thấy được các
+  test case và kết quả.
+- Worker đang chạy: mỗi test case được đưa vào hàng đợi như một run.
+- Test chạy trên một version đã lưu. Lưu trước để test thay đổi mới nhất.
+- Repo LangGraph đã import không có tab Test.
+
+## Test case
+
+**Thêm test case** mở trình soạn của một test case.
+
+![Một test case](../images/test-case.png)
+
+| Phần | Nội dung |
+| --- | --- |
+| Tên | Test case nói về gì, ví dụ "Từ chối nghỉ phép". |
+| Input | Input của run, dạng JSON. |
+| Câu trả lời cho Human node | Với mỗi node Human, các câu trả lời theo thứ tự: Duyệt, Từ chối hoặc trả lời bằng chữ. Node chờ thêm lần nữa, ví dụ sau khi viết lại, sẽ nhận câu kế tiếp. |
+| Điều kiện | Những gì run phải cho ra. Tất cả phải đạt. |
+
+| Điều kiện | Đạt khi |
+| --- | --- |
+| Trạng thái run | Run kết thúc `ok`, `error` hoặc `waiting`, như đã chọn. Không có điều kiện trạng thái thì run phải kết thúc `ok`. |
+| Trường state | Một field bằng, chứa, không chứa hoặc khớp mẫu (biểu thức chính quy), hoặc rỗng hay không rỗng. Object và list so sánh dạng JSON. |
+| Node | Một node có chạy, hoặc không chạy. |
+| Thời gian | Run chạy không quá số giây này. |
+| Chi phí | Run tốn không quá số US$ này. Không kiểm khi model chưa có giá. |
+
+Mỗi workflow có tối đa 50 test case (`STUDIO_TEST_CASES_MAX`), mỗi test case tối
+đa 30 điều kiện và 20 câu trả lời cho mỗi node Human.
+
+## Chạy test
+
+- **Chạy tất cả** chạy mọi test case trên version đã lưu hiện tại; nút chạy trên
+  một test case chỉ chạy test case đó.
+- Tối đa 4 test case chạy cùng lúc (`STUDIO_TEST_PARALLEL`). Mỗi workflow chỉ có
+  một lần chạy test tại một thời điểm; **Huỷ** để dừng.
+- **Dùng model mock offline** chạy mọi node LLM và Decision bằng mock offline:
+  không gọi model, không tốn tiền, lần nào cũng ra cùng câu trả lời. Khi tắt,
+  test dùng model thật và credential của chúng.
+- Mỗi test case hiện đạt hay không đạt, mỗi điều kiện hiện giá trị mong đợi và
+  thực tế. **Mở run** mở trace của run test.
+- Khi một node Human chờ mà test case không còn câu trả lời cho nó, test case
+  không đạt và ghi rõ node nào đang chờ.
+
+Run test không hiện trong **Lịch sử**. Bật **Run test** ở đó để xem chúng.
+
+## Run test không gửi gì
+
+Run test là một run bình thường của workflow, cùng node, giới hạn và trace, nên
+test kiểm đúng những gì run thật làm. Chỉ những gì tới tay người khác bị tắt:
+
+| Không | Thay vào đó |
+| --- | --- |
+| Gửi e-mail | Node Send email chạy thử: output cho thấy thư lẽ ra sẽ gửi. |
+| Gửi yêu cầu duyệt tới kênh, hay thêm bước vào hộp thư Phê duyệt | Câu trả lời của test case tiếp tục run. |
+| Gửi thông báo | — |
+| Gọi API callback | — |
+
+Node Tool, HTTP, MCP, Code và Retriever vẫn chạy thật. Hãy trỏ chúng tới hệ
+thống thử nghiệm khi chúng thay đổi dữ liệu.
+
+## So sánh với version trước
+
+Mỗi kết quả được so với lần chạy test xong gần nhất trên một version cũ hơn.
+Thanh phía trên danh sách hiện số lượng và version đó; mỗi test case có nhãn
+của nó.
+
+![Một lỗi hỏng mới so với version 1](../images/tests-compare.png)
+
+| Nhãn | Nghĩa |
+| --- | --- |
+| Hỏng mới | Trước đạt, giờ không đạt. |
+| Đã sửa | Trước không đạt, giờ đạt. |
+| Vẫn lỗi / Vẫn đạt | Không đổi. |
+| Mới | Chưa có kết quả trước, ví dụ test case mới thêm. |
+
+Test case vẫn là chính nó khi bạn sửa. Khi chưa có kết quả trước, thanh báo như
+vậy: **Chạy trên version** chạy test trên một version cũ đã lưu để có kết quả
+đó. **Lịch sử test** liệt kê các lần chạy test gần đây (version, ai chạy, lúc
+nào, số đạt và không đạt) và mở lại được.
+
+## Lưu một run thành test case
+
+Một run chạy đúng là một test tốt. **Lưu thành test case** trên một run trong
+**Lịch sử**, hoặc trên thanh trace của run, mở một test case mới với:
+
+- input của run;
+- các câu trả lời đã đưa cho node Human, theo thứ tự;
+- các điều kiện run đó đạt: trạng thái, từng node đã chạy (trừ Start và End),
+  và từng field nó ghi. Giá trị dài hơn 200 ký tự được kiểm bằng "chứa" 200 ký
+  tự đầu.
+
+Bỏ những gì không cần rồi lưu.
+
+## Điều kiện không còn khớp graph
+
+Điều kiện nhắc tới node hoặc field state mà graph không còn có được đánh dấu
+**Không còn trong graph**, và không đạt với lý do đó khi chạy. Sửa hoặc bỏ
+điều kiện đó.
+
+## Mẫu có sẵn
+
+Mỗi mẫu có sẵn đi kèm một đến ba test case, và workflow tạo từ mẫu có một bản
+sao (xem [Mẫu workflow](../guide/templates.md)). Chúng đạt với model mock
+offline. **Hỏi đáp RAG** và **Hỗ trợ có chuyển cấp** cần chọn kho tri thức trước.
+Mẫu bạn tự lưu không kèm test case.
+
+## API
+
+```text
+GET|POST    /api/workflows/{wid}/tests
+PUT|DELETE  /api/workflows/{wid}/tests/{tid}
+POST        /api/workflows/{wid}/tests/run              {test_ids?, mock?, version?}
+GET         /api/workflows/{wid}/tests/runs             (lịch sử)
+GET         /api/workflows/{wid}/tests/runs/{sid}       (kết quả và so sánh)
+POST        /api/workflows/{wid}/tests/runs/{sid}/cancel
+POST        /api/workflows/{wid}/tests/from-run/{run_id}   (bản nháp, chưa lưu)
+```

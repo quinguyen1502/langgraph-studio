@@ -53,6 +53,8 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `STUDIO_WORKFLOW_MAX_BYTES` | `1048576` | JSON workflow |
 | `STUDIO_WAIT_TTL` | `604800` | Run đang chờ hết hạn sau thời gian này (giây); `0` là không bao giờ |
 | `STUDIO_VERSION_KEEP` | `0` | Số phiên bản giữ cho mỗi workflow; `0` giữ tất cả |
+| `STUDIO_TEST_CASES_MAX` | `50` | Số [test case](../run/tests.md) mỗi workflow |
+| `STUDIO_TEST_PARALLEL` | `4` | Số test case của một lần chạy test chạy cùng lúc |
 | `STUDIO_ENABLE_DEMO_TOOLS` | `0` | Đăng ký `sleep_demo` để thử huỷ và timeout |
 
 ## Worker và hàng đợi

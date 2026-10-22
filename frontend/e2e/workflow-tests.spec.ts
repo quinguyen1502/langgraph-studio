@@ -102,3 +102,13 @@ test('workflow tests: save as test case from a run, regression against the previ
   await expect(page.locator('#tests-summary')).toContainText('trên v1')
   await page.locator('#tests-history').click(); await expect(page.getByTestId('suite-row')).toHaveCount(3)
 })
+
+// TASK-0069: a workflow made from a built-in template comes with its test cases, and they pass with the mock model.
+test('workflow tests: a built-in template brings test cases that pass offline', async ({ page }) => {
+  const token = await login(page)
+  const wid = (await (await page.request.post('/api/templates/builtin-purchase-request/use', { headers: { Authorization: `Bearer ${token}` }, data: { name: `Purchase e2e ${Date.now()}` } })).json()).data.id
+  await page.goto(`/workflows/${wid}`); await page.locator('#tests-tab').click()
+  await expect(page.getByTestId('test-row')).toHaveCount(3)
+  await page.locator('#tests-mock').click(); await page.locator('#tests-run-all').click()
+  await expect(page.locator('#tests-summary')).toContainText('3 đạt, 0 không đạt', { timeout: 60_000 })
+})

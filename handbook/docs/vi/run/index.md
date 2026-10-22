@@ -36,4 +36,10 @@ cùng một kiểu trace và hiện trong **Lịch sử**.
 
     Cron, múi giờ và các mốc bị lỡ.
 
+-   :material-flask-outline:{ .lg .middle } **[Kiểm thử workflow](tests.md)**
+
+    ---
+
+    Test case, Chạy tất cả, so sánh với version trước.
+
 </div>

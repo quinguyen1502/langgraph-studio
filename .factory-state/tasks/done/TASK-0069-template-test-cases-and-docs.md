@@ -4,10 +4,10 @@
 
 - Project: superstep
 - Task ID: TASK-0069
-- Status: todo
+- Status: done (PR #91, REV-0063, QA-0063)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
-- Updated: 2026-10-21
+- Updated: 2026-10-22
 - Requirement IDs: REQ-0042
 - Design IDs: none (UX direction set in REQ-0042)
 - Architecture IDs: DEC-0009, DEC-0044
@@ -103,5 +103,12 @@ built-in template, and document workflow tests in the handbook.
 ## Activity Log
 
 - 2026-10-21: planned from REQ-0042.
+- 2026-10-22: started after PR #90 merged, and implemented. Review REV-0063, QA QA-0063.
+- 2026-10-22: CI green on PR #91 (Postgres included); the owner approved the merge. REQ-0042 implemented.
 
 ## Handoff Notes
+
+- Template cases live in `engine/templates.py` `TESTS`; a new built-in template needs an entry (the template tests fail
+  otherwise). Inputs name the branch they take, so the mocks pick it.
+- RAG Q&A and Support with escalation need a knowledge base before their cases pass.
+- The handbook capture (`HANDBOOK_SHOTS=1`) re-renders every image; keep only the ones a change needs.

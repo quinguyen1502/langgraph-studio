@@ -1,9 +1,11 @@
 """Template library (TASK-0025, DEC-0028): list built-in + personal + org templates, save a workflow as a template,
 import/export the portable file, start a workflow from a template, delete. Persistence via TemplateRepository; graph
-sanitising and the file format live in engine.templates; new workflows go through WorkflowService.save (unique name)."""
+sanitising and the file format live in engine.templates; new workflows go through WorkflowService.save (unique name).
+A workflow made from a built-in template gets that template's test cases (TASK-0069); saved templates carry none."""
 from __future__ import annotations
 import json, time, uuid
-from ..core import permissions as P
+from typing import Callable, Optional
+from ..core import config, permissions as P
 from ..core.errors import AppError
 from ..engine import templates as T
 from ..models import WorkflowTemplate
@@ -21,13 +23,14 @@ def _name(v) -> str:
 
 
 class TemplateService:
-    def __init__(self, repo: TemplateRepository, workflows: WorkflowService, access: AccessService):
+    def __init__(self, repo: TemplateRepository, workflows: WorkflowService, access: AccessService, tests: Optional[Callable[[], object]] = None):
         self.repo, self.workflows, self.access = repo, workflows, access
+        self.tests = tests  # -> WorkflowTestService: copies a built-in template's test cases to the new workflow
 
     # ---- views ----
     @staticmethod
-    def _summary(tid, name, desc, scope, graph, *, mine=False, owner=None) -> dict:
-        return {"id": tid, "name": name, "description": desc or "", "scope": scope, "mine": mine, "owner": owner,
+    def _summary(tid, name, desc, scope, graph, *, mine=False, owner=None, tests: int = 0) -> dict:
+        return {"id": tid, "name": name, "description": desc or "", "scope": scope, "mine": mine, "owner": owner, "tests": tests,
                 "nodes": [{"id": n["id"], "type": n["type"], "position": n.get("position") or {"x": 0, "y": 0}} for n in graph.get("nodes", [])],
                 "edges": [{"source": e["source"], "target": e["target"]} for e in graph.get("edges", [])]}
 
@@ -35,7 +38,7 @@ class TemplateService:
         return t.owner == uid if t.scope == "user" else self.access.can(uid, P.ORG_MANAGE)
 
     def list(self, uid: str) -> list[dict]:
-        out = [self._summary(b["id"], b["name"], b["description"], "builtin", b["workflow"]) for b in T.BUILTINS]
+        out = [self._summary(b["id"], b["name"], b["description"], "builtin", b["workflow"], tests=len(b["tests"])) for b in T.BUILTINS]
         for t in self.repo.visible(uid):
             s = self._summary(t.id, t.name, t.description, t.scope, json.loads(t.data), mine=t.owner == uid, owner=t.owner)
             s["deletable"] = self._can_delete(t, uid); out.append(s)
@@ -75,7 +78,10 @@ class TemplateService:
 
     def use(self, tid: str, uid: str, name: str | None = None) -> dict:
         tname, _, graph = self._load(tid, uid)
-        return self.workflows.save({**T.sanitize(graph), "name": name or tname}, uid)  # new id, unique name, WORKFLOWS_CREATE check
+        wf = self.workflows.save({**T.sanitize(graph), "name": name or tname}, uid)  # new id, unique name, WORKFLOWS_CREATE check
+        cases = next((b["tests"] for b in T.BUILTINS if b["id"] == tid), [])
+        for case in cases[:config.test_cases_max()] if self.tests else []: self.tests().create(wf["id"], uid, case)
+        return wf
 
     def delete(self, tid: str, uid: str) -> dict:
         if tid in T.BUILTIN_IDS: raise AppError("TEMPLATE_READ_ONLY")

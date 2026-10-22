@@ -36,4 +36,10 @@ produce the same trace, and appear in **History**.
 
     Cron, time zones and missed times.
 
+-   :material-flask-outline:{ .lg .middle } **[Workflow tests](tests.md)**
+
+    ---
+
+    Test cases, Run all, comparison with earlier versions.
+
 </div>

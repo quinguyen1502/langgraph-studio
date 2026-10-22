@@ -148,7 +148,7 @@ export function EditorTestsPanel({ select }: { select?: string | null }) {
           </span></div>}
         {res?.reason && <p className="text-xs text-destructive" data-testid="result-reason">{t(`tests.reason.${res.reason}`, { node: label(res.detail ?? ''), status: t(`status.${res.detail}`) })}</p>}
         {cur && <table className="w-full text-xs" data-testid="result-checks"><thead className="text-muted-foreground"><tr className="text-left">
-          <th className="w-6 py-1 font-normal" /><th className="py-1 font-normal">{t('tests.check')}</th><th className="py-1 font-normal">{t('tests.expected')}</th><th className="py-1 font-normal">{t('tests.actual')}</th></tr></thead>
+          <th className="w-6 py-1 font-normal" /><th className="py-1 font-normal">{t('tests.check')}</th><th className="w-1/4 py-1 font-normal">{t('tests.expected')}</th><th className="w-1/4 py-1 font-normal">{t('tests.actual')}</th></tr></thead>
           <tbody>{(res?.checks ?? cur.checks.map(c => ({ ...c, passed: undefined } as any))).map((c: CheckResult, i: number) => <tr key={i} className="border-t align-top leading-5" data-testid="check-row">
             <td className="py-1"><span className="flex h-5 items-center">{/* centred on the first text line */}
               {c.passed === true ? <Check className="size-3.5 text-success" /> : c.passed === false ? <X className="size-3.5 text-destructive" /> : c.passed === null ? <CircleDashed className="size-3.5 text-muted-foreground" /> : null}</span></td>

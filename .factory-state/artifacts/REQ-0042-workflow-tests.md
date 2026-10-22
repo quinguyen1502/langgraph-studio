@@ -4,10 +4,10 @@
 
 - Project: superstep
 - Requirement ID: REQ-0042
-- Status: Accepted (owner, in chat, 2026-10-21)
+- Status: Implemented (TASK-0067 PR #89, TASK-0068 PR #90, TASK-0069 PR #91)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-21
-- Updated: 2026-10-21
+- Updated: 2026-10-22
 - Source: owner request in chat, 2026-10-21. After REQ-0041 (proposals 1 and 2), the owner asked to continue with the
   feature proposals. This is proposal 3: saved test cases for a workflow, run all at once after each edit and compared
   with the previous version.

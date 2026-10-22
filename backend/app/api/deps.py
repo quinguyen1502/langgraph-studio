@@ -107,7 +107,7 @@ def workflow_service() -> WorkflowService:
                                           teams=TeamRepository(db), audit=audit_service(), tests=WorkflowTestRepository(db))
 
 def template_service() -> TemplateService:
-    return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service())
+    return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service(), tests=workflow_test_service)
 
 def code_service() -> CodeService:
     return CodeService(access_service(), get_rate_limiter(), audit_service())

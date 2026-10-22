@@ -98,7 +98,7 @@ def slack_client_id() -> str: return (os.environ.get("SLACK_CLIENT_ID") or "").s
 def slack_client_secret() -> str: return (os.environ.get("SLACK_CLIENT_SECRET") or "").strip()
 def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET") or "").strip()
 def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
-SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write"  # same as the manual setup (README)
+SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write,app_mentions:read,im:history"  # same as the manual setup (handbook); the last two: chat triggers
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def whatsapp_api_url() -> str: return (os.environ.get("WHATSAPP_API_URL") or "https://graph.facebook.com/v21.0").rstrip("/")  # TASK-0047
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"

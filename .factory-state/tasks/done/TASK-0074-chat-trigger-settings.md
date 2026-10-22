@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0074
-- Status: todo
+- Status: done (PR #98, REV-0068, QA-0068)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -144,6 +144,9 @@ that receiving messages needs. No message is handled yet (TASK-0075).
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0044 (owner accepted it and answered CLAR-0002).
+- 2026-10-22: started after PR #97 merged (owner approved the plan).
+- 2026-10-22: implemented; DEC-0046 written. Review REV-0068, QA QA-0068.
+- 2026-10-22: CI green on PR #98 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 

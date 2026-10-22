@@ -18,12 +18,19 @@ class SlackChannel(ApprovalChannel):
     hint_field = "bot_token"
     per_team = True         # a member id is only meaningful inside its workspace (team_id)
     shared_callback = True  # one Request URL for every workspace: /api/approvals/callback/slack, routed by team.id
+    chat = True
 
-    def _api(self, secrets: dict, method: str, payload: dict) -> dict:
-        _, data = self.call("POST", f"{config.slack_api_url()}/{method}", json=payload,
+    place_pattern = r"[CG][A-Z0-9]{2,20}"  # public / private channel id
+    chat_scopes = ("app_mentions:read", "im:history")  # chat triggers (TASK-0074): mentions in channels, direct messages
+    events_path = "/api/channels/events/slack"  # Event Subscriptions Request URL, one for every workspace (routed by team_id)
+
+    def _post(self, secrets: dict, method: str, payload: dict):
+        r, data = self.call("POST", f"{config.slack_api_url()}/{method}", json=payload,
                             headers={"Authorization": f"Bearer {secrets['bot_token']}", "Content-Type": "application/json; charset=utf-8"})
         if not data.get("ok"): raise AppError("CHANNEL_API_FAILED", kind=self.label, reason=str(data.get("error") or "not ok"))
-        return data
+        return r, data
+
+    def _api(self, secrets: dict, method: str, payload: dict) -> dict: return self._post(secrets, method, payload)[1]
 
     def oauth_access(self, code: str, redirect_uri: str) -> dict:
         """Add to Slack (TASK-0014): exchange the OAuth code for the workspace's bot token (oauth.v2.access)."""
@@ -41,8 +48,10 @@ class SlackChannel(ApprovalChannel):
                     {"type": "button", "action_id": "reject", "style": "danger", "text": {"type": "plain_text", "text": msg.reject_label}, "value": msg.reject_token}]}]
 
     def describe(self, secrets):
-        d = self._api(secrets, "auth.test", {})
-        return {"name": d.get("team") or None, "team_id": d.get("team_id") or None}
+        r, d = self._post(secrets, "auth.test", {})
+        granted = r.headers.get("x-oauth-scopes")  # Slack lists the token's scopes on every Web API response
+        return {"name": d.get("team") or None, "team_id": d.get("team_id") or None,
+                "scopes": None if granted is None else sorted(x.strip() for x in granted.split(",") if x.strip())}
 
     @staticmethod
     def _payload(body: bytes) -> dict:

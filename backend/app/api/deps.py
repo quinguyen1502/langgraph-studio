@@ -7,7 +7,7 @@ from ..core import config, security
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, WorkflowTestRepository, CredentialRepository as _Creds
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, ChatTriggerRepository, WorkflowTestRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.code_service import CodeService
 from ..services.inbox_service import InboxService
@@ -38,6 +38,7 @@ from ..services.notification_service import NotificationService
 from ..services.rate_limit import Counter, RateLimiter, make_counter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.schedule_service import ScheduleService
+from ..services.chat_trigger_service import ChatTriggerService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 from ..services.workflow_test_service import WorkflowTestService
@@ -91,6 +92,10 @@ def schedule_service() -> ScheduleService:
     db = get_db(); return ScheduleService(ScheduleRepository(db), WorkflowRepository(db), RunRepository(db), get_job_queue(), access=access_service())
 
 
+def chat_trigger_service() -> ChatTriggerService:
+    db = get_db(); return ChatTriggerService(ChatTriggerRepository(db), WorkflowRepository(db), channel_service(), access=access_service())
+
+
 def trigger_service() -> TriggerService:
     db = get_db(); return TriggerService(WorkflowRepository(db), RunRepository(db), WorkflowTokenRepository(db), get_job_queue(), get_rate_limiter(),
                                          access=access_service())
@@ -104,7 +109,8 @@ def get_telemetry() -> Telemetry:
 def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
                                           access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db),
-                                          teams=TeamRepository(db), audit=audit_service(), tests=WorkflowTestRepository(db))
+                                          teams=TeamRepository(db), audit=audit_service(), tests=WorkflowTestRepository(db),
+                                          chat_triggers=ChatTriggerRepository(db))
 
 def template_service() -> TemplateService:
     return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service(), tests=workflow_test_service)
@@ -149,7 +155,7 @@ def workflow_test_service() -> WorkflowTestService:
                                               get_job_queue(), run_service, access=access_service())
 
 def channel_service() -> ChannelService:
-    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed)
+    db = get_db(); return ChannelService(ApprovalRepository(db), UserRepository(db), ADAPTERS, policy_service().org_allowed, triggers=ChatTriggerRepository(db))
 
 def approval_service() -> ApprovalService:
     db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,

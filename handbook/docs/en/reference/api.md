@@ -99,6 +99,14 @@ WS /ws/run
     POST   /api/schedules/preview
     ```
 
+??? abstract "Chat triggers"
+
+    ```text
+    GET    /api/workflows/{wid}/chat-triggers       POST   /api/workflows/{wid}/chat-triggers
+    PATCH  /api/workflows/{wid}/chat-triggers/{tid} DELETE /api/workflows/{wid}/chat-triggers/{tid}
+    (owner or admin; {channel_id, place: "dm" | channel or chat id, command, input_field, reply_field, enabled})
+    ```
+
 ??? abstract "Workflow tests"
 
     ```text

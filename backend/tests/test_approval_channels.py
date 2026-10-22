@@ -307,7 +307,7 @@ def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypa
     ch = connect(c, owner, "telegram")
     assert ch["callback_url"] == f"https://studio.example.com/api/approvals/callback/telegram/{ch['id']}"
     reg = c.post(f"/api/approvals/channels/{ch['id']}/register-webhook", headers=H(owner["token"])).json()["data"]
-    assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query"]}
+    assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query", "message"]}
     link(c, api, owner, "telegram", tid, own_channel=False)
     wid = workflow(c, owner, {"channel": "telegram", "target": "-100200300"}); rid = start_waiting(c, owner, wid)
     msg = until(lambda: api.requests("sendMessage"))[-1]
@@ -510,7 +510,8 @@ def test_test_connection(c, api, monkeypatch):
     from app.core.errors import AppError
     o = user(c); ch = connect(c, o, "slack")
     r = c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(o["token"]))
-    assert r.status_code == 200 and r.json()["data"] == {"ok": True, "name": "Team 2222", "team_id": "2222", "matches": True}
+    assert r.status_code == 200 and r.json()["data"] == {"ok": True, "name": "Team 2222", "team_id": "2222", "matches": True,
+                                                         "missing_scopes": None}  # the fake sends no x-oauth-scopes: unknown (TASK-0074)
     assert c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(user(c)["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
     def broken(self, secrets): raise AppError("CHANNEL_API_FAILED", kind="Slack", reason="invalid_auth")
     monkeypatch.setattr(type(ADAPTERS["slack"]), "describe", broken)

@@ -56,6 +56,9 @@ docker compose up --build   # http://localhost:8080
 7. **Operations:** immutable versions with diff and restore, admin, editor
    and viewer roles, shares and teams, an audit log, and OpenTelemetry traces
    to OTLP or LangSmith.
+8. **Learn LangGraph:** the Code tab shows any workflow as one readable LangGraph
+   Python file that runs on its own (offline with a mock model), with the
+   selected node's code highlighted.
 
 ## How it works
 

@@ -6,11 +6,11 @@
 
 | Area | What it holds |
 | --- | --- |
-| Top bar | Name, **Save**, **Run**, **Step**, **Run to here**, undo and redo. Everything else is in the **⋯** (More actions) menu: layout, versions, schedules, API, share, save as template, transfer, delete. |
+| Top bar | Name, **Save**, **Run**, **Step**, **Run to here**, undo and redo. Everything else is in the **⋯** (More actions) menu: layout, versions, schedules, API, share, save as template, workflow JSON, view as code, transfer, delete. |
 | Left | **Node palette** and the **State schema** editor. |
 | Centre | The React Flow canvas. |
 | Right | **Config** for the selected node or edge. |
-| Bottom | **Input** (JSON), **Logs** (the live trace) and **History**. |
+| Bottom | **Input** (JSON), **Logs** (the live trace), **History**, [**Tests**](../run/tests.md) and [**Code**](python-export.md) (the workflow as LangGraph Python). |
 
 Drag the border of the left, right or bottom panel to resize it. The
 minimums are 180 px, 260 px and 140 px, and the canvas keeps at least

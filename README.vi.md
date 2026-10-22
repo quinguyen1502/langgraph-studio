@@ -58,6 +58,9 @@ docker compose up --build   # http://localhost:8080
 7. **Vận hành:** phiên bản bất biến có diff và khôi phục, vai trò admin,
    editor và viewer, chia sẻ và nhóm, nhật ký audit, trace OpenTelemetry gửi
    tới OTLP hoặc LangSmith.
+8. **Học LangGraph:** tab Code hiện mọi workflow dưới dạng một file Python
+   LangGraph dễ đọc, chạy được độc lập (offline với model mock), tô sáng code
+   của node đang chọn.
 
 ## Cách hoạt động
 

@@ -42,6 +42,7 @@ nav:
       - Máy chủ MCP: guide/mcp.md
       - Mẫu workflow: guide/templates.md
       - Phiên bản: guide/versions.md
+      - Xuất ra Python: guide/python-export.md
   - Chạy:
       - run/index.md
       - Run và trace: run/traces.md

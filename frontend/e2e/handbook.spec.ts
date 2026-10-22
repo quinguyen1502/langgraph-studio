@@ -153,6 +153,10 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await shot(page, lang, 'tests')
       await page.getByTestId('test-edit').click(); await expect(page.locator('#test-dialog')).toBeVisible()
       await shot(page, lang, 'test-case'); await page.keyboard.press('Escape')
+      // Export to Python (TASK-0072): version 1 in the Code tab, with the Human node's code marked
+      await page.locator('#code-tab').click(); await page.locator('.react-flow__node[data-id="manager"]').click()
+      await expect(page.locator('.cm-node-mark').first()).toBeVisible()
+      await shot(page, lang, 'code-tab')
       const v1 = (await (await page.request.get(`/api/workflows/${leave}`, { headers: H })).json()).data
       v1.nodes.find((n: { id: string }) => n.id === 'manager').data.output_field = 'details'  // the answer now overwrites the details
       await page.request.post('/api/workflows', { headers: H, data: v1 })

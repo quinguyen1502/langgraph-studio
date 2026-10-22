@@ -184,6 +184,8 @@ Select **Draft reply** on the canvas or in **Logs**. The step opens with
 - Branch on the decision with a **Condition** node: [Nodes](../guide/nodes.md).
 - Keep test cases with an input, the Human answer and what the run should show:
   [Workflow tests](../run/tests.md).
+- See the workflow as LangGraph Python and run it on its own:
+  [Export to Python](../guide/python-export.md).
 - Send approvals to Slack, Telegram, WhatsApp, e-mail or Teams:
   [Approval channels](../operate/channels.md).
 - Run the full stack with Postgres, Redis and a worker:

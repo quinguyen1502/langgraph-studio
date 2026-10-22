@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0072
-- Status: todo
+- Status: done (PR #96, REV-0067, QA-0067)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -29,7 +29,7 @@ and how to run the file.
   - running the file: `pip install langgraph`, the mock by default, environment variables and packages for a real
     model; what is not included (credentials, studio extras, stubs for Retriever, MCP and Send email);
   - limits: imported repositories, timeouts.
-- Screenshot `python-export.png` (en, vi) from `frontend/e2e/handbook.spec.ts`; only the images this task changes are
+- Screenshot `code-tab.png` (en, vi; named after the Code tab) from `frontend/e2e/handbook.spec.ts`; only the images this task changes are
   committed.
 - Links from the editor page, the Guide index and the quickstart's "Next steps"; the API reference already lists the
   route (TASK-0070).
@@ -90,6 +90,11 @@ and how to run the file.
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0043.
+- 2026-10-22: started after PR #94 merged (owner approved).
+- 2026-10-22: implemented. Review REV-0067, QA QA-0067. The approval select's missing key is fixed by PR #95
+  (TASK-0073); the screenshot is retaken after it merges.
+- 2026-10-22: PR #95 merged (owner approved the order); rebased, `code-tab.png` (en, vi) retaken: the select shows
+  "not connected" / "chưa kết nối". Owner approved; done.
 
 ## Handoff Notes
 

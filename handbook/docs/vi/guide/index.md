@@ -53,4 +53,10 @@ node, nối state, và dùng lại công sức giữa các workflow.
 
     Lịch sử mọi thay đổi, so sánh và khôi phục.
 
+-   :material-language-python:{ .lg .middle } **[Xuất ra Python](python-export.md)**
+
+    ---
+
+    Xem workflow dưới dạng code LangGraph, và chạy nó độc lập.
+
 </div>

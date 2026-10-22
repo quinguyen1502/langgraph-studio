@@ -667,6 +667,7 @@
       "studio": "Studio"
     },
     "optional": "optional",
+    "notConnected": "not connected",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
       "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",

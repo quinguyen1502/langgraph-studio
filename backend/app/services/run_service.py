@@ -182,7 +182,12 @@ class RunService:
         edits = row is None or self.access is None or self.access.may(wid, uid, P.EDIT)
         wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
-        version = self._version_of(wid, wf)
+        n = req.get("version")  # a stored version's snapshot instead (workflow tests run against version, TASK-0068)
+        if n is not None:
+            v = self.versions.get(wid, n) if wid and edits and self.versions is not None and isinstance(n, int) and not isinstance(n, bool) else None
+            if v is None: raise AppError("VERSION_NOT_FOUND")
+            wf = json.loads(v.data or "{}")
+        version = n if n is not None else self._version_of(wid, wf)
         res = row.owner if row is not None and row.owner else uid  # a saved workflow uses its owner's resources (DEC-0023)
         wf, invalid = self._expand(res, wid, wf)
         if (steps is not None or until) and (wf.get("source") or {}).get("kind") == "langgraph_import":
@@ -326,7 +331,8 @@ class RunService:
             except Exception: log.warning("exporting the lost segment of run %s failed", r.id)
         common = dict(run_id=r.id, source=r.source or "api", trace_parent=lost, checkpointing=True, fence=fence, attempt=attempt)
         if not (cp.get("node") or cp.get("nodes")):  # nothing finished yet: restart from the beginning
-            plan = self.plan(r.owner or "", {"workflow_id": r.workflow_id, "input": json.loads(r.input or "{}")})
+            pin = {"version": r.workflow_version} if r.source == "test" and r.workflow_version else {}  # a test run keeps its version
+            plan = self.plan(r.owner or "", {"workflow_id": r.workflow_id, "input": json.loads(r.input or "{}"), **pin})
             for k, v in common.items(): setattr(plan, k, v)
             return plan
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),

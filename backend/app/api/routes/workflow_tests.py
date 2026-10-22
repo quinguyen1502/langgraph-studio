@@ -1,4 +1,4 @@
-"""Workflow tests (TASK-0067, REQ-0042): test cases of a workflow and the suite runs that check them."""
+"""Workflow tests (TASK-0067, TASK-0068, REQ-0042): test cases of a workflow and the suite runs that check them."""
 from fastapi import APIRouter, Body, Depends
 from ..deps import current_user, limit_body, workflow_test_service
 
@@ -20,8 +20,14 @@ def delete_test(wid: str, tid: str, user=Depends(current_user), svc=Depends(work
 @router.post("/run")
 def run_tests(wid: str, body=Body(None), user=Depends(current_user), svc=Depends(workflow_test_service)): return svc.run(wid, user["id"], body)
 
+@router.get("/runs")
+def suite_history(wid: str, user=Depends(current_user), svc=Depends(workflow_test_service)): return svc.history(wid, user["id"])
+
 @router.get("/runs/{sid}")
 def get_suite(wid: str, sid: str, user=Depends(current_user), svc=Depends(workflow_test_service)): return svc.suite(wid, sid, user["id"])
 
 @router.post("/runs/{sid}/cancel")
 def cancel_suite(wid: str, sid: str, user=Depends(current_user), svc=Depends(workflow_test_service)): return svc.cancel(wid, sid, user["id"])
+
+@router.post("/from-run/{rid}")
+def draft_from_run(wid: str, rid: str, user=Depends(current_user), svc=Depends(workflow_test_service)): return svc.from_run(wid, rid, user["id"])

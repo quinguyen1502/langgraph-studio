@@ -45,6 +45,9 @@ person, and the owner chose a per-suite option to run every LLM node with the of
    cases of a suite run at once; each settled test run starts the next queued case.
 7. **History.** Test runs are left out of the run history, the last-run column of the workflow list and the waiting
    list; `GET /api/workflows/{id}/runs?tests=true` lists them.
+8. **Versions (TASK-0068).** A suite runs one stored version: the latest by default, or an earlier one on request
+   (editors only). Each test job carries that version, and the run plans from its snapshot, also when it is recovered
+   and restarts. A suite result is compared, by test id, with the latest finished suite run on a lower version.
 
 ## Rationale
 

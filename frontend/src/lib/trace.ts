@@ -12,7 +12,7 @@ export type RunMetrics = { duration_ms: number; tokens: number; tokens_in: numbe
 export type Span = { key: string; node: string; label: string; type: string; iter: number; status: 'running' | 'done' | 'error' | 'cancelled' | 'waiting'
   start: number; end?: number; duration?: number; input?: any; output?: any; error?: string; tokens?: number; cost?: number | null; usage?: Usage; events: RunEvent[]
   live?: string; code?: CodeOutput }  // TASK-0030: LLM text streamed so far (node_token deltas; not stored in run history)
-export type Trace = { spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout' | 'waiting' | 'expired' | 'paused'; start?: number; end?: number; total?: number
+export type Trace = { runId?: string; spans: Span[]; status: 'idle' | 'running' | 'ok' | 'error' | 'cancelled' | 'timeout' | 'waiting' | 'expired' | 'paused'; start?: number; end?: number; total?: number
   tokens?: number; errors: string[]; final?: any; metrics?: RunMetrics; traceUrl?: string
   waiting?: { runId?: string; node?: string; label?: string; prompt?: string }
   paused?: { runId?: string } }  // TASK-0036: one-step pause, not a human approval
@@ -63,7 +63,7 @@ export function buildTrace(events: RunEvent[], meta: (id: string) => { label?: s
   const end = stamped.length ? stamped[stamped.length - 1].ts : kept[kept.length - 1]?.end
   const tokens = kept.reduce((a, s) => a + (s.tokens || 0), 0)
   const metrics = summary?.metrics ?? undefined
-  return { spans: kept, status, start, end, total: metrics?.duration_ms ?? (start != null && end != null ? (end - start) * 1000 : undefined),
+  return { runId, spans: kept, status, start, end, total: metrics?.duration_ms ?? (start != null && end != null ? (end - start) * 1000 : undefined),
     tokens: metrics?.tokens ?? (tokens || undefined), errors, final, metrics, traceUrl: summary?.trace_url ?? undefined,
     waiting: status === 'waiting' && waitingEv ? { runId, node: waitingEv.node, label: waitingEv.label, prompt: waitingEv.prompt } : undefined,
     paused: status === 'paused' ? { runId } : undefined }

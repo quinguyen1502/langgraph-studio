@@ -1623,6 +1623,23 @@
       "node_missing": "This node is not in the workflow.",
       "not_evaluated": "Not checked: the run did not finish.",
       "no_price": "Not checked: the model has no known price."
+    },
+    "saveFromRun": "Save as test case",
+    "runVersion": "Run against version",
+    "runVersionHelp": "Run the tests on a stored earlier version, to compare with it.",
+    "noVersions": "No earlier version",
+    "history": "Test history",
+    "noHistory": "No test runs yet.",
+    "historyItem": "v{{version}}: {{passed}} passed, {{failed}} failed",
+    "comparedWith": "Compared with v{{version}}:",
+    "noBaseline": "No earlier result to compare with.",
+    "stale": "No longer in the graph",
+    "change": {
+      "regression": "Regression",
+      "fixed": "Fixed",
+      "still_failing": "Still failing",
+      "still_passing": "Still passing",
+      "new": "New"
     }
   }
 }

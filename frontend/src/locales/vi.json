@@ -1623,6 +1623,23 @@
       "node_missing": "Node này không có trong workflow.",
       "not_evaluated": "Không kiểm tra: run chưa chạy xong.",
       "no_price": "Không kiểm tra: model chưa có giá."
+    },
+    "saveFromRun": "Lưu thành test case",
+    "runVersion": "Chạy trên version",
+    "runVersionHelp": "Chạy test trên một version cũ đã lưu để có kết quả so sánh.",
+    "noVersions": "Chưa có version cũ",
+    "history": "Lịch sử test",
+    "noHistory": "Chưa chạy test lần nào.",
+    "historyItem": "v{{version}}: {{passed}} đạt, {{failed}} không đạt",
+    "comparedWith": "So với v{{version}}:",
+    "noBaseline": "Chưa có kết quả trước đó để so sánh.",
+    "stale": "Không còn trong graph",
+    "change": {
+      "regression": "Hỏng mới",
+      "fixed": "Đã sửa",
+      "still_failing": "Vẫn lỗi",
+      "still_passing": "Vẫn đạt",
+      "new": "Mới"
     }
   }
 }

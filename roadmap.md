@@ -187,5 +187,5 @@ REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a moc
 REQ-0043, Accepted 2026-10-22 (the owner chose a runnable file with the mock by default, English comments, and subgraphs as their own graphs).
 
 - TASK-0070 Generator: one readable, runnable LangGraph `.py` per workflow version, API route, same-path check against the studio's mock run for every built-in template, DEC-0045. **merged** (PR #93, REV-0064, QA-0064).
-- TASK-0071 Editor panel "View as Python": code beside the canvas, the selected node's function highlighted, Copy and Download. **todo**. After TASK-0070.
+- TASK-0071 Editor "Code" tab ("View as code"; other languages may follow): code beside the canvas, the selected node's function highlighted, Copy and Download. **merged** (PR #94, REV-0065, QA-0065).
 - TASK-0072 Handbook "Export to Python" page (en, vi) with the canvas → code table and a screenshot. **todo**. After TASK-0070 and TASK-0071.

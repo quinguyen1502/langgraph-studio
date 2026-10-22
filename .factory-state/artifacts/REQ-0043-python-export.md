@@ -7,7 +7,8 @@
 - Status: Accepted (owner, in chat, 2026-10-22)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
-- Updated: 2026-10-22
+- Updated: 2026-10-22 (the editor entry is named "Code" / "View as code": other languages, e.g. TypeScript, may
+  follow; owner, during TASK-0071)
 - Source: owner request in chat, 2026-10-22. After REQ-0042 (proposal 3), the owner asked for proposal 5. It serves
   the learning goal: export a workflow as a readable LangGraph Python file that matches the graph on the canvas, so a
   learner sees how the graph is written in code. Proposal 6 (channels as run triggers) stays for later.

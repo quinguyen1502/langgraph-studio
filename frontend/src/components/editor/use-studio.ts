@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { addEdge, useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection } from '@xyflow/react'
-import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, Search } from 'lucide-react'
+import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, Search, FileCode2 } from 'lucide-react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { freeSpot, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
@@ -41,6 +41,7 @@ export function useStudio() {
   const [channels, setChannels] = useState<Channels | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [tab, setTab] = useState('input')
+  const [saves, setSaves] = useState(0)  // successful saves: the Code tab reloads the code after each (TASK-0071)
   const [running, setRunning] = useState(false)
   const [traceSel, setTraceSel] = useState<string | null>(null); const [replay, setReplay] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
@@ -88,7 +89,7 @@ export function useStudio() {
   const save = async () => {
     try {
       const r = await api('/api/workflows', { method: 'POST', json: toJSON() })
-      setWid(r.id); setErrors(r.errors); savedSnap.current = snap(); if (r.errors.length) setTab('input')
+      setWid(r.id); setErrors(r.errors); savedSnap.current = snap(); setSaves(n => n + 1); if (r.errors.length) setTab('input')
     } catch (e: any) { setErrors([t('editor.saveFailed', { error: e.message })]); setTab('input') }
   }
   const mark = (id: string, patch: any) => setNodes(ns => ns.map(n => n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
@@ -214,6 +215,8 @@ export function useStudio() {
     { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
     { id: 'action:schedules', group: 'actions', label: t('schedules.button'), icon: CalendarClock, menu: 'workflow', elementId: 'schedules-btn', disabled: !wid || access !== 'owner', run: () => setDlg('schedules') },
     { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
+    { id: 'action:code', group: 'actions', label: t('codeView.button'), icon: FileCode2, menu: 'workflow', elementId: 'code-btn', keywords: ['langgraph', 'python', 'export'],
+      disabled: !!source, run: () => setTab('code') },
     { id: 'action:openPalette', group: 'actions', label: t('palette.title'), icon: Search, shortcut: 'palette', menu: 'help', elementId: 'palette-btn', run: openPalette },
     { id: 'action:deleteWorkflow', group: 'actions', label: t('editor.deleteWorkflow'), icon: Trash2, menu: 'danger', destructive: true, elementId: 'delete-wf-btn',
       disabled: !wid || access !== 'owner', run: () => { if (wid) delWf.ask({ id: wid, name }) } },
@@ -289,7 +292,7 @@ export function useStudio() {
     tab, setTab, running, traceSel, setTraceSel, replay, setReplay, loadErr, access, ownerEmail, edit, dark, rf,
     hist, load, openRun, toJSON, save, mark, run, respond, cancelRun, removeIds,
     clipNote, note, insert, editable, layoutDir, cheat, setCheat, insertAround, addNote, dlg, setDlg, ctx, setCtx,
-    delWf, isDirty, paletteCmds, trace, traceMeta, step, continueRun, nodesView, onNodeClick, onConnect, onDrop,
+    delWf, isDirty, saves, paletteCmds, trace, traceMeta, step, continueRun, nodesView, onNodeClick, onConnect, onDrop,
     selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds,
   }
 }

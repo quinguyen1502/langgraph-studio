@@ -69,6 +69,8 @@ WS /ws/run
     DELETE /api/workflows/{wid}/shares/{target}
     PUT    /api/workflows/{wid}/team-shares     DELETE /api/workflows/{wid}/team-shares/{tid}
     GET    /api/workflows/{wid}/transfer        POST   /api/workflows/{wid}/transfer
+    GET    /api/workflows/{wid}/python          (mã, các dòng của node; ?version=n)
+    GET    /api/workflows/{wid}/export/python   (file .py để tải về)
     ```
 
 ??? abstract "Runs"

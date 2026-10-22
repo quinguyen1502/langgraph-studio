@@ -416,6 +416,7 @@
     "TEST_SUITE_NOT_FOUND": "Test run not found",
     "TEST_SUITE_RUNNING": "The tests of this workflow are already running",
     "TEST_NOT_SUPPORTED": "Imported LangGraph workflows cannot have tests",
+    "PYTHON_EXPORT_UNAVAILABLE": "Imported LangGraph workflows are Python code already: there is nothing to export.",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",

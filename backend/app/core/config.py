@@ -49,6 +49,7 @@ def wait_ttl() -> float: return max(0.0, float(os.environ.get("STUDIO_WAIT_TTL",
 def sync_wait_max() -> float: return max(0.0, float(os.environ.get("STUDIO_SYNC_WAIT_MAX", 30)))  # sync trigger: then 202 + poll URL
 def trigger_rate_limit() -> int: return max(0, _int("STUDIO_TRIGGER_RATE_LIMIT", 60))  # runs per token per window (0 = off)
 def trigger_rate_window() -> int: return max(1, _int("STUDIO_TRIGGER_RATE_WINDOW", 60))  # seconds
+def chat_trigger_rate_limit() -> int: return max(0, _int("STUDIO_CHAT_TRIGGER_RATE_LIMIT", 60))  # runs per sender and chat trigger per STUDIO_TRIGGER_RATE_WINDOW (0 = off)
 def version_keep() -> int: return max(0, _int("STUDIO_VERSION_KEEP", 0))  # keep last N versions (0 = all)
 # --- TASK-0020 ---
 def webhook_max_attempts() -> int: return max(1, _int("STUDIO_WEBHOOK_MAX_ATTEMPTS", 5))

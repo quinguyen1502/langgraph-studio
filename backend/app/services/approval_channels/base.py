@@ -35,6 +35,17 @@ class Callback:
     context: dict = field(default_factory=dict)  # what acknowledge() needs (response_url, callback_query_id, ...)
 
 
+@dataclass
+class IncomingMessage:
+    """A message to the bot, parsed from the platform's callback (TASK-0075): chat triggers match its first word."""
+    team: str      # workspace (Slack team id); "" on platforms without workspaces
+    place: str     # "dm" (a direct message to the bot) or the channel / chat id
+    sender: str    # platform user id
+    text: str      # without the bot mention
+    key: str       # the platform's id of this delivery (Slack event_id, Telegram update_id): retries carry the same one
+    ref: dict = field(default_factory=dict)  # where replies go (reply() / reply_private())
+
+
 class ApprovalChannel:
     kind: str = ""
     label: str = ""                         # display name in messages ("Slack")
@@ -110,6 +121,23 @@ class ApprovalChannel:
 
     def send_dm(self, secrets: dict, external_id: str, text: str) -> None:
         """Send a private message to one platform user (the identity verification code)."""
+        raise NotImplementedError
+
+    # ---- chat triggers (TASK-0075): only platforms with `chat` ----
+    def handle_message(self, body: bytes) -> Optional[IncomingMessage]:
+        """Parse a message to the bot; None for anything else (bots, edits, joins, files, button presses)."""
+        return None
+
+    def event_challenge(self, body: bytes) -> Optional[str]:
+        """The value to echo when the platform checks the events URL (Slack url_verification); None otherwise."""
+        return None
+
+    def reply(self, secrets: dict, ref: dict, text: str) -> None:
+        """Answer in the message's thread, for everyone in the chat."""
+        raise NotImplementedError
+
+    def reply_private(self, secrets: dict, ref: dict, sender: str, text: str) -> None:
+        """Answer the sender only (refusals)."""
         raise NotImplementedError
 
     # ---- HTTP helper ----

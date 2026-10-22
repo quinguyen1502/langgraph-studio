@@ -72,6 +72,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | --- | --- | --- |
 | `STUDIO_TRIGGER_RATE_LIMIT` | `60` | Số run mỗi token trong một khung; `0` là tắt |
 | `STUDIO_TRIGGER_RATE_WINDOW` | `60` | Độ dài khung (giây) |
+| `STUDIO_CHAT_TRIGGER_RATE_LIMIT` | `60` | Chat trigger: số run mỗi người gửi và trigger trong một khung; `0` là tắt |
 | `STUDIO_SYNC_WAIT_MAX` | `30` | Thời gian chờ `sync` tối đa (giây) |
 | `STUDIO_ALLOW_PRIVATE_CALLBACKS` | `0` | Cho phép callback tới địa chỉ private |
 | `STUDIO_WEBHOOK_MAX_ATTEMPTS` | `5` | Số lần gửi |

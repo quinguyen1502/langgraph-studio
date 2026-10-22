@@ -7,7 +7,7 @@ from ..core import config, security
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, ChatTriggerRepository, WorkflowTestRepository, CredentialRepository as _Creds
+from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, ChatTriggerRepository, ChatMessageRepository, WorkflowTestRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.code_service import CodeService
 from ..services.inbox_service import InboxService
@@ -39,6 +39,7 @@ from ..services.rate_limit import Counter, RateLimiter, make_counter, make_rate_
 from ..services.trigger_service import TriggerService
 from ..services.schedule_service import ScheduleService
 from ..services.chat_trigger_service import ChatTriggerService
+from ..services.chat_run_service import ChatRunService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 from ..services.workflow_test_service import WorkflowTestService
@@ -61,7 +62,7 @@ def get_job_queue() -> JobQueue:
 
 @lru_cache
 def run_worker() -> RunWorker:
-    return RunWorker(get_job_queue(), run_service, delivery_service, schedule_service, approval_service)
+    return RunWorker(get_job_queue(), run_service, delivery_service, schedule_service, approval_service, chat_run_service)
 
 
 @lru_cache
@@ -94,6 +95,11 @@ def schedule_service() -> ScheduleService:
 
 def chat_trigger_service() -> ChatTriggerService:
     db = get_db(); return ChatTriggerService(ChatTriggerRepository(db), WorkflowRepository(db), channel_service(), access=access_service())
+
+
+def chat_run_service() -> ChatRunService:
+    db = get_db(); return ChatRunService(ChatMessageRepository(db), ChatTriggerRepository(db), channel_service(), UserRepository(db), WorkflowRepository(db),
+                                         RunRepository(db), get_job_queue(), access=access_service(), limiter=get_rate_limiter())
 
 
 def trigger_service() -> TriggerService:
@@ -148,7 +154,7 @@ def auth_service() -> AuthService:
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,
                       knowledge=knowledge_service(), mcp=mcp_service(), access=access_service(),
-                      policy=policy_service(), quota=get_counter(), audit=audit_service(), tests=workflow_test_service)
+                      policy=policy_service(), quota=get_counter(), audit=audit_service(), tests=workflow_test_service, chat=chat_run_service)
 
 def workflow_test_service() -> WorkflowTestService:
     db = get_db(); return WorkflowTestService(WorkflowTestRepository(db), WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
@@ -159,7 +165,7 @@ def channel_service() -> ChannelService:
 
 def approval_service() -> ApprovalService:
     db = get_db(); return ApprovalService(ApprovalRepository(db), UserRepository(db), WorkflowRepository(db), RunRepository(db), channel_service(), get_job_queue().enqueue,
-                                         limiter=get_rate_limiter(), notifier=notification_service())
+                                         limiter=get_rate_limiter(), notifier=notification_service(), chat=chat_run_service)
 
 def inbox_service() -> InboxService:
     return InboxService(approval_service(), run_service(), access_service())

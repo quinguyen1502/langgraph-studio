@@ -20,6 +20,15 @@ TEXTS: dict[str, dict[str, str]] = {
         "APPROVAL_ALREADY_DECIDED": "This request was already answered",
         "APPROVAL_IDENTITY_UNKNOWN": "Link and verify your {kind} account in Superstep (Settings → My accounts) to approve",
         "APPROVAL_FORBIDDEN": "You are not allowed to approve this run",
+        # chat triggers (TASK-0075)
+        "chat_started": "▶️ Started {workflow} (run {run})", "chat_finished": "✅ {workflow} finished: {value}",
+        "chat_waiting": "⏸ {workflow} is waiting for approval at {node}", "chat_failed": "❌ {workflow} failed: {error}",
+        "chat_ended": "⏹ {workflow} stopped ({status})", "chat_empty": "(no value)", "chat_open": "Open the run: {link}",
+        "CHAT_IDENTITY_UNKNOWN": "Link your {kind} account in Superstep (Settings → My accounts) to run workflows from the chat",
+        "CHAT_IDENTITY_UNVERIFIED": "Verify your {kind} account in Superstep (Settings → My accounts) with the code the bot sent you",
+        "CHAT_FORBIDDEN": "You are not allowed to run this workflow", "CHAT_TRIGGER_OFF": "This chat trigger is off",
+        "RATE_LIMITED": "Too many runs from you with this command. Try again in a minute",
+        "RUN_INPUT_TOO_LARGE": "The message is too long", "WORKFLOW_NOT_FOUND": "This workflow no longer exists",
     },
     "vi": {
         "title": "Cần phê duyệt", "workflow": "Workflow: {v}", "step": "Bước: {v}", "question": "Câu hỏi: {v}", "run": "Lượt chạy: {v}",
@@ -34,6 +43,14 @@ TEXTS: dict[str, dict[str, str]] = {
         "APPROVAL_ALREADY_DECIDED": "Yêu cầu này đã được trả lời",
         "APPROVAL_IDENTITY_UNKNOWN": "Hãy liên kết và xác minh tài khoản {kind} trong Superstep (Cài đặt → Tài khoản của tôi) để phê duyệt",
         "APPROVAL_FORBIDDEN": "Bạn không có quyền phê duyệt lượt chạy này",
+        "chat_started": "▶️ Đã chạy {workflow} (lượt chạy {run})", "chat_finished": "✅ {workflow} đã xong: {value}",
+        "chat_waiting": "⏸ {workflow} đang chờ phê duyệt ở {node}", "chat_failed": "❌ {workflow} bị lỗi: {error}",
+        "chat_ended": "⏹ {workflow} đã dừng ({status})", "chat_empty": "(không có giá trị)", "chat_open": "Mở lượt chạy: {link}",
+        "CHAT_IDENTITY_UNKNOWN": "Hãy liên kết tài khoản {kind} trong Superstep (Cài đặt → Tài khoản của tôi) để chạy workflow từ chat",
+        "CHAT_IDENTITY_UNVERIFIED": "Hãy xác minh tài khoản {kind} trong Superstep (Cài đặt → Tài khoản của tôi) bằng mã bot đã gửi cho bạn",
+        "CHAT_FORBIDDEN": "Bạn không có quyền chạy workflow này", "CHAT_TRIGGER_OFF": "Chat trigger này đang tắt",
+        "RATE_LIMITED": "Bạn đã chạy lệnh này quá nhiều lần. Hãy thử lại sau một phút",
+        "RUN_INPUT_TOO_LARGE": "Tin nhắn quá dài", "WORKFLOW_NOT_FOUND": "Workflow này không còn tồn tại",
     },
 }
 

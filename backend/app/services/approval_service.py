@@ -27,10 +27,12 @@ BACKGROUND = True  # send/edit messages off the request thread; tests switch it 
 
 class ApprovalService:
     def __init__(self, repo: ApprovalRepository, users: UserRepository, workflows: WorkflowRepository, runs: RunRepository, channels: ChannelService,
-                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None, limiter=None, notifier=None):
+                 enqueue: Optional[Callable[[dict], None]] = None, background: Optional[bool] = None, limiter=None, notifier=None,
+                 chat: Optional[Callable[[], object]] = None):
         self.repo, self.users, self.workflows, self.runs, self.channels, self.enqueue = repo, users, workflows, runs, channels, enqueue
         self.notifier = notifier  # NotificationService (optional): deadline reminders and escalations (TASK-0066)
         self.limiter = limiter  # RateLimiter for the public callbacks (None = no limit)
+        self.chat = chat  # -> ChatRunService (optional): messages on the same webhook start chat-trigger runs (TASK-0075)
         self.adapters = channels.adapters
         self.background = BACKGROUND if background is None else background
 
@@ -157,14 +159,8 @@ class ApprovalService:
             c = self.repo.channel(cid)
             if c is None or c.kind != a.kind: raise AppError("CHANNEL_NOT_FOUND")
             sec = self._secrets(c); a.verify(sec, headers, body); return c, sec  # 401 CHANNEL_SIGNATURE_INVALID
-        team = a.route_key(body) if a.shared_callback else None
-        rows = self.repo.channels_by_team(a.kind, team) if team else []  # unknown team: same 401 as a bad signature
-        ok = []
-        for c in rows:
-            sec = self._secrets(c)
-            try: a.verify(sec, headers, body); ok.append((c, sec))
-            except AppError: continue
-        if not ok: raise AppError("CHANNEL_SIGNATURE_INVALID")
+        ok = self.channels.verified(a, a.route_key(body) if a.shared_callback else None, headers, body)
+        if not ok: raise AppError("CHANNEL_SIGNATURE_INVALID")  # unknown team: same 401 as a bad signature
         want = (cb.token.split(".") + ["", ""])[1] if cb else ""
         req = self.repo.request(want) if want else None
         return next(((c, sec) for c, sec in ok if req is not None and c.id == req.channel_id), ok[0])
@@ -181,7 +177,9 @@ class ApprovalService:
         a = self.adapter(kind); headers = {k.lower(): v for k, v in headers.items()}
         cb = a.handle_callback(body)  # parsing only; nothing is trusted before the signature check below
         c, sec = self._connection(a, cid, headers, body, cb)
-        if cb is None: return {"outcome": "ignored"}
+        if cb is None:  # not a button press: a message to the bot (Telegram's one webhook) may start a run
+            m = a.handle_message(body) if a.chat and self.chat is not None else None
+            return self.chat().receive([(c, sec)], m) if m else {"outcome": "ignored"}
         team = (c.team_id or "") if a.per_team else ""
         code, r, decision = self.decide(kind, c.id, cb.token, cb.external_user, team)
         presser = self.repo.user_for(kind, cb.external_user, team) if cb.external_user else None

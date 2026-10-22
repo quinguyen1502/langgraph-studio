@@ -59,6 +59,12 @@ class ApprovalRepository:
             return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.team_id == team,
                                                                   ChannelIdentity.external_id == external_id, ChannelIdentity.verified_at.is_not(None)))
 
+    def linked(self, kind: str, external_id: str, team: str = "") -> bool:
+        """Someone linked this account, verified or not (chat triggers tell "not linked" from "not verified", TASK-0075)."""
+        with self.db.session() as s:
+            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.team_id == team,
+                                                                  ChannelIdentity.external_id == external_id).limit(1)) is not None
+
     def put_identity(self, uid: str, kind: str, team: str, external_id: Optional[str]) -> None:
         """Link (unverified, no code yet) or unlink with None. Relinking the same account keeps its state."""
         with self.db.session() as s:

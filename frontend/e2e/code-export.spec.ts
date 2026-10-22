@@ -21,7 +21,7 @@ test('Code tab: Python of the saved version, the selected node highlighted, copy
 
   // selecting a node marks its function
   await page.locator('.react-flow__node[data-id="reply"]').click()
-  await expect(page.locator('#code-hint')).toContainText('Reply')
+  await expect(page.locator('#code-hint')).toContainText('“Reply”')
   await expect(page.locator('.cm-node-mark').first()).toContainText('REPLY_PROMPT')
   await expect(page.locator('.cm-node-mark').filter({ hasText: 'def reply(state: State) -> dict:' })).toHaveCount(1)
 

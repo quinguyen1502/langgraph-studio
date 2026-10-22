@@ -14,7 +14,7 @@ import { removable } from '@/lib/graph-ops'
 /** Canvas with its context menu (TASK-0040). */
 export function EditorCanvas() {
   const { t } = useTranslation()
-  const { nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, setSel, source, edit, dark, rf, removeIds, clipNote, copyIds, insert, editable, insertAround, addNote, ctx, setCtx, nodesView, onNodeClick, onConnect, onDrop, canvasLock, setCanvasLock } = useStudioCtx()
+  const { nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, setSel, source, edit, dark, rf, removeIds, clipNote, copyIds, insert, editable, insertAround, addNode, addNote, ctx, setCtx, nodesView, onNodeClick, onConnect, onDrop, canvasLock, setCanvasLock } = useStudioCtx()
   return <ContextMenu>
     <ContextMenuTrigger asChild>
     <main className="h-full min-h-0" onDrop={onDrop} onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}>
@@ -44,7 +44,10 @@ export function EditorCanvas() {
     </main>
     </ContextMenuTrigger>
     <ContextMenuContent>
-      {ctx?.kind === 'pane' && <ContextMenuItem id="add-note" onSelect={() => addNote(ctx.at)}><StickyNote />{t('editor.addNote')}</ContextMenuItem>}
+      {ctx?.kind === 'pane' && <>
+        <InsertMenu id="pane" label={t('editor.addNode')} icon={Plus} onPick={type => addNode(type, ctx.at, true)} />
+        <ContextMenuItem id="add-note" onSelect={() => addNote(ctx.at)}><StickyNote />{t('editor.addNote')}</ContextMenuItem>
+      </>}
       {ctx?.kind === 'node' && <NodeMenu id={ctx.id} type={nodes.find(n => n.id === ctx.id)?.type} edges={edges} canDelete={removable(nodes, [ctx.id]).size > 0} insert={insertAround}
         onCopy={() => copyIds([ctx.id])}
         onCut={() => copyIds([ctx.id], true)}

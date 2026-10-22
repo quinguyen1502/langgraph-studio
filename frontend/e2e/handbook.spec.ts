@@ -222,6 +222,18 @@ for (const lang of ['en', 'vi'] as Lang[]) {
         await shot(page, lang, `settings-${sec}`)
       }
 
+      // Chat triggers (TASK-0077): a Slack connection (the fake API) and one trigger on the Leave request, opened for editing.
+      // Made after the Channels shot so that one stays empty.
+      const team = `T${lang.toUpperCase()}${Date.now().toString(36).toUpperCase()}`
+      const ch = (await (await page.request.post('/api/approvals/channels', { headers: H, data: { kind: 'slack', name: 'Acme Slack', bot_token: `xoxb-1-${team}-abcdefgh`, signing_secret: '0123456789abcdef0123456789abcdef' } })).json()).data
+      await page.request.post(`/api/workflows/${leave}/chat-triggers`, { headers: H, data: { name: lang === 'en' ? 'Leave requests' : 'Đơn nghỉ phép', channel_id: ch.id, place: 'C0HRLEAVE',
+        command: lang === 'en' ? 'leave' : 'nghiphep', input_field: 'message', reply_field: 'decision', enabled: true } })
+      await page.goto(`/workflows/${leave}`); await expect(page.locator('.react-flow__node')).toHaveCount(5)
+      await page.locator('#more-btn').click(); await page.locator('#chat-triggers-btn').click(); await expect(page.locator('#chat-triggers-dialog')).toBeVisible()
+      await page.locator('[data-testid=chat-trigger-row]').getByRole('button', { name: /^(Edit|Sửa) chat trigger/ }).click()
+      await expect(page.locator('#chat-trigger-sample')).toBeVisible()
+      await shot(page, lang, 'chat-triggers'); await page.keyboard.press('Escape')
+
       // Dark theme hero
       await page.evaluate(() => localStorage.setItem('theme', 'dark'))
       await page.addInitScript(() => localStorage.setItem('theme', 'dark'))

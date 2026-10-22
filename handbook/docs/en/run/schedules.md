@@ -1,7 +1,8 @@
 # Schedules
 
 **⋯ → Schedules** in the editor runs the workflow on a cron timetable. The
-workflow's owner sets the schedules.
+workflow's owner sets the schedules. To start runs from a chat message, see
+[Chat triggers](chat-triggers.md).
 
 ![Schedules dialog](../images/schedules.png)
 

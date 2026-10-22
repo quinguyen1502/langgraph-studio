@@ -50,6 +50,7 @@ nav:
       - Human approval: run/human-approval.md
       - API triggers and webhooks: run/api-triggers.md
       - Schedules: run/schedules.md
+      - Chat triggers: run/chat-triggers.md
       - Workflow tests: run/tests.md
   - Operate:
       - operate/index.md

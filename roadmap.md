@@ -193,9 +193,9 @@ REQ-0043, Accepted 2026-10-22 (the owner chose a runnable file with the mock by 
 
 ## Chat triggers
 
-REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts with the run right, a command word, one reply field, one input field).
+REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts with the run right, a command word, one reply field, one input field), Implemented 2026-10-22.
 
 - TASK-0074 Chat trigger rows per workflow, management API (share right, unique command per connection and place), Slack scopes check, Telegram webhook for messages, DEC-0046. **merged** (PR #98, REV-0068, QA-0068).
 - TASK-0075 Slack events and Telegram messages start `source="chat"` runs; thread replies (started, result, error, waiting), private refusals, dedupe, rate limit, audit. **merged** (PR #99, REV-0069, QA-0069).
 - TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
-- TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **todo** (after TASK-0076).
+- TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).

@@ -51,6 +51,12 @@ to Slack** (OAuth). Redirect URL là
 
 Webhook được kiểm tra bằng `X-Telegram-Bot-Api-Secret-Token`.
 
+## Chạy từ chat
+
+Kết nối Slack và Telegram còn chạy được workflow bằng tin nhắn. Slack cần thêm
+hai quyền và một URL nhận sự kiện, Telegram cần đăng ký webhook lại: xem
+[Chạy từ chat](../run/chat-triggers.md).
+
 ## WhatsApp (Cloud API)
 
 1. Trong một Meta app có sản phẩm WhatsApp, dán access token, phone number ID,

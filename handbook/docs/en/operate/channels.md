@@ -51,6 +51,12 @@ still works when those are empty.
 
 The webhook is checked with `X-Telegram-Bot-Api-Secret-Token`.
 
+## Chat triggers
+
+Slack and Telegram connections can also start workflows from a message. They
+need two more Slack scopes and an events URL, or a re-registered Telegram
+webhook: see [Chat triggers](../run/chat-triggers.md).
+
 ## WhatsApp (Cloud API)
 
 1. In a Meta app with the WhatsApp product, paste the access token, the phone

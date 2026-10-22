@@ -117,3 +117,7 @@ một task trong `.factory-state/`, branch `factory/task-<id>-<name>`, kiểm tr
 review, và merge sau khi có người duyệt. Xem
 [Phát triển](https://quinguyen1502.github.io/superstep/vi/reference/development/)
 để biết cách cài môi trường test và quy ước của từng lớp.
+
+## Giấy phép
+
+[MIT](LICENSE)

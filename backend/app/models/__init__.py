@@ -18,7 +18,8 @@ from .template import WorkflowTemplate
 from .auth_security import LoginThrottle, PasswordReset
 from .workflow_schedule import WorkflowSchedule
 from .workflow_chat_trigger import WorkflowChatTrigger
+from .chat_message import ChatMessage
 from .workflow_test import WorkflowTest, WorkflowTestResult, WorkflowTestSuite
 from .approval import ApprovalAudit, ApprovalChannel, ApprovalRequest, ApprovalWait, ApprovalWaitApprover, ChannelIdentity
 
-__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "ApprovalWait", "ApprovalWaitApprover", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare", "Team", "TeamMember", "WorkflowTeamShare", "AuditEvent", "StudioSetting", "WorkflowTemplate", "LoginThrottle", "PasswordReset", "WorkflowSchedule", "WorkflowChatTrigger", "WorkflowTest", "WorkflowTestSuite", "WorkflowTestResult"]
+__all__ = ["Base", "User", "Workflow", "Run", "Credential", "WorkflowToken", "WorkflowVersion", "Notification", "WebhookDelivery", "NodeResult", "ApprovalChannel", "ChannelIdentity", "ApprovalRequest", "ApprovalAudit", "ApprovalWait", "ApprovalWaitApprover", "KnowledgeBase", "KbDocument", "KbChunk", "McpServer", "WorkflowShare", "Team", "TeamMember", "WorkflowTeamShare", "AuditEvent", "StudioSetting", "WorkflowTemplate", "LoginThrottle", "PasswordReset", "WorkflowSchedule", "WorkflowChatTrigger", "ChatMessage", "WorkflowTest", "WorkflowTestSuite", "WorkflowTestResult"]

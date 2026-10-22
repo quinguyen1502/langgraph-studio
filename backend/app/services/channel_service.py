@@ -81,6 +81,16 @@ class ChannelService:
             if c.kind == kind and c.team_id and c.team_id not in seen: seen.add(c.team_id); out.append(c)
         return out
 
+    def verified(self, a: ApprovalChannel, team: Optional[str], headers: dict, body: bytes) -> list[tuple[ChannelRow, dict]]:
+        """The connections of the claimed account (Slack team_id) whose secret verifies this unauthenticated request, with
+        their secrets: the shared Slack URLs (interactivity and events). Unknown team or no match: []."""
+        out = []
+        for c in self.repo.channels_by_team(a.kind, team) if team else []:
+            sec = self.secrets(c)
+            try: a.verify(sec, headers, body); out.append((c, sec))
+            except AppError: continue
+        return out
+
     # ---- chat triggers (TASK-0074, DEC-0046) ----
     def missing_scopes(self, c: ChannelRow) -> Optional[list[str]]:
         """Scopes chat triggers need that the connection's token lacks, as last read from the platform; None: unknown

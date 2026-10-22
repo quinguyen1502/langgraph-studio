@@ -77,4 +77,38 @@ answered CLAR-0002 with the recommended options:
   to receive messages.
 - `ChannelService.public` carries a `chat` block (`missing_scopes`, `events_path`, `events_url`). It is `null` for
   connections that cannot start runs.
-- TASK-0075 records here where it stores the chat reference of a run (new run columns or a small table).
+- **Where the chat reference of a run lives (TASK-0075).** It is in a small table, `chat_messages`, with no new run
+  columns. The table stores only messages that match a trigger. Each row holds:
+  - the connection and the platform's delivery id (Slack `event_id`, Telegram `update_id`), unique together, so a
+    retry starts nothing;
+  - the trigger, the workflow, the sender and the text;
+  - where to reply (Slack channel and thread, Telegram chat and message);
+  - the status (`queued` → `checking` → `started` or `refused`), with the refusal code;
+  - the run id;
+  - the last settled state replied.
+- **The flow (TASK-0075).**
+  - The platform's request only verifies, matches, stores and queues a `chat_message` job, so Slack gets its answer
+    within 3 s.
+  - The worker claims the row (`queued` → `checking`, compare-and-set), runs the checks in this order:
+    - trigger on;
+    - creator's share right (else the trigger stops with `access`);
+    - the sender's verified linked account (`CHAT_IDENTITY_UNKNOWN` / `CHAT_IDENTITY_UNVERIFIED`);
+    - the sender's run right (`CHAT_FORBIDDEN`);
+    - the input size;
+    - the rate limit (`STUDIO_CHAT_TRIGGER_RATE_LIMIT` per sender and trigger, in `STUDIO_TRIGGER_RATE_WINDOW`).
+  - Then it posts "started" and enqueues the run.
+  - `RunService.settled` calls `ChatRunService.on_settled` for `source="chat"`. The reply is sent once per settled
+    state (compare-and-set on `replied`): the reply field (shortened to 3000 characters), the error message, the
+    waiting node's label, or the end status.
+- **Refusals (TASK-0075).**
+  - They go to the sender only: a Slack ephemeral message, or a Telegram direct message. When the bot cannot write
+    to the sender (they never started it), the refusal goes to the group.
+  - They are written in the approval audit log as `chat_refused` with the code. Started runs are logged as
+    `chat_started`.
+- **Matching (TASK-0075).**
+  - The first word after the bot mention is the command, case-insensitive. A leading `/`, and Telegram's
+    `/command@bot` form, are accepted.
+  - The text after the command, a colon or a comma is the input.
+  - Bots (our own replies too), edits, joins and files are ignored.
+- **Run history (TASK-0075).** For chat runs, `GET /api/workflows/{wid}/runs` returns
+  `chat: {kind, sender, trigger}`.

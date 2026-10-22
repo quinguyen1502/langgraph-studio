@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0075
-- Status: todo
+- Status: done (PR #99, REV-0069, QA-0069)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-22
 - Updated: 2026-10-22
@@ -147,7 +147,14 @@ result, the error or the waiting note. Refusals are answered to the sender only.
 ## Activity Log
 
 - 2026-10-22: planned from REQ-0044.
+- 2026-10-22: started after PR #98 merged (owner approved).
+- 2026-10-22: implemented; run storage in `chat_messages` (DEC-0046). Review REV-0069, QA QA-0069.
+- 2026-10-22: CI green on PR #99 (Postgres included); the owner approved the merge.
 
 ## Handoff Notes
 
-- None.
+- TASK-0076:
+  - `GET /api/workflows/{wid}/runs` has `chat: {kind, sender, trigger}` on chat runs (`source="chat"`).
+  - The approval audit log has the actions `chat_started` and `chat_refused` (code in `code`), which need labels in
+    `AuditSection.tsx` and the locales.
+  - Connections carry `chat.events_url` and `chat.missing_scopes` (TASK-0074).

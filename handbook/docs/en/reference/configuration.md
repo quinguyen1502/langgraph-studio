@@ -72,6 +72,7 @@ root lists every variable Compose passes; this page groups them.
 | --- | --- | --- |
 | `STUDIO_TRIGGER_RATE_LIMIT` | `60` | Runs per token per window; `0` off |
 | `STUDIO_TRIGGER_RATE_WINDOW` | `60` | The window (s) |
+| `STUDIO_CHAT_TRIGGER_RATE_LIMIT` | `60` | Chat triggers: runs per sender and trigger per window; `0` off |
 | `STUDIO_SYNC_WAIT_MAX` | `30` | Longest `sync` wait (s) |
 | `STUDIO_ALLOW_PRIVATE_CALLBACKS` | `0` | Allow callbacks to private addresses |
 | `STUDIO_WEBHOOK_MAX_ATTEMPTS` | `5` | Delivery attempts |

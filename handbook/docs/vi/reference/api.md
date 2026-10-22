@@ -161,6 +161,7 @@ WS /ws/run
     PUT    /api/approvals/channels/{cid}        DELETE /api/approvals/channels/{cid}
     POST   /api/approvals/channels/{cid}/test   POST   /api/approvals/channels/{cid}/register-webhook
     POST   /api/approvals/callback/{kind}       GET|POST /api/approvals/callback/{kind}/{cid}
+    POST   /api/channels/events/slack           (Slack Events API: chat trigger; tin nhắn Telegram dùng URL callback)
     GET    /api/approvals/identities            PUT    /api/approvals/identities
     POST   /api/approvals/identities/{kind}/send-code
     POST   /api/approvals/identities/{kind}/verify

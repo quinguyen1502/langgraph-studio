@@ -136,7 +136,7 @@ class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
                  deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None, audit=None,
-                 tests: Optional[Callable[[], object]] = None):
+                 tests: Optional[Callable[[], object]] = None, chat: Optional[Callable[[], object]] = None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -154,6 +154,7 @@ class RunService:
         self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
         self.quota = quota  # rate_limit.Counter (optional): recipients Send email nodes may reach per owner per hour (TASK-0051)
         self.tests = tests  # -> WorkflowTestService (optional): records a finished test run, answers a waiting one (TASK-0067)
+        self.chat = chat  # -> ChatRunService (optional): answers a chat-trigger run in its thread (TASK-0075)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -359,12 +360,14 @@ class RunService:
         """tests: the workflow's test runs instead of its other runs (TASK-0067)."""
         row = self._workflow(wid, uid)
         everyone = self.access is None or self.access.access_of(row, uid) == "owner"  # owner and admins see every run
+        rows = [r for r in self.runs.list_for_workflow(wid, tests=tests) if everyone or r.owner == uid]
+        chat = self.chat().runs_info([r.id for r in rows if r.source == "chat"]) if self.chat else {}  # TASK-0075: who sent the message
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
                  "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui", "version": r.workflow_version,
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
-                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id), "code_runtime": r.code_runtime}
-                for r in self.runs.list_for_workflow(wid, tests=tests) if everyone or r.owner == uid]
+                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id), "code_runtime": r.code_runtime, "chat": chat.get(r.id)}
+                for r in rows]
 
     def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui",
                version: Optional[int] = None, span=None, trace_parent: Optional[dict] = None, trace_events: Optional[list] = None,
@@ -441,6 +444,9 @@ class RunService:
                 try: await asyncio.to_thread(self.tests().on_settled, rid)
                 except Exception: log.exception("recording test run %s failed", rid)
             return
+        if source == "chat" and self.chat:
+            try: await asyncio.to_thread(self.chat().on_settled, rid)
+            except Exception: log.exception("answering chat run %s failed", rid)
         if not self.deliveries: return
         try: await asyncio.to_thread(self.deliveries().for_run, self.runs.get(rid))
         except Exception: log.exception("queueing the callback of run %s failed", rid)

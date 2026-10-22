@@ -1,6 +1,7 @@
 /** Template library (TASK-0025, DEC-0028): API types, the portable file helpers and the mini-preview geometry. */
 export type TplNode = { id: string; type: string; position: { x: number; y: number } }
 export type Template = { id: string; name: string; description: string; scope: 'builtin' | 'user' | 'org'; mine: boolean; deletable?: boolean
+  tests: number  // test cases a workflow made from it gets (built-in templates, TASK-0069)
   nodes: TplNode[]; edges: { source: string; target: string }[] }
 export const TEMPLATE_FORMAT = 'superstep/template'
 

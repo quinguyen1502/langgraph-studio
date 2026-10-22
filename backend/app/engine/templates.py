@@ -225,4 +225,64 @@ BUILTINS += [
 ]
 
 
+
+# Test cases of each built-in template (TASK-0069, REQ-0042), in the shape of the workflow tests API. They pass with the
+# offline mock model: a Condition takes the label it finds as a whole word, and the Decision mock the label it finds in the
+# state, so the inputs name their branch. A workflow made from the template gets a copy; saved templates carry none.
+def _case(name, inp, answers=None, *checks): return {"name": name, "input": inp, "answers": answers or {}, "checks": [OK, *checks]}
+def _ran(node, ran=True): return {"kind": "node", "node": node, "ran": ran}
+def _is(field, value): return {"kind": "field", "field": field, "op": "equals", "value": value}
+def _filled(field): return {"kind": "field", "field": field, "op": "not_empty"}
+OK = {"kind": "status", "value": "ok"}
+YES, NO = ["approved"], ["rejected"]
+
+TESTS: dict[str, list[dict]] = {
+    "builtin-chatbot": [_case("Answers a question", {"message": "What are your opening hours?"}, None, _ran("reply"), _filled("answer"))],
+    "builtin-rag": [_case("Answers from the knowledge base", {"message": "How long is the laptop warranty?"}, None, _ran("retrieve"), _filled("answer"))],
+    "builtin-approval": [
+        _case("Approved reply is polished", {"message": "Where is my order A100?"}, {"ask": YES}, _is("decision", "approved"), _ran("send"), _filled("answer")),
+        _case("Rejected reply is not sent", {"message": "Where is my order A100?"}, {"ask": NO}, _is("decision", "rejected"), _ran("send", False))],
+    "builtin-router": [
+        _case("Billing question", {"message": "I was charged twice, this is a billing question"}, None, _ran("billing"), _ran("technical", False)),
+        _case("Technical question", {"message": "The app crashes on start, a technical problem"}, None, _ran("technical"), _ran("billing", False)),
+        _case("Anything else", {"message": "What are your opening hours?"}, None, _ran("other"), _filled("answer"))],
+    "builtin-refund-approval": [
+        _case("Approved refund is confirmed", {"request": "Refund order 1042, $80, the parcel arrived broken.", "customer_email": "ann@example.com"},
+              {"finance": YES}, _is("decision", "approved"), _ran("confirm"), _ran("decline_draft", False), _filled("sent")),
+        _case("Declined refund gets a polite e-mail", {"request": "Refund order 1043, $900, changed my mind after a year.", "customer_email": "bo@example.com"},
+              {"finance": NO}, _is("decision", "rejected"), _ran("decline_mail"), _ran("confirm", False))],
+    "builtin-leave-request": [
+        _case("Approved leave", {"message": "I'd like leave from 3 to 5 March for a family event.", "employee_email": "bo@example.com"},
+              {"manager": YES}, _is("decision", "approved"), _ran("notify"), _filled("sent")),
+        _case("Rejected leave", {"message": "I'd like leave for the whole of December.", "employee_email": "bo@example.com"},
+              {"manager": NO}, _is("decision", "rejected"), _ran("notify"))],
+    "builtin-social-post": [
+        _case("Approved post gets hashtags", {"brief": "Launch of our new dark mode"}, {"editor": YES}, _ran("rewrite", False), _filled("final")),
+        _case("Rewritten with notes, then approved", {"brief": "Launch of our new dark mode"}, {"editor": ["Make it shorter", "approved"]},
+              _ran("rewrite"), _filled("final"))],
+    "builtin-large-order": [
+        _case("Risky order confirmed by the manager", {"order": "Order 77: 40 laptops, new customer, delivery to a new address, needs a review"},
+              {"manager": YES}, _is("risk", "review"), _ran("confirm"), _ran("cancel", False)),
+        _case("Risky order cancelled by the manager", {"order": "Order 78: 60 phones, changed delivery address, needs a review"},
+              {"manager": NO}, _ran("cancel"), _ran("confirm", False))],
+    "builtin-expense-claim": [
+        _case("Approved claim", {"claim": "Hotel $120 x 2 nights, meals $40", "employee_email": "bo@example.com"},
+              {"approver": YES}, _is("decision", "approved"), _ran("notify"), _filled("check")),
+        _case("Rejected claim", {"claim": "Hotel $480 x 3 nights, meals $200", "employee_email": "bo@example.com"},
+              {"approver": NO}, _is("decision", "rejected"), _ran("notify"))],
+    "builtin-purchase-request": [
+        _case("Both approve", {"request": "Two monitors, $600, from Dell, for the new designers", "requester_email": "cy@example.com"},
+              {"lead": YES, "finance": YES}, _ran("approved_mail"), _ran("rejected_mail", False)),
+        _case("Team lead rejects", {"request": "A standing desk, $900", "requester_email": "cy@example.com"},
+              {"lead": NO}, _ran("finance", False), _ran("rejected_mail")),
+        _case("Finance rejects", {"request": "A conference trip, $4,000", "requester_email": "cy@example.com"},
+              {"lead": YES, "finance": NO}, _ran("rejected_mail"), _ran("approved_mail", False))],
+    "builtin-support-escalation": [
+        _case("Sure answer goes straight out", {"message": "How long is the laptop warranty?"}, None, _is("verdict", "answered"), _ran("review", False), _filled("answer"))],
+    "builtin-feedback-digest": [
+        _case("Three pieces of feedback make one report", {"feedback": ["Love the new editor", "Runs are slow on Mondays", "Please add a Discord channel"]},
+              None, _ran("send"), _filled("report"), _filled("sent"))],
+}
+for _b in BUILTINS: _b["tests"] = TESTS[_b["id"]]
+
 BUILTIN_IDS = {b["id"] for b in BUILTINS}

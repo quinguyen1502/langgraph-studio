@@ -37,6 +37,11 @@ người duyệt trên node Human (xem [Kênh duyệt](../operate/channels.md)).
 đó, run sẽ dừng chờ ở node Human và có thể duyệt ngay trong studio. **Hỏi đáp
 RAG** và **Hỗ trợ có chuyển cấp** cần một kho tri thức trước khi chạy.
 
+Mỗi mẫu có sẵn đi kèm một đến ba test case cho thấy mẫu dùng để làm gì, ví dụ
+"Approved leave" và "Rejected leave". Workflow tạo từ mẫu có các test case này
+trong tab **Test**, và chúng đạt với model mock offline (xem
+[Kiểm thử workflow](../run/tests.md)). Mẫu bạn tự lưu không kèm test case.
+
 Mỗi node Human có kênh duyệt còn có [hạn chờ](../run/human-approval.md#han-cho)
 phù hợp với quy trình, ví dụ đơn nghỉ phép chờ 2 ngày, nhắc mỗi ngày, rồi từ chối.
 Duyệt bài đăng mạng xã hội sẽ tự duyệt nếu biên tập viên không trả lời trong một

@@ -1199,6 +1199,8 @@
     "export": "Export",
     "useNamed": "Create a workflow from {{name}}",
     "noDescription": "No description",
+    "tests_one": "{{count}} test case",
+    "tests_other": "{{count}} test cases",
     "invalidJson": "The file is not valid JSON",
     "deleteTitle": "Delete template",
     "deleteBody": "The template \"{{name}}\" will be removed. Workflows created from it are not affected.",

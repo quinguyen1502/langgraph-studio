@@ -140,6 +140,26 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await shot(page, lang, 'workflows')
       await page.locator('#new-wf').click(); await expect(page.locator('#template-gallery')).toBeVisible()
       await shot(page, lang, 'templates'); await page.keyboard.press('Escape')
+
+      // Workflow tests (TASK-0069): the Leave request template comes with its test cases; Run all with the mock model,
+      // the case editor, then a mistake in version 2 shows as a regression against version 1
+      const leave = (await (await page.request.post('/api/templates/builtin-leave-request/use', { headers: H, data: { name: lang === 'en' ? 'Leave request' : 'Đơn nghỉ phép' } })).json()).data.id
+      const runTests = async () => {
+        await page.locator('#tests-tab').click(); await page.locator('#tests-mock').click(); await page.locator('#tests-run-all').click()
+        await expect(page.locator('#tests-compare')).toBeVisible({ timeout: 60_000 })
+      }
+      await page.goto(`/workflows/${leave}`); await expect(page.locator('.react-flow__node')).toHaveCount(5); await fit(page)
+      await runTests(); await expect(page.locator('#tests-summary')).toContainText(lang === 'en' ? '2 passed, 0 failed' : '2 đạt, 0 không đạt')
+      await shot(page, lang, 'tests')
+      await page.getByTestId('test-edit').click(); await expect(page.locator('#test-dialog')).toBeVisible()
+      await shot(page, lang, 'test-case'); await page.keyboard.press('Escape')
+      const v1 = (await (await page.request.get(`/api/workflows/${leave}`, { headers: H })).json()).data
+      v1.nodes.find((n: { id: string }) => n.id === 'manager').data.output_field = 'details'  // the answer now overwrites the details
+      await page.request.post('/api/workflows', { headers: H, data: v1 })
+      await page.reload(); await expect(page.locator('.react-flow__node')).toHaveCount(5); await fit(page)
+      await runTests(); await expect(page.getByTestId('compare-regression')).toBeVisible()
+      await shot(page, lang, 'tests-compare')
+      await page.goto('/workflows'); await expect(page.locator('#new-wf')).toBeVisible()
       await page.locator('#creds-btn').click(); await page.waitForTimeout(400)
       await shot(page, lang, 'credentials'); await page.keyboard.press('Escape')
 

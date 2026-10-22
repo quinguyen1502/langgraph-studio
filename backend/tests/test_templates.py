@@ -163,3 +163,49 @@ def test_v010_format_still_imports():
     b = T.BUILTINS[0]
     old = {**T.export_payload(b["name"], b["description"], b["workflow"]), "format": "langgraph-studio/template"}
     assert T.problems(old) == [] and T.export_payload("x", None, b["workflow"])["format"] == "superstep/template"
+
+
+# ---------- test cases of the built-in templates (TASK-0069) ----------
+def test_builtin_test_cases_are_valid():
+    from app.engine import checks
+    for b in T.BUILTINS:
+        assert 1 <= len(b["tests"]) <= 3, b["id"]
+        nodes = {n["id"] for n in b["workflow"]["nodes"]}; fields = {f["name"] for f in b["workflow"]["state"]}
+        for case in b["tests"]:
+            assert checks.errors(case["checks"]) == [] and set(case["answers"]) <= nodes and set(case["input"]) <= fields, (b["id"], case["name"])
+            assert all(ch.get("node", "start") in nodes and ch.get("field", "message") in fields | {"message"} for ch in case["checks"]), (b["id"], case["name"])
+
+
+def test_builtin_test_cases_pass_in_mock_mode(monkeypatch):
+    """Every built-in template, used as a workflow, runs its own cases offline and passes them all. The two knowledge base
+    templates get a small FAQ first, as a user picks one."""
+    from tests.test_workflow_tests import run_all
+    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY"): monkeypatch.delenv(k, raising=False)
+    with TestClient(app) as cl:  # the worker runs the test runs
+        u = register(); h = H(u.token)
+        kb = cl.post("/api/knowledge-bases", json={"name": "FAQ"}, headers=h).json()["data"]
+        cl.post(f"/api/knowledge-bases/{kb['id']}/documents", files={"file": ("faq.txt", b"Laptops have a two-year warranty.")}, headers=h)
+        for b in T.BUILTINS:
+            wid = cl.post(f"/api/templates/{b['id']}/use", headers=h, json={}).json()["data"]["id"]
+            cases = cl.get(f"/api/workflows/{wid}/tests", headers=h).json()["data"]["items"]
+            assert [x["name"] for x in cases] == [x["name"] for x in b["tests"]], b["id"]
+            wf = cl.get(f"/api/workflows/{wid}", headers=h).json()["data"]
+            if any(n["type"] == "retriever" for n in wf["nodes"]):
+                for n in wf["nodes"]:
+                    if n["type"] == "retriever": n["data"]["knowledge_base_id"] = kb["id"]
+                cl.post("/api/workflows", json=wf, headers=h)
+            suite = run_all(cl, {"token": u.token}, wid, mock=True)
+            assert {r["name"]: (r["status"], r["reason"], [ch for ch in r["checks"] if ch["passed"] is False]) for r in suite["results"]} == \
+                   {x["name"]: ("passed", None, []) for x in b["tests"]}, b["id"]
+
+
+def test_saved_templates_carry_no_test_cases():
+    u = register(); h = H(u.token)
+    wid = c.post("/api/templates/builtin-leave-request/use", headers=h, json={}).json()["data"]["id"]
+    assert len(c.get(f"/api/workflows/{wid}/tests", headers=h).json()["data"]["items"]) == 2
+    tpl = c.post("/api/templates", json={"workflow_id": wid, "name": f"Mine {uuid.uuid4().hex[:4]}"}, headers=h).json()["data"]
+    assert tpl["tests"] == 0 and "tests" not in c.get(f"/api/templates/{tpl['id']}/export", headers=h).json()["data"]
+    again = c.post(f"/api/templates/{tpl['id']}/use", headers=h, json={}).json()["data"]["id"]
+    assert c.get(f"/api/workflows/{again}/tests", headers=h).json()["data"]["items"] == []
+    listed = {t["id"]: t["tests"] for t in c.get("/api/templates", headers=h).json()["data"]}
+    assert listed["builtin-purchase-request"] == 3 and listed[tpl["id"]] == 0

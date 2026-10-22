@@ -2,7 +2,7 @@
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
-import { AlertCircle, Download, FilePlus2, Loader2, Trash2, Upload } from 'lucide-react'
+import { AlertCircle, Download, FilePlus2, FlaskConical, Loader2, Trash2, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
@@ -69,7 +69,8 @@ export function TemplateGallery({ open, onOpenChange, onBlank }: Props) {
                   <Badge variant={tp.scope === 'builtin' ? 'secondary' : 'outline'} className="ml-auto shrink-0">{t(`templates.scope.${tp.scope}`)}</Badge></div>
                 <p className="text-xs text-muted-foreground line-clamp-2 min-h-8">{tx.description || t('templates.noDescription')}</p>
               </button>
-              <div className="flex gap-1 justify-end">
+              <div className="flex items-center gap-1 justify-end">
+                {tp.tests > 0 && <span className="mr-auto flex items-center gap-1 text-xs text-muted-foreground" data-testid="tpl-tests"><FlaskConical className="size-3.5" />{t('templates.tests', { count: tp.tests })}</span>}
                 <Button variant="ghost" size="sm" data-testid="tpl-export" onClick={() => exp(tp)}><Download />{t('templates.export')}</Button>
                 {tp.deletable && <Button variant="ghost" size="sm" data-testid="tpl-delete" className="text-destructive hover:text-destructive" onClick={() => del(tp)}><Trash2 />{t('common.delete')}</Button>}
               </div>

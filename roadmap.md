@@ -176,8 +176,8 @@ REQ-0041, Accepted 2026-10-21 (the owner chose deadlines with reminders and one 
 
 ## Workflow tests
 
-REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a mock option, CI runs later, and test cases only on built-in templates).
+REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a mock option, CI runs later, and test cases only on built-in templates), Implemented 2026-10-22.
 
 - TASK-0067 Test cases (input, Human answers, checks), Run all / run one on the current version, test runs that send no e-mail, channel message, notification or callback, mock model option, Tests panel, DEC-0044: **merged** (PR #89, REV-0061, QA-0061).
 - TASK-0068 Comparison with the latest suite run on an earlier version (Regression, Fixed, New), Run against version, suite history, Save as test case from a run, stale checks: **merged** (PR #90, REV-0062, QA-0062).
-- TASK-0069 Test cases on every built-in template, copied to workflows made from them; handbook "Workflow tests" page (en, vi): **todo** (after TASK-0067 and TASK-0068).
+- TASK-0069 Test cases on every built-in template, copied to workflows made from them; handbook "Workflow tests" page (en, vi): **merged** (PR #91, REV-0063, QA-0063).

@@ -53,6 +53,8 @@ root lists every variable Compose passes; this page groups them.
 | `STUDIO_WORKFLOW_MAX_BYTES` | `1048576` | Workflow JSON |
 | `STUDIO_WAIT_TTL` | `604800` | A waiting run expires after this (s); `0` never |
 | `STUDIO_VERSION_KEEP` | `0` | Versions kept per workflow; `0` keeps all |
+| `STUDIO_TEST_CASES_MAX` | `50` | [Test cases](../run/tests.md) per workflow |
+| `STUDIO_TEST_PARALLEL` | `4` | Test cases of one run of the tests that run at a time |
 | `STUDIO_ENABLE_DEMO_TOOLS` | `0` | Registers `sleep_demo` for cancel and timeout tests |
 
 ## Workers and the queue

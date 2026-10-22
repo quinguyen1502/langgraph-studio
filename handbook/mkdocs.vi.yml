@@ -48,6 +48,7 @@ nav:
       - Duyệt bởi người: run/human-approval.md
       - API trigger và webhook: run/api-triggers.md
       - Lịch chạy: run/schedules.md
+      - Kiểm thử workflow: run/tests.md
   - Vận hành:
       - operate/index.md
       - Triển khai bằng Compose: operate/deploy.md

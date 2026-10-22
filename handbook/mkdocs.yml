@@ -49,6 +49,7 @@ nav:
       - Human approval: run/human-approval.md
       - API triggers and webhooks: run/api-triggers.md
       - Schedules: run/schedules.md
+      - Workflow tests: run/tests.md
   - Operate:
       - operate/index.md
       - Deploy with Compose: operate/deploy.md

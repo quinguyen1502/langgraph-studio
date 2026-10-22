@@ -292,7 +292,7 @@ export function useStudio() {
     input, setInput, log, setLog, errors, setErrors, tools, mode, source, creds, setCreds, providers, channels, history,
     tab, setTab, running, traceSel, setTraceSel, replay, setReplay, loadErr, access, ownerEmail, edit, dark, rf,
     hist, load, openRun, toJSON, save, mark, run, respond, cancelRun, removeIds,
-    clipNote, note, insert, editable, layoutDir, cheat, setCheat, insertAround, addNote, dlg, setDlg, ctx, setCtx,
+    clipNote, note, insert, editable, layoutDir, cheat, setCheat, insertAround, addNode, addNote, dlg, setDlg, ctx, setCtx,
     delWf, isDirty, saves, paletteCmds, trace, traceMeta, step, continueRun, nodesView, onNodeClick, onConnect, onDrop,
     selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds,
   }

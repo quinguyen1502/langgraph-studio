@@ -14,6 +14,8 @@ class TelegramChannel(ApprovalChannel):
     patterns = {"bot_token": r"\d{3,15}:[\w-]{20,64}", "webhook_secret": r"[A-Za-z0-9_-]{16,256}"}
     identity_pattern = r"\d{1,20}"
     hint_field = "bot_token"
+    chat = True  # messages arrive on the same webhook as button presses (TASK-0074)
+    place_pattern = r"-?\d{1,20}"  # chat id; groups are negative
 
     def prepare(self, values):
         out = super().prepare(values)
@@ -30,7 +32,7 @@ class TelegramChannel(ApprovalChannel):
         return {"name": f"@{me['username']}" if me.get("username") else None, "team_id": str(me["id"]) if me.get("id") else None}
 
     def register(self, secrets, callback_url):
-        self._api(secrets, "setWebhook", {"url": callback_url, "secret_token": secrets["webhook_secret"], "allowed_updates": ["callback_query"]})
+        self._api(secrets, "setWebhook", {"url": callback_url, "secret_token": secrets["webhook_secret"], "allowed_updates": ["callback_query", "message"]})
         return {"registered": True, "manual": False}
 
     def send_request(self, secrets, target, msg: ApprovalMessage):

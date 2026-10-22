@@ -99,6 +99,14 @@ WS /ws/run
     POST   /api/schedules/preview
     ```
 
+??? abstract "Chat trigger"
+
+    ```text
+    GET    /api/workflows/{wid}/chat-triggers       POST   /api/workflows/{wid}/chat-triggers
+    PATCH  /api/workflows/{wid}/chat-triggers/{tid} DELETE /api/workflows/{wid}/chat-triggers/{tid}
+    (chủ hoặc admin; {channel_id, place: "dm" | id kênh hoặc chat, command, input_field, reply_field, enabled})
+    ```
+
 ??? abstract "Kiểm thử workflow"
 
     ```text

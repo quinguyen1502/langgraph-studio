@@ -174,6 +174,11 @@
 | `SCHEDULE_NOT_FOUND` | 404 | Schedule not found |
 | `SCHEDULE_CRON_INVALID` | 400 | Schedule: {reason} |
 | `SCHEDULE_LIMIT` | 400 | A workflow can have at most {max} schedules |
+| `CHAT_TRIGGER_NOT_FOUND` | 404 | Chat trigger not found |
+| `CHAT_TRIGGER_COMMAND_TAKEN` | 409 | Another chat trigger already answers '{command}' there |
+| `CHAT_TRIGGER_LIMIT` | 400 | A workflow can have at most {max} chat triggers |
+| `CHAT_TRIGGER_CONFIG_INVALID` | 400 | Chat trigger: invalid {field} |
+| `CHAT_TRIGGER_SCOPE_MISSING` | 400 | The Slack app lacks the scopes chat triggers need: {scopes}. Reinstall it with them |
 | `TEST_NOT_FOUND` | 404 | Test case not found |
 | `TEST_CASE_INVALID` | 400 | Test case: {reason} |
 | `TEST_CASES_LIMIT` | 400 | A workflow can have at most {max} test cases |

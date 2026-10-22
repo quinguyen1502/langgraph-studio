@@ -50,6 +50,11 @@ class ApprovalChannel:
     # /approve page, where the signed-in studio user decides, so there is no chat identity to verify.
     link_based: bool = False
     target_required: bool = True            # False: the connection itself is the destination (a Teams webhook)
+    # TASK-0074 (DEC-0046): chat triggers start runs from messages to the bot.
+    chat: bool = False                      # the platform can start runs from messages (Slack, Telegram)
+    chat_scopes: tuple[str, ...] = ()       # OAuth scopes messages need (Slack); describe() reports the granted ones
+    events_path: Optional[str] = None       # a separate URL that receives messages (Slack Events API); None: the callback URL
+    place_pattern: str = r".+"              # a chat a trigger may listen in (besides "dm"): Slack channel id, Telegram chat id
 
     # ---- configuration ----
     def prepare(self, values: dict) -> dict:
@@ -67,8 +72,8 @@ class ApprovalChannel:
     def valid_identity(self, external_id: str) -> bool: return bool(re.fullmatch(self.identity_pattern, external_id))
 
     def describe(self, secrets: dict) -> dict:
-        """Check the credentials with the platform and name the account behind them: {"name", "team_id"}.
-        Raises CHANNEL_API_FAILED when the platform refuses them."""
+        """Check the credentials with the platform and name the account behind them: {"name", "team_id"}, plus
+        "scopes" (granted, sorted) on platforms with OAuth scopes. Raises CHANNEL_API_FAILED when the platform refuses them."""
         return {"name": None, "team_id": None}
 
     def route_key(self, body: bytes) -> Optional[str]:

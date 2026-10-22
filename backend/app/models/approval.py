@@ -18,6 +18,7 @@ class ApprovalChannel(Base):
     team_id: Mapped[Optional[str]] = mapped_column(Text)  # platform account: Slack team id (routes the shared URL) / Telegram bot id
     secrets: Mapped[str] = mapped_column(Text)           # Fernet token of {field: value}; never returned by the API
     hint: Mapped[Optional[str]] = mapped_column(Text)    # masked last 4 chars of the main token
+    scopes: Mapped[Optional[str]] = mapped_column(Text)  # Slack: granted OAuth scopes, comma-separated, as last read (TASK-0074); NULL = unknown
     created: Mapped[float] = mapped_column(Float)
 
 

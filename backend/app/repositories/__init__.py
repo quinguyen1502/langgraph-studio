@@ -18,5 +18,8 @@ from .user_data import UserDataRepository
 from .templates import TemplateRepository
 from .auth_security import AuthSecurityRepository
 from .schedules import ScheduleRepository
+from .chat_triggers import ChatTriggerRepository
+from .chat_messages import ChatMessageRepository
+from .workflow_tests import WorkflowTestRepository
 
-__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository", "TemplateRepository", "AuthSecurityRepository", "ScheduleRepository"]
+__all__ = ["UserRepository", "WorkflowRepository", "RunRepository", "CredentialRepository", "WorkflowTokenRepository", "WorkflowVersionRepository", "NotificationRepository", "WebhookDeliveryRepository", "NodeResultRepository", "StaleLease", "ApprovalRepository", "KnowledgeRepository", "McpServerRepository", "WorkflowShareRepository", "TeamRepository", "AuditRepository", "SettingsRepository", "UserDataRepository", "TemplateRepository", "AuthSecurityRepository", "ScheduleRepository", "ChatTriggerRepository", "ChatMessageRepository", "WorkflowTestRepository"]

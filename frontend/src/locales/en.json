@@ -410,6 +410,22 @@
     "SCHEDULE_NOT_FOUND": "Schedule not found",
     "SCHEDULE_CRON_INVALID": "Schedule: {{reason}}",
     "SCHEDULE_LIMIT": "A workflow can have at most {{max}} schedules",
+    "CHAT_TRIGGER_NOT_FOUND": "Chat trigger not found",
+    "CHAT_TRIGGER_COMMAND_TAKEN": "Another chat trigger already answers '{{command}}' there",
+    "CHAT_TRIGGER_LIMIT": "A workflow can have at most {{max}} chat triggers",
+    "CHAT_TRIGGER_CONFIG_INVALID": "Chat trigger: invalid {{field}}",
+    "CHAT_TRIGGER_SCOPE_MISSING": "The Slack app lacks the scopes chat triggers need: {{scopes}}. Reinstall it with them",
+    "CHAT_IDENTITY_UNKNOWN": "Their {{kind}} account is not linked to Superstep",
+    "CHAT_IDENTITY_UNVERIFIED": "Their {{kind}} account is linked but not verified",
+    "CHAT_FORBIDDEN": "They may not run this workflow",
+    "CHAT_TRIGGER_OFF": "The chat trigger is off",
+    "TEST_NOT_FOUND": "Test case not found",
+    "TEST_CASE_INVALID": "Test case: {{reason}}",
+    "TEST_CASES_LIMIT": "A workflow can have at most {{max}} test cases",
+    "TEST_SUITE_NOT_FOUND": "Test run not found",
+    "TEST_SUITE_RUNNING": "The tests of this workflow are already running",
+    "TEST_NOT_SUPPORTED": "Imported LangGraph workflows cannot have tests",
+    "PYTHON_EXPORT_UNAVAILABLE": "Imported LangGraph workflows are Python code already: there is nothing to export.",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
@@ -636,7 +652,9 @@
     "unread_other": "{{count}} unread notifications",
     "run_waiting": "{{workflow}} is waiting for you: {{label}}",
     "run_expired": "A waiting run of {{workflow}} expired",
-    "unknownWorkflow": "A workflow"
+    "unknownWorkflow": "A workflow",
+    "run_reminder": "{{workflow}} is still waiting for you: {{label}}",
+    "run_escalated": "{{workflow}} was handed to you: {{label}}"
   },
   "notifyPrefs": {
     "open": "Notification settings",
@@ -654,12 +672,14 @@
       "telegram": "Telegram",
       "whatsapp": "WhatsApp",
       "email": "E-mail",
-      "teams": "Microsoft Teams"
+      "teams": "Microsoft Teams",
+      "studio": "Studio"
     },
     "optional": "optional",
+    "notConnected": "not connected",
     "keepSecret": "Saved, enter a new value to replace",
     "help": {
-      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. Each workspace is its own connection.",
+      "slack": "Create a Slack app with the bot scopes chat:write and im:write (verification codes), turn on Interactivity with the Request URL shown on the connection. For chat triggers, also add app_mentions:read and im:history and turn on Event Subscriptions. Each workspace is its own connection.",
       "telegram": "Create a bot with @BotFather, save its token, then register the webhook (needs a public https STUDIO_PUBLIC_URL).",
       "whatsapp": "In a Meta app with the WhatsApp product, copy the access token, the phone number ID and the app secret, and choose a verify token. Then set the webhook in the Meta dashboard to the callback URL below with that verify token, and subscribe to \"messages\". Button messages only reach people who wrote to the number in the last 24 hours; outside that window, give an approved template with two quick-reply buttons (Approve, Reject).",
       "email": "Sends the request through the studio's SMTP settings (SMTP_HOST) with Approve / Reject links. Whoever answers signs in to the studio, so there is no account to link. Needs STUDIO_PUBLIC_URL.",
@@ -716,7 +736,14 @@
       "superseded": "Answered elsewhere",
       "expired": "Expired",
       "send_failed": "Send failed",
-      "not_configured": "Not configured"
+      "not_configured": "Not configured",
+      "answered": "Answered",
+      "reminded": "Reminded",
+      "escalated": "Escalated",
+      "escalation_skipped": "Escalation skipped",
+      "timed_out": "Timed out",
+      "chat_started": "Run from chat",
+      "chat_refused": "Chat run refused"
     },
     "node": {
       "title": "Approval channel",
@@ -739,7 +766,7 @@
         "teams": ""
       },
       "approvers": "Approvers (e-mails)",
-      "approversHelp": "Besides you (the run owner). They must link and verify their account under My accounts.",
+      "approversHelp": "Besides you (the run owner). They answer from their Approvals page, or from the channel once they link and verify their account under My accounts.",
       "noTarget": "The webhook posts to its Teams channel."
     },
     "verified": "Verified",
@@ -771,7 +798,16 @@
     "unlinkTitle": "Unlink {{name}}?",
     "unlinkBody": "Approvals on this platform can no longer be matched to you until you link and verify again.",
     "whatsappWindow": "WhatsApp delivers the code only if you messaged the business number in the last 24 hours.",
-    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account."
+    "linkNote": "Approvers answer on the studio's approval page, signed in with their own account.",
+    "chat": {
+      "eventsUrl": "Event Subscriptions Request URL (chat triggers)",
+      "help": {
+        "slack": "Chat triggers: turn on Event Subscriptions with this URL and subscribe the bot to app_mention and message.im. The app needs the scopes app_mentions:read and im:history.",
+        "telegram": "Chat triggers: press Register webhook again so the bot also receives messages. In groups, people write /command, or turn off the bot's privacy mode in @BotFather."
+      },
+      "missing": "Chat triggers need the scopes {{scopes}}: add them in the Slack app settings (or use Add to Slack), reinstall, then press Test.",
+      "unknown": "Press Test to check the scopes chat triggers need."
+    }
   },
   "settings": {
     "title": "Settings",
@@ -1185,6 +1221,8 @@
     "export": "Export",
     "useNamed": "Create a workflow from {{name}}",
     "noDescription": "No description",
+    "tests_one": "{{count}} test case",
+    "tests_other": "{{count}} test cases",
     "invalidJson": "The file is not valid JSON",
     "deleteTitle": "Delete template",
     "deleteBody": "The template \"{{name}}\" will be removed. Workflows created from it are not affected.",
@@ -1195,13 +1233,63 @@
     },
     "saveAs": "Save as template",
     "saveAsTitle": "Save as template",
-    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channels, subgraph links, headers and API keys are removed.",
+    "saveAsDesc": "Saves the last saved version as a reusable template. Credentials, knowledge bases, MCP servers, approval channel connections and approvers, subgraph links, headers and API keys are removed.",
     "saveAsConfirm": "Save template",
     "unsavedNote": "You have unsaved changes. The template uses the last saved version — save the workflow first to include them.",
     "name": "Name",
     "description": "Description",
     "visibility": "Visible to",
-    "saved": "Template \"{{name}}\" saved. Find it under New workflow."
+    "saved": "Template \"{{name}}\" saved. Find it under New workflow.",
+    "builtin": {
+      "builtin-chatbot": {
+        "name": "Chatbot",
+        "description": "One LLM answers the user's message."
+      },
+      "builtin-rag": {
+        "name": "RAG Q&A",
+        "description": "Retrieve passages from a knowledge base, then answer with them."
+      },
+      "builtin-approval": {
+        "name": "Approval flow",
+        "description": "Draft a reply, ask a human to approve it, then send or revise."
+      },
+      "builtin-router": {
+        "name": "Router",
+        "description": "Classify the request and route it to a specialised branch."
+      },
+      "builtin-refund-approval": {
+        "name": "Refund approval",
+        "description": "Finance approves a customer's refund in Slack; the customer gets an e-mail either way."
+      },
+      "builtin-leave-request": {
+        "name": "Leave request",
+        "description": "A manager approves time off in Microsoft Teams; the employee and HR get the answer by e-mail."
+      },
+      "builtin-social-post": {
+        "name": "Social post review",
+        "description": "An editor approves a post in Telegram, or sends it back with notes to rewrite."
+      },
+      "builtin-large-order": {
+        "name": "Large order check",
+        "description": "Risky orders wait for a sales manager in WhatsApp; the others go straight through."
+      },
+      "builtin-expense-claim": {
+        "name": "Expense claim",
+        "description": "Check a travel expense against the policy, approve it by e-mail, then tell the employee."
+      },
+      "builtin-purchase-request": {
+        "name": "Purchase request",
+        "description": "A team lead approves in Slack, then finance approves by e-mail; the requester hears back."
+      },
+      "builtin-support-escalation": {
+        "name": "Support with escalation",
+        "description": "Answer from a knowledge base; a support agent reviews the answers that are unsure."
+      },
+      "builtin-feedback-digest": {
+        "name": "Customer feedback digest",
+        "description": "Label each piece of feedback, write a report and e-mail it to the team."
+      }
+    }
   },
   "clipboard": {
     "duplicate": "Duplicate",
@@ -1320,6 +1408,53 @@
       "custom": "Custom"
     }
   },
+  "chatTriggers": {
+    "button": "Chat triggers",
+    "title": "Chat triggers",
+    "desc": "Start this workflow from a message to your Slack app or Telegram bot. Only people who linked their chat account in Superstep and may run this workflow can start it; runs use your credentials.",
+    "badge": "Chat",
+    "from": "Sent by {{sender}} · trigger {{trigger}}",
+    "empty": "No chat triggers yet.",
+    "add": "New chat trigger",
+    "edit": "Edit chat trigger",
+    "name": "Name",
+    "namePh": "Leave requests",
+    "connection": "Connection",
+    "where": "Listen in",
+    "dm": "Direct messages to the bot",
+    "aChannel": "A Slack channel",
+    "aGroup": "A Telegram group",
+    "inChannel": "channel {{place}}",
+    "inGroup": "group {{place}}",
+    "channelId": "Channel ID (channel details → About, starts with C)",
+    "groupId": "Group chat ID (starts with -)",
+    "command": "Command word",
+    "commandHint": "One word: letters, digits, - or _, up to 32 characters.",
+    "inputField": "Message text goes to",
+    "replyField": "Reply with",
+    "sample": "In {{where}}, people write:",
+    "bot": "bot",
+    "sampleText": "<text>",
+    "create": "Add chat trigger",
+    "save": "Save",
+    "enabledFor": "Turn chat trigger {{name}} on",
+    "editFor": "Edit chat trigger {{name}}",
+    "deleteFor": "Delete chat trigger {{name}}",
+    "deleteTitle": "Delete chat trigger {{name}}?",
+    "deleteBody": "Runs already started are kept.",
+    "last": "last message {{when}}",
+    "stopped": "Stopped",
+    "noConnection": "Connection removed",
+    "needConnection": "Connect a Slack app or a Telegram bot first.",
+    "openChannels": "Open Channels",
+    "missingScopes": "This Slack app lacks the scopes chat triggers need ({{scopes}}). Reinstall it, or save the trigger turned off.",
+    "notes": {
+      "access": "Stopped: its creator no longer manages this workflow.",
+      "channel": "Stopped: its connection was removed.",
+      "scopes": "Stopped: the Slack app lacks scopes."
+    },
+    "help": "The bot answers in the thread: when the run starts, then with the reply field, an error, or the step waiting for approval. Refusals (account not linked, no run right, too many runs) go to the sender only."
+  },
   "approve": {
     "title": "Approval request",
     "approveQ": "Approve this request?",
@@ -1431,5 +1566,163 @@
       "subprocess": "Host subprocess (not isolated)",
       "off": "Off"
     }
+  },
+  "inbox": {
+    "title": "Approvals",
+    "intro": "Steps waiting for your answer, in runs you own or approve.",
+    "empty": "Nothing is waiting for you",
+    "emptyHelp": "When a run pauses at a Human node you own or approve, it shows up here.",
+    "studio": "In the studio",
+    "from": "Run by {{email}}",
+    "since": "Waiting since {{when}}",
+    "openRun": "Open run",
+    "open": "Open approvals",
+    "sent": "Answer sent. The run continues.",
+    "due": "Due {{when}}",
+    "overdue": "Overdue"
+  },
+  "deadline": {
+    "title": "Deadline",
+    "off": "Off: the step waits until someone answers, or until the run's wait limit.",
+    "after": "Wait at most",
+    "unit": "Unit",
+    "units": {
+      "m": "minutes",
+      "h": "hours",
+      "d": "days"
+    },
+    "remindEvery": "Remind every",
+    "remindHelp": "Leave empty for no reminders. At most 5, on the channel and in the bell.",
+    "onTimeout": "When time runs out",
+    "actions": {
+      "reject": "Reject",
+      "approve": "Approve",
+      "escalate": "Hand to other approvers"
+    },
+    "escalateTo": "Hand to (e-mails)",
+    "escalateHelp": "They become approvers and get the same time again. With no answer then, the step is rejected."
+  },
+  "tests": {
+    "tab": "Tests",
+    "badge": "Test",
+    "showRuns": "Test runs",
+    "saveFirst": "Save the workflow to add test cases.",
+    "runAll": "Run all",
+    "runOne": "Run this test",
+    "mock": "Use the offline mock model",
+    "mockBadge": "Mock model",
+    "running": "Running: {{done}} of {{total}} done",
+    "summary": "{{passed}} passed, {{failed}} failed on v{{version}}",
+    "add": "Add test case",
+    "edit": "Edit",
+    "duplicate": "Duplicate",
+    "copyOf": "{{name}} (copy)",
+    "unsaved": "Tests run the saved version. Save to test your latest changes.",
+    "empty": "No test cases yet. Add one with an input and what the run should show.",
+    "emptyViewer": "This workflow has no test cases.",
+    "pick": "Choose a test case to see its checks and last result.",
+    "openRun": "Open run",
+    "check": "Check",
+    "expected": "Expected",
+    "actual": "Actual",
+    "deleteTitle": "Delete test case {{name}}?",
+    "addTitle": "New test case",
+    "editTitle": "Edit test case",
+    "dialogDesc": "A test run sends no e-mail, channel message, notification or callback. Tools, HTTP, MCP and Code nodes run for real.",
+    "name": "Name",
+    "input": "Input",
+    "answers": "Human answers",
+    "answersHelp": "Given in order each time the run waits at the node. With no answer left, the test fails.",
+    "answer": "Answer",
+    "answerText": "Text reply",
+    "addAnswer": "Add answer",
+    "answerKinds": {
+      "approved": "Approve",
+      "rejected": "Reject",
+      "text": "Text reply"
+    },
+    "checks": "Checks",
+    "addCheck": "Add check",
+    "kind": "Check type",
+    "kinds": {
+      "status": "Run status",
+      "field": "State field",
+      "node": "Node",
+      "duration": "Duration",
+      "cost": "Cost"
+    },
+    "field": "Field",
+    "compare": "Comparison",
+    "value": "Value",
+    "node": "Node",
+    "unit": {
+      "duration": "seconds at most",
+      "cost": "US$ at most"
+    },
+    "op": {
+      "equals": "equals",
+      "contains": "contains",
+      "not_contains": "does not contain",
+      "matches": "matches",
+      "empty": "is empty",
+      "not_empty": "is not empty"
+    },
+    "ran": {
+      "ran": "ran",
+      "not_ran": "did not run"
+    },
+    "status": {
+      "queued": "Queued",
+      "running": "Running",
+      "passed": "Passed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "desc": {
+      "status": "Run status is {{value}}",
+      "field": "{{field}} {{op}} “{{value}}”",
+      "fieldNoValue": "{{field}} {{op}}",
+      "ran": "{{node}} ran",
+      "notRan": "{{node}} did not run",
+      "duration": "Takes at most {{max}} s",
+      "cost": "Costs at most ${{max}}"
+    },
+    "reason": {
+      "no_answer": "The run waited at {{node}} with no answer left.",
+      "run_status": "The run ended with status {{status}}.",
+      "field_missing": "This field is not in the state.",
+      "node_missing": "This node is not in the workflow.",
+      "not_evaluated": "Not checked: the run did not finish.",
+      "no_price": "Not checked: the model has no known price."
+    },
+    "saveFromRun": "Save as test case",
+    "runVersion": "Run against version",
+    "runVersionHelp": "Run the tests on a stored earlier version, to compare with it.",
+    "noVersions": "No earlier version",
+    "history": "Test history",
+    "noHistory": "No test runs yet.",
+    "historyItem": "v{{version}}: {{passed}} passed, {{failed}} failed",
+    "comparedWith": "Compared with v{{version}}:",
+    "noBaseline": "No earlier result to compare with.",
+    "stale": "No longer in the graph",
+    "change": {
+      "regression": "Regression",
+      "fixed": "Fixed",
+      "still_failing": "Still failing",
+      "still_passing": "Still passing",
+      "new": "New"
+    }
+  },
+  "codeView": {
+    "tab": "Code",
+    "button": "View as code",
+    "saveFirst": "Save the workflow to see it as LangGraph code.",
+    "version": "v{{n}}",
+    "unsaved": "Unsaved changes are not in the code yet",
+    "showing": "Showing {{node}}",
+    "noCode": "This node has no code of its own",
+    "selectHint": "Select a node on the canvas to find its code",
+    "download": "Download .py",
+    "language": "Python"
   }
 }

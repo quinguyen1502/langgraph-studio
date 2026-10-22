@@ -57,7 +57,7 @@ const refund = (s: typeof T.en) => ({
   state: [{ name: 'order_id', type: 'string' }, { name: 'amount', type: 'string' }, { name: 'reply', type: 'string' }, { name: 'decision', type: 'string' }],
   nodes: [N('start', 'start', 40, { label: s.start }, 180),
     N('draft', 'llm', 280, { label: s.draft, model: 'gpt-4o-mini', prompt: 'Draft a refund reply for order {{state.order_id}}', output_field: 'reply' }, 180),
-    N('ask', 'human', 540, { label: s.approve, prompt: s.approvePrompt, output_field: 'decision' }, 180),
+    N('ask', 'human', 540, { label: s.approve, prompt: s.approvePrompt, output_field: 'decision', deadline: { after: '1d', remind_every: '4h', on_timeout: 'reject' } }, 180),
     N('route', 'condition', 800, { label: s.approved, field: 'decision', default: 'rejected' }, 180),
     N('mail', 'email', 1060, { label: s.notify, to: 'customer@example.com', subject: 'Your refund', body: '{{state.reply}}', format: 'text' }, 80),
     N('end', 'end', 1060, { label: s.end }, 300)],
@@ -130,12 +130,40 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await setInput(page, JSON.stringify({ order_id: 'A100', amount: '$129.50', reply: '', decision: '' }, null, 2))
       await run(page, 'waiting'); await expect(page.locator('#human-question')).toBeVisible()
       await shot(page, lang, 'human-waiting')
+      await page.locator('.react-flow__node[data-id="ask"]').click(); await page.locator('#human-deadline').scrollIntoViewIfNeeded()
+      await shot(page, lang, 'human-deadline')
 
-      // Workflow list with the pending approval
-      await page.goto('/workflows'); await expect(page.locator('[data-testid=pending-row]').first()).toBeVisible()
+      // Approvals inbox with the waiting refund, then the workflow list with its link (TASK-0065)
+      await page.goto('/approvals'); await expect(page.locator('[data-testid=inbox-row]').first()).toBeVisible()
+      await shot(page, lang, 'approvals')
+      await page.goto('/workflows'); await expect(page.locator('#pending-runs')).toBeVisible()
       await shot(page, lang, 'workflows')
       await page.locator('#new-wf').click(); await expect(page.locator('#template-gallery')).toBeVisible()
       await shot(page, lang, 'templates'); await page.keyboard.press('Escape')
+
+      // Workflow tests (TASK-0069): the Leave request template comes with its test cases; Run all with the mock model,
+      // the case editor, then a mistake in version 2 shows as a regression against version 1
+      const leave = (await (await page.request.post('/api/templates/builtin-leave-request/use', { headers: H, data: { name: lang === 'en' ? 'Leave request' : 'Đơn nghỉ phép' } })).json()).data.id
+      const runTests = async () => {
+        await page.locator('#tests-tab').click(); await page.locator('#tests-mock').click(); await page.locator('#tests-run-all').click()
+        await expect(page.locator('#tests-compare')).toBeVisible({ timeout: 60_000 })
+      }
+      await page.goto(`/workflows/${leave}`); await expect(page.locator('.react-flow__node')).toHaveCount(5); await fit(page)
+      await runTests(); await expect(page.locator('#tests-summary')).toContainText(lang === 'en' ? '2 passed, 0 failed' : '2 đạt, 0 không đạt')
+      await shot(page, lang, 'tests')
+      await page.getByTestId('test-edit').click(); await expect(page.locator('#test-dialog')).toBeVisible()
+      await shot(page, lang, 'test-case'); await page.keyboard.press('Escape')
+      // Export to Python (TASK-0072): version 1 in the Code tab, with the Human node's code marked
+      await page.locator('#code-tab').click(); await page.locator('.react-flow__node[data-id="manager"]').click()
+      await expect(page.locator('.cm-node-mark').first()).toBeVisible()
+      await shot(page, lang, 'code-tab')
+      const v1 = (await (await page.request.get(`/api/workflows/${leave}`, { headers: H })).json()).data
+      v1.nodes.find((n: { id: string }) => n.id === 'manager').data.output_field = 'details'  // the answer now overwrites the details
+      await page.request.post('/api/workflows', { headers: H, data: v1 })
+      await page.reload(); await expect(page.locator('.react-flow__node')).toHaveCount(5); await fit(page)
+      await runTests(); await expect(page.getByTestId('compare-regression')).toBeVisible()
+      await shot(page, lang, 'tests-compare')
+      await page.goto('/workflows'); await expect(page.locator('#new-wf')).toBeVisible()
       await page.locator('#creds-btn').click(); await page.waitForTimeout(400)
       await shot(page, lang, 'credentials'); await page.keyboard.press('Escape')
 
@@ -193,6 +221,18 @@ for (const lang of ['en', 'vi'] as Lang[]) {
         await page.goto(`/settings/${sec}`); await page.waitForLoadState('networkidle'); await page.waitForTimeout(400)
         await shot(page, lang, `settings-${sec}`)
       }
+
+      // Chat triggers (TASK-0077): a Slack connection (the fake API) and one trigger on the Leave request, opened for editing.
+      // Made after the Channels shot so that one stays empty.
+      const team = `T${lang.toUpperCase()}${Date.now().toString(36).toUpperCase()}`
+      const ch = (await (await page.request.post('/api/approvals/channels', { headers: H, data: { kind: 'slack', name: 'Acme Slack', bot_token: `xoxb-1-${team}-abcdefgh`, signing_secret: '0123456789abcdef0123456789abcdef' } })).json()).data
+      await page.request.post(`/api/workflows/${leave}/chat-triggers`, { headers: H, data: { name: lang === 'en' ? 'Leave requests' : 'Đơn nghỉ phép', channel_id: ch.id, place: 'C0HRLEAVE',
+        command: lang === 'en' ? 'leave' : 'nghiphep', input_field: 'message', reply_field: 'decision', enabled: true } })
+      await page.goto(`/workflows/${leave}`); await expect(page.locator('.react-flow__node')).toHaveCount(5)
+      await page.locator('#more-btn').click(); await page.locator('#chat-triggers-btn').click(); await expect(page.locator('#chat-triggers-dialog')).toBeVisible()
+      await page.locator('[data-testid=chat-trigger-row]').getByRole('button', { name: /^(Edit|Sửa) chat trigger/ }).click()
+      await expect(page.locator('#chat-trigger-sample')).toBeVisible()
+      await shot(page, lang, 'chat-triggers'); await page.keyboard.press('Escape')
 
       // Dark theme hero
       await page.evaluate(() => localStorage.setItem('theme', 'dark'))

@@ -2,7 +2,8 @@
 
 Kênh duyệt mang yêu cầu của node Human ra ngoài studio. Thiết lập ở **Cài đặt
 → Kênh**; mỗi người tự liên kết tài khoản chat của mình ở **Cài đặt → Tài
-khoản của tôi**.
+khoản của tôi**. Mỗi kênh hiện logo của nền tảng ở đó, trong danh sách kênh
+của node Human và trong **Cài đặt → Nhật ký**.
 
 ![Kênh](../images/settings-channels.png)
 
@@ -49,6 +50,12 @@ to Slack** (OAuth). Redirect URL là
    mình bằng mã.
 
 Webhook được kiểm tra bằng `X-Telegram-Bot-Api-Secret-Token`.
+
+## Chạy từ chat
+
+Kết nối Slack và Telegram còn chạy được workflow bằng tin nhắn. Slack cần thêm
+hai quyền và một URL nhận sự kiện, Telegram cần đăng ký webhook lại: xem
+[Chạy từ chat](../run/chat-triggers.md).
 
 ## WhatsApp (Cloud API)
 

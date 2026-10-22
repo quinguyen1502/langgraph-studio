@@ -6,6 +6,7 @@ import { AuthPage } from '@/pages/Auth'
 import { WorkflowsPage } from '@/pages/Workflows'
 import { ForgotPasswordPage, ResetPasswordPage } from '@/pages/PasswordReset'
 import { ApprovePage } from '@/pages/Approve'
+import { ApprovalsPage } from '@/pages/Approvals'
 import { CommandPalette } from '@/components/command-palette'
 
 // The editor (React Flow, CodeMirror, dagre) and Settings load as their own chunks (TASK-0039).
@@ -27,6 +28,7 @@ export default function App() {
     <Route path="/workflows" element={<Protected><WorkflowsPage /></Protected>} />
     <Route path="/workflows/:id" element={<Protected><EditorPage /></Protected>} />
     <Route path="/approve" element={<Protected><ApprovePage /></Protected>} />
+    <Route path="/approvals" element={<Protected><ApprovalsPage /></Protected>} />
     <Route path="/settings/:section?" element={<Protected><SettingsPage /></Protected>} />
     <Route path="*" element={<Navigate to="/workflows" replace />} />
   </Routes></Suspense></BrowserRouter></TooltipProvider>

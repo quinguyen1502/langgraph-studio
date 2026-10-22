@@ -5,6 +5,8 @@ Platforms (no JWT; verified by signature / secret header): POST /api/approvals/c
 shared POST /api/approvals/callback/slack routed by team_id. GET on the same URL answers WhatsApp's verification.
 Link channels (e-mail, Teams, TASK-0047): GET /api/approvals/link?token= shows the request, POST /api/approvals/link
 records the signed-in user's decision.
+Approvals inbox (TASK-0065, DEC-0043): GET /api/approvals/inbox lists the waiting steps the user owns or may answer,
+POST /api/approvals/inbox/{run_id} {response} answers one.
 """
 import asyncio
 from typing import Optional
@@ -15,7 +17,7 @@ from ...core import config
 from ...core.errors import AppError
 from ...core.client_ip import client_ip
 from ...core import permissions as P
-from ..deps import approval_service, channel_service, current_user, identity_service, need, slack_oauth_service
+from ..deps import approval_service, channel_service, current_user, identity_service, inbox_service, need, slack_oauth_service
 
 router = APIRouter(prefix="/api/approvals", tags=["approvals"])
 
@@ -112,3 +114,12 @@ def link_info(token: str, user=Depends(current_user), svc=Depends(approval_servi
 @router.post("/link")
 def decide_link(body: dict = Body(...), user=Depends(current_user), svc=Depends(approval_service)):
     return svc.decide_link(str(body.get("token") or ""), user["id"])
+
+
+# ---- the Approvals inbox (TASK-0065) ----
+@router.get("/inbox")
+def inbox(user=Depends(current_user), svc=Depends(inbox_service)): return svc.list(user["id"])
+
+@router.post("/inbox/{run_id}")
+def answer(run_id: str, body=Body(None), user=Depends(current_user), svc=Depends(inbox_service)):
+    return svc.answer(user["id"], run_id, body.get("response") if isinstance(body, dict) else None)

@@ -1,7 +1,8 @@
 """API / webhook triggers (TASK-0007).
 
 Owner (JWT): manage per-workflow tokens under /api/workflows/{wid}/tokens and cron schedules (TASK-0046) under
-/api/workflows/{wid}/schedules; POST /api/schedules/preview lists the next times of an expression.
+/api/workflows/{wid}/schedules; POST /api/schedules/preview lists the next times of an expression; chat triggers
+(TASK-0074) under /api/workflows/{wid}/chat-triggers.
 External callers (workflow token, `Authorization: Bearer wft_…` or `X-Workflow-Token`):
   POST /api/hooks/workflows/{wid}/runs  {input, mode: async|sync, callback_url?}
   GET  /api/hooks/workflows/{wid}/runs/{run_id}
@@ -11,8 +12,8 @@ import asyncio
 from fastapi import APIRouter, Depends, Header, Request
 from ...core import config
 from ...schemas.envelope import EnvelopeResponse
-from ...schemas.trigger import ScheduleIn, SchedulePatch, SchedulePreview, TokenIn, TriggerIn
-from ..deps import current_user, delivery_service, schedule_service, trigger_service
+from ...schemas.trigger import ChatTriggerIn, ChatTriggerPatch, ScheduleIn, SchedulePatch, SchedulePreview, TokenIn, TriggerIn
+from ..deps import chat_trigger_service, current_user, delivery_service, schedule_service, trigger_service
 
 router = APIRouter(prefix="/api", tags=["triggers"])
 
@@ -81,3 +82,19 @@ def delete_schedule(wid: str, sid: str, user=Depends(current_user), svc=Depends(
 
 @router.post("/schedules/preview")
 def preview_schedule(body: SchedulePreview, user=Depends(current_user), svc=Depends(schedule_service)): return svc.preview(body.cron, body.timezone)
+
+
+# ---- chat triggers (TASK-0074) ----
+@router.get("/workflows/{wid}/chat-triggers")
+def list_chat_triggers(wid: str, user=Depends(current_user), svc=Depends(chat_trigger_service)): return svc.list(wid, user["id"])
+
+@router.post("/workflows/{wid}/chat-triggers")
+def create_chat_trigger(wid: str, body: ChatTriggerIn, user=Depends(current_user), svc=Depends(chat_trigger_service)):
+    return svc.create(wid, user["id"], body.model_dump())
+
+@router.patch("/workflows/{wid}/chat-triggers/{tid}")
+def update_chat_trigger(wid: str, tid: str, body: ChatTriggerPatch, user=Depends(current_user), svc=Depends(chat_trigger_service)):
+    return svc.update(wid, tid, user["id"], body.model_dump())
+
+@router.delete("/workflows/{wid}/chat-triggers/{tid}")
+def delete_chat_trigger(wid: str, tid: str, user=Depends(current_user), svc=Depends(chat_trigger_service)): return svc.delete(wid, tid, user["id"])

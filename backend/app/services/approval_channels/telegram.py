@@ -1,9 +1,9 @@
 """Telegram: bot sendMessage with an inline keyboard; the webhook is authenticated by the secret_token header."""
-import hmac, json, secrets as pysecrets
+import hmac, json, re, secrets as pysecrets
 from typing import Optional
 from ...core import config
 from ...core.errors import AppError
-from .base import ApprovalChannel, ApprovalMessage, Callback
+from .base import ApprovalChannel, ApprovalMessage, Callback, IncomingMessage
 
 
 class TelegramChannel(ApprovalChannel):
@@ -14,6 +14,8 @@ class TelegramChannel(ApprovalChannel):
     patterns = {"bot_token": r"\d{3,15}:[\w-]{20,64}", "webhook_secret": r"[A-Za-z0-9_-]{16,256}"}
     identity_pattern = r"\d{1,20}"
     hint_field = "bot_token"
+    chat = True  # messages arrive on the same webhook as button presses (TASK-0074)
+    place_pattern = r"-?\d{1,20}"  # chat id; groups are negative
 
     def prepare(self, values):
         out = super().prepare(values)
@@ -30,7 +32,7 @@ class TelegramChannel(ApprovalChannel):
         return {"name": f"@{me['username']}" if me.get("username") else None, "team_id": str(me["id"]) if me.get("id") else None}
 
     def register(self, secrets, callback_url):
-        self._api(secrets, "setWebhook", {"url": callback_url, "secret_token": secrets["webhook_secret"], "allowed_updates": ["callback_query"]})
+        self._api(secrets, "setWebhook", {"url": callback_url, "secret_token": secrets["webhook_secret"], "allowed_updates": ["callback_query", "message"]})
         return {"registered": True, "manual": False}
 
     def send_request(self, secrets, target, msg: ApprovalMessage):
@@ -58,3 +60,28 @@ class TelegramChannel(ApprovalChannel):
 
     def send_dm(self, secrets, external_id, text):
         self._api(secrets, "sendMessage", {"chat_id": external_id, "text": text})  # works once the user pressed Start in the bot chat
+
+    # ---- chat triggers (TASK-0075): messages to the bot, in a private chat or a group ----
+    def handle_message(self, body) -> Optional[IncomingMessage]:
+        try: u = json.loads(body)
+        except (ValueError, UnicodeDecodeError): return None
+        m = u.get("message") if isinstance(u, dict) else None
+        if not isinstance(m, dict) or not isinstance(m.get("text"), str) or (m.get("from") or {}).get("is_bot") or not (m.get("from") or {}).get("id"):
+            return None
+        chat = m.get("chat") or {}
+        text = re.sub(r"^@\w+\s+", "", m["text"].strip())          # "@studio_bot leave ..."
+        text = re.sub(r"^/([\w-]+)@\w+", r"/\1", text)             # "/leave@studio_bot ..." (commands in groups)
+        return IncomingMessage("", "dm" if chat.get("type") == "private" else str(chat.get("id")), str(m["from"]["id"]), text,
+                               str(u.get("update_id")), {"chat_id": chat.get("id"), "message_id": m.get("message_id")})
+
+    def reply(self, secrets, ref, text):
+        self._api(secrets, "sendMessage", {"chat_id": ref["chat_id"], "text": text[:4000], "disable_web_page_preview": True,
+                                           "reply_parameters": {"message_id": ref["message_id"], "allow_sending_without_reply": True}})
+
+    def reply_private(self, secrets, ref, sender, text):
+        """Telegram has no message only one member of a group sees: a direct message, which works once the sender has
+        started the bot; else the reply goes to the group."""
+        if str(ref["chat_id"]) != sender:
+            try: self._api(secrets, "sendMessage", {"chat_id": sender, "text": text[:4000]}); return
+            except AppError: pass
+        self.reply(secrets, ref, text)

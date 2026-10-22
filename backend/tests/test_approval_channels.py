@@ -307,7 +307,7 @@ def test_telegram_webhook_registration_reject_and_secret_header(c, api, monkeypa
     ch = connect(c, owner, "telegram")
     assert ch["callback_url"] == f"https://studio.example.com/api/approvals/callback/telegram/{ch['id']}"
     reg = c.post(f"/api/approvals/channels/{ch['id']}/register-webhook", headers=H(owner["token"])).json()["data"]
-    assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query"]}
+    assert reg["registered"] is True and api.named("setWebhook")[-1] == {"url": ch["callback_url"], "secret_token": TG["webhook_secret"], "allowed_updates": ["callback_query", "message"]}
     link(c, api, owner, "telegram", tid, own_channel=False)
     wid = workflow(c, owner, {"channel": "telegram", "target": "-100200300"}); rid = start_waiting(c, owner, wid)
     msg = until(lambda: api.requests("sendMessage"))[-1]
@@ -353,6 +353,40 @@ def test_expired_button_and_answer_in_studio_supersede(c, api):
     assert slack_post(c, ch["id"], press(approve2, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
     actions = [e["action"] for e in c.get("/api/approvals/audit", headers=H(owner["token"])).json()["data"] if e["run_id"] == rid2]
     assert "superseded" in actions
+
+
+def test_inbox_answer_closes_the_channel_request(c, api):
+    """TASK-0065: an approver answers from the Approvals inbox first; the Slack buttons are refused afterwards."""
+    owner, approver = user(c), user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
+    ch = connect(c, owner, "slack"); link(c, api, approver, "slack", ua)
+    wid = workflow(c, owner, {"channel": "slack", "target": "C1", "approvers": [approver["email"]]})
+    rid = start_waiting(c, owner, wid); approve = until(lambda: api.requests())[-1]["blocks"][1]["elements"][0]["value"]
+    [row] = [x for x in c.get("/api/approvals/inbox", headers=H(approver["token"])).json()["data"] if x["run_id"] == rid]
+    assert row["channel"] == "slack" and row["mine"] is False
+    assert c.post(f"/api/approvals/inbox/{rid}", json={"response": "rejected"}, headers=H(approver["token"])).status_code == 200
+    assert until(lambda: any(b["text"] == "Answered in Superstep" for b in api.named("chat.update")))
+    assert slack_post(c, ch["id"], press(approve, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
+    assert until(lambda: run_row(c, owner, wid, rid)["status"] == "ok")
+    assert run_row(c, owner, wid, rid)["final_state"]["decision"] == "rejected"
+
+
+def test_deadline_reminder_replaces_the_slack_message(c, api):
+    """TASK-0066: a reminder posts a new request and closes the old one; buttons expire at the deadline; a timeout edits it."""
+    owner, approver = user(c), user(c); ua = f"U{uuid.uuid4().hex[:8].upper()}"
+    ch = connect(c, owner, "slack"); link(c, api, approver, "slack", ua)
+    wf = json.loads(json.dumps(APPROVAL)); wf["name"] = f"Leave {uuid.uuid4().hex[:4]}"
+    wf["nodes"][1]["data"].update(approval={"channel": "slack", "target": "C1", "approvers": [approver["email"]]},
+                                  deadline={"after": "2h", "remind_every": "1h", "on_timeout": "reject"})
+    wid = c.post("/api/workflows", json=wf, headers=H(owner["token"])).json()["data"]["id"]
+    rid = start_waiting(c, owner, wid); first = until(lambda: api.requests())[-1]["blocks"][1]["elements"][0]["value"]
+    svc = approval_service(); w = svc.repo.latest_wait(rid)
+    assert svc.repo.requests_for_run(rid)[0].expires == pytest.approx(w.due_at)  # sooner than STUDIO_APPROVAL_TTL (24 h)
+    assert svc.fire_deadlines(w.created + 3601) == 1
+    assert len(api.requests()) == 2 and any("Reminder sent" in b["text"] for b in api.named("chat.update"))
+    assert slack_post(c, ch["id"], press(first, ua)).json()["data"]["code"] == "APPROVAL_ALREADY_DECIDED"
+    assert svc.fire_deadlines(w.created + 7201) == 1
+    assert any("rejected by the deadline" in b["text"] for b in api.named("chat.update"))
+    assert until(lambda: run_row(c, owner, wid, rid)["status"] == "ok")
 
 
 def test_no_op_without_a_configured_channel(c, api):
@@ -476,7 +510,8 @@ def test_test_connection(c, api, monkeypatch):
     from app.core.errors import AppError
     o = user(c); ch = connect(c, o, "slack")
     r = c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(o["token"]))
-    assert r.status_code == 200 and r.json()["data"] == {"ok": True, "name": "Team 2222", "team_id": "2222", "matches": True}
+    assert r.status_code == 200 and r.json()["data"] == {"ok": True, "name": "Team 2222", "team_id": "2222", "matches": True,
+                                                         "missing_scopes": None}  # the fake sends no x-oauth-scopes: unknown (TASK-0074)
     assert c.post(f"/api/approvals/channels/{ch['id']}/test", headers=H(user(c)["token"])).json()["error"]["code"] == "CHANNEL_NOT_FOUND"
     def broken(self, secrets): raise AppError("CHANNEL_API_FAILED", kind="Slack", reason="invalid_auth")
     monkeypatch.setattr(type(ADAPTERS["slack"]), "describe", broken)

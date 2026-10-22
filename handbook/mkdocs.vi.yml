@@ -42,12 +42,15 @@ nav:
       - Máy chủ MCP: guide/mcp.md
       - Mẫu workflow: guide/templates.md
       - Phiên bản: guide/versions.md
+      - Xuất ra Python: guide/python-export.md
   - Chạy:
       - run/index.md
       - Run và trace: run/traces.md
       - Duyệt bởi người: run/human-approval.md
       - API trigger và webhook: run/api-triggers.md
       - Lịch chạy: run/schedules.md
+      - Chạy từ chat: run/chat-triggers.md
+      - Kiểm thử workflow: run/tests.md
   - Vận hành:
       - operate/index.md
       - Triển khai bằng Compose: operate/deploy.md

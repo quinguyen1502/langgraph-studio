@@ -1,6 +1,7 @@
 # API triggers and webhooks
 
-Any workflow can be started over HTTP by another service.
+Any workflow can be started over HTTP by another service. To start one from a
+Slack or Telegram message instead, see [Chat triggers](chat-triggers.md).
 
 ![Trigger via API](../images/api-trigger.png)
 

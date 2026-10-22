@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import PlainTextResponse
 from ...schemas.workflow import Rename, WorkflowIn
 from ..deps import current_user, limit_body, run_service, workflow_service
 
@@ -23,7 +24,7 @@ def dup_wf(wid: str, user=Depends(current_user), svc=Depends(workflow_service)):
 def del_wf(wid: str, force: bool = Query(False), user=Depends(current_user), svc=Depends(workflow_service)): return svc.delete(wid, user["id"], force)
 
 @router.get("/workflows/{wid}/runs")
-def runs(wid: str, user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"])
+def runs(wid: str, tests: bool = Query(False), user=Depends(current_user), svc=Depends(run_service)): return svc.history(wid, user["id"], tests)
 
 @router.post("/validate", dependencies=[Depends(limit_body)])
 def validate_wf(body: WorkflowIn, user=Depends(current_user), svc=Depends(workflow_service)): return {"errors": svc.validate(body.as_dict(), user["id"])}
@@ -41,3 +42,14 @@ def get_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workfl
 
 @router.post("/workflows/{wid}/versions/{n}/restore")
 def restore_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.restore_version(wid, n, user["id"])
+
+# ---- export to Python (TASK-0070) ----
+@router.get("/workflows/{wid}/python")
+def python_code(wid: str, version: int | None = Query(None, ge=1), user=Depends(current_user), svc=Depends(workflow_service)):
+    return svc.python(wid, user["id"], version)
+
+@router.get("/workflows/{wid}/export/python")
+def python_file(wid: str, version: int | None = Query(None, ge=1), user=Depends(current_user), svc=Depends(workflow_service)):
+    out = svc.python(wid, user["id"], version)
+    return PlainTextResponse(out["code"], media_type="text/x-python",
+                             headers={"Content-Disposition": f'attachment; filename="{out["filename"]}"'})

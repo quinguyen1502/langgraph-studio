@@ -35,6 +35,17 @@ class Callback:
     context: dict = field(default_factory=dict)  # what acknowledge() needs (response_url, callback_query_id, ...)
 
 
+@dataclass
+class IncomingMessage:
+    """A message to the bot, parsed from the platform's callback (TASK-0075): chat triggers match its first word."""
+    team: str      # workspace (Slack team id); "" on platforms without workspaces
+    place: str     # "dm" (a direct message to the bot) or the channel / chat id
+    sender: str    # platform user id
+    text: str      # without the bot mention
+    key: str       # the platform's id of this delivery (Slack event_id, Telegram update_id): retries carry the same one
+    ref: dict = field(default_factory=dict)  # where replies go (reply() / reply_private())
+
+
 class ApprovalChannel:
     kind: str = ""
     label: str = ""                         # display name in messages ("Slack")
@@ -50,6 +61,11 @@ class ApprovalChannel:
     # /approve page, where the signed-in studio user decides, so there is no chat identity to verify.
     link_based: bool = False
     target_required: bool = True            # False: the connection itself is the destination (a Teams webhook)
+    # TASK-0074 (DEC-0046): chat triggers start runs from messages to the bot.
+    chat: bool = False                      # the platform can start runs from messages (Slack, Telegram)
+    chat_scopes: tuple[str, ...] = ()       # OAuth scopes messages need (Slack); describe() reports the granted ones
+    events_path: Optional[str] = None       # a separate URL that receives messages (Slack Events API); None: the callback URL
+    place_pattern: str = r".+"              # a chat a trigger may listen in (besides "dm"): Slack channel id, Telegram chat id
 
     # ---- configuration ----
     def prepare(self, values: dict) -> dict:
@@ -67,8 +83,8 @@ class ApprovalChannel:
     def valid_identity(self, external_id: str) -> bool: return bool(re.fullmatch(self.identity_pattern, external_id))
 
     def describe(self, secrets: dict) -> dict:
-        """Check the credentials with the platform and name the account behind them: {"name", "team_id"}.
-        Raises CHANNEL_API_FAILED when the platform refuses them."""
+        """Check the credentials with the platform and name the account behind them: {"name", "team_id"}, plus
+        "scopes" (granted, sorted) on platforms with OAuth scopes. Raises CHANNEL_API_FAILED when the platform refuses them."""
         return {"name": None, "team_id": None}
 
     def route_key(self, body: bytes) -> Optional[str]:
@@ -105,6 +121,23 @@ class ApprovalChannel:
 
     def send_dm(self, secrets: dict, external_id: str, text: str) -> None:
         """Send a private message to one platform user (the identity verification code)."""
+        raise NotImplementedError
+
+    # ---- chat triggers (TASK-0075): only platforms with `chat` ----
+    def handle_message(self, body: bytes) -> Optional[IncomingMessage]:
+        """Parse a message to the bot; None for anything else (bots, edits, joins, files, button presses)."""
+        return None
+
+    def event_challenge(self, body: bytes) -> Optional[str]:
+        """The value to echo when the platform checks the events URL (Slack url_verification); None otherwise."""
+        return None
+
+    def reply(self, secrets: dict, ref: dict, text: str) -> None:
+        """Answer in the message's thread, for everyone in the chat."""
+        raise NotImplementedError
+
+    def reply_private(self, secrets: dict, ref: dict, sender: str, text: str) -> None:
+        """Answer the sender only (refusals)."""
         raise NotImplementedError
 
     # ---- HTTP helper ----

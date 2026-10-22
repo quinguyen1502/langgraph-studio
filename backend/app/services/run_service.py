@@ -33,7 +33,7 @@ class RunPlan:
     run_id: Optional[str] = None
     previous: Optional["Run"] = None
     resume: Optional[dict] = None
-    source: str = "ui"  # ui | api (TASK-0007)
+    source: str = "ui"  # ui | api (TASK-0007) | schedule | test (TASK-0067)
     version: Optional[int] = None  # stored workflow version that runs; None = unsaved edits (TASK-0008)
     trace_parent: Optional[dict] = None  # {trace_id, span_id} of the previous trace segment (TASK-0020)
     recovered: bool = False       # continuing a queue job whose worker died (TASK-0020)
@@ -74,6 +74,14 @@ def _normalise(ev: dict) -> dict:
 
 
 RESPONSE_MAX = 10_000  # characters of a human response
+
+
+def human_response(response) -> str:
+    """A Human node's answer: text, or JSON true / false for approved / rejected (DEC-0013)."""
+    if isinstance(response, bool): response = "approved" if response else "rejected"
+    if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
+    return response
+
 log = get_logger("runs")
 def code_runtime_of(events: list) -> Optional[str]:
     """Where this run's Code nodes ran (TASK-0056): `subprocess` if any call ran unisolated, else `docker`, else None."""
@@ -127,7 +135,8 @@ def _write_in_thread(fn, *args, **kwargs) -> asyncio.Future:
 class RunService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, credentials=None, bus: RunBus | None = None,
                  telemetry: Telemetry | None = None, versions=None, notifier=None, ledger=None, approvals=None,
-                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None, audit=None):
+                 deliveries: Optional[Callable[[], object]] = None, knowledge=None, mcp=None, access=None, policy=None, quota=None, audit=None,
+                 tests: Optional[Callable[[], object]] = None, chat: Optional[Callable[[], object]] = None):
         """credentials: CredentialService (optional; without it, nodes with credential_id fail clearly).
         bus: RunBus for cross-process cancel + event fan-out (in-memory when not given)."""
         self.workflows, self.runs, self.credentials = workflows, runs, credentials
@@ -144,6 +153,8 @@ class RunService:
         self.policy = policy  # PolicyService (optional): org resources at run time (TASK-0029)
         self.access = access  # AccessService (optional): shared workflows and roles (TASK-0014); None = owner-only
         self.quota = quota  # rate_limit.Counter (optional): recipients Send email nodes may reach per owner per hour (TASK-0051)
+        self.tests = tests  # -> WorkflowTestService (optional): records a finished test run, answers a waiting one (TASK-0067)
+        self.chat = chat  # -> ChatRunService (optional): answers a chat-trigger run in its thread (TASK-0075)
 
     # ---- cancel from any API process (POST /api/runs/{id}/cancel) ----
     def cancel(self, rid: str, uid: str) -> None:
@@ -172,7 +183,12 @@ class RunService:
         edits = row is None or self.access is None or self.access.may(wid, uid, P.EDIT)
         wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
-        version = self._version_of(wid, wf)
+        n = req.get("version")  # a stored version's snapshot instead (workflow tests run against version, TASK-0068)
+        if n is not None:
+            v = self.versions.get(wid, n) if wid and edits and self.versions is not None and isinstance(n, int) and not isinstance(n, bool) else None
+            if v is None: raise AppError("VERSION_NOT_FOUND")
+            wf = json.loads(v.data or "{}")
+        version = n if n is not None else self._version_of(wid, wf)
         res = row.owner if row is not None and row.owner else uid  # a saved workflow uses its owner's resources (DEC-0023)
         wf, invalid = self._expand(res, wid, wf)
         if (steps is not None or until) and (wf.get("source") or {}).get("kind") == "langgraph_import":
@@ -197,6 +213,15 @@ class RunService:
         org = self.policy.org_allowed(actor or uid) if self.policy is not None else True
         return Ports(retrieve=self.knowledge.retriever(uid) if self.knowledge else None, mcp_call=self.mcp.caller(uid, org) if self.mcp else None,
                      email_quota=self.email_quota(uid), code_audit=self.code_audit(actor or uid))
+
+    @staticmethod
+    def apply_test(plan: RunPlan, test: Optional[dict]) -> RunPlan:
+        """A workflow test run (TASK-0067, DEC-0044): Send email nodes do a dry run; with `mock`, every LLM and Decision node
+        uses the offline mock. The queue job carries `test`, so a resumed or recovered segment keeps it."""
+        if test is None: return plan
+        plan.source = "test"; plan.ports = plan.ports or Ports()
+        plan.ports.test, plan.ports.mock_models = True, bool(test.get("mock"))
+        return plan
 
     def code_audit(self, uid: str) -> Optional[Callable[[], None]]:
         """Audit entry for the first Code call that runs on the host without isolation (TASK-0056)."""
@@ -237,8 +262,13 @@ class RunService:
         r = self.runs.get(rid)
         if r is None or r.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only (DEC-0013)
         if r.status != "waiting" or not r.checkpoint: raise AppError("RUN_NOT_WAITING")
-        if self._is_stale(r): self._expire(r); raise AppError("RUN_EXPIRED")
+        if self.expire_if_stale(r): raise AppError("RUN_EXPIRED")
         return r
+
+    def expire_if_stale(self, r: Run) -> bool:
+        """Expire a waiting run past STUDIO_WAIT_TTL now (lazily on access). True when it did."""
+        if not self._is_stale(r): return False
+        self._expire(r); return True
 
     @staticmethod
     def _is_stale(r: Run, now: float | None = None) -> bool:
@@ -267,11 +297,10 @@ class RunService:
         if row is not None and row.status == "paused" and not via_channel:
             if row.owner != uid: raise AppError("RUN_NOT_FOUND")  # owner only, same as a human resume
             return self._plan_paused(row, uid, steps, until)
-        if isinstance(response, bool): response = "approved" if response else "rejected"
-        if not isinstance(response, str) or len(response) > RESPONSE_MAX: raise AppError("RUN_RESPONSE_INVALID", max=RESPONSE_MAX)
+        response = human_response(response)
         r = self.waiting_run(rid, uid); cp = json.loads(r.checkpoint)
         if self.approvals is not None and not via_channel:  # answered in the studio: the channel buttons stop working (TASK-0022)
-            if self.approvals.decided_elsewhere(rid): raise AppError("RUN_NOT_WAITING")
+            if self.approvals.decided_elsewhere(rid) or not self.approvals.claim(rid): raise AppError("RUN_NOT_WAITING")  # first answer wins (DEC-0043)
             self.approvals.close_run(rid, "answered")
         res = self.resources_of(r.workflow_id, uid)
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
@@ -303,7 +332,8 @@ class RunService:
             except Exception: log.warning("exporting the lost segment of run %s failed", r.id)
         common = dict(run_id=r.id, source=r.source or "api", trace_parent=lost, checkpointing=True, fence=fence, attempt=attempt)
         if not (cp.get("node") or cp.get("nodes")):  # nothing finished yet: restart from the beginning
-            plan = self.plan(r.owner or "", {"workflow_id": r.workflow_id, "input": json.loads(r.input or "{}")})
+            pin = {"version": r.workflow_version} if r.source == "test" and r.workflow_version else {}  # a test run keeps its version
+            plan = self.plan(r.owner or "", {"workflow_id": r.workflow_id, "input": json.loads(r.input or "{}"), **pin})
             for k, v in common.items(): setattr(plan, k, v)
             return plan
         return RunPlan(r.workflow_id if r.workflow_id != "adhoc" else None, cp["workflow"], json.loads(r.input or "{}"),
@@ -326,15 +356,18 @@ class RunService:
         self._close_waiting(r, {"type": "run_cancelled", "ts": time.time(), "reason": "api"}, "cancelled", uid)
 
     # ---- history ----
-    def history(self, wid: str, uid: str) -> list[dict]:
+    def history(self, wid: str, uid: str, tests: bool = False) -> list[dict]:
+        """tests: the workflow's test runs instead of its other runs (TASK-0067)."""
         row = self._workflow(wid, uid)
         everyone = self.access is None or self.access.access_of(row, uid) == "owner"  # owner and admins see every run
+        rows = [r for r in self.runs.list_for_workflow(wid, tests=tests) if everyone or r.owner == uid]
+        chat = self.chat().runs_info([r.id for r in rows if r.source == "chat"]) if self.chat else {}  # TASK-0075: who sent the message
         return [{"id": r.id, "workflow_id": r.workflow_id, "input": json.loads(r.input or "null"), "events": json.loads(r.events or "[]"),
                  "final_state": json.loads(r.final_state or "null"), "status": r.status, "started": r.started, "ended": r.ended, "source": r.source or "ui", "version": r.workflow_version,
                  "metrics": None if r.duration_ms is None else {"duration_ms": r.duration_ms, "tokens_in": r.tokens_in, "tokens_out": r.tokens_out,
                                                                 "tokens": (r.tokens_in or 0) + (r.tokens_out or 0), "cost_usd": r.cost_usd, "error_count": r.error_count},
-                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id), "code_runtime": r.code_runtime}
-                for r in self.runs.list_for_workflow(wid) if everyone or r.owner == uid]
+                 "trace_id": r.trace_id, "trace_url": trace_url(r.trace_id), "code_runtime": r.code_runtime, "chat": chat.get(r.id)}
+                for r in rows]
 
     def record(self, rid, wid, inp, events, final, status, t0, uid: str = "", checkpoint: dict | None = None, source: str = "ui",
                version: Optional[int] = None, span=None, trace_parent: Optional[dict] = None, trace_events: Optional[list] = None,
@@ -355,11 +388,12 @@ class RunService:
                 trace_id = self.telemetry.record_run(run_meta, events if trace_events is None else trace_events, metrics, trace_parent)
         except Exception: trace_id = None  # tracing must never fail a run
         if trace_id is None and trace_parent: trace_id = trace_parent.get("trace_id")
-        if self.notifier is not None and uid and status in ("waiting", "expired"):
+        test = source == "test"  # a workflow test answers its own Human nodes and sends nothing (DEC-0044)
+        if self.notifier is not None and uid and status in ("waiting", "expired") and not test:
             ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), None)
             try: self.notifier.run_event("run_waiting" if status == "waiting" else "run_expired", uid, rid, wid, ev)
             except Exception: log.exception("notification for run %s failed", rid)  # never fails a run
-        if self.approvals is not None and uid:
+        if self.approvals is not None and uid and not test:
             try:
                 if status == "waiting":
                     ev = next((e for e in reversed(events) if e.get("type") == "run_waiting"), None)
@@ -396,14 +430,23 @@ class RunService:
         status = None
         try:
             status = await self._execute(rid, plan, send, listen, uid)
-            if status != "fenced": await self.settled(rid)
+            if status != "fenced": await self.settled(rid, plan.source)
             return status
         finally:
             if status != "fenced": await _write_in_thread(self.bus.finish, rid)  # a fenced worker leaves the new owner's entry alone
 
-    async def settled(self, rid: str) -> None:
+    async def settled(self, rid: str, source: Optional[str] = None) -> None:
         """Every run segment ends here (first run, studio/Slack/Telegram resume, recovery): an API run's callback_url
-        gets the result or the next pause, once (DeliveryService.for_run is idempotent)."""
+        gets the result or the next pause, once (DeliveryService.for_run is idempotent). A test run (`source`) goes to its
+        suite instead, which records it or answers its Human node (TASK-0067)."""
+        if source == "test":
+            if self.tests:
+                try: await asyncio.to_thread(self.tests().on_settled, rid)
+                except Exception: log.exception("recording test run %s failed", rid)
+            return
+        if source == "chat" and self.chat:
+            try: await asyncio.to_thread(self.chat().on_settled, rid)
+            except Exception: log.exception("answering chat run %s failed", rid)
         if not self.deliveries: return
         try: await asyncio.to_thread(self.deliveries().for_run, self.runs.get(rid))
         except Exception: log.exception("queueing the callback of run %s failed", rid)

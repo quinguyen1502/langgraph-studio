@@ -21,14 +21,19 @@ log = get_logger("worker")
 
 class RunWorker:
     def __init__(self, jobs: JobQueue, services: Callable[[], RunService], deliveries: Optional[Callable[[], object]] = None,
-                 schedules: Optional[Callable[[], object]] = None):
+                 schedules: Optional[Callable[[], object]] = None, approvals: Optional[Callable[[], object]] = None,
+                 chat: Optional[Callable[[], object]] = None):
         self.jobs, self.services, self.deliveries = jobs, services, deliveries  # deliveries: -> DeliveryService
         self.schedules = schedules  # -> ScheduleService (TASK-0046): due cron schedules start runs from maintain()
+        self.approvals = approvals  # -> ApprovalService (TASK-0066): Human node reminders and deadlines from maintain()
+        self.chat = chat  # -> ChatRunService (TASK-0075): chat_message jobs check a message and start its run
         self._tasks: list[asyncio.Task] = []; self._stop = False
 
     async def run_job(self, job: dict) -> Optional[str]:
         if job.get("kind") == "delivery":
             return await asyncio.to_thread(self.deliveries().attempt, job["delivery_id"]) if self.deliveries else None
+        if job.get("kind") == "chat_message":
+            return await self.chat().handle(job["message_id"]) if self.chat else None
         svc = self.services(); rid = job["run_id"]; row = svc.runs.get(rid); attempt = int(job.get("attempt") or 1)
         if job.get("kind") == "resume" and (not job.get("recovered") or (row is not None and row.status == "waiting")):
             return await self.resume_job(svc, job)  # a recovered resume job of a run that already started continues below
@@ -40,8 +45,10 @@ class RunWorker:
             if row.status == "running":  # recovered: continue from the last checkpoint (or restart without one)
                 plan = svc.plan_recover(row, gen, attempt)
             else:
-                plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {}})
+                plan = svc.plan(job["owner"], {"workflow_id": job["workflow_id"], "input": job.get("input") or {},
+                                               **({"version": job["version"]} if job.get("version") else {})})  # a test suite on a stored version
                 plan.run_id, plan.source, plan.checkpointing, plan.fence, plan.attempt = rid, job.get("source", "api"), True, gen, attempt
+            svc.apply_test(plan, job.get("test"))  # a workflow test run (TASK-0067)
             async def send(ev): return True                       # nobody streams; history + webhook carry the result
             async def listen(): await asyncio.Event().wait()      # cancel arrives through the RunBus
             status = await svc.execute(plan, send, listen, job["owner"])
@@ -50,7 +57,7 @@ class RunWorker:
                             source=job.get("source", "api"), fence=gen)
             except StaleLease: return "fenced"
             status = "error"
-            await svc.settled(rid)  # execute() did not run: the error result still goes to the callback
+            await svc.settled(rid, job.get("source"))  # execute() did not run: the error result still goes to the callback
         return status  # execute() queued the callback_url webhook (RunService.settled); a fenced worker leaves it to the new owner
 
     async def resume_job(self, svc: RunService, job: dict) -> Optional[str]:
@@ -63,6 +70,7 @@ class RunWorker:
         gen = svc.runs.claim(rid, ("waiting",))
         if gen is None: return None
         plan.fence, plan.checkpointing, plan.resumed_by = gen, True, job.get("by")
+        svc.apply_test(plan, job.get("test"))
         async def send(ev): return True
         async def listen(): await asyncio.Event().wait()
         return await svc.execute(plan, send, listen, owner)  # settles -> callback_url (RunService.settled)
@@ -106,6 +114,9 @@ class RunWorker:
             if self.schedules is not None:
                 try: await asyncio.to_thread(self.schedules().fire_due)
                 except Exception: log.exception("firing schedules failed")
+            if self.approvals is not None:
+                try: await asyncio.to_thread(self.approvals().fire_deadlines)
+                except Exception: log.exception("firing approval deadlines failed")
             if time.time() - last_reap >= config.job_reap_every():
                 last_reap = time.time(); await self.reap()
             await asyncio.sleep(min(1.0, config.job_reap_every()))

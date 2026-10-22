@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { ErrorAlert } from '@/components/approvals/channel-parts'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { useConfirmDelete } from '@/components/use-confirm-delete'
 import { api } from '@/lib/api'
 import { useOnChange } from '@/lib/use-when'
@@ -36,7 +37,7 @@ export function IdentityRow({ slot, onChange }: { slot: Slot; onChange: (d: Slot
   const changed = ext.trim() !== (slot.external_id || '')
   return <div className="space-y-2 rounded-lg border p-4" data-testid={idp}>
     <div className="flex flex-wrap items-center gap-2">
-      <Label htmlFor={idp}>{t(`approvals.identity.${kind}`)}</Label>
+      <Label htmlFor={idp}><ChannelLogo kind={kind} />{t(`approvals.identity.${kind}`)}</Label>
       {slot.team_id && <Badge variant="outline">{slot.team_name || slot.team_id}</Badge>}
       {slot.external_id && (slot.verified ? <Badge id={`${idp}-verified`}><ShieldCheck />{t('approvals.verified')}</Badge> : <Badge variant="outline">{t('approvals.unverified')}</Badge>)}
       {!slot.available && <Badge variant="secondary">{t('approvals.noConnection')}</Badge>}

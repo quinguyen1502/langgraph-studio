@@ -18,6 +18,7 @@ class ApprovalChannel(Base):
     team_id: Mapped[Optional[str]] = mapped_column(Text)  # platform account: Slack team id (routes the shared URL) / Telegram bot id
     secrets: Mapped[str] = mapped_column(Text)           # Fernet token of {field: value}; never returned by the API
     hint: Mapped[Optional[str]] = mapped_column(Text)    # masked last 4 chars of the main token
+    scopes: Mapped[Optional[str]] = mapped_column(Text)  # Slack: granted OAuth scopes, comma-separated, as last read (TASK-0074); NULL = unknown
     created: Mapped[float] = mapped_column(Float)
 
 
@@ -77,3 +78,36 @@ class ApprovalAudit(Base):
     actor_id: Mapped[Optional[str]] = mapped_column(Text)     # studio user id (when mapped)
     external_id: Mapped[Optional[str]] = mapped_column(Text)  # channel user id
     created: Mapped[float] = mapped_column(Float, index=True)
+
+
+class ApprovalWait(Base):
+    """One pause of a run at a Human node, with or without a channel (TASK-0065, DEC-0043). The Approvals inbox reads
+    it, and closing it (compare-and-set waiting -> closed) is the gate for "first answer wins"."""
+    __tablename__ = "approval_waits"
+    __table_args__ = (Index("ix_approval_waits_owner_status", "owner", "status"),)
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    run_id: Mapped[str] = mapped_column(Text, index=True)
+    node_id: Mapped[str] = mapped_column(Text)
+    owner: Mapped[str] = mapped_column(Text)              # run owner
+    workflow_id: Mapped[Optional[str]] = mapped_column(Text)
+    label: Mapped[Optional[str]] = mapped_column(Text)    # the Human node's label
+    prompt: Mapped[Optional[str]] = mapped_column(Text)   # the question, as rendered for this run
+    channel: Mapped[Optional[str]] = mapped_column(Text)  # channel kind the node asks on (None = studio only)
+    status: Mapped[str] = mapped_column(Text)             # waiting | closed
+    outcome: Mapped[Optional[str]] = mapped_column(Text)  # answered | cancelled | expired | error | timeout | superseded | deadline
+    created: Mapped[float] = mapped_column(Float)
+    closed_at: Mapped[Optional[float]] = mapped_column(Float)
+    # deadlines (TASK-0066): read from the run's own workflow snapshot when the step starts waiting
+    approval: Mapped[Optional[str]] = mapped_column(Text)    # JSON: the node's data.approval (channel, target), for reminders
+    deadline: Mapped[Optional[str]] = mapped_column(Text)    # JSON: engine.deadlines.parse() (seconds)
+    due_at: Mapped[Optional[float]] = mapped_column(Float, index=True)
+    next_remind_at: Mapped[Optional[float]] = mapped_column(Float, index=True)
+    reminders: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    escalated_at: Mapped[Optional[float]] = mapped_column(Float)
+
+
+class ApprovalWaitApprover(Base):
+    """A studio user, besides the run owner, who may answer this waiting step (the node's approvers, resolved by e-mail)."""
+    __tablename__ = "approval_wait_approvers"
+    wait_id: Mapped[str] = mapped_column(Text, primary_key=True)
+    user_id: Mapped[str] = mapped_column(Text, primary_key=True, index=True)

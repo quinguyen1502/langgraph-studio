@@ -2,7 +2,8 @@
 
 Approval channels carry a Human node's request outside the studio. Set them up
 under **Settings → Channels**; each person links their own chat account under
-**Settings → My accounts**.
+**Settings → My accounts**. Each channel shows its platform's logo there, in the
+Human node's channel list and in **Settings → Audit log**.
 
 ![Channels](../images/settings-channels.png)
 
@@ -49,6 +50,12 @@ still works when those are empty.
    user id with a code.
 
 The webhook is checked with `X-Telegram-Bot-Api-Secret-Token`.
+
+## Chat triggers
+
+Slack and Telegram connections can also start workflows from a message. They
+need two more Slack scopes and an events URL, or a re-registered Telegram
+webhook: see [Chat triggers](../run/chat-triggers.md).
 
 ## WhatsApp (Cloud API)
 

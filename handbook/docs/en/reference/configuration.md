@@ -53,6 +53,8 @@ root lists every variable Compose passes; this page groups them.
 | `STUDIO_WORKFLOW_MAX_BYTES` | `1048576` | Workflow JSON |
 | `STUDIO_WAIT_TTL` | `604800` | A waiting run expires after this (s); `0` never |
 | `STUDIO_VERSION_KEEP` | `0` | Versions kept per workflow; `0` keeps all |
+| `STUDIO_TEST_CASES_MAX` | `50` | [Test cases](../run/tests.md) per workflow |
+| `STUDIO_TEST_PARALLEL` | `4` | Test cases of one run of the tests that run at a time |
 | `STUDIO_ENABLE_DEMO_TOOLS` | `0` | Registers `sleep_demo` for cancel and timeout tests |
 
 ## Workers and the queue
@@ -70,6 +72,7 @@ root lists every variable Compose passes; this page groups them.
 | --- | --- | --- |
 | `STUDIO_TRIGGER_RATE_LIMIT` | `60` | Runs per token per window; `0` off |
 | `STUDIO_TRIGGER_RATE_WINDOW` | `60` | The window (s) |
+| `STUDIO_CHAT_TRIGGER_RATE_LIMIT` | `60` | Chat triggers: runs per sender and trigger per window; `0` off |
 | `STUDIO_SYNC_WAIT_MAX` | `30` | Longest `sync` wait (s) |
 | `STUDIO_ALLOW_PRIVATE_CALLBACKS` | `0` | Allow callbacks to private addresses |
 | `STUDIO_WEBHOOK_MAX_ATTEMPTS` | `5` | Delivery attempts |

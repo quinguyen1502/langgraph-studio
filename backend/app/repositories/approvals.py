@@ -1,7 +1,7 @@
 import json, time, uuid
 from typing import Optional
 from sqlalchemy import delete, or_, select, update
-from ..models import ApprovalAudit, ApprovalChannel, ApprovalRequest, ChannelIdentity
+from ..models import ApprovalAudit, ApprovalChannel, ApprovalRequest, ApprovalWait, ApprovalWaitApprover, ChannelIdentity, Run
 from ..models.database import Database
 
 
@@ -59,6 +59,12 @@ class ApprovalRepository:
             return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.team_id == team,
                                                                   ChannelIdentity.external_id == external_id, ChannelIdentity.verified_at.is_not(None)))
 
+    def linked(self, kind: str, external_id: str, team: str = "") -> bool:
+        """Someone linked this account, verified or not (chat triggers tell "not linked" from "not verified", TASK-0075)."""
+        with self.db.session() as s:
+            return s.scalar(select(ChannelIdentity.user_id).where(ChannelIdentity.kind == kind, ChannelIdentity.team_id == team,
+                                                                  ChannelIdentity.external_id == external_id).limit(1)) is not None
+
     def put_identity(self, uid: str, kind: str, team: str, external_id: Optional[str]) -> None:
         """Link (unverified, no code yet) or unlink with None. Relinking the same account keeps its state."""
         with self.db.session() as s:
@@ -114,6 +120,65 @@ class ApprovalRepository:
             n = s.execute(update(ApprovalRequest).where(ApprovalRequest.id == aid, ApprovalRequest.status == "pending")
                           .values(status=status, decided_by=by, decided_external=external, decided_at=time.time())).rowcount
             s.commit(); return n == 1
+
+    # ---- waiting steps (TASK-0065, DEC-0043) ----
+    def add_wait(self, w: ApprovalWait, approvers: list[str]) -> ApprovalWait:
+        """A new pause of the run: any older open step of the same run is closed first (a run waits at one node)."""
+        with self.db.session() as s:
+            s.execute(update(ApprovalWait).where(ApprovalWait.run_id == w.run_id, ApprovalWait.status == "waiting")
+                      .values(status="closed", outcome="superseded", closed_at=time.time()))
+            s.add(w); s.add_all(ApprovalWaitApprover(wait_id=w.id, user_id=u) for u in dict.fromkeys(approvers) if u != w.owner)
+            s.commit(); return w
+
+    def latest_wait(self, rid: str) -> Optional[ApprovalWait]:
+        """The run's most recent waiting step, open or closed."""
+        with self.db.session() as s:
+            return s.scalars(select(ApprovalWait).where(ApprovalWait.run_id == rid).order_by(ApprovalWait.created.desc())).first()
+
+    def wait_approvers(self, wid: str) -> list[str]:
+        with self.db.session() as s: return list(s.scalars(select(ApprovalWaitApprover.user_id).where(ApprovalWaitApprover.wait_id == wid)))
+
+    def close_wait(self, rid: str, outcome: str, wid: Optional[str] = None) -> bool:
+        """Compare-and-set the run's open step waiting -> closed. Exactly one caller wins. wid: only that step (a deadline
+        must not close a later step of the same run)."""
+        with self.db.session() as s:
+            q = update(ApprovalWait).where(ApprovalWait.run_id == rid, ApprovalWait.status == "waiting")
+            n = s.execute((q.where(ApprovalWait.id == wid) if wid else q)
+                          .values(status="closed", outcome=outcome, closed_at=time.time())).rowcount
+            s.commit(); return n == 1
+
+    def due_waits(self, now: float, limit: int = 200) -> list[ApprovalWait]:
+        """Open steps of waiting runs whose deadline or next reminder has come (TASK-0066)."""
+        with self.db.session() as s:
+            q = (select(ApprovalWait).join(Run, Run.id == ApprovalWait.run_id)
+                 .where(ApprovalWait.status == "waiting", Run.status == "waiting", or_(ApprovalWait.due_at <= now, ApprovalWait.next_remind_at <= now)))
+            return list(s.scalars(q.order_by(ApprovalWait.created).limit(limit)))
+
+    def claim_reminder(self, wid: str, expected: float, nxt: Optional[float], count: int) -> bool:
+        """Compare-and-set on the step's next reminder time: one sweep sends it, however many workers run."""
+        with self.db.session() as s:
+            n = s.execute(update(ApprovalWait).where(ApprovalWait.id == wid, ApprovalWait.status == "waiting", ApprovalWait.next_remind_at == expected)
+                          .values(next_remind_at=nxt, reminders=count)).rowcount
+            s.commit(); return n == 1
+
+    def escalate_wait(self, wid: str, expected_due: float, due: float, nxt: Optional[float], approvers: list[str], now: float) -> bool:
+        """Compare-and-set the one escalation of a step, adding the new approvers in the same transaction."""
+        with self.db.session() as s:
+            n = s.execute(update(ApprovalWait).where(ApprovalWait.id == wid, ApprovalWait.status == "waiting", ApprovalWait.escalated_at.is_(None),
+                                                     ApprovalWait.due_at == expected_due)
+                          .values(escalated_at=now, due_at=due, next_remind_at=nxt, reminders=0)).rowcount
+            if n == 1:
+                have = set(s.scalars(select(ApprovalWaitApprover.user_id).where(ApprovalWaitApprover.wait_id == wid)))
+                s.add_all(ApprovalWaitApprover(wait_id=wid, user_id=u) for u in dict.fromkeys(approvers) if u not in have)
+            s.commit(); return n == 1
+
+    def inbox(self, uid: str, limit: int = 200) -> list[ApprovalWait]:
+        """Open steps of runs still waiting that the user owns or may answer: nearest deadline first, then the longest waiting."""
+        with self.db.session() as s:
+            mine = select(ApprovalWaitApprover.wait_id).where(ApprovalWaitApprover.user_id == uid)
+            q = (select(ApprovalWait).join(Run, Run.id == ApprovalWait.run_id)
+                 .where(ApprovalWait.status == "waiting", Run.status == "waiting", or_(ApprovalWait.owner == uid, ApprovalWait.id.in_(mine))))
+            return list(s.scalars(q.order_by(ApprovalWait.due_at.is_(None), ApprovalWait.due_at, ApprovalWait.created).limit(limit)))
 
     # ---- audit ----
     def audit(self, e: ApprovalAudit) -> None:

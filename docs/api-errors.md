@@ -174,6 +174,22 @@
 | `SCHEDULE_NOT_FOUND` | 404 | Schedule not found |
 | `SCHEDULE_CRON_INVALID` | 400 | Schedule: {reason} |
 | `SCHEDULE_LIMIT` | 400 | A workflow can have at most {max} schedules |
+| `CHAT_TRIGGER_NOT_FOUND` | 404 | Chat trigger not found |
+| `CHAT_TRIGGER_COMMAND_TAKEN` | 409 | Another chat trigger already answers '{command}' there |
+| `CHAT_TRIGGER_LIMIT` | 400 | A workflow can have at most {max} chat triggers |
+| `CHAT_TRIGGER_CONFIG_INVALID` | 400 | Chat trigger: invalid {field} |
+| `CHAT_TRIGGER_SCOPE_MISSING` | 400 | The Slack app lacks the scopes chat triggers need: {scopes}. Reinstall it with them |
+| `CHAT_IDENTITY_UNKNOWN` | 403 | Their {kind} account is not linked to Superstep |
+| `CHAT_IDENTITY_UNVERIFIED` | 403 | Their {kind} account is linked but not verified |
+| `CHAT_FORBIDDEN` | 403 | They may not run this workflow |
+| `CHAT_TRIGGER_OFF` | 409 | The chat trigger is off |
+| `TEST_NOT_FOUND` | 404 | Test case not found |
+| `TEST_CASE_INVALID` | 400 | Test case: {reason} |
+| `TEST_CASES_LIMIT` | 400 | A workflow can have at most {max} test cases |
+| `TEST_SUITE_NOT_FOUND` | 404 | Test run not found |
+| `TEST_SUITE_RUNNING` | 409 | The tests of this workflow are already running |
+| `TEST_NOT_SUPPORTED` | 400 | Imported LangGraph workflows cannot have tests |
+| `PYTHON_EXPORT_UNAVAILABLE` | 400 | Imported LangGraph workflows are Python code already: there is nothing to export |
 | `CALLBACK_URL_INVALID` | 400 | callback_url must be a public http(s) URL |
 | `VERSION_NOT_FOUND` | 404 | Workflow version not found |
 | `RUN_EXPIRED` | 410 | This run waited too long for a response and expired |

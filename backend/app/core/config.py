@@ -49,6 +49,7 @@ def wait_ttl() -> float: return max(0.0, float(os.environ.get("STUDIO_WAIT_TTL",
 def sync_wait_max() -> float: return max(0.0, float(os.environ.get("STUDIO_SYNC_WAIT_MAX", 30)))  # sync trigger: then 202 + poll URL
 def trigger_rate_limit() -> int: return max(0, _int("STUDIO_TRIGGER_RATE_LIMIT", 60))  # runs per token per window (0 = off)
 def trigger_rate_window() -> int: return max(1, _int("STUDIO_TRIGGER_RATE_WINDOW", 60))  # seconds
+def chat_trigger_rate_limit() -> int: return max(0, _int("STUDIO_CHAT_TRIGGER_RATE_LIMIT", 60))  # runs per sender and chat trigger per STUDIO_TRIGGER_RATE_WINDOW (0 = off)
 def version_keep() -> int: return max(0, _int("STUDIO_VERSION_KEEP", 0))  # keep last N versions (0 = all)
 # --- TASK-0020 ---
 def webhook_max_attempts() -> int: return max(1, _int("STUDIO_WEBHOOK_MAX_ATTEMPTS", 5))
@@ -98,7 +99,7 @@ def slack_client_id() -> str: return (os.environ.get("SLACK_CLIENT_ID") or "").s
 def slack_client_secret() -> str: return (os.environ.get("SLACK_CLIENT_SECRET") or "").strip()
 def slack_signing_secret() -> str: return (os.environ.get("SLACK_SIGNING_SECRET") or "").strip()
 def slack_oauth_url() -> str: return (os.environ.get("SLACK_OAUTH_URL") or "https://slack.com/oauth/v2/authorize").rstrip("/")
-SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write"  # same as the manual setup (README)
+SLACK_BOT_SCOPES = "chat:write,chat:write.public,im:write,app_mentions:read,im:history"  # same as the manual setup (handbook); the last two: chat triggers
 def telegram_api_url() -> str: return (os.environ.get("TELEGRAM_API_URL") or "https://api.telegram.org").rstrip("/")
 def whatsapp_api_url() -> str: return (os.environ.get("WHATSAPP_API_URL") or "https://graph.facebook.com/v21.0").rstrip("/")  # TASK-0047
 def llm_mode() -> str: return "openai" if os.environ.get("OPENAI_API_KEY") else "mock"
@@ -159,6 +160,8 @@ def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5
 def code_pids() -> int: return max(16, _int("STUDIO_CODE_PIDS", 64))
 def code_max_seconds() -> int: return max(1, _int("STUDIO_CODE_MAX_SECONDS", 30))  # per call, also caps the node timeout
 def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))  # containers at once per process
+def test_cases_max() -> int: return max(1, _int("STUDIO_TEST_CASES_MAX", 50))  # test cases per workflow (TASK-0067)
+def test_parallel() -> int: return max(1, _int("STUDIO_TEST_PARALLEL", 4))     # test runs of one suite at a time (TASK-0067)
 def code_test_per_minute() -> int: return max(1, _int("STUDIO_CODE_TEST_PER_MINUTE", 20))  # Test with sample state, per user
 CODE_DEFAULT_PACKAGES = ["pydantic", "python-dateutil"]  # what docker/studio-code adds to the standard library
 def code_packages() -> list[str]:

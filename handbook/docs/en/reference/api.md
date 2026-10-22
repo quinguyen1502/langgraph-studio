@@ -69,12 +69,14 @@ WS /ws/run
     DELETE /api/workflows/{wid}/shares/{target}
     PUT    /api/workflows/{wid}/team-shares     DELETE /api/workflows/{wid}/team-shares/{tid}
     GET    /api/workflows/{wid}/transfer        POST   /api/workflows/{wid}/transfer
+    GET    /api/workflows/{wid}/python          (the code, node lines; ?version=n)
+    GET    /api/workflows/{wid}/export/python   (the .py file to download)
     ```
 
 ??? abstract "Runs"
 
     ```text
-    GET    /api/workflows/{wid}/runs
+    GET    /api/workflows/{wid}/runs          (?tests=true: test runs)
     GET    /api/runs/pending
     POST   /api/runs/{run_id}/cancel
     WS     /ws/run
@@ -95,6 +97,26 @@ WS /ws/run
     GET    /api/workflows/{wid}/schedules       POST   /api/workflows/{wid}/schedules
     PATCH  /api/workflows/{wid}/schedules/{sid} DELETE /api/workflows/{wid}/schedules/{sid}
     POST   /api/schedules/preview
+    ```
+
+??? abstract "Chat triggers"
+
+    ```text
+    GET    /api/workflows/{wid}/chat-triggers       POST   /api/workflows/{wid}/chat-triggers
+    PATCH  /api/workflows/{wid}/chat-triggers/{tid} DELETE /api/workflows/{wid}/chat-triggers/{tid}
+    (owner or admin; {channel_id, place: "dm" | channel or chat id, command, input_field, reply_field, enabled})
+    ```
+
+??? abstract "Workflow tests"
+
+    ```text
+    GET    /api/workflows/{wid}/tests          POST   /api/workflows/{wid}/tests
+    PUT    /api/workflows/{wid}/tests/{tid}    DELETE /api/workflows/{wid}/tests/{tid}
+    POST   /api/workflows/{wid}/tests/run      ({test_ids?, mock?, version?}: version = a stored earlier version)
+    GET    /api/workflows/{wid}/tests/runs     (suite history)
+    GET    /api/workflows/{wid}/tests/runs/{sid}   (with the comparison to an earlier version)
+    POST   /api/workflows/{wid}/tests/runs/{sid}/cancel
+    POST   /api/workflows/{wid}/tests/from-run/{run_id}   (a draft case from a run, not saved)
     ```
 
 ??? abstract "Templates"
@@ -139,11 +161,13 @@ WS /ws/run
     PUT    /api/approvals/channels/{cid}        DELETE /api/approvals/channels/{cid}
     POST   /api/approvals/channels/{cid}/test   POST   /api/approvals/channels/{cid}/register-webhook
     POST   /api/approvals/callback/{kind}       GET|POST /api/approvals/callback/{kind}/{cid}
+    POST   /api/channels/events/slack           (Slack Events API: chat triggers; Telegram messages use the callback URL)
     GET    /api/approvals/identities            PUT    /api/approvals/identities
     POST   /api/approvals/identities/{kind}/send-code
     POST   /api/approvals/identities/{kind}/verify
     GET    /api/approvals/link                  POST   /api/approvals/link
     GET    /api/approvals/audit
+    GET    /api/approvals/inbox                 POST   /api/approvals/inbox/{run_id}
     GET    /api/approvals/slack/oauth           POST   /api/approvals/slack/oauth/start
     GET    /api/approvals/slack/oauth/callback
     ```

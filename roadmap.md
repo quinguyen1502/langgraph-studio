@@ -150,7 +150,7 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 
 ## Documentation
 
-- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **in review** (PR #65).
+- Handbook on Zensical (English and Vietnamese sites from one page tree), a platform-style README, and a 70 s quickstart video recorded from the UI by `frontend/e2e/quickstart.spec.ts` (`handbook/`, `scripts/promo/`): **merged** (PR #65).
 
 ## Rename
 
@@ -159,3 +159,43 @@ REQ-0039, Accepted and Implemented 2026-10-19; CLAR-0001 answered; DEC-0041 Acce
 - TASK-0060 Clear the run bus entry of a run cancelled while the loop shuts down (REV-0055 follow-up): **merged** (PR #76, REV-0056, QA-0056).
 - TASK-0061 Center the search icon and clear button in search boxes (owner report): **merged** (PR #77).
 - TASK-0062 Docs tell readers to sign up instead of using the demo account (owner request): **merged** (PR #80).
+
+## Channel templates and logos
+
+REQ-0040, Accepted 2026-10-20 (the owner chose brand colours and 8 templates), Implemented 2026-10-21.
+
+- TASK-0063 Channel logos in brand colours (Channels, My accounts, Human node select, Audit log, connection items), DEC-0042: **merged** (PR #83, REV-0057, QA-0057).
+- TASK-0064 Eight built-in templates for real processes (refund, leave, social post, large order, expense claim, purchase request, support escalation, feedback digest), built-in names in en and vi: **merged** (PR #84, REV-0058, QA-0058).
+- TASK-0073 Translate the "not connected" label on a Human node whose channel has no connection yet (owner report: the select showed `approvals.notConnected`): **merged** (PR #95, REV-0066, QA-0066).
+
+## Approval deadlines and inbox
+
+REQ-0041, Accepted 2026-10-21 (the owner chose deadlines with reminders and one inbox for approvals), Implemented 2026-10-21.
+
+- TASK-0065 Approvals inbox: one list of the runs waiting on the user, as owner or listed approver, answered in place; approvers on studio-only nodes; DEC-0043: **merged** (PR #86, REV-0059, QA-0059).
+- TASK-0066 Human node deadlines: reminders, then reject, approve or escalate once; due times in the inbox; deadlines on the six channel templates: **merged** (PR #87, REV-0060, QA-0060).
+
+## Workflow tests
+
+REQ-0042, Accepted 2026-10-21 (the owner chose real models by default with a mock option, CI runs later, and test cases only on built-in templates), Implemented 2026-10-22.
+
+- TASK-0067 Test cases (input, Human answers, checks), Run all / run one on the current version, test runs that send no e-mail, channel message, notification or callback, mock model option, Tests panel, DEC-0044: **merged** (PR #89, REV-0061, QA-0061).
+- TASK-0068 Comparison with the latest suite run on an earlier version (Regression, Fixed, New), Run against version, suite history, Save as test case from a run, stale checks: **merged** (PR #90, REV-0062, QA-0062).
+- TASK-0069 Test cases on every built-in template, copied to workflows made from them; handbook "Workflow tests" page (en, vi): **merged** (PR #91, REV-0063, QA-0063).
+
+## Export to Python
+
+REQ-0043, Accepted 2026-10-22 (the owner chose a runnable file with the mock by default, English comments, and subgraphs as their own graphs), Implemented 2026-10-22.
+
+- TASK-0070 Generator: one readable, runnable LangGraph `.py` per workflow version, API route, same-path check against the studio's mock run for every built-in template, DEC-0045. **merged** (PR #93, REV-0064, QA-0064).
+- TASK-0071 Editor "Code" tab ("View as code"; other languages may follow): code beside the canvas, the selected node's function highlighted, Copy and Download. **merged** (PR #94, REV-0065, QA-0065).
+- TASK-0072 Handbook "Export to Python" page (en, vi) with the canvas → code table and a screenshot. **merged** (PR #96, REV-0067, QA-0067).
+
+## Chat triggers
+
+REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts with the run right, a command word, one reply field, one input field), Implemented 2026-10-22.
+
+- TASK-0074 Chat trigger rows per workflow, management API (share right, unique command per connection and place), Slack scopes check, Telegram webhook for messages, DEC-0046. **merged** (PR #98, REV-0068, QA-0068).
+- TASK-0075 Slack events and Telegram messages start `source="chat"` runs; thread replies (started, result, error, waiting), private refusals, dedupe, rate limit, audit. **merged** (PR #99, REV-0069, QA-0069).
+- TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
+- TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).

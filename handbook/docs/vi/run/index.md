@@ -1,6 +1,6 @@
 # Chạy
 
-Workflow chạy được theo bốn cách. Cách nào cũng đi qua cùng một engine, tạo
+Workflow chạy được theo năm cách. Cách nào cũng đi qua cùng một engine, tạo
 cùng một kiểu trace và hiện trong **Lịch sử**.
 
 | Bắt đầu bởi | Cách | Nhãn trong Lịch sử |
@@ -8,6 +8,7 @@ cùng một kiểu trace và hiện trong **Lịch sử**.
 | Trình soạn thảo | **Chạy**, **Một bước** hoặc **Chạy tới đây**, qua `/ws/run` | — |
 | Dịch vụ khác | `POST /api/hooks/workflows/{wid}/runs` với token của workflow | **API** |
 | Lịch | Lịch cron gắn với workflow | **Lịch** |
+| Tin nhắn chat | Một từ lệnh gửi tới Slack app hoặc bot Telegram | **Chat** |
 | Người tiếp tục run | Duyệt, từ chối hoặc trả lời node Human đang chờ | — |
 
 <div class="grid cards" markdown>
@@ -35,5 +36,17 @@ cùng một kiểu trace và hiện trong **Lịch sử**.
     ---
 
     Cron, múi giờ và các mốc bị lỡ.
+
+-   :material-message-text-outline:{ .lg .middle } **[Chạy từ chat](chat-triggers.md)**
+
+    ---
+
+    Tin nhắn tới Slack app hoặc bot Telegram chạy workflow; bot trả lời.
+
+-   :material-flask-outline:{ .lg .middle } **[Kiểm thử workflow](tests.md)**
+
+    ---
+
+    Test case, Chạy tất cả, so sánh với version trước.
 
 </div>

@@ -49,7 +49,8 @@ docker compose up --build   # http://localhost:8080
 3. **Người trong vòng lặp:** node Human dừng run tại checkpoint; duyệt trong
    studio, hoặc qua Slack, Telegram, WhatsApp, e-mail hay Teams.
 4. **Trigger:** token API cho từng workflow, run đồng bộ và bất đồng bộ,
-   webhook kết quả có chữ ký và retry, lịch cron theo múi giờ.
+   webhook kết quả có chữ ký và retry, lịch cron theo múi giờ, và chạy từ
+   chat: một lệnh gửi Slack app hoặc bot Telegram chạy workflow, bot trả lời.
 5. **Độ tin cậy:** checkpoint trong database, job của worker có lease, side
    effect gần như đúng một lần nhờ idempotency key và sổ ghi kết quả.
 6. **Model và công cụ:** OpenAI, Anthropic, OpenRouter, Ollama, LM Studio và
@@ -58,6 +59,9 @@ docker compose up --build   # http://localhost:8080
 7. **Vận hành:** phiên bản bất biến có diff và khôi phục, vai trò admin,
    editor và viewer, chia sẻ và nhóm, nhật ký audit, trace OpenTelemetry gửi
    tới OTLP hoặc LangSmith.
+8. **Học LangGraph:** tab Code hiện mọi workflow dưới dạng một file Python
+   LangGraph dễ đọc, chạy được độc lập (offline với model mock), tô sáng code
+   của node đang chọn.
 
 ## Cách hoạt động
 
@@ -82,7 +86,7 @@ WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi 
 | --- | --- |
 | Cài đặt, bắt đầu nhanh, khái niệm | [Bắt đầu](https://quinguyen1502.github.io/superstep/vi/start/) |
 | Trình soạn thảo, node, state, chế độ Code, kho tri thức, MCP | [Xây dựng](https://quinguyen1502.github.io/superstep/vi/guide/) |
-| Trace, duyệt bởi người, API trigger, lịch chạy | [Chạy](https://quinguyen1502.github.io/superstep/vi/run/) |
+| Trace, duyệt bởi người, API trigger, lịch chạy, chạy từ chat | [Chạy](https://quinguyen1502.github.io/superstep/vi/run/) |
 | Triển khai, tài khoản, vai trò, nhà cung cấp, kênh duyệt | [Vận hành](https://quinguyen1502.github.io/superstep/vi/operate/) |
 | Cấu hình, HTTP API, mã lỗi, kiến trúc | [Tham chiếu](https://quinguyen1502.github.io/superstep/vi/reference/) |
 

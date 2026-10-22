@@ -410,6 +410,22 @@
     "SCHEDULE_NOT_FOUND": "Không tìm thấy lịch chạy",
     "SCHEDULE_CRON_INVALID": "Lịch chạy: {{reason}}",
     "SCHEDULE_LIMIT": "Một workflow có tối đa {{max}} lịch chạy",
+    "CHAT_TRIGGER_NOT_FOUND": "Không tìm thấy chat trigger",
+    "CHAT_TRIGGER_COMMAND_TAKEN": "Một chat trigger khác đã dùng lệnh '{{command}}' ở đó",
+    "CHAT_TRIGGER_LIMIT": "Một workflow có tối đa {{max}} chat trigger",
+    "CHAT_TRIGGER_CONFIG_INVALID": "Chat trigger: {{field}} không hợp lệ",
+    "CHAT_TRIGGER_SCOPE_MISSING": "App Slack thiếu quyền mà chat trigger cần: {{scopes}}. Hãy cài lại app với các quyền này",
+    "CHAT_IDENTITY_UNKNOWN": "Tài khoản {{kind}} của họ chưa liên kết với Superstep",
+    "CHAT_IDENTITY_UNVERIFIED": "Tài khoản {{kind}} của họ đã liên kết nhưng chưa xác minh",
+    "CHAT_FORBIDDEN": "Họ không có quyền chạy workflow này",
+    "CHAT_TRIGGER_OFF": "Chat trigger đang tắt",
+    "TEST_NOT_FOUND": "Không tìm thấy test case",
+    "TEST_CASE_INVALID": "Test case: {{reason}}",
+    "TEST_CASES_LIMIT": "Một workflow có tối đa {{max}} test case",
+    "TEST_SUITE_NOT_FOUND": "Không tìm thấy lần chạy test",
+    "TEST_SUITE_RUNNING": "Các test của workflow này đang chạy",
+    "TEST_NOT_SUPPORTED": "Workflow LangGraph được import không có test",
+    "PYTHON_EXPORT_UNAVAILABLE": "Workflow LangGraph được import đã là mã Python: không có gì để xuất.",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
@@ -636,7 +652,9 @@
     "unread_other": "{{count}} thông báo chưa đọc",
     "run_waiting": "{{workflow}} đang chờ bạn: {{label}}",
     "run_expired": "Một run đang chờ của {{workflow}} đã hết hạn",
-    "unknownWorkflow": "Một workflow"
+    "unknownWorkflow": "Một workflow",
+    "run_reminder": "{{workflow}} vẫn đang chờ bạn: {{label}}",
+    "run_escalated": "{{workflow}} được chuyển cho bạn duyệt: {{label}}"
   },
   "notifyPrefs": {
     "open": "Cài đặt thông báo",
@@ -654,12 +672,14 @@
       "telegram": "Telegram",
       "whatsapp": "WhatsApp",
       "email": "E-mail",
-      "teams": "Microsoft Teams"
+      "teams": "Microsoft Teams",
+      "studio": "Studio"
     },
     "optional": "không bắt buộc",
+    "notConnected": "chưa kết nối",
     "keepSecret": "Đã lưu, nhập giá trị mới để thay",
     "help": {
-      "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Mỗi workspace là một kết nối riêng.",
+      "slack": "Tạo Slack app với bot scope chat:write và im:write (mã xác minh), bật Interactivity với Request URL hiện trên kết nối. Để dùng chat trigger, thêm app_mentions:read và im:history rồi bật Event Subscriptions. Mỗi workspace là một kết nối riêng.",
       "telegram": "Tạo bot bằng @BotFather, lưu token rồi đăng ký webhook (cần STUDIO_PUBLIC_URL https công khai).",
       "whatsapp": "Trong một Meta app có sản phẩm WhatsApp, sao chép access token, phone number ID và app secret, rồi tự chọn một verify token. Sau đó đặt webhook trong Meta dashboard là callback URL bên dưới với verify token đó, và đăng ký sự kiện \"messages\". Tin có nút chỉ tới được người đã nhắn cho số này trong 24 giờ qua; ngoài khung đó, hãy nhập một template đã duyệt có hai nút trả lời nhanh (Duyệt, Từ chối).",
       "email": "Gửi yêu cầu qua cấu hình SMTP của studio (SMTP_HOST) kèm link Duyệt / Từ chối. Người trả lời đăng nhập vào studio nên không cần liên kết tài khoản. Cần STUDIO_PUBLIC_URL.",
@@ -716,7 +736,14 @@
       "superseded": "Đã trả lời nơi khác",
       "expired": "Hết hạn",
       "send_failed": "Gửi thất bại",
-      "not_configured": "Chưa cấu hình"
+      "not_configured": "Chưa cấu hình",
+      "answered": "Đã trả lời",
+      "reminded": "Đã nhắc",
+      "escalated": "Đã chuyển tiếp",
+      "escalation_skipped": "Bỏ qua chuyển tiếp",
+      "timed_out": "Hết hạn chờ",
+      "chat_started": "Chạy từ chat",
+      "chat_refused": "Từ chối chạy từ chat"
     },
     "node": {
       "title": "Kênh phê duyệt",
@@ -739,7 +766,7 @@
         "teams": ""
       },
       "approvers": "Người duyệt (e-mail)",
-      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ phải liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
+      "approversHelp": "Ngoài bạn (chủ lượt chạy). Họ trả lời trong trang Phê duyệt của mình, hoặc trên kênh sau khi liên kết và xác minh tài khoản ở mục Tài khoản của tôi.",
       "noTarget": "Webhook đăng vào kênh Teams của nó."
     },
     "verified": "Đã xác minh",
@@ -771,7 +798,16 @@
     "unlinkTitle": "Huỷ liên kết {{name}}?",
     "unlinkBody": "Phê duyệt trên nền tảng này không còn được gắn với bạn cho tới khi bạn liên kết và xác minh lại.",
     "whatsappWindow": "WhatsApp chỉ gửi mã nếu bạn đã nhắn cho số doanh nghiệp trong 24 giờ qua.",
-    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ."
+    "linkNote": "Người duyệt trả lời trên trang phê duyệt của studio, đăng nhập bằng tài khoản của chính họ.",
+    "chat": {
+      "eventsUrl": "Request URL cho Event Subscriptions (chat trigger)",
+      "help": {
+        "slack": "Chat trigger: bật Event Subscriptions với URL này và đăng ký cho bot các sự kiện app_mention và message.im. App cần các quyền app_mentions:read và im:history.",
+        "telegram": "Chat trigger: bấm Đăng ký webhook lại để bot nhận cả tin nhắn. Trong nhóm, mọi người gõ /lệnh, hoặc tắt privacy mode của bot trong @BotFather."
+      },
+      "missing": "Chat trigger cần các quyền {{scopes}}: thêm chúng trong cài đặt Slack app (hoặc dùng Add to Slack), cài lại, rồi bấm Kiểm tra.",
+      "unknown": "Bấm Kiểm tra để xem app có đủ quyền cho chat trigger không."
+    }
   },
   "settings": {
     "title": "Cài đặt",
@@ -1185,6 +1221,8 @@
     "export": "Xuất",
     "useNamed": "Tạo workflow từ {{name}}",
     "noDescription": "Không có mô tả",
+    "tests_one": "{{count}} test case",
+    "tests_other": "{{count}} test case",
     "invalidJson": "Tệp không phải JSON hợp lệ",
     "deleteTitle": "Xoá mẫu",
     "deleteBody": "Mẫu \"{{name}}\" sẽ bị xoá. Các workflow đã tạo từ mẫu không bị ảnh hưởng.",
@@ -1195,13 +1233,63 @@
     },
     "saveAs": "Lưu thành mẫu",
     "saveAsTitle": "Lưu thành mẫu",
-    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kênh phê duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
+    "saveAsDesc": "Lưu phiên bản đã lưu gần nhất thành mẫu dùng lại được. Thông tin xác thực, cơ sở tri thức, máy chủ MCP, kết nối kênh phê duyệt và người duyệt, liên kết subgraph, header và API key sẽ bị loại bỏ.",
     "saveAsConfirm": "Lưu mẫu",
     "unsavedNote": "Bạn có thay đổi chưa lưu. Mẫu dùng phiên bản đã lưu gần nhất — hãy lưu workflow trước để bao gồm các thay đổi.",
     "name": "Tên",
     "description": "Mô tả",
     "visibility": "Ai thấy được",
-    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới."
+    "saved": "Đã lưu mẫu \"{{name}}\". Bạn sẽ thấy nó trong mục Workflow mới.",
+    "builtin": {
+      "builtin-chatbot": {
+        "name": "Chatbot",
+        "description": "Một LLM trả lời tin nhắn của người dùng."
+      },
+      "builtin-rag": {
+        "name": "Hỏi đáp RAG",
+        "description": "Tìm các đoạn liên quan trong kho tri thức rồi trả lời dựa trên đó."
+      },
+      "builtin-approval": {
+        "name": "Quy trình duyệt",
+        "description": "Soạn câu trả lời, nhờ người duyệt, rồi gửi hoặc sửa lại."
+      },
+      "builtin-router": {
+        "name": "Định tuyến",
+        "description": "Phân loại yêu cầu rồi chuyển tới nhánh chuyên trách."
+      },
+      "builtin-refund-approval": {
+        "name": "Duyệt hoàn tiền",
+        "description": "Bộ phận tài chính duyệt yêu cầu hoàn tiền trên Slack; khách hàng nhận e-mail dù kết quả thế nào."
+      },
+      "builtin-leave-request": {
+        "name": "Đơn nghỉ phép",
+        "description": "Quản lý duyệt đơn nghỉ phép trên Microsoft Teams; nhân viên và HR nhận kết quả qua e-mail."
+      },
+      "builtin-social-post": {
+        "name": "Duyệt bài đăng mạng xã hội",
+        "description": "Biên tập viên duyệt bài trên Telegram, hoặc gửi lại kèm góp ý để viết lại."
+      },
+      "builtin-large-order": {
+        "name": "Kiểm tra đơn hàng lớn",
+        "description": "Đơn hàng có rủi ro chờ quản lý bán hàng xác nhận trên WhatsApp; các đơn khác đi thẳng."
+      },
+      "builtin-expense-claim": {
+        "name": "Duyệt chi phí công tác",
+        "description": "Kiểm tra chi phí công tác theo chính sách, duyệt qua e-mail, rồi báo cho nhân viên."
+      },
+      "builtin-purchase-request": {
+        "name": "Đề nghị mua sắm",
+        "description": "Trưởng nhóm duyệt trên Slack, sau đó tài chính duyệt qua e-mail; người đề nghị nhận kết quả."
+      },
+      "builtin-support-escalation": {
+        "name": "Hỗ trợ có chuyển cấp",
+        "description": "Trả lời từ kho tri thức; nhân viên hỗ trợ xem lại các câu trả lời chưa chắc chắn."
+      },
+      "builtin-feedback-digest": {
+        "name": "Tổng hợp phản hồi khách hàng",
+        "description": "Gắn nhãn từng phản hồi, viết báo cáo và gửi e-mail cho team."
+      }
+    }
   },
   "clipboard": {
     "duplicate": "Nhân bản",
@@ -1320,6 +1408,53 @@
       "custom": "Tuỳ chỉnh"
     }
   },
+  "chatTriggers": {
+    "button": "Chạy từ chat",
+    "title": "Chạy từ chat",
+    "desc": "Chạy workflow này bằng một tin nhắn gửi tới Slack app hoặc bot Telegram của bạn. Chỉ người đã liên kết tài khoản chat trong Superstep và có quyền chạy workflow mới chạy được; run dùng credential của bạn.",
+    "badge": "Chat",
+    "from": "Gửi bởi {{sender}} · trigger {{trigger}}",
+    "empty": "Chưa có chat trigger nào.",
+    "add": "Chat trigger mới",
+    "edit": "Sửa chat trigger",
+    "name": "Tên",
+    "namePh": "Đơn nghỉ phép",
+    "connection": "Kết nối",
+    "where": "Nghe ở",
+    "dm": "Tin nhắn riêng gửi bot",
+    "aChannel": "Một kênh Slack",
+    "aGroup": "Một nhóm Telegram",
+    "inChannel": "kênh {{place}}",
+    "inGroup": "nhóm {{place}}",
+    "channelId": "ID kênh (chi tiết kênh → About, bắt đầu bằng C)",
+    "groupId": "ID nhóm chat (bắt đầu bằng -)",
+    "command": "Từ lệnh",
+    "commandHint": "Một từ: chữ, số, - hoặc _, tối đa 32 ký tự.",
+    "inputField": "Nội dung tin nhắn vào",
+    "replyField": "Trả lời bằng",
+    "sample": "Ở {{where}}, mọi người gõ:",
+    "bot": "bot",
+    "sampleText": "<nội dung>",
+    "create": "Thêm chat trigger",
+    "save": "Lưu",
+    "enabledFor": "Bật chat trigger {{name}}",
+    "editFor": "Sửa chat trigger {{name}}",
+    "deleteFor": "Xoá chat trigger {{name}}",
+    "deleteTitle": "Xoá chat trigger {{name}}?",
+    "deleteBody": "Các run đã chạy vẫn được giữ.",
+    "last": "tin nhắn gần nhất {{when}}",
+    "stopped": "Đã dừng",
+    "noConnection": "Kết nối đã bị xoá",
+    "needConnection": "Hãy kết nối một Slack app hoặc bot Telegram trước.",
+    "openChannels": "Mở Kênh",
+    "missingScopes": "Slack app này thiếu quyền mà chat trigger cần ({{scopes}}). Hãy cài lại app, hoặc lưu trigger ở trạng thái tắt.",
+    "notes": {
+      "access": "Đã dừng: người tạo không còn quản lý workflow này.",
+      "channel": "Đã dừng: kết nối của nó đã bị xoá.",
+      "scopes": "Đã dừng: Slack app thiếu quyền."
+    },
+    "help": "Bot trả lời trong thread: khi run bắt đầu, rồi bằng field trả lời, một lỗi, hoặc bước đang chờ duyệt. Lời từ chối (chưa liên kết tài khoản, không có quyền chạy, chạy quá nhiều) chỉ người gửi thấy."
+  },
   "approve": {
     "title": "Yêu cầu phê duyệt",
     "approveQ": "Duyệt yêu cầu này?",
@@ -1431,5 +1566,163 @@
       "subprocess": "Subprocess trên máy chủ (không cách ly)",
       "off": "Tắt"
     }
+  },
+  "inbox": {
+    "title": "Phê duyệt",
+    "intro": "Các bước đang chờ bạn trả lời, trong lượt chạy bạn sở hữu hoặc được giao duyệt.",
+    "empty": "Không có gì đang chờ bạn",
+    "emptyHelp": "Khi một lượt chạy dừng ở node Human mà bạn sở hữu hoặc được giao duyệt, nó sẽ hiện ở đây.",
+    "studio": "Trong studio",
+    "from": "Lượt chạy của {{email}}",
+    "since": "Chờ từ {{when}}",
+    "openRun": "Mở lượt chạy",
+    "open": "Mở Phê duyệt",
+    "sent": "Đã gửi câu trả lời. Lượt chạy tiếp tục.",
+    "due": "Hạn {{when}}",
+    "overdue": "Quá hạn"
+  },
+  "deadline": {
+    "title": "Hạn chờ",
+    "off": "Tắt: bước này chờ đến khi có người trả lời, hoặc đến giới hạn chờ của lượt chạy.",
+    "after": "Chờ tối đa",
+    "unit": "Đơn vị",
+    "units": {
+      "m": "phút",
+      "h": "giờ",
+      "d": "ngày"
+    },
+    "remindEvery": "Nhắc lại mỗi",
+    "remindHelp": "Để trống nếu không cần nhắc. Tối đa 5 lần, trên kênh duyệt và ở chuông thông báo.",
+    "onTimeout": "Khi hết hạn",
+    "actions": {
+      "reject": "Từ chối",
+      "approve": "Duyệt",
+      "escalate": "Chuyển cho người duyệt khác"
+    },
+    "escalateTo": "Chuyển cho (e-mail)",
+    "escalateHelp": "Họ trở thành người duyệt và có thêm một khoảng thời gian như trên. Nếu vẫn không ai trả lời, bước này bị từ chối."
+  },
+  "tests": {
+    "tab": "Test",
+    "badge": "Test",
+    "showRuns": "Run test",
+    "saveFirst": "Lưu workflow để thêm test case.",
+    "runAll": "Chạy tất cả",
+    "runOne": "Chạy test này",
+    "mock": "Dùng model mock offline",
+    "mockBadge": "Model mock",
+    "running": "Đang chạy: xong {{done}}/{{total}}",
+    "summary": "{{passed}} đạt, {{failed}} không đạt trên v{{version}}",
+    "add": "Thêm test case",
+    "edit": "Sửa",
+    "duplicate": "Nhân bản",
+    "copyOf": "{{name}} (bản sao)",
+    "unsaved": "Test chạy trên phiên bản đã lưu. Hãy lưu để test các thay đổi mới nhất.",
+    "empty": "Chưa có test case. Hãy thêm một test case với input và kết quả run cần có.",
+    "emptyViewer": "Workflow này chưa có test case.",
+    "pick": "Chọn một test case để xem các điều kiện và kết quả lần chạy gần nhất.",
+    "openRun": "Mở run",
+    "check": "Điều kiện",
+    "expected": "Mong đợi",
+    "actual": "Thực tế",
+    "deleteTitle": "Xoá test case {{name}}?",
+    "addTitle": "Test case mới",
+    "editTitle": "Sửa test case",
+    "dialogDesc": "Run test không gửi e-mail, tin nhắn kênh, thông báo hay callback. Node Tool, HTTP, MCP và Code vẫn chạy thật.",
+    "name": "Tên",
+    "input": "Input",
+    "answers": "Câu trả lời cho Human node",
+    "answersHelp": "Dùng lần lượt mỗi khi run dừng chờ ở node. Hết câu trả lời thì test không đạt.",
+    "answer": "Câu trả lời",
+    "answerText": "Trả lời bằng chữ",
+    "addAnswer": "Thêm câu trả lời",
+    "answerKinds": {
+      "approved": "Duyệt",
+      "rejected": "Từ chối",
+      "text": "Trả lời bằng chữ"
+    },
+    "checks": "Điều kiện",
+    "addCheck": "Thêm điều kiện",
+    "kind": "Loại điều kiện",
+    "kinds": {
+      "status": "Trạng thái run",
+      "field": "Trường state",
+      "node": "Node",
+      "duration": "Thời gian",
+      "cost": "Chi phí"
+    },
+    "field": "Trường",
+    "compare": "Phép so sánh",
+    "value": "Giá trị",
+    "node": "Node",
+    "unit": {
+      "duration": "giây, tối đa",
+      "cost": "US$, tối đa"
+    },
+    "op": {
+      "equals": "bằng",
+      "contains": "chứa",
+      "not_contains": "không chứa",
+      "matches": "khớp mẫu",
+      "empty": "trống",
+      "not_empty": "không trống"
+    },
+    "ran": {
+      "ran": "có chạy",
+      "not_ran": "không chạy"
+    },
+    "status": {
+      "queued": "Đang chờ",
+      "running": "Đang chạy",
+      "passed": "Đạt",
+      "failed": "Không đạt",
+      "cancelled": "Đã huỷ"
+    },
+    "desc": {
+      "status": "Trạng thái run là {{value}}",
+      "field": "{{field}} {{op}} “{{value}}”",
+      "fieldNoValue": "{{field}} {{op}}",
+      "ran": "{{node}} có chạy",
+      "notRan": "{{node}} không chạy",
+      "duration": "Chạy tối đa {{max}} giây",
+      "cost": "Chi phí tối đa ${{max}}"
+    },
+    "reason": {
+      "no_answer": "Run dừng chờ ở {{node}} nhưng đã hết câu trả lời.",
+      "run_status": "Run kết thúc với trạng thái {{status}}.",
+      "field_missing": "Trường này không có trong state.",
+      "node_missing": "Node này không có trong workflow.",
+      "not_evaluated": "Không kiểm tra: run chưa chạy xong.",
+      "no_price": "Không kiểm tra: model chưa có giá."
+    },
+    "saveFromRun": "Lưu thành test case",
+    "runVersion": "Chạy trên version",
+    "runVersionHelp": "Chạy test trên một version cũ đã lưu để có kết quả so sánh.",
+    "noVersions": "Chưa có version cũ",
+    "history": "Lịch sử test",
+    "noHistory": "Chưa chạy test lần nào.",
+    "historyItem": "v{{version}}: {{passed}} đạt, {{failed}} không đạt",
+    "comparedWith": "So với v{{version}}:",
+    "noBaseline": "Chưa có kết quả trước đó để so sánh.",
+    "stale": "Không còn trong graph",
+    "change": {
+      "regression": "Hỏng mới",
+      "fixed": "Đã sửa",
+      "still_failing": "Vẫn lỗi",
+      "still_passing": "Vẫn đạt",
+      "new": "Mới"
+    }
+  },
+  "codeView": {
+    "tab": "Code",
+    "button": "Xem dạng code",
+    "saveFirst": "Lưu workflow để xem nó dưới dạng mã LangGraph.",
+    "version": "v{{n}}",
+    "unsaved": "Thay đổi chưa lưu chưa có trong mã",
+    "showing": "Đang chỉ {{node}}",
+    "noCode": "Node này không có mã riêng",
+    "selectHint": "Chọn một node trên canvas để tìm mã của nó",
+    "download": "Tải .py",
+    "language": "Python"
   }
 }

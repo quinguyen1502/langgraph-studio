@@ -1,6 +1,6 @@
 # Run
 
-A workflow runs in four ways. All of them go through the same engine,
+A workflow runs in five ways. All of them go through the same engine,
 produce the same trace, and appear in **History**.
 
 | Started by | How | Badge in History |
@@ -8,6 +8,7 @@ produce the same trace, and appear in **History**.
 | The editor | **Run**, **Step** or **Run to here**, over `/ws/run` | — |
 | Another service | `POST /api/hooks/workflows/{wid}/runs` with a workflow token | **API** |
 | A timetable | A cron schedule on the workflow | **Schedule** |
+| A chat message | A command word to your Slack app or Telegram bot | **Chat** |
 | A person resuming | Approve, reject or answer a waiting Human node | — |
 
 <div class="grid cards" markdown>
@@ -35,5 +36,17 @@ produce the same trace, and appear in **History**.
     ---
 
     Cron, time zones and missed times.
+
+-   :material-message-text-outline:{ .lg .middle } **[Chat triggers](chat-triggers.md)**
+
+    ---
+
+    A message to the Slack app or Telegram bot starts a run; the bot answers.
+
+-   :material-flask-outline:{ .lg .middle } **[Workflow tests](tests.md)**
+
+    ---
+
+    Test cases, Run all, comparison with earlier versions.
 
 </div>

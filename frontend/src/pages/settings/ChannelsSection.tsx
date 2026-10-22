@@ -14,6 +14,7 @@ import { AddConnection, ConnectionItem, ErrorAlert } from '@/components/approval
 import { IdentityRow } from '@/components/approvals/identity-row'
 import { slotKey, useSlots, type Slot, type Slots } from '@/components/approvals/slots'
 import { AddToSlack, SlackOAuthNotice } from '@/components/approvals/add-to-slack'
+import { ChannelLogo } from '@/components/approvals/channel-logo'
 import { FilterBar } from '@/components/settings/filter-bar'
 import type { Channel, ChannelKind, Channels } from '@/lib/approvals'
 import { api } from '@/lib/api'
@@ -35,7 +36,7 @@ function PlatformCard({ k, data, conns, slots, onSlots, reload, initialScope }: 
   return <Collapsible open={open} onOpenChange={setOpen} asChild>
     <Card data-testid={`channel-card-${k.kind}`} className="gap-4">
       <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2">{t(`approvals.kind.${k.kind}`)}
+        <CardTitle className="flex flex-wrap items-center gap-2"><ChannelLogo kind={k.kind} className="size-5" />{t(`approvals.kind.${k.kind}`)}
           <Badge variant={connected ? 'default' : 'outline'} data-testid="status">{connected ? <CircleCheck /> : <CircleDashed />}{t(connected ? 'settings.status.connected' : 'settings.status.notSetUp')}</Badge>
           {has('org') && <Badge variant="secondary"><Building2 />{t('approvals.scope.org')}</Badge>}
           {has('user') && <Badge variant="secondary"><User />{t('approvals.scope.user')}</Badge>}

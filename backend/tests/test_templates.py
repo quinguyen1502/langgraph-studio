@@ -1,8 +1,10 @@
 """TASK-0025: template library: built-ins, save-as (sanitised), import/export, use, scopes, delete."""
 import uuid
+import pytest
 from types import SimpleNamespace as NS
 from fastapi.testclient import TestClient
 from app.engine import templates as T
+from app.engine.runtime import run_stream
 from app.engine.validator import validate
 from app.main import app
 
@@ -41,6 +43,64 @@ def test_builtins_are_well_formed():
     for b in T.BUILTINS:
         assert T.problems(T.export_payload(b["name"], b["description"], b["workflow"])) == []
         assert all("knowledge base" in e for e in validate(b["workflow"]))  # only "pick your KB" may remain
+
+
+NEW = ["builtin-refund-approval", "builtin-leave-request", "builtin-social-post", "builtin-large-order", "builtin-expense-claim",
+       "builtin-purchase-request", "builtin-support-escalation", "builtin-feedback-digest"]
+FIRST_HUMAN = {"builtin-refund-approval": "finance", "builtin-leave-request": "manager", "builtin-social-post": "editor",
+               "builtin-large-order": "manager", "builtin-expense-claim": "approver", "builtin-purchase-request": "lead"}
+INPUTS = {"request": "Refund order 1042, $80, the parcel arrived broken.", "message": "I'd like leave from 3 to 5 March for a family event.",
+          "brief": "Launch of our new dark mode", "order": "Order 77: 40 laptops, new customer, delivery to a new address",
+          "claim": "Hotel $180 x 2 nights, meals $40", "customer_email": "ann@example.com", "employee_email": "bo@example.com",
+          "requester_email": "cy@example.com", "feedback": ["Love the new editor", "Runs are slow on Mondays", "Please add a Discord channel"]}
+
+
+def test_builtin_order_and_channel_kinds():
+    """TASK-0064: 12 built-ins, the eight new ones after the first four. Human nodes on a channel store only its kind."""
+    assert [b["id"] for b in T.BUILTINS] == ["builtin-chatbot", "builtin-rag", "builtin-approval", "builtin-router", *NEW]
+    kinds = {b["id"]: [n["data"]["approval"] for n in b["workflow"]["nodes"] if n["type"] == "human" and "approval" in n["data"]] for b in T.BUILTINS}
+    assert {i: [a["channel"] for a in v] for i, v in kinds.items() if v} == {
+        "builtin-refund-approval": ["slack"], "builtin-leave-request": ["teams"], "builtin-social-post": ["telegram"],
+        "builtin-large-order": ["whatsapp"], "builtin-expense-claim": ["email"], "builtin-purchase-request": ["slack", "email"]}
+    assert all(list(a) == ["channel"] for v in kinds.values() for a in v)
+
+
+def test_channel_templates_have_deadlines():
+    """TASK-0066: every Human node on a channel has a deadline that suits the process; only the social post approves on timeout."""
+    from app.engine import deadlines
+    due = {(b["id"], n["id"]): deadlines.parse(n["data"]) for b in T.BUILTINS for n in b["workflow"]["nodes"] if n["type"] == "human" and n["data"].get("approval")}
+    assert len(due) == 7 and all(due.values())
+    assert {k for k, v in due.items() if v["on_timeout"] == "approve"} == {("builtin-social-post", "editor")}
+    assert due[("builtin-leave-request", "manager")] == {"after": 172800.0, "remind_every": 86400.0, "on_timeout": "reject", "escalate_to": []}
+
+
+@pytest.mark.parametrize("tid", [i for i in NEW if i != "builtin-support-escalation"])  # that one needs a knowledge base, like builtin-rag
+def test_new_builtins_run_offline(tid, monkeypatch):
+    """Mock LLM and dry-run e-mail: each runs up to its first Human node, or to the end."""
+    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY"): monkeypatch.delenv(k, raising=False)
+    wf = next(b for b in T.BUILTINS if b["id"] == tid)["workflow"]
+    evs = list(run_stream(wf, {k: v for k, v in INPUTS.items() if any(f["name"] == k for f in wf["state"])}))
+    assert not [e for e in evs if e["type"] == "error"]
+    if tid in FIRST_HUMAN: assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == FIRST_HUMAN[tid]
+    else: assert evs[-1]["type"] == "run_finished" and len(evs[-1]["state"]["labelled"]) == 3 and evs[-1]["state"]["report"] and evs[-1]["state"]["sent"]
+
+
+def test_channel_template_waits_in_the_studio_without_a_connection():
+    """A workflow made from a channel template keeps the kind and, with no connection yet, waits to be approved in the studio."""
+    u = register(); wid = c.post("/api/templates/builtin-refund-approval/use", headers=H(u.token), json={}).json()["data"]["id"]
+    wf = c.get(f"/api/workflows/{wid}", headers=H(u.token)).json()["data"]
+    assert next(n for n in wf["nodes"] if n["id"] == "finance")["data"]["approval"] == {"channel": "slack"}
+    with c.websocket_connect(f"/ws/run?token={u.token}") as ws:
+        ws.send_json({"workflow_id": wid, "input": {"request": "Refund order 1042", "customer_email": "ann@example.com"}}); evs = []
+        while not evs or evs[-1]["type"] not in ("run_finished", "run_waiting", "error"): evs.append(ws.receive_json())
+    assert evs[-1]["type"] == "run_waiting" and evs[-1]["node"] == "finance"
+
+
+def test_sanitize_keeps_only_the_channel_kind():
+    """Saved and exported templates drop a Human node's connection, target and approvers (TASK-0064)."""
+    wf = {"nodes": [{"id": "a", "type": "human", "data": {"approval": {"channel_id": "c1", "channel": "slack", "target": "C1", "approvers": ["x@y.z"]}}},
+                    {"id": "b", "type": "human", "data": {"approval": {"channel_id": "c2"}}}], "edges": []}
+    assert [n["data"]["approval"] for n in T.sanitize(wf)["nodes"]] == [{"channel": "slack"}, {}]
 
 
 def test_problems():
@@ -103,3 +163,49 @@ def test_v010_format_still_imports():
     b = T.BUILTINS[0]
     old = {**T.export_payload(b["name"], b["description"], b["workflow"]), "format": "langgraph-studio/template"}
     assert T.problems(old) == [] and T.export_payload("x", None, b["workflow"])["format"] == "superstep/template"
+
+
+# ---------- test cases of the built-in templates (TASK-0069) ----------
+def test_builtin_test_cases_are_valid():
+    from app.engine import checks
+    for b in T.BUILTINS:
+        assert 1 <= len(b["tests"]) <= 3, b["id"]
+        nodes = {n["id"] for n in b["workflow"]["nodes"]}; fields = {f["name"] for f in b["workflow"]["state"]}
+        for case in b["tests"]:
+            assert checks.errors(case["checks"]) == [] and set(case["answers"]) <= nodes and set(case["input"]) <= fields, (b["id"], case["name"])
+            assert all(ch.get("node", "start") in nodes and ch.get("field", "message") in fields | {"message"} for ch in case["checks"]), (b["id"], case["name"])
+
+
+def test_builtin_test_cases_pass_in_mock_mode(monkeypatch):
+    """Every built-in template, used as a workflow, runs its own cases offline and passes them all. The two knowledge base
+    templates get a small FAQ first, as a user picks one."""
+    from tests.test_workflow_tests import run_all
+    for k in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "TYPESAFE_API_KEY"): monkeypatch.delenv(k, raising=False)
+    with TestClient(app) as cl:  # the worker runs the test runs
+        u = register(); h = H(u.token)
+        kb = cl.post("/api/knowledge-bases", json={"name": "FAQ"}, headers=h).json()["data"]
+        cl.post(f"/api/knowledge-bases/{kb['id']}/documents", files={"file": ("faq.txt", b"Laptops have a two-year warranty.")}, headers=h)
+        for b in T.BUILTINS:
+            wid = cl.post(f"/api/templates/{b['id']}/use", headers=h, json={}).json()["data"]["id"]
+            cases = cl.get(f"/api/workflows/{wid}/tests", headers=h).json()["data"]["items"]
+            assert [x["name"] for x in cases] == [x["name"] for x in b["tests"]], b["id"]
+            wf = cl.get(f"/api/workflows/{wid}", headers=h).json()["data"]
+            if any(n["type"] == "retriever" for n in wf["nodes"]):
+                for n in wf["nodes"]:
+                    if n["type"] == "retriever": n["data"]["knowledge_base_id"] = kb["id"]
+                cl.post("/api/workflows", json=wf, headers=h)
+            suite = run_all(cl, {"token": u.token}, wid, mock=True)
+            assert {r["name"]: (r["status"], r["reason"], [ch for ch in r["checks"] if ch["passed"] is False]) for r in suite["results"]} == \
+                   {x["name"]: ("passed", None, []) for x in b["tests"]}, b["id"]
+
+
+def test_saved_templates_carry_no_test_cases():
+    u = register(); h = H(u.token)
+    wid = c.post("/api/templates/builtin-leave-request/use", headers=h, json={}).json()["data"]["id"]
+    assert len(c.get(f"/api/workflows/{wid}/tests", headers=h).json()["data"]["items"]) == 2
+    tpl = c.post("/api/templates", json={"workflow_id": wid, "name": f"Mine {uuid.uuid4().hex[:4]}"}, headers=h).json()["data"]
+    assert tpl["tests"] == 0 and "tests" not in c.get(f"/api/templates/{tpl['id']}/export", headers=h).json()["data"]
+    again = c.post(f"/api/templates/{tpl['id']}/use", headers=h, json={}).json()["data"]["id"]
+    assert c.get(f"/api/workflows/{again}/tests", headers=h).json()["data"]["items"] == []
+    listed = {t["id"]: t["tests"] for t in c.get("/api/templates", headers=h).json()["data"]}
+    assert listed["builtin-purchase-request"] == 3 and listed[tpl["id"]] == 0

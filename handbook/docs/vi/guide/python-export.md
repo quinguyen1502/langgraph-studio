@@ -1,0 +1,162 @@
+# Xuất ra Python
+
+Tab **Code** trong trình soạn thảo hiện workflow dưới dạng một file Python
+LangGraph: state, mỗi node một hàm, và graph được dựng từ các hàm đó. Dùng nó
+để xem một graph trên canvas được viết bằng code thế nào, hoặc mang bản thử
+nghiệm sang dự án của bạn.
+
+![Tab Code với node Manager approval đang được chọn](../images/code-tab.png)
+
+## Mở code
+
+- Mở tab **Code** ở panel dưới, hoặc chọn **Xem dạng code** trong menu **⋯**
+  hay bảng lệnh (++ctrl+k++).
+- Tab hiện **version đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
+  trong code sau khi **Lưu**.
+- Chọn một node trên canvas: code của nó được tô sáng và cuộn tới. Start và End
+  chỉ tới các cạnh `START` và `END` của chúng.
+- **Sao chép** chép cả file; **Tải .py** lưu file, đặt tên theo workflow.
+- Ai mở được workflow thì xem được code của nó. Repo LangGraph đã import vốn
+  là code nên không có tab Code.
+
+## Chạy file
+
+```bash
+pip install langgraph
+python leave_request.py
+```
+
+File không cần gì từ Superstep. Nó chạy input mẫu (input của test case đầu
+tiên nếu workflow có test case), in ra những gì mỗi node trả về, rồi state cuối:
+
+```text
+[read_the_request] {"details": "[mock:gpt-4o-mini] Trả lời: I'd like leave ..."}
+>> manager_approval: approved
+[manager_approval] {"decision": "approved"}
+(e-mail not sent) to bo@example.com: Your leave request: approved
+...
+Final state: {...}
+```
+
+- **Model.** Node LLM mặc định dùng mock offline: không cần API key, không tốn
+  tiền, lần nào cũng ra cùng câu trả lời. Để gọi model thật, cài LangChain và
+  gói của nhà cung cấp rồi đặt tên nhà cung cấp:
+
+    ```bash
+    pip install langchain langchain-openai
+    export LLM_PROVIDER=openai OPENAI_API_KEY=sk-...
+    ```
+
+    `LLM_PROVIDER` là bất kỳ nhà cung cấp nào `init_chat_model` hỗ trợ
+    (`openai`, `anthropic`, `ollama`, …); tên model của node được dùng nguyên
+    như trên canvas.
+- **Node Human.** `EXAMPLE_ANSWERS` chứa các câu trả lời của test case đầu
+  tiên. Khi một node hết câu trả lời, file hỏi trên terminal.
+- **Node Code** chạy nguyên như đã viết, trong tiến trình Python của bạn, không
+  có sandbox của studio. Hãy đọc chúng trước khi chạy file người khác chia sẻ.
+
+## Từ canvas sang code
+
+| Canvas | Code |
+| --- | --- |
+| Các field state | `class State(TypedDict, total=False)`; field có reducer là `Annotated[kiểu, reducer]` |
+| Start và End | `START` và `END` trong các cạnh |
+| LLM | `render(PROMPT, state)`, rồi `call_llm(prompt, model)` |
+| Condition | một node không đổi gì, và `add_conditional_edges` với hàm router và bảng nhãn → node |
+| Human | `interrupt(...)` dừng run; `Command(resume=answer)` chạy tiếp |
+| Join | một node, và `add_edge([nhánh, nhánh], join)`: chạy một lần khi mọi nhánh xong |
+| For each | một field vị trí vòng lặp và một router trả về `each` hoặc `done` |
+| Decision | `decide(text, question)` cho từng câu hỏi |
+| Subgraph | workflow con thành graph riêng `build_<child>()`, được thêm như một node |
+| Tool: function | code của hàm, được chép vào |
+| Tool: HTTP | một request `httpx` |
+| Tool: Code | code của node, nằm trong hàm của node |
+| Retriever, MCP, Send email | hàm stub có `TODO`: chúng cần dịch vụ của studio |
+| Note | một comment |
+| Retry, cache, input fields | `RetryPolicy`, `CachePolicy`, `input_schema` trong `add_node` |
+| Timeout | một comment: LangGraph không dừng được node đang chặn |
+
+Hàm của node được đặt theo nhãn (`Read the request` → `read_the_request`). Tên
+trùng với một field state hay một tên của Python được thêm `_node`, ví dụ
+`decision_node`.
+
+### State và reducer
+
+Từ mẫu Tổng hợp phản hồi khách hàng:
+
+```python
+class State(TypedDict, total=False):
+    feedback: list
+    item: str
+    labelled: Annotated[list, append_items]
+    report: str
+    sent: dict
+    loop_each_piece_of_feedback: int  # loop position of a For each node
+```
+
+Một node chỉ trả về các field nó đổi, và LangGraph gộp chúng vào state. Field
+không có reducer bị thay thế; `labelled` gom một nhãn cho mỗi phản hồi.
+
+### Một Condition
+
+Từ mẫu Định tuyến:
+
+```python
+def route_route(state: State) -> str:
+    """The branch to take after "Route": the edge label that state["intent"] names."""
+    value = state.get("intent")
+    ...
+    label = pick_branch(value, ["billing", "technical", "other"])
+    return "other" if label is None else label
+
+
+builder.add_conditional_edges("route", route_route, {"billing": "billing_answer", "technical": "technical_answer", "other": "general_answer"})
+```
+
+### Một node Human
+
+Từ mẫu Đơn nghỉ phép:
+
+```python
+def manager_approval(state: State) -> dict:
+    answer = interrupt({"node": "manager_approval", "question": render(MANAGER_APPROVAL_PROMPT, state)})
+    return {"decision": answer}
+```
+
+`interrupt()` dừng run và trao câu hỏi cho bên gọi. Graph được compile với một
+checkpointer (`MemorySaver`), nên `main()` chạy tiếp được bằng
+`graph.stream(Command(resume="approved"), config)`. Khi đó node chạy lại từ
+đầu, và `interrupt()` trả về câu trả lời.
+
+### Một Subgraph
+
+```python
+def build_review_step():
+    builder = StateGraph(ReviewStepState)
+    ...
+    return builder.compile()
+
+
+builder.add_node("review", build_review_step())  # a compiled graph is a node of another graph
+```
+
+Subgraph có class state riêng và dùng chung field với graph cha theo tên.
+
+## Những gì không có trong file
+
+- Credential, API key, cấu hình SMTP, kho tri thức, máy chủ MCP, kênh duyệt,
+  người duyệt và địa chỉ chuyển cấp.
+- Các tính năng của studio quanh một run: trace, lịch sử run, khôi phục sau
+  khi khởi động lại, kênh duyệt và hạn chót, theo dõi chi phí, timeout của node.
+- Lời gọi Retriever, MCP và Send email thật: stub trả về kết quả rỗng, không
+  gì cả, hoặc thư lẽ ra sẽ gửi.
+
+Hai kết quả có thể khác studio: node Decision với model thật hỏi LLM thay vì
+TypeSafe Jev, và một field có reducer mà subgraph cũng ghi sẽ được gộp thêm một
+lần khi subgraph trả về.
+
+## API
+
+`GET /api/workflows/{wid}/python` trả về code, tên file, version và các dòng
+của từng node; `GET /api/workflows/{wid}/export/python` tải file. Cả hai nhận
+`?version=n`. Xem [HTTP API](../reference/api.md).

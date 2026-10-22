@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { AlertTriangle, Ban, CheckCircle2, Clock, Hand, Pause, TimerOff, Coins, DollarSign, ExternalLink, Layers, Loader2, X, XCircle, type LucideIcon, ShieldAlert } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -30,7 +30,7 @@ const StatusIcon = ({ s, className }: { s: Span['status'] | Trace['status']; cla
   : <CheckCircle2 className={cn('size-4 text-success', className)} />
 
 
-function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; replay?: string; onExitReplay?: () => void; raw: boolean; setRaw: (b: boolean) => void }) {
+function Summary({ trace, replay, onExitReplay, raw, setRaw, actions }: { trace: Trace; replay?: string; onExitReplay?: () => void; raw: boolean; setRaw: (b: boolean) => void; actions?: ReactNode }) {
   const { t } = useTranslation()
   return <div id="trace-summary" data-status={trace.status} className={cn('flex items-center gap-3 border-b px-3 py-1.5 text-xs', (trace.status === 'error') && 'bg-destructive/5', trace.status === 'timeout' && 'bg-warning/10', trace.status === 'cancelled' && 'bg-muted')}>
     <span className="flex items-center gap-1.5 font-medium"><StatusIcon s={trace.status} />{t(`trace.${trace.status}`)}</span>
@@ -42,6 +42,7 @@ function Summary({ trace, replay, onExitReplay, raw, setRaw }: { trace: Trace; r
     {trace.metrics && trace.metrics.error_count > 0 && <Badge variant="destructive" id="trace-error-count">{t('trace.errorCount', { count: trace.metrics.error_count })}</Badge>}
     {trace.traceUrl && <Button asChild variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs" id="trace-link"><a href={trace.traceUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-3.5" />{t('trace.openTrace')}</a></Button>}
     {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label={t('trace.exitReplay')} onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
+    {actions}
     <div className="ml-auto flex items-center gap-2">
       <Switch id="raw-toggle" size="sm" checked={raw} onCheckedChange={setRaw} />
       <Label htmlFor="raw-toggle" className="text-xs font-normal text-muted-foreground">{t('trace.rawEvents')}</Label></div>
@@ -118,14 +119,15 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
   </div>
 }
 
-export function RunTrace({ trace, events, meta, selected, onSelect, replay, onExitReplay }: {
+export function RunTrace({ trace, events, meta, selected, onSelect, replay, onExitReplay, actions }: {
   trace: Trace; events: RunEvent[]; meta: Meta; selected: string | null; onSelect: (s: Span | null) => void; replay?: string; onExitReplay?: () => void
+  actions?: ReactNode  // extra buttons in the summary bar (Save as test case, TASK-0068)
 }) {
   const { t } = useTranslation(); const [raw, setRaw] = useState(false)
   const sel = trace.spans.find(s => s.key === selected) || null
   if (!events.length) return <div className="p-3 text-xs text-muted-foreground">{t('trace.empty')}</div>
   return <div className="h-full flex flex-col min-h-0">
-    <Summary trace={trace} replay={replay} onExitReplay={onExitReplay} raw={raw} setRaw={setRaw} />
+    <Summary trace={trace} replay={replay} onExitReplay={onExitReplay} raw={raw} setRaw={setRaw} actions={actions} />
     <div className="flex-1 min-h-0 flex">
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('flex gap-2', e.type === 'error' && 'text-destructive')}><span className="w-6 shrink-0 select-none text-right text-muted-foreground tabular-nums">{i}</span><span className="min-w-0 break-all">{JSON.stringify(e)}</span></div>)}</div>

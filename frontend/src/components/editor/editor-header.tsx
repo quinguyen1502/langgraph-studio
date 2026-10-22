@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Link } from 'react-router-dom'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { SchedulesDialog } from '@/components/schedules-dialog'
+import { ChatTriggersDialog } from '@/components/chat-triggers-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
@@ -78,6 +79,7 @@ export function EditorHeader() {
       <VersionsDialog wid={wid} isDirty={isDirty} open={dlg === 'versions'} onOpenChange={v => setDlg(v ? 'versions' : null)} onRestored={wf => { load(wf); setErrors([]) }} />
       {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
       {access === 'owner' && <SchedulesDialog wid={wid} open={dlg === 'schedules'} onOpenChange={v => setDlg(v ? 'schedules' : null)} defaultInput={input} />}
+      {access === 'owner' && !source && <ChatTriggersDialog wid={wid} open={dlg === 'chat'} onOpenChange={v => setDlg(v ? 'chat' : null)} />}
       <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
         <DialogContent className="flex max-h-[85vh] w-full min-w-0 flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader className="shrink-0 pr-8"><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>

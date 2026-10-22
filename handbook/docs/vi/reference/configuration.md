@@ -53,6 +53,8 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `STUDIO_WORKFLOW_MAX_BYTES` | `1048576` | JSON workflow |
 | `STUDIO_WAIT_TTL` | `604800` | Run đang chờ hết hạn sau thời gian này (giây); `0` là không bao giờ |
 | `STUDIO_VERSION_KEEP` | `0` | Số phiên bản giữ cho mỗi workflow; `0` giữ tất cả |
+| `STUDIO_TEST_CASES_MAX` | `50` | Số [test case](../run/tests.md) mỗi workflow |
+| `STUDIO_TEST_PARALLEL` | `4` | Số test case của một lần chạy test chạy cùng lúc |
 | `STUDIO_ENABLE_DEMO_TOOLS` | `0` | Đăng ký `sleep_demo` để thử huỷ và timeout |
 
 ## Worker và hàng đợi
@@ -70,6 +72,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | --- | --- | --- |
 | `STUDIO_TRIGGER_RATE_LIMIT` | `60` | Số run mỗi token trong một khung; `0` là tắt |
 | `STUDIO_TRIGGER_RATE_WINDOW` | `60` | Độ dài khung (giây) |
+| `STUDIO_CHAT_TRIGGER_RATE_LIMIT` | `60` | Chat trigger: số run mỗi người gửi và trigger trong một khung; `0` là tắt |
 | `STUDIO_SYNC_WAIT_MAX` | `30` | Thời gian chờ `sync` tối đa (giây) |
 | `STUDIO_ALLOW_PRIVATE_CALLBACKS` | `0` | Cho phép callback tới địa chỉ private |
 | `STUDIO_WEBHOOK_MAX_ATTEMPTS` | `5` | Số lần gửi |

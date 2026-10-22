@@ -69,12 +69,14 @@ WS /ws/run
     DELETE /api/workflows/{wid}/shares/{target}
     PUT    /api/workflows/{wid}/team-shares     DELETE /api/workflows/{wid}/team-shares/{tid}
     GET    /api/workflows/{wid}/transfer        POST   /api/workflows/{wid}/transfer
+    GET    /api/workflows/{wid}/python          (mã, các dòng của node; ?version=n)
+    GET    /api/workflows/{wid}/export/python   (file .py để tải về)
     ```
 
 ??? abstract "Runs"
 
     ```text
-    GET    /api/workflows/{wid}/runs
+    GET    /api/workflows/{wid}/runs          (?tests=true: các run test)
     GET    /api/runs/pending
     POST   /api/runs/{run_id}/cancel
     WS     /ws/run
@@ -95,6 +97,26 @@ WS /ws/run
     GET    /api/workflows/{wid}/schedules       POST   /api/workflows/{wid}/schedules
     PATCH  /api/workflows/{wid}/schedules/{sid} DELETE /api/workflows/{wid}/schedules/{sid}
     POST   /api/schedules/preview
+    ```
+
+??? abstract "Chat trigger"
+
+    ```text
+    GET    /api/workflows/{wid}/chat-triggers       POST   /api/workflows/{wid}/chat-triggers
+    PATCH  /api/workflows/{wid}/chat-triggers/{tid} DELETE /api/workflows/{wid}/chat-triggers/{tid}
+    (chủ hoặc admin; {channel_id, place: "dm" | id kênh hoặc chat, command, input_field, reply_field, enabled})
+    ```
+
+??? abstract "Kiểm thử workflow"
+
+    ```text
+    GET    /api/workflows/{wid}/tests          POST   /api/workflows/{wid}/tests
+    PUT    /api/workflows/{wid}/tests/{tid}    DELETE /api/workflows/{wid}/tests/{tid}
+    POST   /api/workflows/{wid}/tests/run      ({test_ids?, mock?, version?}: version = một version cũ đã lưu)
+    GET    /api/workflows/{wid}/tests/runs     (lịch sử các lần chạy test)
+    GET    /api/workflows/{wid}/tests/runs/{sid}   (kèm so sánh với version trước)
+    POST   /api/workflows/{wid}/tests/runs/{sid}/cancel
+    POST   /api/workflows/{wid}/tests/from-run/{run_id}   (bản nháp test case từ một run, chưa lưu)
     ```
 
 ??? abstract "Mẫu"
@@ -139,11 +161,13 @@ WS /ws/run
     PUT    /api/approvals/channels/{cid}        DELETE /api/approvals/channels/{cid}
     POST   /api/approvals/channels/{cid}/test   POST   /api/approvals/channels/{cid}/register-webhook
     POST   /api/approvals/callback/{kind}       GET|POST /api/approvals/callback/{kind}/{cid}
+    POST   /api/channels/events/slack           (Slack Events API: chat trigger; tin nhắn Telegram dùng URL callback)
     GET    /api/approvals/identities            PUT    /api/approvals/identities
     POST   /api/approvals/identities/{kind}/send-code
     POST   /api/approvals/identities/{kind}/verify
     GET    /api/approvals/link                  POST   /api/approvals/link
     GET    /api/approvals/audit
+    GET    /api/approvals/inbox                 POST   /api/approvals/inbox/{run_id}
     GET    /api/approvals/slack/oauth           POST   /api/approvals/slack/oauth/start
     GET    /api/approvals/slack/oauth/callback
     ```

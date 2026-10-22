@@ -31,3 +31,23 @@ class SchedulePatch(BaseModel):
 class SchedulePreview(BaseModel):
     cron: str = Field(..., max_length=120)
     timezone: str = Field("UTC", max_length=64)
+
+
+class ChatTriggerIn(BaseModel):  # TASK-0074
+    name: str = Field("", max_length=80)
+    channel_id: str = Field(..., max_length=64)
+    place: str = Field("dm", max_length=64)
+    command: str = Field(..., max_length=40)
+    input_field: str = Field(..., max_length=120)
+    reply_field: str = Field(..., max_length=120)
+    enabled: bool = True
+
+
+class ChatTriggerPatch(BaseModel):
+    name: Optional[str] = Field(None, max_length=80)
+    channel_id: Optional[str] = Field(None, max_length=64)
+    place: Optional[str] = Field(None, max_length=64)
+    command: Optional[str] = Field(None, max_length=40)
+    input_field: Optional[str] = Field(None, max_length=120)
+    reply_field: Optional[str] = Field(None, max_length=120)
+    enabled: Optional[bool] = None

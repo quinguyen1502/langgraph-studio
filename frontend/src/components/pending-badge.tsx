@@ -1,27 +1,17 @@
-import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { UserCheck } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import { api } from '@/lib/api'
+import { useInboxCount } from '@/lib/use-inbox-count'
 
-const POLL_MS = 30_000
-
-/** Header badge: number of the user's runs waiting for a human response (TASK-0019). Hidden at 0. */
+/** Header entry to the Approvals inbox (TASK-0019, TASK-0065), with the number of steps waiting for the user. */
 export function PendingBadge() {
-  const { t } = useTranslation(); const nav = useNavigate(); const [n, setN] = useState(0)
-  useEffect(() => {
-    let alive = true
-    const load = () => api<unknown[]>('/api/runs/pending').then(xs => { if (alive) setN(xs.length) }).catch(() => {})
-    load(); const id = setInterval(load, POLL_MS)
-    const onFocus = () => load(); window.addEventListener('focus', onFocus)
-    return () => { alive = false; clearInterval(id); window.removeEventListener('focus', onFocus) }
-  }, [])
-  if (!n) return null
+  const { t } = useTranslation(); const nav = useNavigate(); const n = useInboxCount()
+  const label = n ? t('human.pendingCount', { count: n }) : t('inbox.title')
   return <Tooltip><TooltipTrigger asChild>
-    <Button variant="ghost" size="sm" id="pending-badge" aria-label={t('human.pendingCount', { count: n })} onClick={() => nav('/workflows#pending-runs')}>
-      <UserCheck className="text-node-human" /><Badge variant="secondary" data-testid="pending-count">{n}</Badge>
-    </Button></TooltipTrigger><TooltipContent>{t('human.pendingCount', { count: n })}</TooltipContent></Tooltip>
+    <Button variant="ghost" size="sm" id="pending-badge" aria-label={label} onClick={() => nav('/approvals')}>
+      <UserCheck className="text-node-human" />{n > 0 && <Badge variant="secondary" data-testid="pending-count">{n}</Badge>}
+    </Button></TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>
 }

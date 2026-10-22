@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from ..core import config
 from ..core import permissions as P
 from ..core.errors import AppError
-from ..engine import subgraphs
+from ..engine import python_export, subgraphs
 from ..engine.examples import EXAMPLE
 from ..models import Workflow, WorkflowVersion
 from ..repositories import RunRepository, WorkflowRepository, WorkflowVersionRepository
@@ -24,10 +24,12 @@ def new_id() -> str: return uuid.uuid4().hex[:8]
 
 class WorkflowService:
     def __init__(self, workflows: WorkflowRepository, runs: RunRepository, versions: WorkflowVersionRepository | None = None,
-                 access=None, shares=None, users=None, teams=None, audit=None):
+                 access=None, shares=None, users=None, teams=None, audit=None, tests=None, chat_triggers=None):
         self.repo, self.runs, self.versions = workflows, runs, versions
         self.access, self.shares, self.users = access, shares, users
         self.teams, self.audit = teams, audit  # TeamRepository, AuditService (TASK-0029)  # AccessService etc. (TASK-0014); None = owner-only
+        self.tests = tests  # WorkflowTestRepository (optional): test cases and results go with the workflow (TASK-0067)
+        self.chat_triggers = chat_triggers  # ChatTriggerRepository (optional): so do its chat triggers (TASK-0074)
 
     # -- persistence: every write goes through here so versions stay in sync (TASK-0008) --
     def _write(self, wid: str, name: str, wf: dict, uid: str, *, new: bool = True, note: str | None = None,
@@ -113,6 +115,25 @@ class WorkflowService:
         if self.versions is None: return None
         v = self.versions.latest(wid)
         return (v.version, json.loads(v.data or "{}")) if v else None
+
+    def python(self, wid: str, uid: str, version: int | None = None) -> dict:
+        """The workflow's latest version (or `version`) as a readable LangGraph Python file (TASK-0070, REQ-0043).
+        Subgraph children come with the viewer's access, as in a run; the first test case is the example input."""
+        w = self.owned(wid, uid)
+        cur = self.current_version(wid) if version is None else (version, json.loads(self._version(wid, version).data or "{}"))
+        n, wf = cur if cur else (None, json.loads(w.data or "{}"))
+        if wf.get("source"): raise AppError("PYTHON_EXPORT_UNAVAILABLE")
+        load = self._loader(uid)
+        if (errs := subgraphs.check(wf, load, wid)): raise AppError("WORKFLOW_INVALID", details=errs)
+        children: dict = {}
+        def collect(g: dict) -> None:
+            for _, ref in subgraphs.refs(g):
+                if ref not in children: children[ref] = load(ref) or {}; collect(children[ref])
+        collect(wf)
+        case = (self.tests.list_for_workflow(wid) or [None])[0] if self.tests is not None else None
+        example = {"input": json.loads(case.input), "answers": json.loads(case.answers)} if case else None
+        out = python_export.to_python(wf, w.name, n, children, example)
+        return {"filename": out.filename, "version": n, "code": out.code, "nodes": out.nodes}
 
     def owned(self, wid: str, uid: str, action: str = P.VIEW) -> Workflow:
         """The workflow if `uid` may perform `action` on it (owner, share or admin, TASK-0014)."""
@@ -205,6 +226,8 @@ class WorkflowService:
         if self.audit is not None and (deps or w.owner != uid): self.audit.record(uid, "workflow.delete", "workflow", wid, w.name, dependents=len(deps))
         if self.shares is not None: self.shares.delete_for_workflow(wid)
         if self.versions is not None: self.versions.delete_for_workflow(wid)
+        if self.tests is not None: self.tests.delete_for_workflow(wid)
+        if self.chat_triggers is not None: self.chat_triggers.delete_for_workflow(wid)
         return {"ok": True}
 
     def create(self, wf: dict, uid: str) -> str:

@@ -21,6 +21,8 @@ async function say(page: Page, text: string) {
   await page.locator('#chat-input').fill(text); await page.keyboard.press('Enter')
   await expect(page.getByTestId('chat-mine').last()).toHaveText(text)
 }
+/** the chat's View as Select (Workflow builder / Chat visitor) */
+const viewAs = async (page: Page, v: 'builder' | 'visitor') => { await page.locator('#chat-view').click(); await page.locator(`#chat-view-${v}`).click(); await expect(page.locator('[role=listbox]')).toHaveCount(0) }
 const enable = (page: Page, H: Record<string, string>, wid: string, extra: Record<string, unknown> = {}) =>
   page.request.put(`/api/workflows/${wid}/chat`, { headers: H, data: { enabled: true, ...extra } })
 
@@ -91,12 +93,12 @@ test('step visibility: builders see every step, visitors what the settings allow
   await expect(steps).toHaveAttribute('data-mode', 'full'); await expect(steps.locator('[data-slot=trace-title]')).toHaveText(['Đã chạy Bot'])
   await steps.getByTestId('chat-step').click(); await expect(page.getByTestId('chat-step-detail')).toBeVisible()
 
-  await page.locator('#chat-view-visitor').click()
+  await viewAs(page, 'visitor')
   await expect(page.getByTestId('chat-steps').last()).toHaveAttribute('data-mode', 'labels')
   await expect(page.locator('[data-slot=trace-title]')).toHaveText(['Đã chạy Bot']); await expect(page.getByTestId('chat-step-detail')).toHaveCount(0)
 
   await enable(page, H, wid, { steps: 'none' })
-  await page.locator('#chat-view-builder').click(); await page.locator('#chat-view-visitor').click()
+  await viewAs(page, 'builder'); await viewAs(page, 'visitor')
   await expect(page.getByTestId('chat-answer').last()).toHaveAttribute('data-status', 'ok')
   await expect(page.getByTestId('chat-steps')).toHaveCount(0)
 })

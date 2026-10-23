@@ -1770,8 +1770,6 @@
     "delete": "Delete chat",
     "deleteTitle": "Delete this chat?",
     "deleteBody": "“{{title}}” and its messages are deleted. Its runs stay in History.",
-    "viewBuilder": "Builder",
-    "viewVisitor": "Visitor",
     "stepsHint": {
       "full": "Every step, with its input and output",
       "labels": "Visitors see step names",
@@ -1849,6 +1847,17 @@
     "openTip": "Chat with this workflow",
     "fullscreen": "Fullscreen",
     "exitFullscreen": "Exit fullscreen (Esc)",
-    "resize": "Resize the chat panel"
+    "resize": "Resize the chat panel",
+    "viewAs": "View as",
+    "views": {
+      "builder": {
+        "title": "Workflow builder",
+        "desc": "See every step with full input and output."
+      },
+      "visitor": {
+        "title": "Chat visitor",
+        "desc": "Preview exactly what visitors see on the public chat, per Chat settings."
+      }
+    }
   }
 }

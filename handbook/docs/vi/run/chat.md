@@ -16,8 +16,8 @@ workflow có thể nhớ.
 - **Toàn màn hình** (nút mũi tên) hiện chat trên cả cửa sổ, với danh sách các
   cuộc trò chuyện ở bên trái. ++esc++ để quay lại; cuộc trò chuyện và nội dung
   đang gõ vẫn còn.
-- Trong khung hẹp, chọn cuộc trò chuyện cũ ở menu cạnh **Người dựng / Người
-  chat**, hoặc bắt đầu cuộc mới bằng nút **+**.
+- Trong khung hẹp, chọn cuộc trò chuyện cũ ở menu cạnh **Xem dưới góc
+  nhìn**, hoặc bắt đầu cuộc mới bằng nút **Chat mới** (biểu tượng bút).
 
 ![Chat toàn màn hình](../images/chat-fullscreen.png)
 
@@ -55,9 +55,10 @@ từ trang khác không hiện, link mở ở tab mới.
 - **Cuộc trò chuyện mới** bắt đầu một cuộc trò chuyện chưa có gì để nhớ. Các
   cuộc trò chuyện cũ vẫn ở danh sách, mới nhất trên cùng, đặt tên theo tin nhắn
   đầu tiên.
-- **Người dựng / Người chat** ở trên cùng đổi cách xem. *Người dựng* thấy mọi
-  bước kèm input và output (bấm vào một bước để mở); *Người chat* chỉ thấy những
-  gì **Bước hiện cho người chat** cho phép.
+- **Xem dưới góc nhìn** ở trên cùng đổi cách xem. *Người dựng workflow* thấy đầy
+  đủ mọi bước, kèm input và output (bấm vào một bước để mở); *Khách chat* xem
+  trước đúng như khách thấy trên trang chat công khai: những gì **Bước hiện cho
+  người chat** cho phép.
 - Mỗi tin nhắn là một run trong lịch sử run (**Chạy → Xem tất cả**) với nhãn
   *Chat*, nên bạn mở được trace đầy đủ ở đó.
 - Chat dùng workflow đã lưu: hãy lưu thay đổi trước khi thử.

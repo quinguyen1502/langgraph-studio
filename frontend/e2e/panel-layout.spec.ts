@@ -48,7 +48,7 @@ test('Chat side panel: toggle, width and open state remembered, fullscreen keeps
   expect(Math.abs(w0 - 420)).toBeLessThanOrEqual(2)
 
   // the chat toolbar and the editor header stay on one size each
-  await expectRowAligned([page.locator('#chat-toolbar [role=tablist]'), page.locator('#chat-session-picker'), page.locator('#chat-new'), page.locator('#chat-fullscreen'), page.locator('#chat-close')], { label: 'chat toolbar' })
+  await expectRowAligned([page.locator('#chat-view'), page.locator('#chat-session-picker'), page.locator('#chat-new'), page.locator('#chat-fullscreen'), page.locator('#chat-close')], { label: 'chat toolbar' })
   await expectRowAligned([page.locator('#save-btn'), page.locator('#run-btn'), page.locator('#chat-open'), page.locator('#more-btn')], { label: 'editor header' })
 
   // Config stays beside the chat: a node can be edited while chatting
@@ -68,6 +68,10 @@ test('Chat side panel: toggle, width and open state remembered, fullscreen keeps
   await page.locator('#chat-input').fill('draft kept')
   await page.locator('#chat-fullscreen').click(); await expect(page.locator('#chat-side')).toHaveAttribute('data-fullscreen', 'true')
   await expect(page.locator('#chat-input')).toHaveValue('draft kept')
+  // fullscreen: the icon-only New chat sits in the sidebar header, level with the chat toolbar
+  await expect(page.locator('#chat-new')).toHaveAttribute('aria-label', 'Chat mới'); await expect(page.locator('#chat-new')).toHaveText('')
+  await expectRowAligned([page.locator('#chat-new'), page.locator('#chat-fullscreen'), page.locator('#chat-close')], { label: 'fullscreen chat header' })
+  await expectRowAligned([page.locator('#chat-sidebar-header > span'), page.locator('#chat-new')], { sameHeight: false, label: 'chat sidebar header' })
   await page.keyboard.press('Escape'); await expect(page.locator('#chat-side')).not.toHaveAttribute('data-fullscreen', 'true')
   await expect(page.locator('#chat-input')).toHaveValue('draft kept')
 

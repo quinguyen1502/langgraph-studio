@@ -1763,15 +1763,13 @@
   },
   "chat": {
     "tab": "Chat",
-    "new": "Cuộc trò chuyện mới",
+    "new": "Chat mới",
     "sessions": "Cuộc trò chuyện",
     "noSessions": "Chưa có cuộc trò chuyện nào.",
     "untitled": "Cuộc trò chuyện mới",
     "delete": "Xoá cuộc trò chuyện",
     "deleteTitle": "Xoá cuộc trò chuyện này?",
     "deleteBody": "“{{title}}” và các tin nhắn của nó sẽ bị xoá. Các run vẫn còn trong Lịch sử.",
-    "viewBuilder": "Người dựng",
-    "viewVisitor": "Người chat",
     "stepsHint": {
       "full": "Mọi bước, kèm input và output",
       "labels": "Người chat thấy tên các bước",
@@ -1849,6 +1847,17 @@
     "openTip": "Chat với workflow này",
     "fullscreen": "Toàn màn hình",
     "exitFullscreen": "Thoát toàn màn hình (Esc)",
-    "resize": "Đổi kích thước khung chat"
+    "resize": "Đổi kích thước khung chat",
+    "viewAs": "Xem dưới góc nhìn",
+    "views": {
+      "builder": {
+        "title": "Người dựng workflow",
+        "desc": "Thấy đầy đủ mọi bước, kèm input và output."
+      },
+      "visitor": {
+        "title": "Khách chat",
+        "desc": "Xem trước đúng như khách thấy trên trang chat công khai, theo cài đặt Chat."
+      }
+    }
   }
 }

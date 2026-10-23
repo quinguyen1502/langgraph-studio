@@ -3,12 +3,11 @@
  *  the Chat settings give visitors. Runs use the saved workflow, like a chat trigger. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, MessageSquarePlus, Settings2, Trash2 } from 'lucide-react'
+import { AlertCircle, Settings2, SquarePen, Trash2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tip } from '@/components/tip'
 import { api } from '@/lib/api'
@@ -39,10 +38,12 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
   const waiting = waitingTurn(chat.session?.turns ?? [])   // a typed message answers the waiting Human node
   const mode = view === 'builder' ? 'full' : chat.session?.steps_mode ?? settings?.steps ?? 'labels'
   const off = settings && !settings.enabled
+  // one icon-only New chat button: next to the session Select (compact) or in the sidebar header (fullscreen)
+  const newChat = <Tip tip={t('chat.new')}><Button size="icon-sm" variant="ghost" id="chat-new" aria-label={t('chat.new')} disabled={!!off} onClick={fresh}><SquarePen /></Button></Tip>
   return <div className="flex h-full min-h-0" id="chat-panel">
     {!compact && <aside className="flex w-56 shrink-0 flex-col border-r">
-      <div className="p-2"><Button size="sm" variant="outline" className="w-full justify-start" id="chat-new" disabled={!!off} onClick={fresh}><MessageSquarePlus />{t('chat.new')}</Button></div>
-      <ScrollArea className="min-h-0 flex-1"><nav className="space-y-0.5 px-2 pb-2" aria-label={t('chat.sessions')}>
+      <div className="flex h-11 shrink-0 items-center justify-between gap-2 border-b px-3" id="chat-sidebar-header"><span className="truncate text-xs font-medium text-muted-foreground">{t('chat.sessions')}</span>{newChat}</div>
+      <ScrollArea className="min-h-0 flex-1"><nav className="space-y-0.5 p-2" aria-label={t('chat.sessions')}>
         {!sessions.length && <p className="px-2 py-1 text-xs text-muted-foreground">{t('chat.noSessions')}</p>}
         {sessions.map(s => <div key={s.id} className={cn('group flex items-center gap-1 rounded-md hover:bg-accent', s.id === sid && 'bg-accent')}>
           <button data-testid="chat-session" aria-current={s.id === sid || undefined} onClick={() => setSid(s.id)} className="min-w-0 flex-1 px-2 py-1.5 text-left">
@@ -54,15 +55,18 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
     </aside>}
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="chat-toolbar">
-        <Tabs value={view} onValueChange={v => setView(v as ChatView)}><TabsList size="sm">
-          <TabsTrigger value="builder" id="chat-view-builder">{t('chat.viewBuilder')}</TabsTrigger>
-          <TabsTrigger value="visitor" id="chat-view-visitor">{t('chat.viewVisitor')}</TabsTrigger></TabsList></Tabs>
+        <Select value={view} onValueChange={v => setView(v as ChatView)}>
+          <SelectTrigger size="sm" className="w-auto min-w-0 shrink" id="chat-view" aria-label={t('chat.viewAs')}><SelectValue>{t(`chat.views.${view}.title`)}</SelectValue></SelectTrigger>
+          <SelectContent><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
+            {(['builder', 'visitor'] as const).map(v => <SelectItem key={v} value={v} id={`chat-view-${v}`} className="max-w-80">
+              <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs whitespace-normal text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></SelectItem>)}
+          </SelectGroup></SelectContent></Select>
         <span className={cn('truncate text-xs text-muted-foreground', compact && 'hidden')} id="chat-mode-hint">{t(`chat.stepsHint.${mode}`)}</span>
         {dirty && !compact && <span className="truncate text-xs text-warning" id="chat-unsaved">{t('chat.unsaved')}</span>}
-        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" className="w-40" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
+        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" className="min-w-0 flex-1 max-w-40" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
           <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.title || t('chat.untitled')}</SelectItem>)}</SelectContent></Select>
-          <Tip tip={t('chat.new')}><Button size="icon-sm" variant="ghost" id="chat-new" aria-label={t('chat.new')} disabled={!!off} onClick={fresh}><MessageSquarePlus /></Button></Tip></>}
-        <span className="ml-auto" />
+          {newChat}</>}
+        {!compact && <span className="ml-auto" />}
         {canConfigure && <Tip tip={t('chat.settings.title')}><Button size="icon-sm" variant="ghost" id="chat-settings-btn" aria-label={t('chat.settings.title')} onClick={() => setCfg(true)}><Settings2 /></Button></Tip>}{actions}
       </div>
       {(err || chat.error) && <Alert variant="destructive" className="m-3 w-auto"><AlertCircle /><AlertDescription id="chat-error-banner">{err || chat.error}</AlertDescription></Alert>}

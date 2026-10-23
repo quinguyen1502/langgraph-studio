@@ -1,12 +1,12 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/readme-avatar-dark.svg">
-    <img src="frontend/public/brand/readme-avatar.svg" alt="Superstep logo" width="200" height="200">
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-mark-dark.svg">
+    <img src="frontend/public/brand/superstep-mark.svg" alt="Superstep logo" width="140" height="140">
   </picture>
 
   <h3><b>Superstep</b></h3>
   <p>✨ ✨ ✨</p>
-  <p>Studio LangGraph trực quan, mã nguồn mở<br>Kéo thả đồ thị • Theo dõi run trực tiếp • Duyệt bởi con người • Node code Python</p>
+  <p>Studio LangGraph trực quan, mã nguồn mở<br>Kéo thả đồ thị • Theo dõi run trực tiếp • Duyệt bởi con người • Node code Python &amp; TypeScript</p>
 
   <p>
     <a href="https://github.com/quinguyen1502/superstep/stargazers"><img src="https://img.shields.io/github/stars/quinguyen1502/superstep?style=social" alt="GitHub stars"></a>
@@ -18,18 +18,31 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b>
 </div>
 
-Superstep là nền tảng tự host để xây workflow LangGraph trên trình duyệt
-và chạy chúng như một dịch vụ. Workflow là tài liệu JSON được backend FastAPI
-kiểm tra và biên dịch thành `StateGraph` của LangGraph. Mỗi workflow chạy được
-từ trình soạn thảo kèm trace trực tiếp của từng node, từ dịch vụ khác qua
-HTTP, theo lịch cron, và có thể dừng giữa chừng chờ người quyết định.
+<p align="center"><b>Dựng workflow LangGraph trên trình duyệt và chạy chúng như một dịch vụ.</b></p>
 
-[![Video bắt đầu nhanh: dựng, chạy, duyệt và gọi một workflow](handbook/docs/vi/assets/video/studio-intro-vi.jpg)](https://quinguyen1502.github.io/superstep/vi/#video)
+<p align="center"><a href="https://quinguyen1502.github.io/superstep/vi/">Tài liệu</a> • <a href="https://quinguyen1502.github.io/superstep/vi/#video">Video bắt đầu nhanh</a> • <a href="https://quinguyen1502.github.io/superstep/vi/reference/api/">HTTP API</a> • <a href="https://quinguyen1502.github.io/superstep/vi/reference/architecture/">Kiến trúc</a></p>
 
-[Tài liệu](https://quinguyen1502.github.io/superstep/vi/) ·
-[Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/) ·
-[HTTP API](https://quinguyen1502.github.io/superstep/vi/reference/api/) ·
-[Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="handbook/docs/vi/images/editor-dark.png">
+  <img src="handbook/docs/vi/images/editor.png" alt="Trình soạn thảo Superstep: bảng node, canvas đồ thị, cài đặt node và trace run trực tiếp" width="100%">
+</picture>
+
+## Vì sao chọn Superstep?
+
+<table>
+  <tr>
+    <td width="50%" valign="top">🧩 <b>Đồ thị trực quan</b><br>Kéo node, nối cạnh; lưu dạng JSON, biên dịch thành <code>StateGraph</code> của LangGraph</td>
+    <td width="50%" valign="top">▶️ <b>Run trực tiếp</b><br>Trace và thay đổi state của từng node khi đang chạy; debug từng bước</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">🙋 <b>Con người duyệt</b><br>Dừng chờ duyệt trong studio, Slack, Telegram, email hoặc Teams</td>
+    <td width="50%" valign="top">⚡ <b>Trigger</b><br>HTTP API có token, webhook có chữ ký, lịch cron, lệnh chat</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">🐍 <b>Code Python & TypeScript</b><br>Node code trong sandbox Docker khoá chặt; mọi model, MCP và pgvector</td>
+    <td width="50%" valign="top">📄 <b>Học LangGraph</b><br>Xuất workflow thành một file Python dễ đọc, chạy độc lập</td>
+  </tr>
+</table>
 
 ## Bắt đầu nhanh
 

@@ -28,7 +28,7 @@ export function EditorPalette() {
       <Separator />
       <section className="flex min-h-0 flex-1 basis-0 flex-col" id="palette-state">
         <div className="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-muted-foreground">{t('editor.stateSchema')}</div>
-        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pt-1 pb-2 space-y-1.5">{state.map((f, i) => <div className="@container space-y-1" key={i} data-testid="state-field"><div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 @max-[13rem]:grid-cols-[minmax(0,1fr)_auto]">
+        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pt-1 pb-2 divide-y">{state.map((f, i) => <div className="@container space-y-1 py-2 first:pt-1" key={i} data-testid="state-field"><div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 @max-[13rem]:grid-cols-[minmax(0,1fr)_auto]">
             <Input className="min-w-0 @max-[13rem]:col-span-full" value={f.name} aria-label={t('editor.fieldName')} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
             <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v, reducer: REDUCERS[v]?.includes(x.reducer || '') ? x.reducer : undefined } : x))}>
               <SelectTrigger className="w-24 @max-[13rem]:w-full" aria-label={t('editor.fieldType')}><SelectValue /></SelectTrigger>

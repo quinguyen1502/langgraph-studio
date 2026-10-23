@@ -1,0 +1,60 @@
+# Render Blueprint, full variant: web + run worker + Render Postgres + Render Key Value (Redis-compatible).
+# API/webhook/schedule runs go through the Key Value queue and are executed by the worker; the web service runs
+# only the editor's runs. Deploy: https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep&path=deploy/render/render.full.yaml
+envVarGroups:
+  - name: superstep-shared
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STUDIO_SECRET_KEY
+        generateValue: true
+
+services:
+  - type: web
+    name: superstep
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    envVars:
+      - fromGroup: superstep-shared
+      - key: DATABASE_URL
+        fromDatabase: { name: superstep-db, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: superstep-kv, property: connectionString }
+      - key: STUDIO_WORKER
+        value: "0"
+      - key: STUDIO_ADMIN_EMAILS
+        sync: false
+      - key: STUDIO_PUBLIC_URL
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+  - type: worker
+    name: superstep-worker
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: python -m app.worker
+    plan: starter
+    autoDeployTrigger: "off"
+    envVars:
+      - fromGroup: superstep-shared
+      - key: DATABASE_URL
+        fromDatabase: { name: superstep-db, property: connectionString }
+      - key: REDIS_URL
+        fromService: { type: keyvalue, name: superstep-kv, property: connectionString }
+      - key: OPENAI_API_KEY
+        sync: false
+  - type: keyvalue
+    name: superstep-kv
+    plan: starter
+    maxmemoryPolicy: noeviction  # queued runs must not be evicted
+    ipAllowList: []  # private network only
+
+databases:
+  - name: superstep-db
+    plan: basic-256mb
+    postgresMajorVersion: "17"

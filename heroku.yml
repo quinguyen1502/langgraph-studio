@@ -1,0 +1,12 @@
+# Heroku container build (app.json sets "stack": "container"). The image's CMD serves the UI, /api and /ws on $PORT.
+# Heroku has no persistent disk, so app.json adds Heroku Postgres (DATABASE_URL). Optional worker: add Heroku
+# Key-Value Store (REDIS_URL) and run `heroku ps:scale worker=1` (docs/deploy/README.md#heroku).
+build:
+  docker:
+    web: Dockerfile
+    worker: Dockerfile
+run:
+  worker:
+    command:
+      - python -m app.worker
+    image: worker

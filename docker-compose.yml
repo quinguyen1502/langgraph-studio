@@ -48,6 +48,7 @@ services:
       STUDIO_PUBLIC_URL: ${STUDIO_PUBLIC_URL:-}
       STUDIO_APPROVAL_TTL: ${STUDIO_APPROVAL_TTL:-86400}
       STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:-}
+      STUDIO_ADMIN_PASSWORD: ${STUDIO_ADMIN_PASSWORD:-}  # first admin in production; empty = generated, printed once in the log
       # RBAC (TASK-0014): role of new accounts; "Add to Slack" app credentials (empty = paste bot tokens only)
       STUDIO_DEFAULT_ROLE: ${STUDIO_DEFAULT_ROLE:-editor}
       SLACK_CLIENT_ID: ${SLACK_CLIENT_ID:-}

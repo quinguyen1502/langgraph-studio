@@ -88,6 +88,16 @@ Editor runs execute in the API process and stream events over WebSocket. API
 triggers, schedules and recovered runs go through the queue to a worker.
 Details: [Architecture](https://quinguyen1502.github.io/superstep/reference/architecture/).
 
+## Deploy
+
+Deploy the all-in-one image (UI, API and WebSocket on one port; SQLite on a volume or Postgres):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/quinguyen1502/superstep)
+
+Railway, Coolify, Dokploy, Postgres and worker variants, the first admin account and the variables:
+[`docs/deploy/`](docs/deploy/README.md). Code nodes there run on the host (no Docker sandbox); read the guide first.
+
 ## Documentation
 
 | Topic | Handbook section |

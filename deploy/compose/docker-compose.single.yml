@@ -1,0 +1,23 @@
+# All-in-one image with SQLite on a volume: for Coolify, Dokploy or any Docker host (docs/deploy/README.md).
+# Usage: JWT_SECRET=... STUDIO_SECRET_KEY=... STUDIO_ADMIN_EMAILS=you@example.com docker compose -f deploy/compose/docker-compose.single.yml up -d
+# Postgres: set DATABASE_URL (postgres://user:pass@host:5432/db). Code nodes use the subprocess runtime here; for
+# Docker-sandboxed Code nodes deploy the repository's docker-compose.yml instead.
+services:
+  superstep:
+    image: ${SUPERSTEP_IMAGE:-ghcr.io/quinguyen1502/superstep:latest}
+    build: { context: ../.., dockerfile: Dockerfile }
+    ports: ["${PORT:-8000}:8000"]
+    environment:
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      STUDIO_SECRET_KEY: ${STUDIO_SECRET_KEY:?set STUDIO_SECRET_KEY}
+      STUDIO_ADMIN_EMAILS: ${STUDIO_ADMIN_EMAILS:-}
+      STUDIO_ADMIN_PASSWORD: ${STUDIO_ADMIN_PASSWORD:-}
+      STUDIO_PUBLIC_URL: ${STUDIO_PUBLIC_URL:-}
+      DATABASE_URL: ${DATABASE_URL:-}
+      REDIS_URL: ${REDIS_URL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes: [superstep-data:/data]
+    restart: unless-stopped
+
+volumes:
+  superstep-data:

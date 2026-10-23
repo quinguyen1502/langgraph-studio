@@ -64,16 +64,33 @@ def test_static_checks(host):
 
 
 def test_allowlist_from_settings(host, monkeypatch):
-    monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod, jsr:@std/path")
-    ok = 'import { z } from "npm:zod@3"\nimport { join } from "jsr:@std/path/join"\nexport const main = () => 1'
+    monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod@3, jsr:@std/path@1")
+    ok = ('import { z } from "npm:zod@3"\nimport { y } from "npm:zod@3.25.1"\nimport { join } from "jsr:@std/path@1/join"\n'
+          'export const main = () => 1')
     assert cr.problems(ok, "typescript") == []
-    assert "allowed: npm:zod, jsr:@std/path" in cr.problems('import x from "npm:zodiac"\nexport const main = () => 1', "typescript")[0]
+    p = lambda imp: cr.problems(f'import x from "{imp}"\nexport const main = () => 1', "typescript")
+    assert "allowed: npm:zod@3, jsr:@std/path@1" in p("npm:zodiac@3")[0]
+    assert p("npm:zod") == ['import "npm:zod" needs a version: use "npm:zod@3"']  # Deno would pick the newest
+    assert p("npm:zod@4") == ['import "npm:zod@4": version 4 is not available, use "npm:zod@3"']
+    assert p("npm:zod@30") == ['import "npm:zod@30": version 30 is not available, use "npm:zod@3"']
+    assert p("jsr:@std/path/join") == ['import "jsr:@std/path/join" needs a version: use "jsr:@std/path@1"']
+    assert p("npm:zod@^3")[0].endswith('use "npm:zod@3"')
+
+
+def test_import_check_on_save(host, monkeypatch):
+    monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod@3")
+    errs = validate(wf('import { z } from "npm:zod"\nexport const main = () => 1'))
+    assert 'Node c: import "npm:zod" needs a version: use "npm:zod@3"' in errs
+    assert not [e for e in validate(wf('import { z } from "npm:zod@3"\nexport const main = () => 1')) if "import" in e]
+    assert L.import_problem("npm:zod", ["npm:zod@3"]) == 'import "npm:zod" needs a version: use "npm:zod@3"'
+    assert L.import_problem("npm:zod@3/mini", ["npm:zod@3"]) is None
+    assert L.import_problem("npm:zod@3", ["npm:zod"]) == 'import "npm:zod@3": use "npm:zod" (no version)'
 
 
 def test_default_packages_follow_the_runtime(monkeypatch):
     monkeypatch.delenv("STUDIO_CODE_TS_PACKAGES", raising=False); monkeypatch.delenv("STUDIO_CODE_TS_DENO_DIR", raising=False)
     monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1"); monkeypatch.setenv("STUDIO_CODE_RUNTIME", "docker")
-    assert L.LANGUAGES["typescript"].packages() == ["npm:zod", "npm:date-fns"]  # cached in studio-code-ts:1
+    assert L.LANGUAGES["typescript"].packages() == ["npm:zod@3", "npm:date-fns@4"]  # pinned, cached in studio-code-ts:1
     monkeypatch.setenv("STUDIO_CODE_RUNTIME", "subprocess")
     assert L.LANGUAGES["typescript"].packages() == []  # the host has no cache unless STUDIO_CODE_TS_DENO_DIR is set
 
@@ -173,10 +190,10 @@ def test_allowlisted_npm_package_from_a_cache(host, monkeypatch, tmp_path_factor
     p = subprocess.run([DENO, "cache", "--no-config", "--no-lock", str(deps)], env={**os.environ, "DENO_DIR": str(cache)},
                        capture_output=True, text=True, timeout=120)
     if p.returncode != 0: pytest.skip(f"cannot fill a Deno cache here (no network?): {p.stderr[-200:]}")
-    monkeypatch.setenv("STUDIO_CODE_TS_DENO_DIR", str(cache)); monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod")
+    monkeypatch.setenv("STUDIO_CODE_TS_DENO_DIR", str(cache)); monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod@3")
     assert run_ts('import { z } from "npm:zod@3"\nexport function main(s) { return z.string().min(2).parse(s.m) }', {"m": "ok"}).value == "ok"
-    monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod,npm:left-pad")  # allowed but not cached: still cannot load
-    assert fails('import pad from "npm:left-pad"\nexport const main = () => pad("1", 3)').code == "CODE_INVALID"
+    monkeypatch.setenv("STUDIO_CODE_TS_PACKAGES", "npm:zod@3,npm:left-pad@1")  # allowed but not cached: still cannot load
+    assert fails('import pad from "npm:left-pad@1"\nexport const main = () => pad("1", 3)').code == "CODE_INVALID"
 
 
 @needs_deno
@@ -208,7 +225,7 @@ def ts_sandbox(monkeypatch):
 
 
 def test_docker_runs_typescript_and_its_packages(ts_sandbox):
-    r = run_ts('import { z } from "npm:zod"\nimport { addDays } from "npm:date-fns"\n'
+    r = run_ts('import { z } from "npm:zod@3"\nimport { addDays } from "npm:date-fns@4"\n'
                'export function main(s: { message: string }) { return [z.string().parse(s.message), addDays(new Date(0), 1).toISOString()] }',
                {"message": "hi"})
     assert r.value == ["hi", "1970-01-02T00:00:00.000Z"] and r.runtime == "docker"

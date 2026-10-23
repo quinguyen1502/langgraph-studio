@@ -87,9 +87,12 @@ def _locked(name: str, network: str, memory: str, cpus: str, pids: int) -> List[
     ]
 
 
-def build_code(*, name: str, image: str, command: List[str], memory: str, cpus: str, pids: int) -> List[str]:
-    """Tool node Code mode (TASK-0053): no network, no mounts, and a fixed environment that holds no secret."""
-    env = ["-e", "HOME=/tmp", "-e", "PYTHONUNBUFFERED=1", "-e", "PYTHONDONTWRITEBYTECODE=1"]
+def build_code(*, name: str, image: str, command: List[str], memory: str, cpus: str, pids: int,
+               environment: Optional[Dict[str, str]] = None) -> List[str]:
+    """Tool node Code mode (TASK-0053): no network, no mounts, and a fixed environment that holds no secret.
+    `environment` comes from the language (TASK-0080); Python's is the default."""
+    fixed = environment if environment is not None else {"HOME": "/tmp", "PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    env = [x for k, v in fixed.items() for x in ("-e", f"{k}={v}")]
     return _locked(name, "none", memory, cpus, pids) + env + ["-w", "/tmp", image] + command
 
 

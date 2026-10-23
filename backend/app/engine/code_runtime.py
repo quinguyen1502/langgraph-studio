@@ -112,11 +112,11 @@ def _bytes(size: str) -> int:
     return int(float(m.group(1)) * 1024 ** "_kmg".index(m.group(2) or "_"))
 
 
-def _rlimits(memory: int, seconds: int, pids: int) -> Callable[[], None]:
+def _rlimits(limits: List[tuple]) -> Callable[[], None]:
     def apply() -> None:  # runs in the child between fork and exec (Linux only)
         import resource
-        for lim, val in ((resource.RLIMIT_AS, memory), (resource.RLIMIT_CPU, seconds), (resource.RLIMIT_NOFILE, 64), (resource.RLIMIT_NPROC, pids)):
-            try: resource.setrlimit(lim, (val, val))
+        for name, val in limits:
+            try: resource.setrlimit(getattr(resource, name), (val, val))
             except (ValueError, OSError): pass
     return apply
 
@@ -126,7 +126,7 @@ def _host_process(workdir: str, seconds: float, lang: "langs.CodeLanguage") -> D
     env = {"HOME": workdir, "TMPDIR": workdir, "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", **lang.host_env(workdir)}
     kw: Dict[str, Any] = {"cwd": workdir, "env": env, "start_new_session": True}
     if sys.platform.startswith("linux"):
-        kw["preexec_fn"] = _rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids())
+        kw["preexec_fn"] = _rlimits(lang.host_rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids()))
     return kw
 
 
@@ -178,14 +178,15 @@ def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout:
                 out, err, code, stopped = _exchange(lang.host_command(tmp), name, payload, limit, cancelled, _host_process(tmp, limit, lang))
         else:
             argv = container.build_code(name=name, image=lang.image(), command=lang.command(),
-                                        memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids())
+                                        memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids(),
+                                        environment=lang.container_env())
             out, err, code, stopped = _exchange(argv, name, payload, limit, cancelled)
     finally: slot.release()
     ms = round((time.perf_counter() - t0) * 1000, 2)
     if stopped == "timeout": raise CodeFailure("CODE_TIMEOUT", {"runtime": runtime}, node=node, seconds=f"{limit:g}")
     if stopped == "cancelled": raise AppError("CODE_FAILED", node=node, error="the run was cancelled")
     line = next((x for x in reversed(out.splitlines()) if x.strip()), "")
-    if code in (137, -9) and not line: raise CodeFailure("CODE_MEMORY", {"runtime": runtime}, node=node, limit=config.code_memory())
+    if code in lang.memory_exit_codes and not line: raise CodeFailure("CODE_MEMORY", {"runtime": runtime}, node=node, limit=config.code_memory())
     if len(line.encode()) > RESULT_MAX + STDOUT_MAX: raise AppError("CODE_TOO_LARGE", node=node, what="result", max_kb=RESULT_MAX // 1024)
     try: res = json.loads(line)
     except ValueError:

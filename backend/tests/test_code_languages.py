@@ -58,7 +58,7 @@ def test_runtime_facts_list_each_language(on):
     c = TestClient(app)
     tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
     r = c.get("/api/meta/runtime", headers={"Authorization": f"Bearer {tok}"}).json()["data"]
-    assert [x["id"] for x in r["languages"]] == ["python"] and r["languages"][0]["available"] is True
+    assert [x["id"] for x in r["languages"]] == ["python", "typescript"] and r["languages"][0]["available"] is True  # TypeScript since TASK-0080
     assert r["languages"][0]["starter"] == r["starter"]  # the top level stays Python's, as before
 
 

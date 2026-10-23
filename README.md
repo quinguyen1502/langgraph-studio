@@ -1,9 +1,16 @@
-# Superstep
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-lockup-dark.svg">
+    <img src="frontend/public/brand/superstep-lockup.svg" alt="Superstep" width="320">
+  </picture>
 
-[![CI](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg)](https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml)
-[![Handbook](https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg)](https://quinguyen1502.github.io/superstep/)
+  <p>
+    <a href="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+    <a href="https://quinguyen1502.github.io/superstep/"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg" alt="Handbook"></a>
+  </p>
 
-**English** · [Tiếng Việt](README.vi.md)
+  <b>English</b> · <a href="README.vi.md">Tiếng Việt</a>
+</div>
 
 Superstep is a self-hosted platform for building LangGraph workflows in
 the browser and running them as services. Workflows are JSON documents that

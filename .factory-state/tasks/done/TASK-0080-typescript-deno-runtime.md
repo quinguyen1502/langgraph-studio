@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0080
-- Status: review (draft PR, stacked; REV-0073, QA-0073)
+- Status: done (PR #110)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -33,3 +33,7 @@ Run `export function main(state)` written in TypeScript with the same contract, 
 ## Tests
 
 - `tests/test_code_typescript.py`, parametrised language tests.
+
+## Progress Log
+
+- 2026-10-23: CI fix: moved the inline comment off the USER line in docker/studio-code-ts/Dockerfile (Docker parsed it as part of the user); owner approved the merge; merged into develop (PR #110).

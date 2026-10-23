@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0079
-- Status: review (draft PR, stacked; REV-0072, QA-0072)
+- Status: done (PR #109)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -36,3 +36,7 @@ Make the Tool node Code mode language-pluggable without changing what Python use
 ## Tests
 
 - `tests/test_code_languages.py` (8 tests); existing Code-mode tests unchanged in behaviour (monkeypatched `unavailable` now accepts the language argument).
+
+## Progress Log
+
+- 2026-10-23: merged into develop (PR #109, merge commit 9ff7259); marked done in PR #110 since #109 is already merged.

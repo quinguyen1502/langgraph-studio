@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { Workflow, Loader2, AlertCircle, Clock, CircleCheck } from 'lucide-react'
+import { Loader2, AlertCircle, Clock, CircleCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { PasswordRules } from '@/components/password-rules'
 import { passwordOk } from '@/lib/password'
+import { LogoMark } from '@/components/logo'
 
 const safeNext = (n: string | null) => (n && n.startsWith('/') && !n.startsWith('//') && !n.startsWith('/login') && !n.startsWith('/register') ? n : '/workflows')
 
@@ -44,7 +45,7 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
     <div className="absolute top-4 right-4 flex gap-1"><LanguageSwitcher /><ThemeToggle /></div>
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-2 rounded-lg bg-primary text-primary-foreground p-2 w-fit"><Workflow className="size-5" /></div>
+        <LogoMark className="mx-auto mb-2 size-10" />
         <CardTitle className="text-xl">{t(isLogin ? 'auth.loginTitle' : 'auth.registerTitle')}</CardTitle>
         <CardDescription>{t(isLogin ? (demo ? 'auth.loginHint' : 'auth.loginPlain') : 'auth.registerHint')}</CardDescription>
       </CardHeader>

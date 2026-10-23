@@ -3,7 +3,7 @@
 import type { ComponentType } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Navigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Workflow } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { LanguageSwitcher } from '@/components/language-switcher'
 import { ThemeToggle } from '@/components/theme-toggle'
@@ -20,6 +20,7 @@ import { TeamsSection } from './TeamsSection'
 import { ActivitySection } from './ActivitySection'
 import { can, useMe } from '@/lib/rbac'
 import { SECTIONS, type SectionId } from './sections'
+import { Logo } from '@/components/logo'
 
 const COMPONENTS: Record<SectionId, ComponentType> = {
   profile: ProfileSection, channels: ChannelsSection, accounts: AccountsSection, audit: AuditSection, knowledge: KnowledgeSection,
@@ -34,7 +35,7 @@ export function SettingsPage() {
   const Component = COMPONENTS[current.id]
   return <div className="min-h-dvh bg-background">
     <header className="flex h-14 items-center gap-3 border-b px-6">
-      <Link to="/workflows" className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Workflow className="size-4" /></div>Superstep</Link>
+      <Link to="/workflows"><Logo /></Link>
       <div className="ml-auto flex items-center gap-1"><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
     </header>
     <div className="mx-auto flex max-w-6xl flex-col gap-6 p-6 md:flex-row">

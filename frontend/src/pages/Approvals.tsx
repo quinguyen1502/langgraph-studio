@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
-import { ArrowLeft, CircleCheck, Inbox, Loader2, Workflow } from 'lucide-react'
+import { ArrowLeft, CircleCheck, Inbox, Loader2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import { UserMenu } from '@/components/user-menu'
 import { api } from '@/lib/api'
 import { INBOX_POLL_MS, type InboxItem } from '@/lib/approvals'
 import { fmtDate } from '@/lib/i18n'
+import { Logo } from '@/components/logo'
 
 export function ApprovalsPage() {
   const { t } = useTranslation()
@@ -37,7 +38,7 @@ export function ApprovalsPage() {
   }
   return <div className="min-h-dvh bg-background text-foreground">
     <header className="flex h-14 items-center gap-3 border-b px-6">
-      <Link to="/workflows" className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary p-1.5 text-primary-foreground"><Workflow className="size-4" /></div>Superstep</Link>
+      <Link to="/workflows"><Logo /></Link>
       <div className="ml-auto flex items-center gap-1"><PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
     </header>
     <main className="mx-auto max-w-3xl space-y-4 p-6" id="approvals-page">

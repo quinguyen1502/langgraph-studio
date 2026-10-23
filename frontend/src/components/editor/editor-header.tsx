@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react'
-import { Redo2, Undo2, Play, Save, Workflow, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square } from 'lucide-react'
+import { Redo2, Undo2, Play, Save, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -26,6 +26,7 @@ import { NotificationBell } from '@/components/notification-bell'
 import { ShortcutCheatsheet } from '@/components/shortcut-cheatsheet'
 import { Tip } from '@/components/tip'
 import { useStudioCtx } from './studio-context'
+import { LogoMark } from '@/components/logo'
 
 const isMacPlatform = isMac()
 
@@ -39,7 +40,7 @@ export function EditorHeader() {
       <div className="mr-3 flex min-w-0 items-center gap-2">
         <Tip tip={t('editor.backToList')}><Button variant="ghost" size="icon" asChild><Link to="/workflows" id="back-btn"><ArrowLeft /></Link></Button></Tip>
         {/* the product name hides when its column is too narrow instead of running under the name field */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 font-semibold" id="header-brand"><div className="shrink-0 rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>
+        <div className="flex min-w-0 flex-1 items-center gap-2 font-semibold" id="header-brand"><LogoMark />
           <div className="@container min-w-0 flex-1"><span className="hidden whitespace-nowrap @[8.5rem]:inline">Superstep</span></div></div>
       </div>
       <div className="flex min-w-0 items-center gap-2">

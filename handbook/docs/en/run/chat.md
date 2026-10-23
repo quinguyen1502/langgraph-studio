@@ -57,7 +57,9 @@ images from other sites are not shown, and links open in a new tab.
 - **View as** at the top switches the view. *Workflow builder* shows every step
   with its full input and output (click a step to open it); *Chat visitor*
   previews exactly what visitors see on the public chat: what **Steps shown to
-  visitors** allows.
+  visitors** allows. In a narrow panel the switch shows a short **Builder** or
+  **Visitor** label and also holds **Chat settings**; while you preview as a
+  visitor, a strip above the thread says so, with **Back to builder view**.
 - Each message is a run in the run history (**Run → View all**) with the *Chat*
   badge, so you can open its full trace there.
 - Chat uses the saved workflow: save your changes before you try them.

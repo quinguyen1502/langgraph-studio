@@ -1855,12 +1855,16 @@
     "views": {
       "builder": {
         "title": "Người dựng workflow",
-        "desc": "Thấy đầy đủ mọi bước, kèm input và output."
+        "desc": "Thấy đầy đủ mọi bước, kèm input và output.",
+        "short": "Người dựng"
       },
       "visitor": {
         "title": "Khách chat",
-        "desc": "Xem trước đúng như khách thấy trên trang chat công khai, theo cài đặt Chat."
+        "desc": "Xem trước đúng như khách thấy trên trang chat công khai, theo cài đặt Chat.",
+        "short": "Khách"
       }
-    }
+    },
+    "visitorBanner": "Bạn đang xem trước như khách chat",
+    "visitorExit": "Về góc nhìn người dựng"
   }
 }

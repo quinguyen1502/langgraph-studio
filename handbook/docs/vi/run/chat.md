@@ -58,7 +58,9 @@ từ trang khác không hiện, link mở ở tab mới.
 - **Xem dưới góc nhìn** ở trên cùng đổi cách xem. *Người dựng workflow* thấy đầy
   đủ mọi bước, kèm input và output (bấm vào một bước để mở); *Khách chat* xem
   trước đúng như khách thấy trên trang chat công khai: những gì **Bước hiện cho
-  người chat** cho phép.
+  người chat** cho phép. Khi khung Chat hẹp, nút đổi cách xem hiện nhãn ngắn
+  **Người dựng** hoặc **Khách** và chứa luôn **Cài đặt Chat**; khi đang xem như
+  khách, một dải phía trên cuộc trò chuyện báo điều đó, kèm **Về góc nhìn người dựng**.
 - Mỗi tin nhắn là một run trong lịch sử run (**Chạy → Xem tất cả**) với nhãn
   *Chat*, nên bạn mở được trace đầy đủ ở đó.
 - Chat dùng workflow đã lưu: hãy lưu thay đổi trước khi thử.

@@ -3,11 +3,11 @@
  *  the Chat settings give visitors. Runs use the saved workflow, like a chat trigger. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Settings2, SquarePen, Trash2, UserRound, Workflow } from 'lucide-react'
+import { AlertCircle, Eye, Settings2, SquarePen, Trash2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tip } from '@/components/tip'
@@ -55,17 +55,20 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
       </nav></ScrollArea>
     </aside>}
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="chat-toolbar">
+      <div className={cn("flex h-11 shrink-0 items-center border-b px-3", compact ? "gap-1" : "gap-2")} id="chat-toolbar">
         {compact
-          // compact: an icon trigger keeps the row for the session picker; the menu still names and explains both views
+          // compact: a short "Builder" / "Visitor" trigger keeps the row for the session picker; its menu names and explains
+          // both views and holds Chat settings
           ? <DropdownMenu><Tip tip={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}><DropdownMenuTrigger asChild>
-              <Button size="icon-sm" variant="ghost" id="chat-view" aria-label={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}>{view === 'builder' ? <Workflow /> : <UserRound />}</Button>
+              <Button size="sm" variant="ghost" id="chat-view" aria-label={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}>{t(`chat.views.${view}.short`)}</Button>
             </DropdownMenuTrigger></Tip>
             <DropdownMenuContent align="start" className="w-72"><DropdownMenuLabel>{t('chat.viewAs')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={view} onValueChange={v => setView(v as ChatView)}>
                 {(['builder', 'visitor'] as const).map(v => <DropdownMenuRadioItem key={v} value={v} id={`chat-view-${v}`}>
                   <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></DropdownMenuRadioItem>)}
-              </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+              </DropdownMenuRadioGroup>
+              {canConfigure && <><DropdownMenuSeparator /><DropdownMenuItem id="chat-settings-btn" onSelect={() => setCfg(true)}><Settings2 />{t('chat.settings.title')}</DropdownMenuItem></>}
+            </DropdownMenuContent></DropdownMenu>
           : <Select value={view} onValueChange={v => setView(v as ChatView)}>
             <SelectTrigger size="sm" variant="ghost" className="w-auto min-w-0 shrink" id="chat-view" aria-label={t('chat.viewAs')}><SelectValue>{t(`chat.views.${view}.title`)}</SelectValue></SelectTrigger>
             <SelectContent position="popper" align="start"><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
@@ -74,18 +77,21 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
             </SelectGroup></SelectContent></Select>}
         <span className={cn('truncate text-xs text-muted-foreground', compact && 'hidden')} id="chat-mode-hint">{t(`chat.stepsHint.${mode}`)}</span>
         {dirty && !compact && <span className="truncate text-xs text-warning" id="chat-unsaved">{t('chat.unsaved')}</span>}
-        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" variant="ghost" className="min-w-32 flex-1" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
+        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" variant="ghost" className="min-w-32 flex-1 justify-start" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
           <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.title || t('chat.untitled')}</SelectItem>)}</SelectContent></Select>
           {newChat}</>}
         {!compact && <span className="ml-auto" />}
-        {canConfigure && <Tip tip={t('chat.settings.title')}><Button size="icon-sm" variant="ghost" id="chat-settings-btn" aria-label={t('chat.settings.title')} onClick={() => setCfg(true)}><Settings2 /></Button></Tip>}{actions}
+        {canConfigure && !compact && <Tip tip={t('chat.settings.title')}><Button size="icon-sm" variant="ghost" id="chat-settings-btn" aria-label={t('chat.settings.title')} onClick={() => setCfg(true)}><Settings2 /></Button></Tip>}{actions}
       </div>
       {(err || chat.error) && <Alert variant="destructive" className="m-3 w-auto"><AlertCircle /><AlertDescription id="chat-error-banner">{err || chat.error}</AlertDescription></Alert>}
       {off ? <div className="m-auto max-w-sm space-y-3 p-6 text-center" id="chat-off">
           <p className="text-sm text-muted-foreground">{t('chat.off')}</p>
           {canConfigure && <Button size="sm" id="chat-turn-on" onClick={() => setCfg(true)}><Settings2 />{t('chat.settings.open')}</Button>}</div>
-        : settings && <ChatThread turns={chat.session?.turns ?? []} mode={mode} settings={settings} events={chat.events} trace={chat.trace}
-            pending={chat.pending} running={chat.running} onAnswer={chat.answer} />}
+        : settings && <>{view === 'visitor' && <div className="flex shrink-0 items-center gap-2 border-b bg-muted/60 px-3 py-1.5 text-xs text-muted-foreground" id="chat-visitor-banner" role="status">
+            <Eye className="size-3.5 shrink-0" /><span className="min-w-0 flex-1 truncate">{t('chat.visitorBanner')}</span>
+            <Button size="xs" variant="link" id="chat-visitor-exit" onClick={() => setView('builder')}>{t('chat.visitorExit')}</Button></div>}
+          <ChatThread turns={chat.session?.turns ?? []} mode={mode} settings={settings} events={chat.events} trace={chat.trace}
+            pending={chat.pending} running={chat.running} onAnswer={chat.answer} /></>}
       {!off && <ChatComposer disabled={!settings || waiting?.answered_by === 'reviewer'} running={chat.running} onStop={chat.cancel}
         placeholder={waiting ? t(waiting.answered_by === 'reviewer' ? 'chat.waitingReviewer' : 'chat.answerPlaceholder') : undefined}
         onSend={text => waiting?.run_id ? chat.answer(waiting.run_id, text) : send(text)} />}

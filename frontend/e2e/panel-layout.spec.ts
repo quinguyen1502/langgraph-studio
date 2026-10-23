@@ -139,6 +139,16 @@ for (const lang of ['en', 'vi'] as const) {
     for (const r of row) { const b = (await r.boundingBox())!; expect(b.x + b.width, 'toolbar control past the panel edge').toBeLessThanOrEqual(tb.x + tb.width + 0.5) }
     await page.locator('#chat-view').click(); await expect(page.getByRole('menu')).toContainText(lang === 'vi' ? 'Xem dưới góc nhìn' : 'View as')
     await expect(page.locator('#chat-view-visitor')).toContainText(lang === 'vi' ? 'Khách chat' : 'Chat visitor')
+    await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Người dựng' : 'Builder')
     await page.locator('#chat-view-visitor').click(); await expect(page.locator('#chat-view')).toHaveAttribute('aria-label', lang === 'vi' ? 'Xem dưới góc nhìn: Khách chat' : 'View as: Chat visitor')
+    await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Khách' : 'Visitor')
+    // the session picker's chevron hugs its title
+    const val = (await page.locator('#chat-session-picker [data-slot=select-value]').boundingBox())!
+    const chev = (await page.locator('#chat-session-picker > svg').boundingBox())!
+    expect(chev.x - (val.x + val.width), 'chevron right after the title').toBeLessThanOrEqual(10)
+    // visitor view: a banner on top of the thread, one click back to the builder view
+    await expect(page.locator('#chat-visitor-banner')).toContainText(lang === 'vi' ? 'Bạn đang xem trước như khách chat' : "You're previewing what chat visitors see")
+    await page.locator('#chat-visitor-exit').click()
+    await expect(page.locator('#chat-visitor-banner')).toHaveCount(0); await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Người dựng' : 'Builder')
   })
 }

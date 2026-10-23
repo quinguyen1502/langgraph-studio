@@ -1855,12 +1855,16 @@
     "views": {
       "builder": {
         "title": "Workflow builder",
-        "desc": "See every step with full input and output."
+        "desc": "See every step with full input and output.",
+        "short": "Builder"
       },
       "visitor": {
         "title": "Chat visitor",
-        "desc": "Preview exactly what visitors see on the public chat, per Chat settings."
+        "desc": "Preview exactly what visitors see on the public chat, per Chat settings.",
+        "short": "Visitor"
       }
-    }
+    },
+    "visitorBanner": "You're previewing what chat visitors see",
+    "visitorExit": "Back to builder view"
   }
 }

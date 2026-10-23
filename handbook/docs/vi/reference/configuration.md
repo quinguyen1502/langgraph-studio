@@ -97,7 +97,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
 | `STUDIO_ENABLE_CODE_NODES` | `0` | Bật chế độ Code |
-| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, hoặc `subprocess` (không cách ly) |
+| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, hoặc `subprocess` (chạy trực tiếp trên server, không có Docker giới hạn quyền) |
 | `STUDIO_CODE_IMAGE` | `studio-code:1` | Image sandbox |
 | `STUDIO_CODE_PACKAGES` | theo image | Package hiện trong trình soạn thảo |
 | `STUDIO_CODE_MEMORY` | `256m` | Bộ nhớ mỗi lần gọi |
@@ -112,7 +112,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
 | `STUDIO_ENABLE_IMPORT` | `0` | Bật import |
-| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` chỉ dùng khi test (không cách ly) |
+| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` chỉ dùng khi test (chạy trực tiếp trên server, không có Docker giới hạn quyền) |
 | `STUDIO_IMPORT_DIR` | `~/.superstep/imports` | Thư mục job |
 | `STUDIO_IMPORT_HOST_DIR` | trống | Đường dẫn trên host của thư mục đó khi dùng Compose |
 | `STUDIO_IMPORT_IMAGE` | `python:3.12-slim` | Image sandbox |

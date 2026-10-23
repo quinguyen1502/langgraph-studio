@@ -63,7 +63,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | replay | xem lại | |
     | test case, test run | test case, run test | |
     | Python, TypeScript, Deno, npm, package, Web API | keep in English | Mode options read "Code (Python)" / "Code (TypeScript)" in both locales; "Ngôn ngữ" for a language label |
-    | Runs on host (subprocess Code runtime, was "Not isolated") | Chạy trực tiếp trên server; "Chạy trên server" on the canvas node | warning badge with a tooltip: "Code runs directly on the server, without Docker limiting its access. Use only for trusted code." / "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy." |
+    | Runs on host (subprocess Code runtime; never "not isolated" / "without isolation") | Chạy trực tiếp trên server; "Chạy trên server" on the canvas node; never "không cách ly" | longer texts say "without Docker limiting its access" / "không có Docker giới hạn quyền"; "cách ly" / "isolation" only for what the Docker sandbox does | warning badge with a tooltip: "Code runs directly on the server, without Docker limiting its access. Use only for trusted code." / "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy." |
 
 ## Review checklist
 

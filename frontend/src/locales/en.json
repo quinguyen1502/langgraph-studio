@@ -1116,7 +1116,7 @@
       "workflow_transfer": "Ownership transferred",
       "workflow_delete": "Workflow deleted",
       "policy_org_resources": "Org resource policy changed",
-      "system_code_runtime_subprocess": "Code nodes ran without isolation"
+      "system_code_runtime_subprocess": "Code nodes ran directly on the server (runs on host)"
     },
     "types": {
       "user": "User",
@@ -1553,11 +1553,11 @@
     "result": "Result ({{ms}} ms)",
     "stdout": "Printed output",
     "traceback": "Traceback",
-    "notIsolated": "Code runs directly on this server, without isolation: it can use the network and read files the server can read.",
+    "notIsolated": "Code runs directly on this server, without Docker limiting its access: it can use the network and read files the server can read. Use only for trusted code.",
     "notIsolatedShort": "Runs on host",
     "notIsolatedNode": "Runs on host",
     "notIsolatedTip": "Code runs directly on the server, without Docker limiting its access. Use only for trusted code.",
-    "runUnisolated": "Code nodes in this run ran on the server without isolation (subprocess runtime).",
+    "runUnisolated": "Code nodes in this run ran directly on the server, without Docker limiting their access (subprocess runtime).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Code nodes",
     "adminIntro": "Where Tool nodes in Code mode run, and with which limits.",

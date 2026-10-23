@@ -97,7 +97,7 @@ root lists every variable Compose passes; this page groups them.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `STUDIO_ENABLE_CODE_NODES` | `0` | Turn Code mode on |
-| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, or `subprocess` (not isolated) |
+| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, or `subprocess` (runs on host: no Docker limiting its access) |
 | `STUDIO_CODE_IMAGE` | `studio-code:1` | Sandbox image |
 | `STUDIO_CODE_PACKAGES` | the image's | Packages shown in the editor |
 | `STUDIO_CODE_MEMORY` | `256m` | Memory per call |
@@ -112,7 +112,7 @@ root lists every variable Compose passes; this page groups them.
 | Variable | Default | Meaning |
 | --- | --- | --- |
 | `STUDIO_ENABLE_IMPORT` | `0` | Turn import on |
-| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` only for tests (not isolated) |
+| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` only for tests (runs on host: no Docker limiting its access) |
 | `STUDIO_IMPORT_DIR` | `~/.superstep/imports` | Job directories |
 | `STUDIO_IMPORT_HOST_DIR` | empty | Host path of that directory under Compose |
 | `STUDIO_IMPORT_IMAGE` | `python:3.12-slim` | Sandbox image |

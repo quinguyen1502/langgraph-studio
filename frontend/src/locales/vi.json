@@ -1116,7 +1116,7 @@
       "workflow_transfer": "Chuyển quyền sở hữu",
       "workflow_delete": "Xoá workflow",
       "policy_org_resources": "Đổi chính sách tài nguyên tổ chức",
-      "system_code_runtime_subprocess": "Node Code chạy không cách ly"
+      "system_code_runtime_subprocess": "Node Code chạy trực tiếp trên server"
     },
     "types": {
       "user": "Người dùng",
@@ -1553,11 +1553,11 @@
     "result": "Kết quả ({{ms}} ms)",
     "stdout": "Nội dung đã in",
     "traceback": "Traceback",
-    "notIsolated": "Code chạy trực tiếp trên máy chủ này, không cách ly: nó có thể dùng mạng và đọc các file mà máy chủ đọc được.",
+    "notIsolated": "Code chạy trực tiếp trên máy chủ này, không có Docker giới hạn quyền: nó có thể dùng mạng và đọc các file mà máy chủ đọc được. Chỉ nên dùng cho code tin cậy.",
     "notIsolatedShort": "Chạy trực tiếp trên server",
     "notIsolatedNode": "Chạy trên server",
     "notIsolatedTip": "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy.",
-    "runUnisolated": "Node Code trong run này đã chạy trên máy chủ mà không cách ly (runtime subprocess).",
+    "runUnisolated": "Node Code trong run này đã chạy trực tiếp trên server, không có Docker giới hạn quyền (runtime subprocess).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Node Code",
     "adminIntro": "Nơi chạy node Tool ở chế độ Code và các giới hạn.",

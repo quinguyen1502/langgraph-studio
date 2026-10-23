@@ -43,13 +43,20 @@ def get_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workfl
 @router.post("/workflows/{wid}/versions/{n}/restore")
 def restore_version(wid: str, n: int, user=Depends(current_user), svc=Depends(workflow_service)): return svc.restore_version(wid, n, user["id"])
 
-# ---- export to Python (TASK-0070) ----
+# ---- export to code: Python (TASK-0070) and TypeScript / LangGraph.js (TASK-0082) ----
 @router.get("/workflows/{wid}/python")
-def python_code(wid: str, version: int | None = Query(None, ge=1), user=Depends(current_user), svc=Depends(workflow_service)):
-    return svc.python(wid, user["id"], version)
+def python_code(wid: str, version: int | None = Query(None, ge=1), language: str = Query("python", max_length=40),
+                user=Depends(current_user), svc=Depends(workflow_service)):
+    return svc.export(wid, user["id"], version, language)
 
-@router.get("/workflows/{wid}/export/python")
-def python_file(wid: str, version: int | None = Query(None, ge=1), user=Depends(current_user), svc=Depends(workflow_service)):
-    out = svc.python(wid, user["id"], version)
-    return PlainTextResponse(out["code"], media_type="text/x-python",
+@router.get("/workflows/{wid}/code")
+def workflow_code(wid: str, version: int | None = Query(None, ge=1), language: str = Query("python", max_length=40),
+                  user=Depends(current_user), svc=Depends(workflow_service)):
+    return svc.export(wid, user["id"], version, language)
+
+@router.get("/workflows/{wid}/export/{language}")
+def export_file(wid: str, language: str, version: int | None = Query(None, ge=1), user=Depends(current_user),
+                svc=Depends(workflow_service)):
+    out = svc.export(wid, user["id"], version, language)
+    return PlainTextResponse(out["code"], media_type=out["media_type"],
                              headers={"Content-Disposition": f'attachment; filename="{out["filename"]}"'})

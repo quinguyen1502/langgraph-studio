@@ -15,7 +15,7 @@ test('Code tab: Python of the saved version, the selected node highlighted, copy
   const code = page.locator('#code-view')
   await expect(code).toContainText('a LangGraph graph exported from Superstep')  // CodeMirror renders the lines in view
   await expect(page.locator('#code-file')).toHaveText(/^python_e2e_\d+\.py$/)
-  await expect(page.locator('#code-language')).toHaveText('Python')
+  await expect(page.locator('#code-export-language')).toHaveText('Python')
   await expect(page.locator('#code-version')).toHaveText('v1')
   await expect(page.locator('#code-hint')).toContainText('Chọn một node')
 
@@ -55,4 +55,28 @@ test('Code tab: none for an imported repository', async ({ page }) => {
   await expect(page.locator('#code-tab')).toHaveCount(0)
   await page.locator('#more-btn').click()
   await expect(page.locator('#code-btn')).toHaveAttribute('data-disabled', '')
+})
+
+test('Code tab: TypeScript (LangGraph.js) export, remembered, highlighted and downloaded as .ts', async ({ page }) => {
+  // TASK-0082 (REQ-0047): the language picker asks the same exporter API for LangGraph.js TypeScript
+  const H = await login(page)
+  const wid = await newWorkflow(page, H, SIMPLE(`TS export e2e ${Date.now()}`))
+  await page.goto(`/workflows/${wid}`)
+  await page.locator('#more-btn').click(); await page.locator('#code-btn').click()
+  await page.locator('#code-export-language').click(); await page.locator('#code-export-language-typescript').click()
+  const code = page.locator('#code-view')
+  await expect(code).toContainText('a LangGraph.js graph exported from Superstep')
+  await expect(page.locator('#code-file')).toHaveText(/^ts_export_e2e_\d+\.ts$/)
+  await expect(page.locator('#code-view')).toHaveAttribute('data-language', 'typescript')
+  await expect(page.locator('#code-download')).toHaveText('Tải .ts')
+
+  await page.locator('.react-flow__node[data-id="reply"]').click()
+  await expect(page.locator('.cm-node-mark').filter({ hasText: 'async function reply(state: State): Promise<Update> {' })).toHaveCount(1)
+  const dl = page.waitForEvent('download'); await page.locator('#code-download').click()
+  expect((await dl).suggestedFilename()).toMatch(/^ts_export_e2e_\d+\.ts$/)
+
+  await page.reload()  // the choice is remembered in this browser
+  await page.locator('#more-btn').click(); await page.locator('#code-btn').click()
+  await expect(page.locator('#code-export-language')).toHaveText('TypeScript')
+  await expect(code).toContainText('a LangGraph.js graph exported from Superstep')
 })

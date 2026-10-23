@@ -11,19 +11,16 @@ A Subgraph node becomes its child workflow's own compiled graph, added as a node
 The output is a pure function of its input: the same graph gives the same bytes.
 """
 from __future__ import annotations
-import ast, builtins, inspect, io, json, keyword, re, tokenize, unicodedata
-from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple
+import ast, builtins, inspect, io, json, keyword, re, tokenize
+from typing import Any, Dict, List, Optional
 from . import foreach
-from .templates import sanitize
+from .export_common import (TITLES, RECURSION, Export, Graph as _Graph, GraphWriter, camel as _camel, number as _number,
+                            one_line as _one_line, slug)
 from .templating import VAR_RE, _ONE_FILTER
 from .tools import TOOLS
 
 PY_TYPES = {"string": "str", "number": "float", "integer": "int", "boolean": "bool", "object": "dict", "list": "list"}
 REDUCERS = {"append": "append_items", "merge": "merge_objects", "add": "add_numbers"}
-SKIP = ("start", "end", "note")
-TITLES = {"llm": "LLM", "foreach": "For each", "mcp": "MCP", "email": "Send email", "subgraph_exit": "Subgraph exit"}  # canvas nodes that are not LangGraph nodes
-RECURSION = 25  # LangGraph's default step limit
 
 # names the file defines or imports: node functions never take them
 RESERVED = set(dir(builtins)) | set(keyword.kwlist) | set(keyword.softkwlist) | {
@@ -34,21 +31,6 @@ RESERVED = set(dir(builtins)) | set(keyword.kwlist) | set(keyword.softkwlist) | 
     "EXAMPLE_INPUT", "EXAMPLE_ANSWERS", "main", "graph", "builder", *REDUCERS.values()}
 
 
-@dataclass
-class Export:
-    code: str
-    nodes: Dict[str, List[List[int]]] = field(default_factory=dict)  # top-level node id -> 1-based [first, last] line ranges
-    names: Dict[str, str] = field(default_factory=dict)  # node id ("sub/inner" inside subgraphs) -> LangGraph node name
-    filename: str = "workflow.py"
-
-
-def slug(text: str, fallback: str = "node") -> str:
-    s = unicodedata.normalize("NFKD", str(text or "").replace("đ", "d").replace("Đ", "D"))
-    s = re.sub(r"[^a-z0-9]+", "_", "".join(c for c in s if not unicodedata.combining(c)).lower()).strip("_")
-    if not s: s = fallback
-    return f"{fallback}_{s}" if s[0].isdigit() else s
-
-
 RULE = re.compile(r"# --- (.+?) -+")
 WIDTH = 117
 
@@ -56,16 +38,6 @@ WIDTH = 117
 def _rule(title: str) -> str:
     """A section heading comment as wide as the code."""
     return f"# --- {title} ".ljust(WIDTH, "-")
-
-
-def _number(v: Any, kind: type = float) -> Any:
-    """`v` when it is a number (an int for `kind=int`), else None. Graph values never reach the code unchecked."""
-    if isinstance(v, bool) or not isinstance(v, (int, float)) or (kind is int and not isinstance(v, int)): return None
-    return v if v == v and abs(v) != float("inf") else None
-
-
-def _one_line(text: Any) -> str:
-    return " ".join(str(text or "").split())
 
 
 def _doc(text: Any) -> str:
@@ -106,22 +78,6 @@ def _indent_code(source: str, pad: str = "    ") -> List[str]:
     except (tokenize.TokenError, IndentationError, SyntaxError):
         pass
     return [ln if i in inside or not ln.strip() else pad + ln for i, ln in enumerate(lines, 1)]
-
-
-class _Names:
-    def __init__(self, taken):
-        self.used = set(RESERVED) | set(taken)
-
-    def take(self, base: str) -> str:
-        name = base if base not in self.used else f"{base}_node"
-        i = 2
-        while name in self.used: name, i = f"{base}_{i}", i + 1
-        self.used.add(name)
-        return name
-
-
-def _camel(name: str) -> str:
-    return "".join(p[:1].upper() + p[1:] for p in name.split("_") if p) or "Node"
 
 
 # ---- fixed parts of the file ------------------------------------------------------------------------------------
@@ -336,135 +292,27 @@ def add_numbers(current: Any, new: Any) -> float:
 # ---- the generator ------------------------------------------------------------------------------------------------
 
 
-class _Graph:
-    """One workflow (the exported one or a subgraph child), after `sanitize`, with its LangGraph names."""
+class _Writer(GraphWriter):
+    RESERVED = frozenset(RESERVED)
 
-    def __init__(self, raw: dict, title: str, wid: Optional[str]):
-        self.raw, self.title, self.wid = raw, title, wid
-        self.wf = sanitize(raw)
-        self.refs = {n["id"]: (n.get("data") or {}).get("workflow_id") or "" for n in raw.get("nodes") or []
-                     if isinstance(n, dict) and n.get("type") == "subgraph"}
-        self.nodes = {n["id"]: n for n in self.wf["nodes"]}
-        self.edges = [e for e in self.wf["edges"] if e["source"] in self.nodes and e["target"] in self.nodes]
-        self.names: Dict[str, str] = {}
-        self.cursors: Dict[str, str] = {}
-        self.fields: List[dict] = list(self.wf["state"])
-
-    def order(self) -> List[str]:
-        """Node ids in reading order: breadth first from Start along the edges, then the rest as stored."""
-        out: List[str] = []
-        queue = [i for i, n in self.nodes.items() if n["type"] == "start"]
-        while queue:
-            i = queue.pop(0)
-            if i in out: continue
-            out.append(i); queue += [e["target"] for e in self.edges if e["source"] == i]
-        return out + [i for i in self.nodes if i not in out]
-
-    def out(self, nid: str) -> List[dict]:
-        return [e for e in self.edges if e["source"] == nid and self.nodes[e["target"]]["type"] != "note"]
-
-
-class _Writer:
     def __init__(self, name: str, version: Optional[int], children: Dict[str, dict], example: Optional[dict]):
-        self.title, self.version = _one_line(name) or "Workflow", version
-        self.children, self.example = children, example or {}
-        self.lines: List[str] = []
-        self.spans: Dict[str, List[List[int]]] = {}
-        self.uses: set = set()
+        super().__init__(name, version, children, example)
         self.extra: Dict[str, str] = {}  # tool helpers: name -> source
         self.imports: set = set()  # modules the tool functions use
         self.taken: set = set()  # names the tool functions define
-        self.built: Dict[str, Tuple[_Graph, str, str]] = {}  # child workflow id -> (graph, build function, state class)
 
-    # -- output --
-    def add(self, text: str = "") -> None:
-        self.lines.extend(text.split("\n"))
-
-    def span(self, nid: Optional[str], start: int) -> None:
-        if nid is not None and len(self.lines) >= start: self.spans.setdefault(nid, []).append([start, len(self.lines)])
-
-    # -- names --
-    def name_graphs(self, g: _Graph, names: _Names) -> None:
-        for nid in g.order():
-            n = g.nodes[nid]
-            if n["type"] in SKIP: continue
-            g.names[nid] = names.take(slug((n.get("data") or {}).get("label") or nid, n["type"]))
-            if n["type"] == "foreach":
-                g.cursors[nid] = names.take(f"loop_{g.names[nid]}")
-            if n["type"] == "subgraph":
-                ref = g.refs.get(nid) or ""
-                if ref in self.children and ref not in self.built:  # each child once, even when used twice
-                    child = _Graph(self.children[ref], _one_line(self.children[ref].get("name")) or ref, ref)
-                    self.built[ref] = (child, "", "")
-                    self.name_graphs(child, names)
-                    base = slug(child.title, "subgraph")
-                    self.built[ref] = (child, names.take(f"build_{base}"), names.take(f"{_camel(base)}State"))
-
-    def all_fields(self, g: _Graph, seen: Tuple[str, ...] = ()) -> List[dict]:
-        """The graph's state fields and those of its subgraphs (shared by name, as the studio expands them)."""
-        out = list(g.fields); known = {f["name"] for f in out}
-        for nid, ref in g.refs.items():
-            if ref in self.built and ref not in seen:
-                for f in self.all_fields(self.built[ref][0], seen + (ref,)):
-                    if f["name"] not in known: out.append(f); known.add(f["name"])
-        return out
-
-    def expanded_names(self, g: _Graph, prefix: str = "", seen: Tuple[str, ...] = ()) -> Dict[str, str]:
-        out = {prefix + nid: name for nid, name in g.names.items()}
-        for nid, ref in g.refs.items():
-            if ref in self.built and ref not in seen:
-                out.update(self.expanded_names(self.built[ref][0], f"{prefix}{nid}/", seen + (ref,)))
-        return out
-
-    # -- file --
     def write(self, raw: dict) -> Export:
-        main = _Graph(raw, self.title, None)
         for g in [raw, *self.children.values()]:  # tool functions are copied in under their own names
             for n in g.get("nodes") or []:
                 d = (n.get("data") or {}) if isinstance(n, dict) else {}
                 if n.get("type") == "tool" and d.get("mode", "function") == "function": self.tool_source(d.get("function") or "")
-        taken = {f.get("name") for f in self.every_field(main)} | self.taken
-        self.name_graphs(main, _Names(taken))
-        graphs = self.children_first(main) + [main]
-        for g in graphs: self.scan(g)
+        main, graphs = self.prepare(raw, self.taken)
         self.body(graphs, main)
         self.lines = [_rule(m.group(1)) if (m := RULE.fullmatch(ln)) else ln for ln in self.lines]
         head = self.header()
         self.lines = head + self.lines
         spans = {nid: [[a + len(head), b + len(head)] for a, b in r] for nid, r in self.spans.items()}
         return Export("\n".join(self.lines).rstrip("\n") + "\n", spans, self.expanded_names(main), f"{slug(self.title, 'workflow')}.py")
-
-    def every_field(self, g: _Graph) -> List[dict]:
-        out = list(g.fields)
-        for c in self.children.values(): out += list(sanitize(c)["state"])
-        return out
-
-    def children_first(self, g: _Graph, seen: Optional[List[str]] = None) -> List[_Graph]:
-        """Subgraphs, deepest first, each once."""
-        seen = [] if seen is None else seen
-        for ref in g.refs.values():
-            if ref in self.built and ref not in seen:
-                seen.append(ref)
-                self.children_first(self.built[ref][0], seen)
-                seen.remove(ref); seen.append(ref)  # after its own children
-        return [self.built[r][0] for r in seen]
-
-    def scan(self, g: _Graph) -> None:
-        """What the file needs: helpers, stubs, reducers, imports."""
-        for f in self.all_fields(g):
-            if (f.get("reducer") or "replace") in REDUCERS: self.uses.add(f["reducer"])
-        for n in g.nodes.values():
-            t, d = n["type"], n.get("data") or {}
-            if t in ("llm", "human", "retriever", "decision", "email", "mcp") or (t == "tool" and d.get("mode") == "http"):
-                self.uses.add("templates")
-            if t in ("llm", "decision"): self.uses.add("model")
-            if t in ("condition", "decision"): self.uses.add("routing")
-            if t == "decision": self.uses.add("decide")
-            if t == "human": self.uses.add("human")
-            if t == "tool" and d.get("mode") == "code": self.uses.add("code")
-            if t == "retriever": self.uses.add("retrieve")
-            if t == "mcp": self.uses.add("call_mcp_tool")
-            if t == "email": self.uses.add("send_email")
 
     def tool_source(self, name: str) -> None:
         fn = TOOLS.get(name)
@@ -659,13 +507,6 @@ class _Writer:
             self.add(f"{_camel(name)}Input = TypedDict({lit(_camel(name) + 'Input')}, "
                      f"{{{', '.join(f'{lit(x)}: {self.ann(fields[x])}' for x in names)}}}, total=False)")
 
-    def inputs(self, g: _Graph, nid: str) -> List[str]:
-        """The node's input fields when they are all state fields (as `node_policy.input_schema`), else none."""
-        n = g.nodes[nid]; names = (n.get("data") or {}).get("input_fields")
-        known = {f["name"] for f in self.all_fields(g)}
-        ok = n["type"] != "subgraph" and isinstance(names, list) and names and all(x in known for x in names)
-        return list(names) if ok else []
-
     def router(self, g: _Graph, nid: str, cls: str) -> None:
         d = g.nodes[nid].get("data") or {}; fld = d.get("field") or ""
         labels = [e.get("label") for e in g.out(nid)]
@@ -710,14 +551,7 @@ class _Writer:
 
     def decision(self, g: _Graph, nid: str, cls: str, head: str) -> None:
         d = g.nodes[nid].get("data") or {}; name, const = g.names[nid], g.names[nid].upper()
-        qs = []
-        for q in d.get("questions") or []:
-            if not isinstance(q, dict): continue
-            item: Dict[str, Any] = {"id": q.get("id"), "type": q.get("type"), "instructions": q.get("instructions") or ""}
-            if q.get("type") == "choice": item["options"] = [o.get("label") for o in q.get("options") or [] if isinstance(o, dict)]
-            if q.get("type") == "score": item["levels"] = list(q.get("levels") or [])
-            if q.get("field"): item["field"] = q["field"]
-            qs.append(item)
+        qs = self.questions(d)
         self.add(f"{const}_TEXT = {lit(d.get('text') or '')}")
         self.add(f"{const}_QUESTIONS = {lit(qs)}")
         self.add("")
@@ -869,18 +703,7 @@ class _Writer:
             self.add(f"    return builder.compile({'cache=InMemoryCache()' if cache else ''})")
 
     def run(self, main: _Graph) -> None:
-        fields = {f["name"]: f for f in self.all_fields(main)}
-        names = self.expanded_names(main)
-        inp = self.example.get("input")
-        if not isinstance(inp, dict):
-            written = set()
-            from .validator import written as writes
-            for g in [main] + [c for c, _, _ in self.built.values()]:
-                for n in g.nodes.values(): written.update(writes(n))
-            empty = {"string": "", "number": 0, "integer": 0, "boolean": False, "list": [], "object": {}}
-            inp = {k: empty.get(f.get("type", "string"), "") for k, f in fields.items() if k not in written}
-        answers = {names[k]: list(v) for k, v in (self.example.get("answers") or {}).items() if k in names and v}
-        budget = max([foreach.step_budget(main.wf)] + [foreach.step_budget(c.wf) for c, _, _ in self.built.values()])
+        inp, answers, budget = self.example_run(main)
         has_human = "human" in self.uses
         self.add("")
         self.add("")

@@ -199,3 +199,9 @@ REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts wit
 - TASK-0075 Slack events and Telegram messages start `source="chat"` runs; thread replies (started, result, error, waiting), private refusals, dedupe, rate limit, audit. **merged** (PR #99, REV-0069, QA-0069).
 - TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
 - TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).
+
+## Vietnamese language quality
+
+REQ-0045, Approved 2026-10-23 (owner approved the glossary and fix plan steps 1-8; archive tags and branch pruning skipped), Implemented 2026-10-23.
+
+- TASK-0078 Glossary (ui-conventions rule 10), vi locale polish and natural-Vietnamese pass, locale parity/glossary test, README features, Vietnamese handbook wording. **merged** (PR #107).

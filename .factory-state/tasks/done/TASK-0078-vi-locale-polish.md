@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0078
-- Status: review (draft PR)
+- Status: done (PR #107)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -41,7 +41,9 @@ Apply the approved Vietnamese glossary to the UI, README and handbook, and guard
 
 - 2026-10-23: review written; owner approved the glossary and fix plan steps 1-8 (skip step 9).
 - 2026-10-23: implemented on `factory/task-0078-vi-locale-polish`; draft PR into develop.
+- 2026-10-23: follow-up commits: d2bd7db (owner, codeView.showing) and b6ae5f8 (114 literal strings rewritten, handbook and README wording).
+- 2026-10-23: owner approved the merge; merged into develop (PR #107).
 
 ## Handoff Notes
 
-- Not merged; needs owner review.
+- None.

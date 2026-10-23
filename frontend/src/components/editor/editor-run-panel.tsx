@@ -34,7 +34,7 @@ export function EditorRunPanel() {
   const saveCase = (rid: string) => api<Omit<TestCase, 'id' | 'last'>>(`/api/workflows/${wid}/tests/from-run/${rid}`, { method: 'POST' })
     .then(d => { setDraftErr(''); setDraft({ ...d, id: '', last: null }) }).catch(e => setDraftErr(e.message))
   const saveButton = (rid: string) => <Tip tip={t('tests.saveFromRun')}>
-    <Button size="icon" variant="ghost" className="size-6" data-testid="save-test" aria-label={t('tests.saveFromRun')} onClick={() => saveCase(rid)}><FlaskConical className="size-3.5" /></Button></Tip>
+    <Button size="icon-xs" variant="ghost" data-testid="save-test" aria-label={t('tests.saveFromRun')} onClick={() => saveCase(rid)}><FlaskConical className="size-3.5" /></Button></Tip>
   const finished = (s: string) => s !== 'running' && s !== 'queued' && s !== 'idle'
   return <section className="h-full min-h-0 flex flex-col">
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
@@ -53,7 +53,7 @@ export function EditorRunPanel() {
           {trace.waiting?.runId && !running && <HumanPanel waiting={trace.waiting} onRespond={r => respond(trace.waiting!.runId!, r)} />}
           <RunTrace trace={trace} events={log as any} meta={traceMeta} selected={traceSel} onSelect={sp => setTraceSel(sp?.key ?? null)}
             replay={replay ?? undefined} onExitReplay={() => { setReplay(null); setLog([]); setTraceSel(null) }}
-            actions={canSave && !running && trace.runId && finished(trace.status) ? <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs" id="trace-save-test"
+            actions={canSave && !running && trace.runId && finished(trace.status) ? <Button variant="ghost" size="xs" id="trace-save-test"
               onClick={() => saveCase(trace.runId!)}><FlaskConical className="size-3.5" />{t('tests.saveFromRun')}</Button> : undefined} />
         </TabsContent>
         <TabsContent value="history" className="flex-1 min-h-0">
@@ -61,7 +61,7 @@ export function EditorRunPanel() {
             {wid && !source && <div className="flex items-center gap-2 pb-1"><Switch id="history-tests" checked={testRuns !== null} onCheckedChange={showTests} />
               <Label htmlFor="history-tests" className="text-xs font-normal">{t('tests.showRuns')}</Label></div>}
             {!rows.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
-            {draftErr && <Alert variant="destructive" className="py-2"><AlertDescription>{draftErr}</AlertDescription></Alert>}
+            {draftErr && <Alert variant="destructive"><AlertDescription>{draftErr}</AlertDescription></Alert>}
             {rows.map(h => <div key={h.id} className="flex items-center gap-1">
               <button data-testid="history-row" onClick={() => openRun(h)}
               className="min-w-0 flex-1 flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">

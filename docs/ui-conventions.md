@@ -65,6 +65,26 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | Python, TypeScript, Deno, npm, package, Web API | keep in English | Mode options read "Code (Python)" / "Code (TypeScript)" in both locales; "Ngôn ngữ" for a language label |
     | Runs on host (subprocess Code runtime; never "not isolated" / "without isolation") | Chạy trực tiếp trên server; "Chạy trên server" on the canvas node; never "không cách ly" | longer texts say "without Docker limiting its access" / "không có Docker giới hạn quyền"; "cách ly" / "isolation" only for what the Docker sandbox does | warning badge with a tooltip: "Code runs directly on the server, without Docker limiting its access. Use only for trusted code." / "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy." |
 
+11. **Alignment & sizing** (TASK-0086, DEC-0055). Controls that share a row line up by construction, not by hand.
+    - **One size variant per row.** Button, Input, SelectTrigger, TabsList and Toggle in one row use the same shadcn size: the default size is 32px (`h-8`) for all of them (Button `default`/`icon`, Input, SelectTrigger `default`, TabsList), `sm` is 28px (Button `sm`/`icon-sm`, SelectTrigger `sm`, TabsList `sm`) and `xs` is 24px (Button `xs`/`icon-xs`). Inputs only come in 32px, so a row with an Input uses the default size.
+    - **Never hand-set `h-*`, `py-*`, `leading-*` or `text-[…]` on a shadcn control.** Use the `size` prop, or add a `cva` variant to the ui component (as Badge `size="sm"` and TabsList `size="sm"` do). Width, margin and layout classes (`w-*`, `flex-1`, `ml-auto`, `min-w-0`) are fine.
+    - **Icons** inside a control take their size from the component's own `[&_svg]` rule (`size-4`, smaller in `xs`/`sm`). Don't add `size-*` to an icon inside a Button or Badge. Icon + text is `items-center`, which every control already sets.
+    - **Mixed fonts or sizes on one line** (a mono id next to a time, a number next to a label) align on the text baseline: wrap them in `inline-flex items-baseline`, give them one size and line height, and use `tabular-nums` for numbers. Never `leading-none` to force them together: equal box centres do not give equal baselines.
+    - **Toolbars** are `flex items-center gap-2` with a fixed row height (`h-11`, `h-14`) instead of vertical padding, so a taller or shorter control cannot shift the row.
+    - Components whose size is their content (Skeleton, ScrollArea, Separator, ResizablePanel) are sized with classes as shadcn shows; layout containers that need an exception (an empty-state TableCell, a flush Card) carry `/* ui-class-ok: <reason> */` on the element.
+    - Checked by `npm run lint` (`scripts/check-ui-classes.mjs`, also on CI) and by `e2e/alignment.spec.ts` (`expectRowAligned`, `expectBaselineAligned` in `e2e/helpers/alignment.ts`, light and dark, en and vi).
+
+    | Don't | Do |
+    |---|---|
+    | `<Button size="sm" className="h-6 px-2 text-xs">` | `<Button size="xs">` |
+    | `<Input className="h-8" />` next to `<Button size="sm">` (32px vs 28px) | `<Input />` next to `<Button>` (both 32px) |
+    | `<SelectTrigger size="sm" className="h-7">` | `<SelectTrigger size="sm">` |
+    | `<Badge className="h-4 px-1 text-[10px]">` | `<Badge size="sm">` (add the variant in `ui/badge.tsx`) |
+    | `<TabsList className="h-7"><TabsTrigger className="h-5 text-xs">` | `<TabsList size="sm"><TabsTrigger>` |
+    | `<Button><Play className="size-3.5" />Run</Button>` | `<Button><Play />Run</Button>` |
+    | `<span className="leading-none">21:07</span><span className="font-mono text-xs leading-none">2959fe</span>` | `<span className="inline-flex items-baseline gap-1.5 text-xs"><span className="tabular-nums">21:07</span><span className="font-mono tabular-nums">2959fe</span></span>` |
+    | `<div className="flex gap-3 py-1.5">` toolbar | `<div className="flex h-11 items-center gap-2">` |
+
 ## Review checklist
 
 - [ ] No custom widget where shadcn has a component.
@@ -76,4 +96,5 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
 - [ ] Node fields rendered as `{{state.field}}` templates use `TemplateEditor`.
 - [ ] Warning/alert icons: destructive for danger, `variant="warning"` / `text-warning` for cautions; none left in the neutral default colour.
 - [ ] New vi strings follow the glossary (rule 10) and `npm test` passes the locale checks.
+- [ ] Controls in one row use one size variant, with no hand-set `h-*`/`py-*`/`leading-*`/`text-[…]` (`npm run lint` passes; any `ui-class-ok:` opt-out gives a reason), and `e2e/alignment.spec.ts` covers new toolbars.
 - [ ] Screenshots are taken in both light and dark mode for UI changes.

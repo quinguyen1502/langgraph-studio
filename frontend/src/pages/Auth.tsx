@@ -54,18 +54,18 @@ export function AuthPage({ mode }: { mode: 'login' | 'register' }) {
           {reset && !error && <div id="reset-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><CircleCheck className="size-4 shrink-0 text-success" />{t('auth.resetDone')}</div>}
           {expired && !error && <div id="expired-notice" role="status" className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><Clock className="size-4 shrink-0 text-warning" />{t('auth.expired')}</div>}
           {error && <Alert variant="destructive" id="auth-error"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
-          <div className="space-y-1.5"><Label htmlFor="email">{t('auth.email')}</Label><Input id="email" className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
+          <div className="space-y-1.5"><Label htmlFor="email">{t('auth.email')}</Label><Input id="email" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} placeholder="you@company.com" /></div>
           <div className="space-y-1.5"><Label htmlFor="password">{t('auth.password')}</Label>
-            <Input id="password" className="h-10" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby={isLogin ? undefined : 'pw-rules'} />
+            <Input id="password" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby={isLogin ? undefined : 'pw-rules'} />
             {!isLogin && <PasswordRules id="pw-rules" password={password} />}
             {isLogin && <div className="text-right"><Link to="/forgot-password" state={{ email }} id="forgot-link" className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground">{t('auth.forgot')}</Link></div>}
           </div>
           {!isLogin && <div className="space-y-1.5"><Label htmlFor="confirm">{t('auth.confirm')}</Label>
-            <Input id="confirm" className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
+            <Input id="confirm" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
             {mismatch && <p className="text-xs text-destructive">{t('auth.mismatch')}</p>}</div>}
         </CardContent>
         <CardFooter className="flex-col gap-3 mt-6">
-          <Button type="submit" id="auth-submit" size="lg" className="w-full h-11 text-base" disabled={!canSubmit}>{busy && <Loader2 className="animate-spin" />}{t(isLogin ? 'auth.login' : 'auth.register')}</Button>
+          <Button type="submit" id="auth-submit" size="lg" /* ui-class-ok: auth submit is a 44px full-width touch target, larger than Button lg */ className="w-full h-11 text-base" disabled={!canSubmit}>{busy && <Loader2 className="animate-spin" />}{t(isLogin ? 'auth.login' : 'auth.register')}</Button>
           <p className="text-sm text-muted-foreground">{t(isLogin ? 'auth.noAccount' : 'auth.haveAccount')}<Link className="underline text-foreground" to={next !== '/workflows' ? `${other}?next=${encodeURIComponent(next)}` : other}>{t(isLogin ? 'auth.register' : 'auth.login')}</Link></p>
         </CardFooter>
       </form>

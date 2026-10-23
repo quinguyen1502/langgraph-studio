@@ -50,7 +50,7 @@ function KbFields({ form, set, creds, idp }: { form: Form; set: (f: Form) => voi
     {form.credential_id && <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
       <Button type="button" variant="outline" size="sm" id={`${idp}-embed-test`} disabled={probe.busy} onClick={runProbe}><PlugZap />{t('kb.embedTest')}</Button>
       {probe.ok && <Badge variant="success" id={`${idp}-embed-ok`}><CircleCheck />{t('kb.embedOk', { dims: probe.ok.dims, ms: probe.ok.latency_ms })}</Badge>}
-      {probe.err && <Alert variant="destructive" id={`${idp}-embed-error`} className="py-2"><AlertCircle /><AlertDescription className="text-xs">{probe.err}</AlertDescription></Alert>}
+      {probe.err && <Alert variant="destructive" id={`${idp}-embed-error`}><AlertCircle /><AlertDescription className="text-xs">{probe.err}</AlertDescription></Alert>}
     </div>}
   </div>
 }

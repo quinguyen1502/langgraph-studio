@@ -81,8 +81,8 @@ export function CredentialsDialog({ trigger, onChanged }: { trigger?: React.Reac
             <div className="ml-auto flex shrink-0 items-center gap-1">
               <Button variant="ghost" size="sm" aria-label={t('creds.testAria', { name: c.name })}
                 onClick={() => run(s => setRowTest(r => ({ ...r, [c.id]: s })), () => credentialModels(c.id))}><PlugZap />{t('creds.test')}</Button>
-              <Button variant="ghost" size="icon" className="size-7" aria-label={t('creds.editAria', { name: c.name })} onClick={() => startEdit(c)}><Pencil /></Button>
-              <Button variant="ghost" size="icon" className="size-7" aria-label={t('creds.deleteAria', { name: c.name })} onClick={() => del(c)}><Trash2 /></Button>
+              <Button variant="ghost" size="icon-sm" aria-label={t('creds.editAria', { name: c.name })} onClick={() => startEdit(c)}><Pencil /></Button>
+              <Button variant="ghost" size="icon-sm" aria-label={t('creds.deleteAria', { name: c.name })} onClick={() => del(c)}><Trash2 /></Button>
             </div></div>
           {rowTest[c.id] && <ProbeStatus s={rowTest[c.id]} id={`cred-test-${c.id}`} />}
         </div>)}

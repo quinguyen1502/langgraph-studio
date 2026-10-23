@@ -89,7 +89,8 @@ def run_stream(wf: Dict[str, Any], inputs: Dict[str, Any], resolve=None, resume:
                 if isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("code_output"):
                     code_out[chunk["node"]] = chunk["code_output"]  # Code node stdout (TASK-0053), stored on node_finished
                 elif isinstance(chunk, dict) and chunk.get("node") in nodes and chunk.get("delta"):
-                    yield {"type": "node_token", "node": chunk["node"], "iteration": counts.get(chunk["node"], 1), "delta": chunk["delta"]}
+                    yield {"type": "node_token", "node": chunk["node"], "iteration": counts.get(chunk["node"], 1), "delta": chunk["delta"],
+                           "field": nodes[chunk["node"]]["data"].get("output_field")}  # the state field the text goes to (a chat's reply, TASK-0084)
                 continue
             if mode == "checkpoints":  # superstep boundary: the nodes that run next, all inputs settled
                 nxt = [n for n in (chunk.get("next") or []) if n in nodes]

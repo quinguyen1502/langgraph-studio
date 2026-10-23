@@ -1,0 +1,238 @@
+"""Web chat (TASK-0084, REQ-0048, DEC-0052..0054): a workflow answers a conversation, one run per message.
+
+A workflow's chat is a chat trigger of kind "web" (channel_id = place = "web"); its settings live in the trigger's
+`settings` JSON. Each message starts a `source="chat"` run (over the studio's run socket, so it streams) with
+{input_field: text, messages_field: the last `max_turns` exchanges + this message}. When the run settles,
+ChatRunService.on_settled (reply-once per settled state, as for Slack/Telegram) hands it to answer(), which writes the
+assistant turn: the reply field, the Human node's question, or the error.
+
+Phase 1 is the studio: signed-in users with the run right. `access` "anonymous" / "signed_in", `channel` "web" /
+"embed" and attachments are reserved for the published page (phase 2) and later.
+"""
+from __future__ import annotations
+import json, time, uuid
+from typing import Optional
+from ..core import permissions as P
+from ..core.errors import AppError
+from ..engine.limits import size
+from ..core import config
+from ..models import ChatMessage, ChatSession, ChatTurn, Run, WorkflowChatTrigger
+from ..repositories import ChatMessageRepository, ChatSessionRepository, ChatTriggerRepository, RunRepository, WorkflowRepository
+from ..repositories.chat_triggers import WEB
+
+ACCESS = ("studio",)                   # phase 1
+ACCESS_RESERVED = ("anonymous", "signed_in")  # the published page (phase 2)
+STEPS = ("none", "labels", "full")
+ANSWERED_BY = ("visitor", "reviewer")
+DEFAULTS = {"access": "studio", "messages_field": "", "max_turns": 10, "steps": "labels", "retention_days": 30}
+MAX_TURNS, RETENTION_MAX, TEXT_MAX, TITLE_MAX = 50, 3650, 4000, 60
+STEP_EVENTS = ("node_started", "node_finished", "error")
+
+
+def answered_by(node_data: Optional[dict]) -> str:
+    """Who answers a Human node in a chat (DEC-0054): the person chatting (default) or a reviewer in the Approvals inbox."""
+    v = (node_data or {}).get("answered_by")
+    return v if v in ANSWERED_BY else "visitor"
+
+
+def steps_of(events: list, mode: str) -> list[dict]:
+    """The node steps of a run as a chat shows them (DEC-0053): none, labels (node, label, type, status) or full
+    (plus duration, input, output and errors)."""
+    if mode == "none": return []
+    out: dict[str, dict] = {}
+    for e in events:
+        t, nid = e.get("type"), e.get("node")
+        if t not in STEP_EVENTS or not nid or e.get("node_type") in ("start", "end"): continue
+        key = f"{nid}:{e.get('iteration') or 1}"
+        s = out.setdefault(key, {"node": nid, "label": e.get("label") or nid, "type": e.get("node_type") or e.get("kind"), "status": "running"})
+        if t == "node_finished": s["status"] = "ok"
+        if t == "error": s["status"] = "error"
+        if mode == "full":
+            for k in ("duration_ms", "input", "delta", "errors", "code"):
+                if k in e: s[k] = e[k]
+    return list(out.values())
+
+
+class ChatSessionService:
+    def __init__(self, sessions: ChatSessionRepository, triggers: ChatTriggerRepository, messages: ChatMessageRepository,
+                 workflows: WorkflowRepository, runs: RunRepository, access=None):
+        self.sessions, self.triggers, self.messages, self.workflows, self.runs, self.access = sessions, triggers, messages, workflows, runs, access
+
+    # ---- settings (the workflow's Chat section) ----
+    def settings(self, wid: str, uid: str) -> dict:
+        w = self._workflow(wid, uid, P.RUN)
+        return self._public(w, self.triggers.web(wid))
+
+    def save_settings(self, wid: str, uid: str, body: dict) -> dict:
+        w = self._workflow(wid, uid, P.SHARE)
+        if not isinstance(body, dict): raise AppError("CHAT_SETTINGS_INVALID", field="body")
+        t = self.triggers.web(wid)
+        cur = self._public(w, t); v = {**cur, **{k: body[k] for k in cur if k in body}}
+        v = self._check(w, v)
+        cols = {"input_field": v["input_field"], "reply_field": v["reply_field"], "enabled": v["enabled"],
+                "settings": json.dumps({k: v[k] for k in DEFAULTS})}
+        if t is None:
+            self.triggers.add(WorkflowChatTrigger(id=uuid.uuid4().hex[:10], workflow_id=wid, owner=uid, name="Web chat", channel_id=WEB, place=WEB,
+                                                  command=wid.lower(), created=time.time(), **cols))
+        else: self.triggers.set_fields(t.id, **cols)
+        return self._public(w, self.triggers.web(wid))
+
+    def _public(self, w, t: Optional[WorkflowChatTrigger]) -> dict:
+        fields = self._fields(w)
+        guess = lambda names, typ: next((f["name"] for f in fields if f["name"] in names), next((f["name"] for f in fields if f.get("type") == typ), ""))  # noqa: E731
+        s = {**DEFAULTS, **(json.loads(t.settings or "{}") if t else {})}
+        if t is None: s["messages_field"] = guess(("messages", "history"), "list")
+        return {"enabled": bool(t.enabled) if t else False, "slug": t.command if t else w.id.lower(),
+                "input_field": t.input_field if t else guess(("message", "input", "question"), "string"),
+                "reply_field": t.reply_field if t else guess(("reply", "answer", "output"), "string"), **s}
+
+    def _check(self, w, v: dict) -> dict:
+        def bad(field): return AppError("CHAT_SETTINGS_INVALID", field=field)
+        fields = {f["name"]: f for f in self._fields(w)}
+        if v.get("access") in ACCESS_RESERVED: raise AppError("CHAT_ACCESS_NOT_AVAILABLE", access=v["access"])
+        if v.get("access") not in ACCESS: raise bad("access")
+        for f in ("input_field", "reply_field"):
+            if v.get(f) not in fields: raise bad(f)
+        m = v.get("messages_field") or ""
+        if m and (m not in fields or fields[m].get("type") != "list" or m in (v["input_field"],)): raise bad("messages_field")
+        if v.get("steps") not in STEPS: raise bad("steps")
+        for k, hi in (("max_turns", MAX_TURNS), ("retention_days", RETENTION_MAX)):
+            n = v.get(k)
+            if isinstance(n, bool) or not isinstance(n, int) or not 1 <= n <= hi: raise bad(k)
+        return {**v, "enabled": bool(v.get("enabled")), "messages_field": m}
+
+    @staticmethod
+    def _fields(w) -> list[dict]:
+        try: state = json.loads(w.data or "{}").get("state") or []
+        except (ValueError, AttributeError): state = []
+        return [f for f in state if isinstance(f, dict) and isinstance(f.get("name"), str)]
+
+    # ---- sessions ----
+    def list(self, wid: str, uid: str) -> list[dict]:
+        self._workflow(wid, uid, P.RUN)
+        return [self._session(s) for s in self.sessions.list_for(wid, uid)]
+
+    def create(self, wid: str, uid: str) -> dict:
+        w = self._workflow(wid, uid, P.RUN); t = self._chat(w.id)
+        now = time.time()
+        return self._session(self.sessions.add(ChatSession(id=uuid.uuid4().hex[:12], workflow_id=w.id, trigger_id=t.id, channel="studio", owner=uid,
+                                                           title="", created=now, updated=now)))
+
+    def get(self, sid: str, uid: str, view: str = "builder") -> dict:
+        s, t = self._own(sid, uid)
+        mode = "full" if view != "visitor" else (json.loads(t.settings or "{}").get("steps") or DEFAULTS["steps"])
+        steps: dict[str, list] = {}
+        turns = self.sessions.turns(sid)
+        for x in turns:
+            if x.role == "assistant" and x.run_id and x.run_id not in steps:
+                r = self.runs.get(x.run_id); steps[x.run_id] = steps_of(json.loads(r.events or "[]") if r else [], mode)
+        out = []
+        for x in turns:
+            d = self._turn(x)
+            if x.role == "assistant" and x.run_id in steps:
+                d["steps"] = steps.pop(x.run_id)  # a run's steps go with its first answer
+            out.append(d)
+        return {**self._session(s), "steps_mode": mode, "turns": out}
+
+    def delete(self, sid: str, uid: str) -> dict:
+        self._own(sid, uid); self.sessions.delete(sid); return {"ok": True}
+
+    # ---- a message (RunService.plan, over the run socket) ----
+    def input_for(self, uid: str, sid: str, message) -> dict:
+        """{workflow_id, input} for the next message, checked; nothing is written yet."""
+        s, t = self._own(sid, uid, P.RUN)
+        if not t.enabled: raise AppError("CHAT_NOT_ENABLED")
+        if not isinstance(message, str) or not message.strip(): raise AppError("CHAT_MESSAGE_EMPTY")
+        if len(message) > TEXT_MAX: raise AppError("CHAT_MESSAGE_TOO_LONG", max=TEXT_MAX)
+        last = self._turns(sid)
+        if last and last[-1].status == "waiting": raise AppError("CHAT_RUN_WAITING")  # answer the question first
+        w = self.workflows.get(s.workflow_id)
+        st = json.loads(t.settings or "{}"); fields = {f["name"]: f for f in self._fields(w)}
+        text = message.strip()
+        inp = {t.input_field: [text] if (fields.get(t.input_field) or {}).get("type") == "list" else text}
+        if (mf := st.get("messages_field")): inp[mf] = self.history(sid, int(st.get("max_turns") or DEFAULTS["max_turns"])) + [{"role": "user", "content": text}]
+        if size(inp) > config.input_max(): raise AppError("RUN_INPUT_TOO_LARGE", max_kb=config.input_max() // 1024)
+        return {"workflow_id": s.workflow_id, "input": inp, "text": text}
+
+    def history(self, sid: str, max_turns: int) -> list[dict]:
+        """The last `max_turns` exchanges as [{role, content}] (DEC-0052): the person's messages and the finished answers."""
+        rows = [x for x in self._turns(sid) if x.role == "user" or (x.role == "assistant" and x.status == "ok")]
+        msgs = [{"role": x.role, "content": x.text} for x in rows]
+        return msgs[-2 * max_turns:]
+
+    def record(self, uid: str, sid: str, text: str, rid: str) -> None:
+        """The person's turn and the reply-once record, once the run is planned."""
+        s, t = self._own(sid, uid, P.RUN); now = time.time()
+        turn = self.sessions.add_turn(ChatTurn(id=uuid.uuid4().hex[:12], session_id=sid, run_id=rid, role="user", text=text, status="ok", created=now))
+        self.messages.add_once(ChatMessage(id=uuid.uuid4().hex[:12], channel_id=WEB, key=turn.id, trigger_id=t.id, workflow_id=s.workflow_id, kind=WEB,
+                                           team="", sender=uid, text=text, ref=json.dumps({"session": sid}), status="started", run_id=rid, created=now))
+        self.sessions.set_fields(sid, last_run_id=rid, **({"title": text[:TITLE_MAX]} if not s.title else {}))
+        self.triggers.set_fields(t.id, last_message=now, last_run_id=rid)
+
+    def check_answer(self, uid: str, sid: str, rid: str) -> None:
+        """A visitor answer from the chat: the run is this session's and its Human node is answered by the visitor."""
+        self._own(sid, uid, P.RUN)
+        turn = next((x for x in reversed(self._turns(sid)) if x.run_id == rid), None)
+        if turn is None: raise AppError("RUN_NOT_FOUND")
+        if turn.status == "waiting" and turn.answered_by == "reviewer": raise AppError("CHAT_ANSWER_BY_REVIEWER")
+
+    # ---- a run settled (ChatRunService.on_settled, once per state) ----
+    def answer(self, m: ChatMessage, r: Run, res: dict) -> None:
+        sid = (json.loads(m.ref or "{}") or {}).get("session")
+        t = self.triggers.get(m.trigger_id)
+        if not sid or self.sessions.get(sid) is None or t is None: return
+        turn = ChatTurn(id=uuid.uuid4().hex[:12], session_id=sid, run_id=r.id, role="assistant", status=r.status, created=time.time())
+        if r.status == "ok":
+            v = (res.get("final_state") or {}).get(t.reply_field)
+            turn.text = v if isinstance(v, str) else ("" if v is None else json.dumps(v, ensure_ascii=False))
+        elif r.status == "waiting":
+            ev = next((e for e in reversed(json.loads(r.events or "[]")) if e.get("type") == "run_waiting"), {})
+            node = (res.get("waiting") or {}).get("node") or ev.get("node")
+            wf = (json.loads(r.checkpoint or "{}") or {}).get("workflow") or {}
+            data = next((n.get("data") for n in wf.get("nodes") or [] if n.get("id") == node), None)
+            turn.text, turn.node, turn.answered_by = ev.get("prompt") or "", node, answered_by(data)
+        else:
+            err = res.get("error"); turn.code = (err or {}).get("code") if isinstance(err, dict) else None
+            turn.text = ((err or {}).get("message") if isinstance(err, dict) else err) or ""
+        self.sessions.add_turn(turn)
+
+    # ---- retention (the worker's maintenance loop) ----
+    def cleanup(self) -> int:
+        """Deletes sessions idle for longer than their chat's retention_days (DEC-0052)."""
+        n, now = 0, time.time()
+        for t in self.triggers.webs():
+            days = int((json.loads(t.settings or "{}") or {}).get("retention_days") or DEFAULTS["retention_days"])
+            n += self.sessions.delete_idle(t.id, now - days * 86400)
+        return n
+
+    # ---- helpers ----
+    def _workflow(self, wid: str, uid: str, action: str):
+        if self.access is not None: return self.access.workflow(wid, uid, action)
+        w = self.workflows.get_owned(wid, uid)
+        if w is None: raise AppError("WORKFLOW_NOT_FOUND")
+        return w
+
+    def _chat(self, wid: str) -> WorkflowChatTrigger:
+        t = self.triggers.web(wid)
+        if t is None or not t.enabled: raise AppError("CHAT_NOT_ENABLED")
+        return t
+
+    def _own(self, sid: str, uid: str, action: str = P.VIEW) -> tuple[ChatSession, WorkflowChatTrigger]:
+        s = self.sessions.get(sid)
+        if s is None or s.owner != uid: raise AppError("CHAT_SESSION_NOT_FOUND")
+        self._workflow(s.workflow_id, uid, action)
+        t = self.triggers.get(s.trigger_id)
+        if t is None: raise AppError("CHAT_NOT_ENABLED")
+        return s, t
+
+    def _turns(self, sid: str) -> list[ChatTurn]: return self.sessions.turns(sid)
+
+    @staticmethod
+    def _session(s: ChatSession) -> dict:
+        return {"id": s.id, "workflow_id": s.workflow_id, "channel": s.channel, "title": s.title, "last_run_id": s.last_run_id,
+                "created": s.created, "updated": s.updated}
+
+    @staticmethod
+    def _turn(x: ChatTurn) -> dict:
+        return {"id": x.id, "role": x.role, "text": x.text, "status": x.status, "run_id": x.run_id, "node": x.node,
+                "answered_by": x.answered_by, "code": x.code, "created": x.created}

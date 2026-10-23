@@ -39,6 +39,8 @@ for (const [lang, theme] of [['en', 'light'], ['vi', 'light'], ['en', 'dark'], [
 
     // editor header: every control in the top bar
     await page.goto(`/workflows/${wid}`); await expect(page.locator('#run-btn')).toBeVisible()
+    // STATE SCHEMA field row at the default panel width: name, type and delete on one line, one height
+    await expectRowAligned(await page.locator('[data-testid=state-field]').first().locator('> div > *').all(), { label: 'state field row' })
     await expectRowAligned(await visible(page, 'header :is(button, input, a[data-slot=button])'), { label: 'editor header' })
     await expectBaselineAligned([page.locator('#save-btn'), page.locator('#run-btn'), page.locator('#step-btn')], { label: 'editor header buttons' })
 
@@ -61,5 +63,32 @@ for (const [lang, theme] of [['en', 'light'], ['vi', 'light'], ['en', 'dark'], [
     await expectRowAligned([page.locator('label[for=deadline-on]'), page.locator('#deadline-on')], { sameHeight: false, label: 'deadline switch row' })
     await page.locator('#deadline-on').click()
     await expectRowAligned(await visible(page, '#deadline-after, #deadline-after-unit'), { label: 'deadline duration field' })
+  })
+}
+
+// The left panel at its narrowest: nothing in the palette or STATE SCHEMA list may push past the panel edge
+// (the ScrollArea content used to be a `display: table` div that grew to the long vi reducer label).
+for (const lang of ['en', 'vi'] as const) {
+  test(`left panel content fits its width (${lang})`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const H = await login(page)
+    const wid = await newWorkflow(page, H, { name: 'Narrow', state: [{ name: 'message', type: 'string' }, { name: 'messages', type: 'list' }, { name: 'meta', type: 'object' }],
+      nodes: [N('s', 'start', 40), N('e', 'end', 300)], edges: [{ id: '1', source: 's', target: 'e' }] })
+    await page.evaluate(l => { localStorage.setItem('lang', l); localStorage.setItem('lgs.editorPanels', JSON.stringify({ left: 180, right: 300, bottom: 260 })) }, lang)
+    await page.goto(`/workflows/${wid}`); await expect(page.locator('#reducer-messages')).toBeVisible()
+    const panel = (await page.locator('#panel-left').boundingBox())!
+    for (const vp of await page.locator('#panel-left [data-slot=scroll-area-viewport]').all()) {
+      const { sw, cw } = await vp.evaluate(e => ({ sw: e.scrollWidth, cw: e.clientWidth }))
+      expect(sw, 'left panel scroll viewport overflows').toBeLessThanOrEqual(cw)
+    }
+    for (const el of await page.locator('[data-testid=state-field] input, [data-testid=state-field] button, #reducer-messages, #reducer-meta').all()) {
+      const b = (await el.boundingBox())!
+      expect(b.x + b.width, 'control past the left panel edge').toBeLessThanOrEqual(panel.x + panel.width + 0.5)
+    }
+    // narrow: the name takes its own line, type + delete share the next one; all controls keep the default 32px
+    const field = page.locator('[data-testid=state-field]').first()
+    await expectRowAligned(await field.locator('> div > button').all(), { label: 'state field type + delete' })
+    expect((await field.locator('input').boundingBox())!.width, 'name input stays usable').toBeGreaterThan(100)
+    expect(Math.round((await field.locator('input').boundingBox())!.height)).toBe(32)
   })
 }

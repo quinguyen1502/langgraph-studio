@@ -28,16 +28,16 @@ export function EditorPalette() {
       <Separator />
       <section className="flex min-h-0 flex-1 basis-0 flex-col" id="palette-state">
         <div className="px-3 pt-3 pb-2 text-xs font-semibold uppercase text-muted-foreground">{t('editor.stateSchema')}</div>
-        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pt-1 pb-2 space-y-1.5">{state.map((f, i) => <div className="space-y-1" key={i}><div className="flex gap-1">
-            <Input className="flex-1 min-w-0" value={f.name} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+        <ScrollArea className="min-h-0 flex-1"><div className="px-3 pt-1 pb-2 space-y-1.5">{state.map((f, i) => <div className="@container space-y-1" key={i} data-testid="state-field"><div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1 @max-[13rem]:grid-cols-[minmax(0,1fr)_auto]">
+            <Input className="min-w-0 @max-[13rem]:col-span-full" value={f.name} aria-label={t('editor.fieldName')} onChange={e => setState(s => s.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
             <Select value={f.type} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, type: v, reducer: REDUCERS[v]?.includes(x.reducer || '') ? x.reducer : undefined } : x))}>
-              <SelectTrigger size="sm" className="w-24"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-24 @max-[13rem]:w-full" aria-label={t('editor.fieldType')}><SelectValue /></SelectTrigger>
               <SelectContent>{['string', 'number', 'integer', 'boolean', 'object', 'list'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
             </Select>
-            <Button variant="ghost" size="icon" onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
+            <Button variant="ghost" size="icon" aria-label={t('editor.removeField', { name: f.name })} onClick={() => setState(s => s.filter((_, j) => j !== i))}><Trash2 /></Button>
             </div>
             {REDUCERS[f.type] && <Select value={f.reducer || 'replace'} onValueChange={v => setState(s => s.map((x, j) => j === i ? { ...x, reducer: v === 'replace' ? undefined : v } : x))}>
-              <SelectTrigger size="sm" className="w-full text-xs" id={`reducer-${f.name}`} aria-label={t('editor.reducer')}><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full min-w-0" id={`reducer-${f.name}`} aria-label={t('editor.reducer')}><SelectValue /></SelectTrigger>
               <SelectContent>{REDUCERS[f.type].map(r => <SelectItem key={r} value={r}>{t(`editor.reducers.${r}`)}</SelectItem>)}</SelectContent>
             </Select>}
           </div>)}</div></ScrollArea>

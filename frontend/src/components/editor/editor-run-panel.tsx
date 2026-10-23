@@ -46,7 +46,7 @@ export function EditorRunPanel() {
         </div>
         <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
           <JsonEditor id="run-input" value={input} onChange={setInput} className="h-full min-h-0 flex-1" />
-          {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
+          {errors.length > 0 && <ScrollArea className="w-1/2 min-w-0"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
         </TabsContent>
         <TabsContent value="logs" className="flex-1 min-h-0">

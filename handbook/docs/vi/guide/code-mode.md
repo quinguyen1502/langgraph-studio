@@ -72,8 +72,10 @@ export function main(state: State) {
   cho lỗi `CODE_RESULT_NOT_JSON`.
 - **Package:** Web API (trừ `fetch`, xem dưới), cộng các package máy chủ cho
   phép, import đúng như ghi trong danh sách dưới ô code, ví dụ
-  `import { z } from "npm:zod"`. Image mặc định có `npm:zod` và
-  `npm:date-fns`. Import khác cho lỗi `CODE_INVALID`.
+  `import { z } from "npm:zod@3"`. Image mặc định có `npm:zod@3` và
+  `npm:date-fns@4`. Ghi phiên bản đúng như danh sách: `npm:zod` không có phiên
+  bản, hoặc khác major, cho lỗi `CODE_INVALID` kèm spec được phép trong thông
+  báo; import khác cũng vậy.
 - **Không có quyền nào:** đọc hay ghi file, mạng, biến môi trường, chạy tiến
   trình và thông tin hệ thống đều lỗi `NotCapable` (`CODE_FAILED`), trên mọi
   môi trường chạy.

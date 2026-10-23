@@ -1579,7 +1579,7 @@
     "languageKept": "Your code was kept. Rewrite it in {{language}} before you run it.",
     "stateType": "State type",
     "stateTypeHint": "Generated from the state schema. Use it as `state: State`; Deno removes types without checking them, so no declaration is needed. Type state. for field names.",
-    "tsPackages": "Web APIs and these packages: {{packages}} (import them as written, e.g. \"npm:zod\").",
+    "tsPackages": "Web APIs and these packages: {{packages}} (import them with the version as written, e.g. \"npm:zod@3\").",
     "tsNoPackages": "Web APIs only; no packages can be imported here.",
     "adminLanguages": "Languages",
     "languageReady": "Ready",

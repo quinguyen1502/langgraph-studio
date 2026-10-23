@@ -1579,7 +1579,7 @@
     "languageKept": "Code của bạn được giữ nguyên. Hãy viết lại bằng {{language}} trước khi chạy.",
     "stateType": "Kiểu State",
     "stateTypeHint": "Tạo từ schema của state. Dùng như `state: State`; Deno bỏ kiểu đi mà không kiểm tra nên không cần khai báo. Gõ state. để xem tên các trường.",
-    "tsPackages": "Web API và các package: {{packages}} (import đúng như ghi, ví dụ \"npm:zod\").",
+    "tsPackages": "Web API và các package: {{packages}} (import đúng như ghi, kèm phiên bản, ví dụ \"npm:zod@3\").",
     "tsNoPackages": "Chỉ có Web API; ở đây không import được package nào.",
     "adminLanguages": "Ngôn ngữ",
     "languageReady": "Sẵn sàng",

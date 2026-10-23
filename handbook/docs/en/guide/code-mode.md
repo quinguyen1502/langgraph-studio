@@ -72,8 +72,10 @@ export function main(state: State) {
   a cycle gives `CODE_RESULT_NOT_JSON`.
 - **Packages:** Web APIs (`fetch` aside, see below), plus the packages the
   server allows, imported as written in the list under the editor, for
-  example `import { z } from "npm:zod"`. The default image has `npm:zod` and
-  `npm:date-fns`. Any other import is `CODE_INVALID`.
+  example `import { z } from "npm:zod@3"`. The default image has `npm:zod@3`
+  and `npm:date-fns@4`. Write the version as listed: `npm:zod` without one, or
+  another major, is `CODE_INVALID` with the allowed spec in the message, and
+  so is any other import.
 - **No permissions:** reading or writing files, the network, environment
   variables, starting processes and system information all fail with
   `NotCapable` (`CODE_FAILED`), on every runtime.

@@ -59,9 +59,26 @@ docker build -t studio-code-ts:1 docker/studio-code-ts
 | --- | --- | --- |
 | `STUDIO_CODE_LANGUAGES` | `python,typescript` | Các ngôn ngữ trình soạn thảo cung cấp |
 | `STUDIO_CODE_TS_IMAGE` | `studio-code-ts:1` | Image Deno |
-| `STUDIO_CODE_TS_PACKAGES` | `npm:zod,npm:date-fns` | Các package duy nhất code được import; giữ khớp với `docker/studio-code-ts/deps.ts` |
+| `STUDIO_CODE_TS_PACKAGES` | `npm:zod@3,npm:date-fns@4` | Các package duy nhất code được import, mỗi package ghim theo `tên@major`; giữ đúng như `docker/studio-code-ts/deps.ts` |
 | `STUDIO_DENO` | `deno` trong `PATH` | File chạy Deno cho chế độ subprocess |
 | `STUDIO_CODE_TS_DENO_DIR` | trống | Cache Deno chứa các package được phép, cho chế độ subprocess |
+
+Code phải import package với đúng bản major đã ghim trong danh sách, ví dụ
+`npm:zod@3` (hoặc `npm:zod@3.25.1`, `npm:zod@3/mini`). Import `npm:zod` không
+ghi phiên bản hoặc khác major bị từ chối khi lưu, với lỗi `CODE_INVALID` và lý
+do ghi rõ spec được phép, vì nếu không Deno sẽ tìm bản mới nhất, mà cache không
+có bản đó.
+
+Chế độ subprocess không có image, nên bạn tự tạo cache với đúng các spec đó rồi
+trỏ máy chủ tới cache này (không có `STUDIO_CODE_TS_DENO_DIR` và
+`STUDIO_CODE_TS_PACKAGES` thì không package nào được phép):
+
+```bash
+export DENO_DIR=/var/lib/studio/deno-cache
+printf 'import "npm:zod@3";\nimport "npm:date-fns@4";\n' > deps.ts
+deno cache --no-config --no-lock deps.ts
+export STUDIO_CODE_TS_DENO_DIR=$DENO_DIR STUDIO_CODE_TS_PACKAGES=npm:zod@3,npm:date-fns@4
+```
 
 Deno chạy không có cờ quyền nào, cùng `--no-remote` và `--cached-only`. Code
 không đọc hay ghi được file, không dùng được mạng, không đọc được biến môi

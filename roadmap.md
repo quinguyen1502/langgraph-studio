@@ -210,5 +210,5 @@ REQ-0045, Approved 2026-10-23 (owner approved the glossary and fix plan steps 1-
 
 REQ-0046, Accepted 2026-10-23 (feasibility study Option A: Deno; owner approved P0-P2, P3 out of scope).
 
-- TASK-0079 Code-mode language registry (`engine/code_languages.py`), `data.language` (default Python), `STUDIO_CODE_LANGUAGES`, `CODE_LANGUAGE_UNSUPPORTED`, DEC-0048. **draft PR** (REV-0072, QA-0072).
-- TASK-0080 TypeScript on Deno: `code_runner.ts`, zero-permission `deno run`, V8 heap cap, npm allowlist (`STUDIO_CODE_TS_PACKAGES`), `docker/studio-code-ts`, compose and CI (Deno for pytest, a Docker job that builds both Code images), DEC-0049. **draft PR** (REV-0073, QA-0073).
+- TASK-0079 Code-mode language registry (`engine/code_languages.py`), `data.language` (default Python), `STUDIO_CODE_LANGUAGES`, `CODE_LANGUAGE_UNSUPPORTED`, DEC-0048. **merged** (PR #109, REV-0072, QA-0072).
+- TASK-0080 TypeScript on Deno: `code_runner.ts`, zero-permission `deno run`, V8 heap cap, npm allowlist (`STUDIO_CODE_TS_PACKAGES`), `docker/studio-code-ts`, compose and CI (Deno for pytest, a Docker job that builds both Code images), DEC-0049. **merged** (PR #110, REV-0073, QA-0073).

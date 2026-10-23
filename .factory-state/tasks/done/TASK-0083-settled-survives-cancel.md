@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0083
-- Status: review (draft PR)
+- Status: done (PR #113)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -48,7 +48,8 @@ failed.
 
 - 2026-10-23: diagnosed from CI runs 39930090057 and 39943245803 (both fail at line 191, the post-resume reply) and a
   local instrumented loop (`settled()` entered, then CancelledError before `on_settled` ran); fixed; draft PR into develop.
+- 2026-10-23: CI green, SQLite backend job re-run 3 times (4/4 green); owner approved the merge; merged into develop (PR #113).
 
 ## Handoff Notes
 
-- Not merged; needs owner review.
+- None.

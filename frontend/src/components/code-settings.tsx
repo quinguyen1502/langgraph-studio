@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next'
 import { AlertTriangle, FlaskConical, Info, Loader2, Lock, ShieldAlert } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { JsonView } from '@/components/json-view'
 import { CodeEditor, type CodeLanguageId } from '@/components/code-editor'
 import { api } from '@/lib/api'
@@ -29,26 +28,15 @@ function sample(input: string): Record<string, unknown> {
   try { const v = JSON.parse(input); return v && typeof v === 'object' && !Array.isArray(v) ? v : {} } catch { return {} }
 }
 
-export function CodeSettings({ value, onChange, runtime, canWrite, editable, input, nodeId, timeout, language = 'python', onLanguage, fields = [] }: {
+export function CodeSettings({ value, onChange, runtime, canWrite, editable, input, nodeId, timeout, language = 'python', kept = false, fields = [] }: {
   value: string; onChange: (v: string) => void; runtime: CodeRuntime | null; canWrite: boolean; editable: boolean
   input: string; nodeId: string; timeout?: number
-  language?: CodeLanguageId; onLanguage?: (language: CodeLanguageId, code?: string) => void; fields?: StateField[]
+  language?: CodeLanguageId; kept?: boolean; fields?: StateField[]
 }) {
   const { t } = useTranslation()
   const [busy, setBusy] = useState(false); const [result, setResult] = useState<CodeTestResult | null>(null); const [error, setError] = useState('')
-  const [kept, setKept] = useState(false)
   const info = languageInfo(runtime, language)
   const ready = !!runtime?.available && !!info?.available
-  const offered = runtime?.languages?.map(l => l.id) ?? ['python']
-  const choices = offered.includes(language) ? offered : [language, ...offered]
-  const pick = (next: string) => {
-    const to = next as CodeLanguageId
-    if (to === language) return
-    const untouched = !value.trim() || value === languageInfo(runtime, language)?.starter
-    const starter = languageInfo(runtime, to)?.starter
-    setResult(null); setError(''); setKept(!untouched)
-    onLanguage?.(to, untouched && starter !== undefined ? starter : undefined)
-  }
   const packages = language === 'typescript'
     ? (info?.packages.length ? t('code.tsPackages', { packages: info.packages.join(', ') }) : t('code.tsNoPackages'))
     : t('code.packages', { packages: [t('code.stdlib'), ...(info?.packages ?? [])].join(', ') })
@@ -64,11 +52,6 @@ export function CodeSettings({ value, onChange, runtime, canWrite, editable, inp
       <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t('code.off')
         : !info ? t('code.languageOff', { language: t(`code.languages.${language}`) })
         : t('code.unavailable', { problem: info.problem || runtime.problem || '' })}</AlertDescription></Alert>}
-    <div className="flex items-center gap-2"><span className="text-[11px] text-muted-foreground">{t('code.language')}</span>
-      <Select value={language} onValueChange={pick} disabled={!editable || !canWrite}>
-        <SelectTrigger size="sm" className="h-7 w-40 text-xs" id="code-language"><SelectValue /></SelectTrigger>
-        <SelectContent>{choices.map(id => <SelectItem key={id} value={id} id={`code-language-${id}`}>{t(`code.languages.${id}`)}</SelectItem>)}</SelectContent>
-      </Select></div>
     {kept && <p className="text-[11px] text-muted-foreground" id="code-language-kept">{t('code.languageKept', { language: t(`code.languages.${language}`) })}</p>}
     {language === 'typescript' && <div className="space-y-1" id="code-state-type-box">
       <div className="text-[11px] font-medium text-muted-foreground">{t('code.stateType')}</div>

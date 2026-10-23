@@ -20,9 +20,10 @@ def main(state):
 
 ## Write and test
 
-1. Select a Tool node and set **Mode** to **Code (Python or TypeScript)**.
-   The field starts with a Python `main(state)` stub. Pick **TypeScript** in
-   **Language** to write TypeScript instead (see [TypeScript](#typescript)).
+1. Select a Tool node and set **Mode** to **Code (Python)** or
+   **Code (TypeScript)**. The field starts with that language's `main(state)`
+   stub (see [TypeScript](#typescript)). Mode only lists the languages this
+   server can run.
 2. Below the editor, the node lists the packages in the image and the limits.
 3. Put sample input in the run panel's **Input** tab.
 4. Press **Test with sample state**. It runs `main(state)` once with that
@@ -50,7 +51,7 @@ The code changes the run only through its return value.
 
 ## TypeScript
 
-Pick **TypeScript** in the node's **Language** list. If you have not changed
+Set **Mode** to **Code (TypeScript)**. If you have not changed
 the code yet, the stub becomes the TypeScript one; edited code is kept, and
 the node asks you to rewrite it. The canvas marks the node **TS**.
 

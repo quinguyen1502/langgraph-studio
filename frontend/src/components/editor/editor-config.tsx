@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Sparkles } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -6,6 +7,7 @@ import { NodeRuntime } from '@/components/node-runtime'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
+import { applyMode, codeChoices, modeValue, nodeLanguage, type ToolModeValue } from '@/lib/code-mode'
 import { api } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
 import { HumanApprovalSettings } from '@/components/human-approval-settings'
@@ -28,6 +30,7 @@ import { useStudioCtx } from './studio-context'
 
 /** Right panel: config of the selected node or edge (TASK-0040). */
 export function EditorConfig() {
+  const [kept, setKept] = useState<string | null>(null)  // node whose edited code was kept on a language switch
   const { t } = useTranslation()
   const { nodes, setEdges, wid, tools, creds, setCreds, providers, channels, edit, mark, selNode, selEdge, upd, setRuntime, d, fieldNames, state, input } = useStudioCtx()
   const codeRt = useCodeRuntime(); const canCode = can(useMe(), 'code.write')  // Tool node Code mode (TASK-0055)
@@ -67,17 +70,17 @@ export function EditorConfig() {
             <HumanDeadlineSettings key={`${selNode.id}-deadline`} value={d.deadline} onChange={v => upd('deadline', v)} />
           </>}
           {selNode.type === 'tool' && <>
-            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, language: 'python', code: codeRt?.starter ?? '' }) : upd('mode', v)}>
+            <F label={t('field.mode')}><Select value={modeValue(d)} onValueChange={v => { const r = applyMode(d, v as ToolModeValue, codeRt); setKept(r.kept ? selNode.id : null); if (Object.keys(r.patch).length) mark(selNode.id, r.patch) }}>
               <SelectTrigger className="w-full min-w-0" id="tool-mode"><SelectValue className="min-w-0 truncate" /></SelectTrigger>
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem>
-                <SelectItem value="code" id="tool-mode-code" disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>{t('editor.codeMode')}
-                  {codeRt?.code_runtime === 'subprocess' && <Badge variant="warning" className="ml-1 h-4 shrink-0 px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge>}</SelectItem></SelectContent></Select>
+                {codeChoices(codeRt, d).map(l => <SelectItem key={l} value={`code:${l}`} id={`tool-mode-code-${l}`} disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>
+                  {t('editor.codeMode', { language: t(`code.languages.${l}`) })}
+                  {codeRt?.code_runtime === 'subprocess' && <Badge variant="warning" className="ml-1 h-4 shrink-0 px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge>}</SelectItem>)}</SelectContent></Select>
               {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
               {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
-            {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={selNode.id} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}
+            {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={`${selNode.id}-${nodeLanguage(d)}`} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}
                 editable={edit} input={input} nodeId={selNode.id} timeout={typeof d.timeout === 'number' ? d.timeout : undefined}
-                language={d.language === 'typescript' ? 'typescript' : 'python'} fields={state}
-                onLanguage={(language, code) => mark(selNode.id, code === undefined ? { language } : { language, code })} /></F>
+                language={nodeLanguage(d)} fields={state} kept={kept === selNode.id} /></F>
             : d.mode === 'http' ? <>
               <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
               <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>

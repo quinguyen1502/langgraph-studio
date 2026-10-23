@@ -20,9 +20,10 @@ def main(state):
 
 ## Viết và chạy thử
 
-1. Chọn một node Tool, đặt **Chế độ** là **Code (Python hoặc TypeScript)**.
-   Ô code bắt đầu bằng khung `main(state)` của Python. Chọn **TypeScript** ở
-   **Ngôn ngữ** để viết TypeScript (xem [TypeScript](#typescript)).
+1. Chọn một node Tool, đặt **Chế độ** là **Code (Python)** hoặc
+   **Code (TypeScript)**. Ô code bắt đầu bằng khung `main(state)` của ngôn ngữ
+   đó (xem [TypeScript](#typescript)). Chế độ chỉ liệt kê những ngôn ngữ máy
+   chủ này chạy được.
 2. Dưới ô code, node liệt kê các package có trong image và các giới hạn.
 3. Đặt input mẫu vào tab **Input** của panel run.
 4. Bấm **Chạy thử với state mẫu**. Nút này chạy `main(state)` một lần với
@@ -50,7 +51,7 @@ Code chỉ ảnh hưởng tới run qua giá trị trả về.
 
 ## TypeScript
 
-Chọn **TypeScript** trong danh sách **Ngôn ngữ** của node. Nếu bạn chưa sửa
+Đặt **Chế độ** là **Code (TypeScript)**. Nếu bạn chưa sửa
 code, khung mẫu đổi sang khung TypeScript; code đã sửa thì được giữ nguyên và
 node nhắc bạn viết lại. Trên canvas, node có nhãn **TS**.
 

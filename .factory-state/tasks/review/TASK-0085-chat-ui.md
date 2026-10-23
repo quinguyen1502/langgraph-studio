@@ -43,7 +43,7 @@ Human node's "Answered by" option, docs, handbook and tests.
 
 ## Activity Log
 
-- 2026-10-23: implemented on `feat/agent-chat-p2-ui` (stacked on `feat/agent-chat-p1-backend`); draft PR.
+- 2026-10-23: implemented on `feat/agent-chat-p2-ui` (stacked on `feat/agent-chat-p1-backend`); draft PR #117 (base #116).
 
 ## Handoff Notes
 

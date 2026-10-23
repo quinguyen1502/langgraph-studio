@@ -93,7 +93,7 @@ class TypeScript(CodeLanguage):
     environment or start processes; the V8 heap is capped at the memory limit."""
     id = "typescript"
     starter = ('export function main(state: State) {\n'
-               '  // Return the value for the output field.\n'
+               '  // Return the value for the output field. Packages: import { z } from "npm:zod@3"\n'
                '  return state.message ?? ""\n'
                '}\n')
     memory_exit_codes = (137, -9, 133, -5)  # V8 "out of memory" aborts with SIGTRAP (133 / -5)
@@ -103,8 +103,7 @@ class TypeScript(CodeLanguage):
         if not MAIN_TS.search(code): return ["export a function main(state): export function main(state) { … }"]
         allowed = self.packages()
         for _q, spec in IMPORT_TS.findall(code):
-            if not any(spec == p or spec.startswith((p + "@", p + "/")) for p in allowed):
-                return [f"import \"{spec}\" is not available" + (f" (allowed: {', '.join(allowed)})" if allowed else " (no packages are allowed here)")]
+            if (why := import_problem(spec, allowed)): return [why]
         return []
 
     def _deno_args(self) -> List[str]:
@@ -136,6 +135,26 @@ class TypeScript(CodeLanguage):
     def host_problem(self) -> Optional[str]:
         exe = config.deno_exe()
         return None if exe and os.access(exe, os.X_OK) else "Deno is not installed (install deno or set STUDIO_DENO)"
+
+
+SPEC_TS = re.compile(r"^((?:npm|jsr):(?:@[^/@]+/)?[^/@]+)(?:@([^/]*))?(/.*)?$")
+
+
+def import_problem(spec: str, allowed: List[str]) -> Optional[str]:
+    """Why `spec` may not be imported, or None. Allowed entries are pinned `name@major` (``npm:zod@3``); an import
+    must use the same name and major: ``npm:zod@3``, ``npm:zod@3.25.1`` or ``npm:zod@3/mini``. An unversioned
+    ``npm:zod`` would make Deno pick the newest version, which the cache need not have, so it is refused too."""
+    m = SPEC_TS.match(spec)
+    for entry in allowed:
+        e = SPEC_TS.match(entry)
+        if not (m and e) or m.group(1) != e.group(1): continue
+        want = e.group(2)
+        if want is None: return None if m.group(2) is None else f'import "{spec}": use "{entry}" (no version)'
+        have = m.group(2)
+        if have is not None and (have == want or have.startswith(want + ".")): return None
+        if have is None: return f'import "{spec}" needs a version: use "{entry}"'
+        return f'import "{spec}": version {have} is not available, use "{entry}"'
+    return f'import "{spec}" is not available' + (f" (allowed: {', '.join(allowed)})" if allowed else " (no packages are allowed here)")
 
 
 def _mib(size: str) -> int:

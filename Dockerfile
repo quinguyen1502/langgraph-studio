@@ -37,7 +37,9 @@ COPY backend/app ./app
 RUN pip install . python-dateutil==2.9.0.post0 \
     && useradd -m -u 10001 studio && mkdir -p /data && chown studio /data
 COPY --from=web /src/dist ./static
-USER studio
+COPY docker/entrypoint.sh /usr/local/bin/superstep-entrypoint
+# Starts as root only to chown a root-owned platform volume at /data, then drops to `studio` (docker/entrypoint.sh)
+ENTRYPOINT ["superstep-entrypoint"]
 VOLUME /data
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --retries=5 \

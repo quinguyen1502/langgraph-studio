@@ -72,8 +72,7 @@ khai; hãy deploy từ repo:
 
 1. **New Project → Deploy from GitHub repo**, chọn bản fork của bạn hoặc `quinguyen1502/superstep`.
 2. **Variables**: `JWT_SECRET` và `STUDIO_SECRET_KEY` (giá trị ngẫu nhiên, ví dụ `openssl rand -hex 32`),
-   `STUDIO_ADMIN_EMAILS`, `RAILWAY_RUN_UID=0` (volume của Railway thuộc root; nếu không đặt, image chạy bằng user
-   không phải root và không ghi được).
+   `STUDIO_ADMIN_EMAILS`.
 3. SQLite: **thêm volume** cho dịch vụ, gắn tại `/data`. Hoặc Postgres: thêm database Postgres và đặt
    `DATABASE_URL=${{Postgres.DATABASE_URL}}` (dùng Postgres có pgvector nếu bạn cần tìm kiếm vector).
 4. **Settings → Networking → Generate Domain**, rồi đặt `STUDIO_PUBLIC_URL` bằng địa chỉ đó.
@@ -81,23 +80,72 @@ khai; hãy deploy từ repo:
 Worker tuỳ chọn: thêm Redis (`REDIS_URL=${{Redis.REDIS_URL}}` cho cả hai dịch vụ) và một dịch vụ thứ hai từ cùng
 repo với lệnh khởi động `python -m app.worker`.
 
+## Fly.io
+
+[`fly.toml`](../../fly.toml) chạy image đã phát hành với volume 1 GB tại `/data` (SQLite) và health check. Fly không
+có nút deploy; hãy dùng CLI:
+
+```sh
+fly launch --copy-config --no-deploy --name <app>         # giữ fly.toml, chọn tổ chức và vùng của bạn
+fly volumes create superstep_data --size 1 --region sin --app <app>
+fly secrets set --app <app> JWT_SECRET=$(openssl rand -hex 32) STUDIO_SECRET_KEY=$(openssl rand -hex 32) \
+  STUDIO_ADMIN_EMAILS=you@example.com STUDIO_PUBLIC_URL=https://<app>.fly.dev
+fly deploy --app <app>
+fly logs --app <app> | grep "admin account"
+```
+
+Chạy `fly secrets list` để kiểm tra khoá đã được lưu; Fly không bao giờ hiện lại giá trị bí mật, nên hãy giữ một bản
+`STUDIO_SECRET_KEY`. Dùng Postgres thay cho SQLite: tạo cluster Fly Managed Postgres (hoặc Postgres bất kỳ), đặt
+`DATABASE_URL` bằng `fly secrets set` và xoá khối `[[mounts]]`. `auto_stop_machines = "stop"` giúp tiết kiệm chi phí
+nhưng ngắt WebSocket đang mở và làm trễ lịch chạy; đặt `"off"` nếu cần ứng dụng luôn bật. Chỉ giữ một machine khi
+dùng SQLite (mỗi volume thuộc về một machine).
+
+## DigitalOcean App Platform
+
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/quinguyen1502/superstep/tree/main)
+
+[`.do/deploy.template.yaml`](../../.do/deploy.template.yaml) deploy image đã phát hành cùng database Postgres được
+quản lý (App Platform không có volume lưu trữ lâu dài) và đặt `STUDIO_PUBLIC_URL` là URL của ứng dụng. Ở màn hình
+xem lại, thay hai giá trị bí mật `change-me` bằng chuỗi ngẫu nhiên và đặt `STUDIO_ADMIN_EMAILS`. Mật khẩu admin dùng
+một lần nằm trong **Runtime Logs**. Database development đủ cho dùng thử; hãy chuyển sang cluster được quản lý khi
+chạy thật.
+
+## Koyeb
+
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=docker&image=ghcr.io/quinguyen1502/superstep:latest&name=superstep&ports=8000;http;/&env%5BSTUDIO_ADMIN_EMAILS%5D=&env%5BJWT_SECRET%5D=&env%5BSTUDIO_SECRET_KEY%5D=&env%5BDATABASE_URL%5D=)
+
+Nút này deploy image đã phát hành trên cổng 8000. Điền `STUDIO_ADMIN_EMAILS`, `JWT_SECRET`, `STUDIO_SECRET_KEY`
+(chuỗi ngẫu nhiên) và `DATABASE_URL`: hãy tạo database Koyeb Postgres trước (hoặc dùng Postgres bất kỳ), vì instance
+miễn phí không có volume. Đặt health check HTTP `/api/health` trên cổng 8000. Instance miễn phí giảm về 0 sau một giờ
+không có truy cập.
+
+## Zeabur
+
+[`deploy/zeabur/template.yaml`](../../deploy/zeabur/template.yaml) chạy image đã phát hành với volume tại `/data`.
+Mẫu này chưa được đưa lên marketplace; hãy deploy bằng CLI:
+
+```sh
+npx zeabur@latest template deploy -f deploy/zeabur/template.yaml
+```
+
+Lệnh sẽ hỏi tên miền, email admin và `STUDIO_SECRET_KEY`; `JWT_SECRET` được tự sinh. Muốn dùng Postgres, thêm dịch
+vụ Zeabur PostgreSQL vào project và đặt `DATABASE_URL` bằng chuỗi kết nối của nó.
+
+## Northflank
+
+Chưa có mẫu được phát hành. Trong giao diện Northflank:
+
+1. **Create service → Deployment**, image ngoài `ghcr.io/quinguyen1502/superstep:latest`, cổng 8000 (HTTP, public).
+2. **Secret group** liên kết với dịch vụ, gồm `JWT_SECRET`, `STUDIO_SECRET_KEY` (chuỗi ngẫu nhiên) và
+   `STUDIO_ADMIN_EMAILS`.
+3. Lưu trữ: thêm volume tại `/data` (SQLite), hoặc tạo **PostgreSQL addon** và liên kết chuỗi kết nối thành
+   `DATABASE_URL`.
+4. Health check: HTTP `/api/health` trên cổng 8000. Sao chép mật khẩu admin dùng một lần từ log của dịch vụ.
+
 ## Coolify và Dokploy (tự host)
 
-Hai công cụ này chạy trên máy chủ của bạn, nên có hai lựa chọn:
-
-- **Image all-in-one.** Tạo resource Docker Compose từ
-  [`deploy/compose/docker-compose.single.yml`](../../deploy/compose/docker-compose.single.yml) (hoặc resource Docker
-  image với `ghcr.io/quinguyen1502/superstep:latest`, cổng 8000, volume tại `/data`). Đặt `JWT_SECRET`,
-  `STUDIO_SECRET_KEY` và `STUDIO_ADMIN_EMAILS` trong phần biến môi trường. Muốn dùng Postgres, tạo resource database
-  và đặt `DATABASE_URL`.
-- **Toàn bộ stack với sandbox Docker.** Tạo resource Docker Compose từ `docker-compose.yml` của repo (đặt
-  `JWT_SECRET`, `POSTGRES_PASSWORD`, `STUDIO_SECRET_KEY`, `STUDIO_ENV=production`, `STUDIO_ADMIN_EMAILS`). Khi đó node
-  Code chạy trong container Docker qua Docker socket của máy chủ: build `docker/studio-code` và `docker/studio-code-ts`
-  trên máy chủ và đặt `STUDIO_ENABLE_CODE_NODES=1`. Gắn Docker socket cho container api quyền tương đương root trên
-  máy chủ.
-
-Cả hai đặt một reverse proxy (Traefik hoặc Caddy) trước dịch vụ; WebSocket hoạt động mà không cần cấu hình thêm.
-Trỏ tên miền vào cổng 8000 (all-in-one) hoặc cổng 80 của dịch vụ `web` (toàn bộ stack).
+Hai công cụ này chạy trên máy chủ của bạn, và đây là cách duy nhất để node Code chạy trong sandbox Docker. Hướng dẫn
+đầy đủ: [Tự host với Coolify hoặc Dokploy](self-hosted.vi.md).
 
 ## Máy chủ Docker bất kỳ
 

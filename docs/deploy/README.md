@@ -71,8 +71,7 @@ worker dyno (the worker process ignores this variable).
 template yet; deploy from the repository:
 
 1. **New Project → Deploy from GitHub repo**, pick your fork or `quinguyen1502/superstep`.
-2. **Variables**: `JWT_SECRET` and `STUDIO_SECRET_KEY` (random values, e.g. `openssl rand -hex 32`), `STUDIO_ADMIN_EMAILS`,
-   `RAILWAY_RUN_UID=0` (Railway volumes are owned by root; the image runs as a non-root user otherwise).
+2. **Variables**: `JWT_SECRET` and `STUDIO_SECRET_KEY` (random values, e.g. `openssl rand -hex 32`), `STUDIO_ADMIN_EMAILS`.
 3. SQLite: **add a volume** to the service, mounted at `/data`. Postgres instead: add the Postgres database and set
    `DATABASE_URL=${{Postgres.DATABASE_URL}}` (use a pgvector-enabled Postgres if you need vector search).
 4. **Settings → Networking → Generate Domain**, then set `STUDIO_PUBLIC_URL` to it.
@@ -80,23 +79,71 @@ template yet; deploy from the repository:
 Optional worker: add Redis (`REDIS_URL=${{Redis.REDIS_URL}}` on both services) and a second service from the same
 repository with the start command `python -m app.worker`.
 
+## Fly.io
+
+[`fly.toml`](../../fly.toml) runs the published image with a 1 GB volume at `/data` (SQLite) and a health check.
+Fly has no deploy button; use the CLI:
+
+```sh
+fly launch --copy-config --no-deploy --name <app>         # keeps fly.toml, picks your org and region
+fly volumes create superstep_data --size 1 --region sin --app <app>
+fly secrets set --app <app> JWT_SECRET=$(openssl rand -hex 32) STUDIO_SECRET_KEY=$(openssl rand -hex 32) \
+  STUDIO_ADMIN_EMAILS=you@example.com STUDIO_PUBLIC_URL=https://<app>.fly.dev
+fly deploy --app <app>
+fly logs --app <app> | grep "admin account"
+```
+
+Run `fly secrets list` later to confirm the key is stored; Fly never shows secret values again, so keep a copy of
+`STUDIO_SECRET_KEY`. Postgres instead of SQLite: create a Fly Managed Postgres cluster (or any Postgres), set
+`DATABASE_URL` with `fly secrets set`, and remove the `[[mounts]]` block. `auto_stop_machines = "stop"` keeps costs
+low but drops open WebSockets and delays schedules; set it to `"off"` for an always-on app. Keep one machine while
+you use SQLite (a volume belongs to one machine).
+
+## DigitalOcean App Platform
+
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/quinguyen1502/superstep/tree/main)
+
+[`.do/deploy.template.yaml`](../../.do/deploy.template.yaml) deploys the published image with a managed Postgres
+database (App Platform has no persistent volumes) and sets `STUDIO_PUBLIC_URL` to the app URL. On the review screen,
+replace both `change-me` secrets with random strings and set `STUDIO_ADMIN_EMAILS`. The one-time admin password is
+in **Runtime Logs**. The development database is fine for trials; move to a managed cluster for production.
+
+## Koyeb
+
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=docker&image=ghcr.io/quinguyen1502/superstep:latest&name=superstep&ports=8000;http;/&env%5BSTUDIO_ADMIN_EMAILS%5D=&env%5BJWT_SECRET%5D=&env%5BSTUDIO_SECRET_KEY%5D=&env%5BDATABASE_URL%5D=)
+
+The button deploys the published image on port 8000. Fill in `STUDIO_ADMIN_EMAILS`, `JWT_SECRET`,
+`STUDIO_SECRET_KEY` (random strings) and `DATABASE_URL`: create a Koyeb Postgres database first (or use any
+Postgres), because free instances have no volume. Set the health check to HTTP `/api/health` on port 8000. Free
+instances scale to zero after an hour without traffic.
+
+## Zeabur
+
+[`deploy/zeabur/template.yaml`](../../deploy/zeabur/template.yaml) runs the published image with a volume at `/data`.
+The template is not published to the marketplace; deploy it with the CLI:
+
+```sh
+npx zeabur@latest template deploy -f deploy/zeabur/template.yaml
+```
+
+It asks for a domain, the admin email and `STUDIO_SECRET_KEY`; `JWT_SECRET` is generated. For Postgres, add the
+Zeabur PostgreSQL service to the project and set `DATABASE_URL` to its connection string.
+
+## Northflank
+
+No template is published. In the Northflank UI:
+
+1. **Create service → Deployment**, external image `ghcr.io/quinguyen1502/superstep:latest`, port 8000 (HTTP, public).
+2. **Secret group** linked to the service with `JWT_SECRET`, `STUDIO_SECRET_KEY` (random strings) and
+   `STUDIO_ADMIN_EMAILS`.
+3. Storage: either add a volume at `/data` (SQLite), or create a **PostgreSQL addon** and link its connection string
+   as `DATABASE_URL`.
+4. Health check: HTTP `/api/health` on port 8000. Copy the one-time admin password from the service logs.
+
 ## Coolify and Dokploy (self-hosted)
 
-These run on your own server, so you have two choices:
-
-- **All-in-one image.** Create a Docker Compose resource from
-  [`deploy/compose/docker-compose.single.yml`](../../deploy/compose/docker-compose.single.yml) (or a Docker image
-  resource with `ghcr.io/quinguyen1502/superstep:latest`, port 8000, a volume at `/data`). Set `JWT_SECRET`,
-  `STUDIO_SECRET_KEY` and `STUDIO_ADMIN_EMAILS` in the environment. For Postgres, create a database resource and
-  set `DATABASE_URL`.
-- **Full stack with the Docker sandbox.** Create a Docker Compose resource from the repository's
-  `docker-compose.yml` (set `JWT_SECRET`, `POSTGRES_PASSWORD`, `STUDIO_SECRET_KEY`, `STUDIO_ENV=production`,
-  `STUDIO_ADMIN_EMAILS`). Code nodes then run in Docker containers through the host's Docker socket: build
-  `docker/studio-code` and `docker/studio-code-ts` on the server and set `STUDIO_ENABLE_CODE_NODES=1`.
-  Mounting the Docker socket gives the api container root-equivalent access to the host.
-
-Both tools put a reverse proxy (Traefik or Caddy) in front of the service; WebSockets work without extra settings.
-Point the domain at port 8000 (all-in-one) or 80 of the `web` service (full stack).
+These run on your own server, which is the only setup where Code nodes run in the Docker sandbox. Full guide:
+[Self-hosted with Coolify or Dokploy](self-hosted.md).
 
 ## Any other Docker host
 

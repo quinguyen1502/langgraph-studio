@@ -32,6 +32,8 @@ jobs:
         options: --health-cmd "pg_isready -U studio" --health-interval 5s --health-timeout 3s --health-retries 10
     steps:
       - uses: actions/checkout@v4
+      - name: Deploy files (Render, Heroku, Railway, Fly, DO, Zeabur, compose)
+        run: pip install pyyaml && python scripts/check_deploy_configs.py
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
       - name: Build
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
@@ -56,12 +58,21 @@ jobs:
           until curl -fsS http://localhost:8001/api/health >/dev/null 2>&1; do sleep 1; done
           pw=$(docker logs pg 2>&1 | sed -n 's/.*change it now): \([^ ]*\).*/\1/p' | head -1)
           test -n "$pw" && SMOKE_PASSWORD=$pw scripts/image_smoke.sh http://localhost:8001 pg
+      - name: Root-owned volume (Fly, Railway, Render, Zeabur mounts) and a platform PORT
+        run: |
+          sudo mkdir -p "$RUNNER_TEMP/rootdata" && sudo chown root:root "$RUNNER_TEMP/rootdata" && sudo chmod 755 "$RUNNER_TEMP/rootdata"
+          docker run -d --name rv -p 8080:8080 -e PORT=8080 -v "$RUNNER_TEMP/rootdata:/data" \
+            -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID \
+            -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
+          scripts/image_smoke.sh http://localhost:8080 rv
+          test "$(docker top rv -o uid,args | awk '/uvicorn/ {print $1; exit}')" = 10001 || { docker top rv -o uid,args; exit 1; }  # dropped root
+          sudo test -f "$RUNNER_TEMP/rootdata/studio.db"
       - name: Production refuses a missing STUDIO_SECRET_KEY
         run: |
           if docker run --rm -e JWT_SECRET=ci-jwt-0123456789abcdef0123456789 superstep:ci python -c "import app.main"; then
             echo "started without STUDIO_SECRET_KEY" >&2; exit 1; fi
       - if: failure()
-        run: docker logs sq || true; docker logs pg || true
+        run: docker logs sq || true; docker logs pg || true; docker logs rv || true
       - name: Trivy (fail on fixable CRITICAL)
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0 (immutable; earlier tags were compromised in March 2026)
         with:

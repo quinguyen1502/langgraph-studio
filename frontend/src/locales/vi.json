@@ -1554,7 +1554,9 @@
     "stdout": "Nội dung đã in",
     "traceback": "Traceback",
     "notIsolated": "Code chạy trực tiếp trên máy chủ này, không cách ly: nó có thể dùng mạng và đọc các file mà máy chủ đọc được.",
-    "notIsolatedShort": "Không cách ly",
+    "notIsolatedShort": "Chạy trực tiếp trên server",
+    "notIsolatedNode": "Chạy trên server",
+    "notIsolatedTip": "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy.",
     "runUnisolated": "Node Code trong run này đã chạy trên máy chủ mà không cách ly (runtime subprocess).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Node Code",
@@ -1566,7 +1568,7 @@
     "adminRisk": "Runtime subprocess không phải sandbox: code người dùng ra được mạng và đọc được file mà máy chủ đọc được; trên macOS không giới hạn được bộ nhớ. Hãy dùng Docker, trừ khi chỉ dùng nội bộ và tin cậy.",
     "runtimes": {
       "docker": "Sandbox Docker",
-      "subprocess": "Subprocess trên máy chủ (không cách ly)",
+      "subprocess": "Chạy trực tiếp trên server (subprocess)",
       "off": "Tắt"
     },
     "languages": {

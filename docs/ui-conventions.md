@@ -51,7 +51,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | field | trường | "trường state" |
     | key (stored secret, dict key) | khoá | "API key" stays |
     | provider | nhà cung cấp | |
-    | server | máy chủ | "MCP server" = máy chủ MCP |
+    | server | máy chủ | "MCP server" = máy chủ MCP; exception: the subprocess-runtime badge (below) says "server" as the owner chose |
     | tool | công cụ | MCP tool = công cụ MCP; the node type "Tool" stays |
     | knowledge base | kho tri thức | |
     | approve, approval, approver | duyệt, yêu cầu duyệt, người duyệt | not "phê duyệt" |
@@ -63,6 +63,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | replay | xem lại | |
     | test case, test run | test case, run test | |
     | Python, TypeScript, Deno, npm, package, Web API | keep in English | Mode options read "Code (Python)" / "Code (TypeScript)" in both locales; "Ngôn ngữ" for a language label |
+    | Runs on host (subprocess Code runtime, was "Not isolated") | Chạy trực tiếp trên server; "Chạy trên server" on the canvas node | warning badge with a tooltip: "Code runs directly on the server, without Docker limiting its access. Use only for trusted code." / "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy." |
 
 ## Review checklist
 

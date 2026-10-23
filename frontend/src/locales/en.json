@@ -1554,7 +1554,9 @@
     "stdout": "Printed output",
     "traceback": "Traceback",
     "notIsolated": "Code runs directly on this server, without isolation: it can use the network and read files the server can read.",
-    "notIsolatedShort": "Not isolated",
+    "notIsolatedShort": "Runs on host",
+    "notIsolatedNode": "Runs on host",
+    "notIsolatedTip": "Code runs directly on the server, without Docker limiting its access. Use only for trusted code.",
     "runUnisolated": "Code nodes in this run ran on the server without isolation (subprocess runtime).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Code nodes",
@@ -1566,7 +1568,7 @@
     "adminRisk": "The host subprocess runtime is not a sandbox. User code can reach the network and read files the server user can read; on macOS the memory limit does not apply. Use Docker for anything but trusted local use.",
     "runtimes": {
       "docker": "Docker sandbox",
-      "subprocess": "Host subprocess (not isolated)",
+      "subprocess": "Runs on host (subprocess)",
       "off": "Off"
     },
     "languages": {

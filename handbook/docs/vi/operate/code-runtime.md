@@ -86,8 +86,8 @@ Studio cho thấy điều này ở mọi nơi:
 
 - một dòng `WARNING` trong log khi khởi động;
 - `code_runtime: "subprocess"` trong `GET /api/meta/runtime`;
-- một cảnh báo trong cấu hình Code, và nhãn **Không cách ly** trên node và
-  trong ô chọn chế độ;
+- một cảnh báo trong cấu hình Code, và nhãn **Chạy trực tiếp trên server** trong ô chọn
+  chế độ và **Chạy trên server** trên node, kèm tooltip giải thích;
 - `runtime: subprocess` trên các dòng trace, kèm một cảnh báo cho mỗi run;
 - một dấu trong lịch sử run (`code_runtime` trên mỗi run);
 - thẻ Code nodes ở **Cài đặt → Người dùng**;

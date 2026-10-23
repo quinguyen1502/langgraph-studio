@@ -1,16 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <style>
-    .bg { fill: #171717 }
-    .fg { stroke: #fafafa }
-    @media (prefers-color-scheme: dark) {
-      .bg { fill: #ededed }
-      .fg { stroke: #171717 }
-    }
+    .t{fill:#171626} .f{stroke:#fafafa} .a{fill:#00e0ea}
+    @media (prefers-color-scheme: dark){ .t{fill:#e7e7f0} .f{stroke:#171626} .a{fill:#00829d} }
   </style>
-  <rect width="32" height="32" rx="8" class="bg"/>
-  <g class="fg" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="translate(4 4)">
-    <rect width="8" height="8" x="3" y="3" rx="2"/>
-    <path d="M7 11v4a2 2 0 0 0 2 2h4"/>
-    <rect width="8" height="8" x="13" y="13" rx="2"/>
-  </g>
+  <rect width="32" height="32" rx="8" class="t"/>
+  <path class="f" d="M7 25 17 15M10 14h8v8" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect class="a" x="20" y="4" width="8" height="8" rx="2.5"/>
 </svg>

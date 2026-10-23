@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Workflow, Plus, Search, Copy, Pencil, Trash2, MoreHorizontal, Loader2, AlertCircle, RefreshCw, SearchX, FolderOpen, X } from 'lucide-react'
+import { Plus, Search, Copy, Pencil, Trash2, MoreHorizontal, Loader2, AlertCircle, RefreshCw, SearchX, FolderOpen, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -28,6 +28,7 @@ import { Label } from '@/components/ui/label'
 import { can, canEdit, useMe, type Access } from '@/lib/rbac'
 import { useLoadWhen } from '@/lib/use-when'
 import { Tip } from '@/components/tip'
+import { Logo } from '@/components/logo'
 
 type W = { id: string; name: string; updated: number; node_count: number; last_run_status: string | null; last_run_at: number | null; access: Access; mine: boolean; owner_email: string | null }
 
@@ -73,7 +74,7 @@ export function WorkflowsPage() {
 
   return <div className="min-h-screen bg-background text-foreground">
     <header className="h-14 border-b flex items-center gap-3 px-6">
-      <div className="flex items-center gap-2 font-semibold"><div className="rounded-md bg-primary text-primary-foreground p-1.5"><Workflow className="size-4" /></div>Superstep</div>
+      <Logo />
       <div className="ml-auto flex items-center gap-1"><PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu /></div>
     </header>
     <main className="max-w-6xl mx-auto p-6 space-y-4">

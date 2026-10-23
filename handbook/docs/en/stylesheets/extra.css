@@ -1,29 +1,29 @@
-/* Superstep handbook. Brand colour: the LLM node violet of the app. */
+/* Superstep handbook. Brand (DEC-0047): Step-up ink #171626 + cyan accent. */
 :root,
 [data-md-color-scheme="default"] {
-  --brand: #6c4bd8;
-  --brand-soft: rgba(108, 75, 216, 0.08);
-  --brand-line: rgba(108, 75, 216, 0.28);
-  --md-primary-fg-color: #1d1b26;
+  --brand: #00728a;
+  --brand-soft: rgba(0, 114, 138, 0.08);
+  --brand-line: rgba(0, 114, 138, 0.28);
+  --md-primary-fg-color: #171626;
   --md-primary-fg-color--light: #3a3648;
   --md-primary-fg-color--dark: #121018;
   --md-primary-bg-color: #ffffff;
-  --md-accent-fg-color: #6c4bd8;
-  --md-accent-fg-color--transparent: rgba(108, 75, 216, 0.1);
-  --md-typeset-a-color: #5b3cc9;
+  --md-accent-fg-color: #00728a;
+  --md-accent-fg-color--transparent: rgba(0, 114, 138, 0.1);
+  --md-typeset-a-color: #00728a;
 }
 
 [data-md-color-scheme="slate"] {
-  --brand: #a48bff;
-  --brand-soft: rgba(164, 139, 255, 0.08);
-  --brand-line: rgba(164, 139, 255, 0.3);
-  --md-hue: 255;
+  --brand: #58e5ed;
+  --brand-soft: rgba(88, 229, 237, 0.08);
+  --brand-line: rgba(88, 229, 237, 0.3);
+  --md-hue: 285;
   --md-primary-fg-color: #15131c;
   --md-primary-fg-color--light: #2a2734;
   --md-primary-fg-color--dark: #0e0d13;
-  --md-accent-fg-color: #a48bff;
-  --md-accent-fg-color--transparent: rgba(164, 139, 255, 0.12);
-  --md-typeset-a-color: #b7a3ff;
+  --md-accent-fg-color: #58e5ed;
+  --md-accent-fg-color--transparent: rgba(88, 229, 237, 0.12);
+  --md-typeset-a-color: #58e5ed;
 }
 
 /* Screenshots */

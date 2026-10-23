@@ -4,7 +4,7 @@ Never imported by the server: it uses the standard library only, so any Python 3
 stdin: one JSON object {"source", "state", "stdout_max"}.
 stdout: the last line is one JSON object, either {"ok": true, "value", "stdout"} or
 {"ok": false, "kind": "invalid" | "failed" | "not_json", "error", "traceback", "stdout", "type"}."""
-import contextlib, io, json, linecache, sys, traceback
+import contextlib, io, json, linecache, os, sys, traceback
 
 FILE = "<code>"
 
@@ -26,8 +26,19 @@ def _traceback(exc):
     return "".join(te.format()).strip()
 
 
+BLOCKED = ("socket.", "subprocess.", "os.exec", "os.spawn", "os.posix_spawn", "os.fork", "os.system", "pty.", "ctypes.")
+
+
+def _refuse(event, _args):
+    if event.startswith(BLOCKED):
+        raise PermissionError(f"{event} is not allowed here: Code nodes have no network and cannot start processes")
+
+
 def main():
     req = json.loads(sys.stdin.read())
+    # STUDIO_CODE_NO_NETWORK=1 (the sandbox service): an audit hook, which cannot be removed once added, refuses sockets,
+    # new processes and ctypes for the user's code. It is a guard inside the interpreter, not a kernel boundary.
+    if os.environ.get("STUDIO_CODE_NO_NETWORK") == "1": sys.addaudithook(_refuse)
     source, limit = req["source"], int(req.get("stdout_max") or 65536)
     linecache.cache[FILE] = (len(source), None, source.splitlines(True), FILE)
     out = io.StringIO()

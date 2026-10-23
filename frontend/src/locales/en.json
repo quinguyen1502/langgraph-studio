@@ -1571,6 +1571,7 @@
     "runtimes": {
       "docker": "Docker sandbox",
       "subprocess": "Runs on host (subprocess)",
+      "remote": "Sandbox service (remote)",
       "off": "Off"
     },
     "languages": {

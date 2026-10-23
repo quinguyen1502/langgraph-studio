@@ -1,4 +1,5 @@
-# Render Blueprint, full variant: web + run worker + Render Postgres + Render Key Value (Redis-compatible).
+# Render Blueprint, full variant: web + run worker + Render Postgres + Render Key Value (Redis-compatible) + the
+# sandbox service (a private service: Code nodes run there, away from the secrets; docs/deploy/sandbox.md).
 # API/webhook/schedule runs go through the Key Value queue and are executed by the worker; the web service runs
 # only the editor's runs. Deploy: https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep&path=deploy/render/render.full.yaml
 envVarGroups:
@@ -7,6 +8,10 @@ envVarGroups:
       - key: JWT_SECRET
         generateValue: true
       - key: STUDIO_SECRET_KEY
+        generateValue: true
+  - name: superstep-sandbox-token  # the only value the sandbox service gets
+    envVars:
+      - key: STUDIO_SANDBOX_TOKEN
         generateValue: true
 
 services:
@@ -20,12 +25,17 @@ services:
     autoDeployTrigger: "off"
     envVars:
       - fromGroup: superstep-shared
+      - fromGroup: superstep-sandbox-token
       - key: DATABASE_URL
         fromDatabase: { name: superstep-db, property: connectionString }
       - key: REDIS_URL
         fromService: { type: keyvalue, name: superstep-kv, property: connectionString }
       - key: STUDIO_WORKER
         value: "0"
+      - key: STUDIO_CODE_RUNTIME
+        value: remote
+      - key: STUDIO_SANDBOX_URL
+        fromService: { type: pserv, name: superstep-sandbox, property: hostport }
       - key: STUDIO_ADMIN_EMAILS
         sync: false
       - key: STUDIO_PUBLIC_URL
@@ -42,12 +52,26 @@ services:
     autoDeployTrigger: "off"
     envVars:
       - fromGroup: superstep-shared
+      - fromGroup: superstep-sandbox-token
       - key: DATABASE_URL
         fromDatabase: { name: superstep-db, property: connectionString }
       - key: REDIS_URL
         fromService: { type: keyvalue, name: superstep-kv, property: connectionString }
+      - key: STUDIO_CODE_RUNTIME
+        value: remote
+      - key: STUDIO_SANDBOX_URL
+        fromService: { type: pserv, name: superstep-sandbox, property: hostport }
       - key: OPENAI_API_KEY
         sync: false
+  - type: pserv  # private network only; gets the shared token and nothing else
+    name: superstep-sandbox
+    runtime: docker
+    dockerfilePath: ./docker/studio-sandbox/Dockerfile
+    dockerContext: .
+    plan: starter
+    autoDeployTrigger: "off"
+    envVars:
+      - fromGroup: superstep-sandbox-token
   - type: keyvalue
     name: superstep-kv
     plan: starter

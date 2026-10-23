@@ -149,7 +149,7 @@ def import_host_dir() -> str | None:
     value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
     return value or None
 # --- TASK-0053: Tool node Code mode (REQ-0039, DEC-0041); off until STUDIO_ENABLE_CODE_NODES=1 ---
-CODE_RUNTIMES = ("docker", "subprocess")  # subprocess (TASK-0056) is NOT isolation; only when set explicitly
+CODE_RUNTIMES = ("docker", "subprocess", "remote")  # subprocess (TASK-0056) is NOT isolation; remote = the sandbox service
 def code_runtime() -> str:
     """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
     if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
@@ -160,6 +160,16 @@ def code_languages() -> list[str]:
     default since TASK-0080 (TypeScript reports itself unavailable until its image or the deno binary is there)."""
     raw = os.environ.get("STUDIO_CODE_LANGUAGES") or "python,typescript"
     return [x.strip().lower() for x in raw.split(",") if x.strip()]
+def sandbox_url() -> str:
+    """STUDIO_SANDBOX_URL: the sandbox service for STUDIO_CODE_RUNTIME=remote; a bare host:port gets http://."""
+    url = (os.environ.get("STUDIO_SANDBOX_URL") or "").strip().rstrip("/")
+    return url if not url or "://" in url else f"http://{url}"
+def sandbox_token() -> str: return os.environ.get("STUDIO_SANDBOX_TOKEN") or ""  # shared by the studio and the sandbox service
+def code_no_network() -> bool: return os.environ.get("STUDIO_CODE_NO_NETWORK") == "1"  # Python Code: refuse sockets and processes (audit hook)
+def code_run_as() -> int | None:
+    """STUDIO_CODE_RUN_AS: first uid for Code processes when the server runs as root (the sandbox service); unset = no change."""
+    raw = os.environ.get("STUDIO_CODE_RUN_AS", "").strip()
+    return int(raw) if raw.isdigit() else None
 def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
 def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
 def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"

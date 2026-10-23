@@ -5,16 +5,19 @@ parses the source (`problems`); it never executes it. A call is killed at its ti
 - docker (default): a fresh container with no network, no mounts, an empty environment, memory/CPU/process limits.
 - subprocess (TASK-0056, STUDIO_CODE_RUNTIME=subprocess): a child of this server with an empty environment, a temporary
   working directory and (on Linux) rlimits. It is NOT isolation: the code can use the network and read what the server
-  user can read. It exists only for servers without Docker, and every surface labels it."""
+  user can read. It exists only for servers without Docker, and every surface labels it.
+- remote (STUDIO_CODE_RUNTIME=remote): the same subprocess runtime, but inside a separate sandbox service
+  (`app.sandbox_service`, docker/studio-sandbox) that holds no studio secrets, reached over HTTP with a shared token.
+Each runtime is a `CodeRunner` (strategy) in `RUNNERS`; `run_code` and `unavailable` only talk to that interface."""
 from __future__ import annotations
-import json, os, re, signal, subprocess, sys, tempfile, threading, time
+import json, os, queue, re, signal, subprocess, sys, tempfile, threading, time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 from ..core import config
 from ..core.errors import AppError
 from ..core.logging import get_logger
 from . import code_languages as langs
-from .sandbox import container
+from .sandbox import container, remote
 
 SOURCE_MAX = 64 * 1024
 STATE_MAX = 1024 * 1024
@@ -73,26 +76,12 @@ def warn_if_unisolated() -> None:
 
 
 def unavailable(language: Optional[str] = None) -> Optional[str]:
-    """Why Code nodes (of `language`, Python by default) cannot run here right now, or None.
-    Docker and the language's image are checked at most every 30 s."""
+    """Why Code nodes (of `language`, Python by default) cannot run here right now, or None."""
     runtime = config.code_runtime()
     if runtime == "off": return "off"
     lang = language or langs.DEFAULT
     if lang not in langs.enabled(): return f"{lang} is not enabled (STUDIO_CODE_LANGUAGES)"
-    if runtime == "subprocess": return langs.LANGUAGES[lang].host_problem()
-    image = langs.LANGUAGES[lang].image()
-    hit = _checked.get(image)
-    if hit and time.monotonic() - hit[0] < CHECK_TTL: return hit[1]
-    try:
-        r = subprocess.run([container.docker_exe(), "image", "inspect", image], stdout=subprocess.DEVNULL,
-                           stderr=subprocess.PIPE, text=True, timeout=15)
-        problem = None if r.returncode == 0 else (
-            f"the image {image} is missing (build it: docker build -t {image} docker/studio-code)" if "No such image" in (r.stderr or "")
-            else f"Docker is not running ({(r.stderr or '').strip()[:200]})")
-    except FileNotFoundError: problem = "Docker is not installed"
-    except subprocess.TimeoutExpired: problem = "Docker did not answer"
-    _checked[image] = (time.monotonic(), problem)
-    return problem
+    return RUNNERS[runtime].problem(langs.LANGUAGES[lang])
 
 
 def runtime_error(language: Optional[str] = None) -> Optional[AppError]:
@@ -121,12 +110,23 @@ def _rlimits(limits: List[tuple]) -> Callable[[], None]:
     return apply
 
 
-def _host_process(workdir: str, seconds: float, lang: "langs.CodeLanguage") -> Dict[str, Any]:
-    """Popen arguments for the subprocess runtime: empty environment, its own folder and process group, rlimits on Linux."""
+def _drop_to(uid: int) -> Callable[[], None]:
+    def apply() -> None:  # after the rlimits, in the child: no way back to the parent's user
+        os.setgroups([]); os.setgid(uid); os.setuid(uid)
+    return apply
+
+
+def _host_process(workdir: str, seconds: float, lang: "langs.CodeLanguage", uid: Optional[int] = None) -> Dict[str, Any]:
+    """Popen arguments for the subprocess runtime: empty environment, its own folder and process group, rlimits on Linux,
+    and (when the parent is root, i.e. the sandbox service) its own unprivileged uid."""
     env = {"HOME": workdir, "TMPDIR": workdir, "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", **lang.host_env(workdir)}
     kw: Dict[str, Any] = {"cwd": workdir, "env": env, "start_new_session": True}
     if sys.platform.startswith("linux"):
-        kw["preexec_fn"] = _rlimits(lang.host_rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids()))
+        limits = _rlimits(lang.host_rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids()))
+        if uid is None: kw["preexec_fn"] = limits
+        else:
+            os.chown(workdir, uid, uid); drop = _drop_to(uid)
+            kw["preexec_fn"] = lambda: (limits(), drop())
     return kw
 
 
@@ -159,6 +159,83 @@ def _exchange(argv: List[str], name: str, payload: str, seconds: float,
     return box.get("out") or "", box.get("err") or "", proc.returncode if proc.returncode is not None else -9, stopped
 
 
+class CodeRunner:
+    """Where one Code call executes. `problem`: why `lang` cannot run there now (None = it can). `exchange`: send the
+    payload, return (stdout, stderr, returncode, stopped) with stopped in ("", "timeout", "cancelled")."""
+    name = ""
+
+    def problem(self, lang: "langs.CodeLanguage") -> Optional[str]: raise NotImplementedError
+
+    def exchange(self, lang: "langs.CodeLanguage", payload: str, seconds: float,
+                 cancelled: Optional[Callable[[], bool]]) -> tuple[str, str, int, str]: raise NotImplementedError
+
+
+class DockerRunner(CodeRunner):
+    """A fresh `docker run` per call: no network, no mounts, memory/CPU/process limits. Docker and the language's
+    image are checked at most every 30 s."""
+    name = "docker"
+
+    def problem(self, lang):
+        image = lang.image()
+        hit = _checked.get(image)
+        if hit and time.monotonic() - hit[0] < CHECK_TTL: return hit[1]
+        try:
+            r = subprocess.run([container.docker_exe(), "image", "inspect", image], stdout=subprocess.DEVNULL,
+                               stderr=subprocess.PIPE, text=True, timeout=15)
+            problem = None if r.returncode == 0 else (
+                f"the image {image} is missing (build it: docker build -t {image} docker/studio-code)" if "No such image" in (r.stderr or "")
+                else f"Docker is not running ({(r.stderr or '').strip()[:200]})")
+        except FileNotFoundError: problem = "Docker is not installed"
+        except subprocess.TimeoutExpired: problem = "Docker did not answer"
+        _checked[image] = (time.monotonic(), problem)
+        return problem
+
+    def exchange(self, lang, payload, seconds, cancelled):
+        name = container.container_name()
+        argv = container.build_code(name=name, image=lang.image(), command=lang.command(), memory=config.code_memory(),
+                                    cpus=config.code_cpus(), pids=config.code_pids(), environment=lang.container_env())
+        return _exchange(argv, name, payload, seconds, cancelled)
+
+
+class SubprocessRunner(CodeRunner):
+    """A child process of this one (see the module docstring for what that does NOT isolate). With STUDIO_CODE_RUN_AS
+    set and this process running as root, each concurrent call gets its own uid from that base (the sandbox service)."""
+    name = "subprocess"
+
+    def __init__(self) -> None: self._uids: Optional[queue.Queue] = None; self._lock = threading.Lock()
+
+    def problem(self, lang): return lang.host_problem()
+
+    def _uid_pool(self) -> Optional[queue.Queue]:
+        base = config.code_run_as()
+        if base is None or os.geteuid() != 0: return None
+        with self._lock:
+            if self._uids is None:
+                self._uids = queue.Queue()
+                for i in range(config.code_concurrency()): self._uids.put(base + i)
+        return self._uids
+
+    def exchange(self, lang, payload, seconds, cancelled):
+        pool = self._uid_pool(); uid = pool.get() if pool is not None else None
+        try:
+            with tempfile.TemporaryDirectory(prefix="lgs-code-") as tmp:
+                return _exchange(lang.host_command(tmp), "", payload, seconds, cancelled, _host_process(tmp, seconds, lang, uid))
+        finally:
+            if pool is not None: pool.put(uid)
+
+
+class RemoteRunner(CodeRunner):
+    """The sandbox service (STUDIO_SANDBOX_URL + STUDIO_SANDBOX_TOKEN); see engine/sandbox/remote.py."""
+    name = "remote"
+
+    def problem(self, lang): return remote.problem(lang.id)
+
+    def exchange(self, lang, payload, seconds, cancelled): return remote.run(lang.id, payload, seconds, cancelled)
+
+
+RUNNERS: Dict[str, CodeRunner] = {r.name: r for r in (DockerRunner(), SubprocessRunner(), RemoteRunner())}
+
+
 def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout: Optional[float] = None,
              cancelled: Optional[Callable[[], bool]] = None, language: Optional[str] = None) -> CodeResult:
     """Call main(state) of `source` once in the sandbox. Raises AppError (CodeFailure when the code itself failed)."""
@@ -169,18 +246,10 @@ def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout:
     if len(data.encode()) > STATE_MAX: raise AppError("CODE_TOO_LARGE", node=node, what="state", max_kb=STATE_MAX // 1024)
     limit = min(float(timeout), config.code_max_seconds()) if timeout else float(config.code_max_seconds())
     payload = json.dumps({"source": source, "stdout_max": STDOUT_MAX, "state": json.loads(data)}, ensure_ascii=False)
-    runtime = config.code_runtime(); name = container.container_name()
+    runtime = config.code_runtime(); runner = RUNNERS[runtime]
     slot = _slot(); t0 = time.perf_counter()
     if not slot.acquire(timeout=limit): raise AppError("CODE_TIMEOUT", node=node, seconds=f"{limit:g}")
-    try:
-        if runtime == "subprocess":
-            with tempfile.TemporaryDirectory(prefix="lgs-code-") as tmp:
-                out, err, code, stopped = _exchange(lang.host_command(tmp), name, payload, limit, cancelled, _host_process(tmp, limit, lang))
-        else:
-            argv = container.build_code(name=name, image=lang.image(), command=lang.command(),
-                                        memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids(),
-                                        environment=lang.container_env())
-            out, err, code, stopped = _exchange(argv, name, payload, limit, cancelled)
+    try: out, err, code, stopped = runner.exchange(lang, payload, limit, cancelled)
     finally: slot.release()
     ms = round((time.perf_counter() - t0) * 1000, 2)
     if stopped == "timeout": raise CodeFailure("CODE_TIMEOUT", {"runtime": runtime}, node=node, seconds=f"{limit:g}")

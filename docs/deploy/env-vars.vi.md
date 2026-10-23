@@ -35,7 +35,9 @@ Các biến quan trọng với image all-in-one. Danh sách đầy đủ (kênh 
 | Biến | Mặc định trong image | Mục đích |
 |---|---|---|
 | `STUDIO_ENABLE_CODE_NODES` | `1` | `0` để tắt chế độ Code. |
-| `STUDIO_CODE_RUNTIME` | `subprocess` | Chạy trực tiếp trên server: code chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy. Image không có Docker daemon nên `docker` không dùng được ở đây. |
+| `STUDIO_CODE_RUNTIME` | `subprocess` | Chạy trực tiếp trên server: code chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy. Image không có Docker daemon nên `docker` không dùng được ở đây. `remote` gửi lời gọi Code tới [dịch vụ sandbox](sandbox.vi.md). |
+| `STUDIO_SANDBOX_URL`, `STUDIO_SANDBOX_TOKEN` | rỗng | Dịch vụ sandbox và token dùng chung (từ 16 ký tự), cho `STUDIO_CODE_RUNTIME=remote`. |
+| `STUDIO_CODE_NO_NETWORK` | rỗng (`1` trong image sandbox) | `1` = code Python bị từ chối socket, process mới và ctypes (audit hook bên trong trình thông dịch). |
 | `STUDIO_CODE_LANGUAGES` | `python,typescript` | Các ngôn ngữ được cung cấp. TypeScript chạy trên Deno có sẵn trong image. |
 | `STUDIO_CODE_TS_DENO_DIR`, `STUDIO_CODE_TS_PACKAGES` | `/opt/deno-cache`, `npm:zod@3,npm:date-fns@4` | Các package TypeScript được cache trong image. Giữ nguyên trừ khi bạn tự build image. |
 | `STUDIO_CODE_PACKAGES` | `pydantic,python-dateutil` | Các package Python hiển thị cho người dùng là import được. |

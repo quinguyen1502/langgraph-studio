@@ -72,7 +72,9 @@ class Python(CodeLanguage):
 
     def command(self) -> List[str]: return ["python", "-I", "-c", _read("code_runner.py")]
     def host_command(self, workdir: str) -> List[str]: return [sys.executable, "-I", "-c", _read("code_runner.py")]
-    def host_env(self, workdir: str) -> Dict[str, str]: return {"PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    def host_env(self, workdir: str) -> Dict[str, str]:
+        env = {"PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+        return {**env, "STUDIO_CODE_NO_NETWORK": "1"} if config.code_no_network() else env  # read by code_runner.py
     def container_env(self) -> Dict[str, str]: return {"HOME": "/tmp", "PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
     def image(self) -> str: return config.code_image()
     def packages(self) -> List[str]: return config.code_packages()

@@ -38,6 +38,9 @@ test('code mode in TypeScript: switch language, State type, test, run, admin car
   await page.locator('#code-test').click()
   await expect(page.locator('#code-test-result')).toContainText('XIN CHÀO', { timeout: 30_000 })
   await expect(page.locator('#code-test-result [data-testid="code-stdout"]')).toHaveText('got xin chào')
+  // the config panel never scrolls sideways (long Select labels / State type / editor lines must not widen it)
+  const overflow = await page.locator('#config-panel [data-slot="scroll-area-viewport"]').evaluate(e => ({ sw: e.scrollWidth, cw: e.clientWidth }))
+  expect(overflow.sw).toBeLessThanOrEqual(overflow.cw)
 
   // edited code is kept when switching back, with a hint
   await page.locator('#code-language').click(); await page.locator('#code-language-python').click()

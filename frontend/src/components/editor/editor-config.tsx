@@ -33,8 +33,8 @@ export function EditorConfig() {
   const codeRt = useCodeRuntime(); const canCode = can(useMe(), 'code.write')  // Tool node Code mode (TASK-0055)
   const chatCreds = creds.filter(c => (providers.find(p => p.id === c.provider)?.kind ?? 'chat') === 'chat')  // TypeSafe keys: Decision nodes; SMTP: Send email
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
-  return <aside className="h-full bg-muted/30 min-h-0">
-      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
+  return <aside className="h-full bg-muted/30 min-h-0" id="config-panel">
+      <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:block!"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
@@ -68,10 +68,10 @@ export function EditorConfig() {
           </>}
           {selNode.type === 'tool' && <>
             <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, language: 'python', code: codeRt?.starter ?? '' }) : upd('mode', v)}>
-              <SelectTrigger className="w-full" id="tool-mode"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full min-w-0" id="tool-mode"><SelectValue className="min-w-0 truncate" /></SelectTrigger>
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem>
                 <SelectItem value="code" id="tool-mode-code" disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>{t('editor.codeMode')}
-                  {codeRt?.code_runtime === 'subprocess' && <Badge variant="warning" className="ml-1 h-4 px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge>}</SelectItem></SelectContent></Select>
+                  {codeRt?.code_runtime === 'subprocess' && <Badge variant="warning" className="ml-1 h-4 shrink-0 px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge>}</SelectItem></SelectContent></Select>
               {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
               {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
             {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={selNode.id} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}

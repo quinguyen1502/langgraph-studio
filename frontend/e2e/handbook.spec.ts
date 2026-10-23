@@ -234,6 +234,45 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await expect(page.locator('#chat-trigger-sample')).toBeVisible()
       await shot(page, lang, 'chat-triggers'); await page.keyboard.press('Escape')
 
+      // Chat panel (TASK-0085) and the overview shot for the README: tool call, a visitor confirmation, a TypeScript Code node
+      // on the refund branch (not run, so no Docker needed), the run trace below and the Code node's settings on the right
+      const tsCode = 'export function main(state: { message: string }) {\n  const order = state.message.match(/[A-Z]\\d+/)?.[0] ?? ""\n  return { order_id: order, reason: "refund" }\n}\n'
+      const shop = { name: lang === 'en' ? 'Order assistant' : 'Trợ lý đơn hàng',
+        state: [{ name: 'message', type: 'string' }, { name: 'intent', type: 'string' }, { name: 'order', type: 'string' }, { name: 'confirm', type: 'string' }, { name: 'answer', type: 'string' }],
+        nodes: [N('start', 'start', 40, { label: s.start }, 200),
+          N('classify', 'llm', 250, { label: lang === 'en' ? 'Classify intent' : 'Phân loại ý định', model: 'gpt-4o-mini', prompt: 'Classify: {{state.message}}', output_field: 'intent' }, 200),
+          N('route', 'condition', 470, { label: lang === 'en' ? 'Route by intent' : 'Rẽ nhánh theo ý định', field: 'intent', default: 'order_status' }, 200),
+          N('lookup', 'tool', 690, { label: lang === 'en' ? 'Lookup order' : 'Tra cứu đơn', mode: 'function', function: 'lookup_order', output_field: 'order' }, 80),
+          N('refund', 'tool', 690, { label: lang === 'en' ? 'Parse refund' : 'Đọc yêu cầu hoàn', mode: 'code', language: 'typescript', code: tsCode, output_field: 'order' }, 320),
+          N('ask', 'human', 910, { label: lang === 'en' ? 'Confirm with customer' : 'Xác nhận với khách', prompt: lang === 'en' ? 'Is this your order? {{state.order}}' : 'Đây có phải đơn của bạn? {{state.order}}', output_field: 'confirm', answered_by: 'visitor' }, 200),
+          N('reply', 'llm', 1130, { label: lang === 'en' ? 'Reply' : 'Trả lời', model: 'gpt-4o-mini', prompt: 'Order: {{state.order}}. Confirmed: {{state.confirm}}', output_field: 'answer' }, 200),
+          N('end', 'end', 1350, { label: s.end }, 200)],
+        edges: [{ id: '1', source: 'start', target: 'classify' }, { id: '2', source: 'classify', target: 'route' }, { id: '3', source: 'route', target: 'lookup', label: 'order_status' },
+          { id: '4', source: 'route', target: 'refund', label: 'refund' }, { id: '5', source: 'lookup', target: 'ask' }, { id: '6', source: 'refund', target: 'ask' },
+          { id: '7', source: 'ask', target: 'reply' }, { id: '8', source: 'reply', target: 'end' }] }
+      const shopId = await make(shop)
+      await page.request.put(`/api/workflows/${shopId}/chat`, { headers: H, data: { enabled: true, steps: 'labels' } })
+      await page.goto(`/workflows/${shopId}`); await expect(page.locator('.react-flow__node')).toHaveCount(8)
+      const say = async (text: string) => { await page.locator('#chat-input').fill(text); await page.keyboard.press('Enter') }
+      if (!(await page.locator('#chat-input').isVisible())) await page.locator('#chat-open').click()
+      await say(lang === 'en' ? 'Where is my order A100?' : 'Đơn A100 của tôi đang ở đâu?')
+      await expect(page.locator('#chat-confirmation')).toBeVisible({ timeout: 30_000 }); await page.locator('#chat-approve').click()
+      await expect(page.getByTestId('chat-answer').last()).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
+      await say(lang === 'en' ? 'And order B7?' : 'Còn đơn B7 thì sao?'); await expect(page.locator('#chat-confirmation')).toBeVisible({ timeout: 30_000 })
+      await page.locator('.react-flow__pane').click({ position: { x: 20, y: 20 } }); await fit(page)  // Shift+1 on the canvas, not in the chat box
+      await shot(page, lang, 'chat-tab')
+      await page.locator('#chat-view').click(); await page.locator('#chat-view-visitor').click(); await expect(page.locator('#chat-visitor-banner')).toBeVisible()
+      await shot(page, lang, 'chat-visitor')
+      await page.locator('#chat-visitor-exit').click()
+      await page.locator('#chat-fullscreen').click(); await shot(page, lang, 'chat-fullscreen'); await page.keyboard.press('Escape')
+      // overview: a bigger window so canvas, settings, trace and chat all fit
+      await page.setViewportSize({ width: 1800, height: 1000 })
+      await setInput(page, JSON.stringify({ message: lang === 'en' ? 'Where is my order C3?' : 'Đơn C3 của tôi đang ở đâu?' }, null, 2)); await run(page, 'waiting')
+      await page.locator('.react-flow__node[data-id="classify"]').click(); await fit(page)
+      await page.mouse.move(2, 998); await page.waitForTimeout(450)
+      await page.screenshot({ path: `../handbook/docs/${lang}/images/overview.png` })
+      await page.setViewportSize({ width: 1440, height: 900 }); await page.locator('#chat-close').click()
+
       // Dark theme hero
       await page.evaluate(() => localStorage.setItem('theme', 'dark'))
       await page.addInitScript(() => localStorage.setItem('theme', 'dark'))

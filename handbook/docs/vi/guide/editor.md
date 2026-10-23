@@ -10,7 +10,7 @@
 | Trái | **Node palette** và trình sửa **State schema**. |
 | Giữa | Canvas React Flow. |
 | Phải | **Cấu hình** của node hoặc edge đang chọn. |
-| Dưới | Ba tab. **Chạy**: input (JSON) và logs (trace trực tiếp) nằm cạnh nhau, một menu chọn 10 run gần nhất và **Xem tất cả** cho toàn bộ lịch sử run. [**Test**](../run/tests.md). [**Code**](python-export.md) (workflow dưới dạng Python LangGraph). |
+| Dưới | Ba tab. **Chạy**: input (JSON) và logs (trace trực tiếp) nằm cạnh nhau, một menu chọn 10 run gần nhất và **Xem tất cả** cho toàn bộ lịch sử run. [**Test**](../run/tests.md). [**Code**](python-export.md) (workflow dưới dạng LangGraph Python hoặc TypeScript). |
 | Ngoài cùng bên phải | Khung [**Chat**](../run/chat.md), khi đang mở. |
 
 Kéo viền của panel trái, phải hoặc dưới để đổi kích thước. Kích thước tối

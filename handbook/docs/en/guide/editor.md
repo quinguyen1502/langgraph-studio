@@ -10,7 +10,7 @@
 | Left | **Node palette** and the **State schema** editor. |
 | Centre | The React Flow canvas. |
 | Right | **Config** for the selected node or edge. |
-| Bottom | Three tabs. **Run**: the input (JSON) and the logs (the live trace) side by side, a picker with the last 10 runs and **View all** for the whole run history. [**Tests**](../run/tests.md). [**Code**](python-export.md) (the workflow as LangGraph Python). |
+| Bottom | Three tabs. **Run**: the input (JSON) and the logs (the live trace) side by side, a picker with the last 10 runs and **View all** for the whole run history. [**Tests**](../run/tests.md). [**Code**](python-export.md) (the workflow as LangGraph Python or TypeScript). |
 | Far right | The [**Chat**](../run/chat.md) panel, when it is open. |
 
 Drag the border of the left, right or bottom panel to resize it. The

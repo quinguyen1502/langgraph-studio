@@ -1,7 +1,7 @@
 # Chạy
 
 Workflow chạy được theo năm cách. Cách nào cũng đi qua cùng một engine, tạo
-cùng một kiểu trace và hiện trong **Lịch sử**.
+cùng một kiểu trace và hiện trong lịch sử run (**Chạy → Xem tất cả**).
 
 | Bắt đầu bởi | Cách | Nhãn trong Lịch sử |
 | --- | --- | --- |

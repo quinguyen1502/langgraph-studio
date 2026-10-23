@@ -16,7 +16,7 @@ kept so the workflow can remember it.
 - **Fullscreen** (the arrows) shows the chat over the whole window, with the list
   of your chats on the left. ++esc++ goes back; the conversation and what you
   were typing stay.
-- In the narrow panel, pick an earlier chat from the menu next to
+- In the narrow panel, pick an earlier chat from the session picker next to
   **View as**, or start one with the **New chat** button (the pen icon).
 
 ![Chat in fullscreen](../images/chat-fullscreen.png)
@@ -60,6 +60,8 @@ images from other sites are not shown, and links open in a new tab.
   visitors** allows. In a narrow panel the switch shows a short **Builder** or
   **Visitor** label and also holds **Chat settings**; while you preview as a
   visitor, a strip above the thread says so, with **Back to builder view**.
+
+![Previewing as a chat visitor](../images/chat-visitor.png)
 - Each message is a run in the run history (**Run → View all**) with the *Chat*
   badge, so you can open its full trace there.
 - Chat uses the saved workflow: save your changes before you try them.

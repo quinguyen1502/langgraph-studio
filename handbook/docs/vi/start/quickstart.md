@@ -96,7 +96,7 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
 
 ## 5. Chạy và duyệt
 
-1. Mở tab **Input** ở phía dưới và nhập:
+1. Trong tab **Chạy** ở phía dưới, nhập vào **Input** (bên trái):
 
     ```json
     {"message": "Đơn A100 của tôi bị vỡ khi nhận. Tôi được hoàn tiền không?"}
@@ -119,12 +119,12 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
     [Duyệt bởi người](../run/human-approval.md#duyet-qua-chat).
 
 !!! success "Kiểm tra"
-    Tab **Logs** hiện **Hoàn thành** với bốn bước: Start, Soạn trả lời, Duyệt
+    Nhật ký (bên phải input) hiện **Hoàn thành** với bốn bước: Start, Soạn trả lời, Duyệt
     trả lời và End.
 
 ## 6. Đọc trace
 
-Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó mở ra với
+Chọn **Soạn trả lời** trên canvas hoặc trong nhật ký. Bước đó mở ra với
 **Input**, **Output**, **State diff** và sự kiện **Raw**. State diff cho thấy
 `reply` được bước này thêm vào.
 
@@ -149,7 +149,7 @@ Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó m
 
     Phản hồi là `202` kèm `run_id` và `"status": "queued"`.
 
-3. Mở tab **Lịch sử** (tải lại trang trước). Run gọi qua API có nhãn **API**
+3. Mở **Chạy → Xem tất cả** (tải lại trang trước). Run gọi qua API có nhãn **API**
    và trạng thái `waiting`: nó dừng ở node Human, giống run chạy trong studio.
 
 ![Lịch sử có run trong studio và run qua API](../images/quickstart-history.png)

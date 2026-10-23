@@ -1,7 +1,7 @@
 # Run
 
 A workflow runs in five ways. All of them go through the same engine,
-produce the same trace, and appear in **History**.
+produce the same trace, and appear in the run history (**Run → View all**).
 
 | Started by | How | Badge in History |
 | --- | --- | --- |

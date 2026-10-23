@@ -57,7 +57,7 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="chat-toolbar">
         <Select value={view} onValueChange={v => setView(v as ChatView)}>
           <SelectTrigger size="sm" className="w-auto min-w-0 shrink" id="chat-view" aria-label={t('chat.viewAs')}><SelectValue>{t(`chat.views.${view}.title`)}</SelectValue></SelectTrigger>
-          <SelectContent><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
+          <SelectContent position="popper" align="start"><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
             {(['builder', 'visitor'] as const).map(v => <SelectItem key={v} value={v} id={`chat-view-${v}`} className="max-w-80">
               <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs whitespace-normal text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></SelectItem>)}
           </SelectGroup></SelectContent></Select>

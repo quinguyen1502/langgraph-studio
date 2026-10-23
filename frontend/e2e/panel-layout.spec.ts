@@ -140,6 +140,10 @@ for (const lang of ['en', 'vi'] as const) {
     await page.locator('#chat-view').click(); await expect(page.getByRole('menu')).toContainText(lang === 'vi' ? 'Xem dưới góc nhìn' : 'View as')
     await expect(page.locator('#chat-view-visitor')).toContainText(lang === 'vi' ? 'Khách chat' : 'Chat visitor')
     await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Người dựng' : 'Builder')
+    // the View as label and the session title share the font size and the text baseline
+    const fs = async (sel: string) => page.locator(sel).evaluate(e => getComputedStyle(e).fontSize)
+    expect(await fs('#chat-view')).toBe(await fs('#chat-session-picker [data-slot=select-value]'))
+    await expectBaselineAligned([page.locator('#chat-view'), page.locator('#chat-session-picker [data-slot=select-value]')], { label: 'View as label and session title' })
     for (const v of ['builder', 'visitor'] as const) {
       if (v === 'visitor') { await page.locator('#chat-view-visitor').click(); await page.locator('#chat-view').click() }
       // the View as trigger reads as a menu: its chevron sits right after the label, inside the panel

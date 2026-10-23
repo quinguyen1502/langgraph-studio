@@ -11,7 +11,7 @@ nghiệm sang dự án của bạn.
 
 - Mở tab **Code** ở panel dưới, hoặc chọn **Xem dạng code** trong menu **⋯**
   hay bảng lệnh (++ctrl+k++).
-- Tab hiện **version đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
+- Tab hiện **phiên bản đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
   trong code sau khi **Lưu**.
 - Chọn một node trên canvas: code của nó được tô sáng và cuộn tới. Start và End
   chỉ tới các cạnh `START` và `END` của chúng.

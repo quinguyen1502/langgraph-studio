@@ -51,7 +51,7 @@ node, không làm sập server.
 
 ## Decision (Jev)
 
-Hỏi Jev của [TypeSafe](https://typesafe.ai) các câu hỏi có kiểu về `text` (một
+Hỏi Jev của [TypeSafe](https://typesafe.ai) về `text` và nhận câu trả lời có kiểu (một
 template; nếu đúng bằng một `{{state.x}}` thì gửi giá trị kèm kiểu). Mỗi câu
 hỏi có `id`, `instructions` và một kiểu:
 

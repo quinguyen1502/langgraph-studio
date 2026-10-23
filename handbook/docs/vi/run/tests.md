@@ -11,7 +11,7 @@ sửa để biết cái gì vẫn chạy đúng và thay đổi nào làm hỏng
 - Cần quyền sửa workflow để thêm, sửa và chạy test. Người xem thấy được các
   test case và kết quả.
 - Worker đang chạy: mỗi test case được đưa vào hàng đợi như một run.
-- Test chạy trên một version đã lưu. Lưu trước để test thay đổi mới nhất.
+- Test chạy trên một phiên bản đã lưu. Lưu trước để test thay đổi mới nhất.
 - Repo LangGraph đã import không có tab Test.
 
 ## Test case
@@ -40,7 +40,7 @@ Mỗi workflow có tối đa 50 test case (`STUDIO_TEST_CASES_MAX`), mỗi test 
 
 ## Chạy test
 
-- **Chạy tất cả** chạy mọi test case trên version đã lưu hiện tại; nút chạy trên
+- **Chạy tất cả** chạy mọi test case trên phiên bản đã lưu hiện tại; nút chạy trên
   một test case chỉ chạy test case đó.
 - Tối đa 4 test case chạy cùng lúc (`STUDIO_TEST_PARALLEL`). Mỗi workflow chỉ có
   một run test tại một thời điểm; **Huỷ** để dừng.
@@ -69,24 +69,24 @@ test kiểm đúng những gì run thật làm. Chỉ những gì tới tay ngư
 Node Tool, HTTP, MCP, Code và Retriever vẫn chạy thật. Hãy trỏ chúng tới hệ
 thống thử nghiệm khi chúng thay đổi dữ liệu.
 
-## So sánh với version trước
+## So sánh với phiên bản trước
 
-Mỗi kết quả được so với run test xong gần nhất trên một version cũ hơn.
-Thanh phía trên danh sách hiện số lượng và version đó; mỗi test case có nhãn
+Mỗi kết quả được so với run test gần nhất đã xong trên một phiên bản cũ hơn.
+Thanh phía trên danh sách hiện số lượng và phiên bản đó; mỗi test case có nhãn
 của nó.
 
-![Một lỗi hỏng mới so với version 1](../images/tests-compare.png)
+![Một test mới lỗi so với phiên bản 1](../images/tests-compare.png)
 
 | Nhãn | Nghĩa |
 | --- | --- |
-| Hỏng mới | Trước đạt, giờ không đạt. |
+| Mới lỗi | Trước đạt, giờ không đạt. |
 | Đã sửa | Trước không đạt, giờ đạt. |
 | Vẫn lỗi / Vẫn đạt | Không đổi. |
 | Mới | Chưa có kết quả trước, ví dụ test case mới thêm. |
 
-Test case vẫn là chính nó khi bạn sửa. Khi chưa có kết quả trước, thanh báo như
-vậy: **Chạy trên version** chạy test trên một version cũ đã lưu để có kết quả
-đó. **Lịch sử test** liệt kê các run test gần đây (version, ai chạy, lúc
+Sửa test case không làm mất lịch sử của nó. Khi chưa có kết quả trước, thanh sẽ
+báo như vậy: **Chạy trên phiên bản** chạy test trên một phiên bản cũ đã lưu để
+có kết quả so sánh. **Lịch sử test** liệt kê các run test gần đây (phiên bản, ai chạy, lúc
 nào, số đạt và không đạt) và mở lại được.
 
 ## Lưu một run thành test case

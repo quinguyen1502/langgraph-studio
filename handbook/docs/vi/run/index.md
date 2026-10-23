@@ -47,6 +47,6 @@ cùng một kiểu trace và hiện trong **Lịch sử**.
 
     ---
 
-    Test case, Chạy tất cả, so sánh với version trước.
+    Test case, Chạy tất cả, so sánh với phiên bản trước.
 
 </div>

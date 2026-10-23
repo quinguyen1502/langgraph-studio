@@ -30,7 +30,7 @@ còn có sẵn tài khoản demo `admin@example.com` / `admin123`). Tài liệu 
 <http://localhost:8000/docs>. Node LLM trả lời bằng bản mock offline cố định
 cho tới khi bạn thêm credential của model. Phần
 [Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/)
-dựng, chạy, duyệt và gọi workflow đầu tiên trong khoảng mười phút.
+hướng dẫn dựng, chạy, duyệt và gọi workflow đầu tiên trong khoảng mười phút.
 
 Chạy đủ stack (Postgres có pgvector, Redis, API, worker, nginx):
 

@@ -34,7 +34,7 @@ Mở **Cài đặt → Máy chủ MCP**, chọn **Thêm máy chủ MCP**.
         Đây không phải sandbox. Máy chủ MCP không tin cậy nên chạy thành
         container HTTP riêng.
 
-**Tìm công cụ** liệt kê những gì máy chủ cung cấp. Phạm vi là cá nhân hoặc toàn
+**Lấy danh sách công cụ** liệt kê những gì máy chủ cung cấp. Phạm vi là cá nhân hoặc toàn
 tổ chức; admin chọn vai trò nào được dùng máy chủ của tổ chức. Secret được mã
 hoá, API chỉ trả về tên và giá trị đã che.
 

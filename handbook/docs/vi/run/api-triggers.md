@@ -3,7 +3,7 @@
 Workflow nào cũng có thể được một dịch vụ khác khởi chạy qua HTTP. Để chạy
 bằng tin nhắn Slack hoặc Telegram, xem [Chạy từ chat](chat-triggers.md).
 
-![Kích hoạt qua API](../images/api-trigger.png)
+![Chạy qua API](../images/api-trigger.png)
 
 ## Trước khi bắt đầu
 

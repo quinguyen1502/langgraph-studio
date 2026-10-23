@@ -88,7 +88,7 @@ sequenceDiagram
 ```
 
 Run bus nằm trong bộ nhớ khi chỉ có một process, hoặc trên Redis khi có nhiều
-process; với Redis, job có worker bị chết sẽ được giữ lại bởi worker khác và chạy
+process; với Redis, job của worker bị chết sẽ được worker khác nhận lại và chạy
 tiếp từ checkpoint cuối.
 
 ## Side effect gần như đúng một lần

@@ -131,6 +131,7 @@ const BANNED: [RegExp, string][] = [
   [/\d+\}\} nút|\bnút node\b/, '“nút” means a button; nodes are “node”'],
   [/\b[Ff]ields?\b/, 'use “trường”'],
   [/\bProvider\b/, 'use “nhà cung cấp”'],
+  [/^(Nút|Cạnh)$/, 'nodes and edges stay “node” / “edge”'],
 ]
 
 describe('locales', () => {

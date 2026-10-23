@@ -61,9 +61,9 @@ Kết nối tạo trước khi có tính năng chạy từ chat cần làm các 
 | --- | --- |
 | Tên | Hiện trong danh sách và trong Lịch sử. |
 | Kết nối | Một Slack app hoặc bot Telegram ở **Cài đặt → Kênh**. |
-| Nghe ở | **Tin nhắn riêng gửi bot**, **Một kênh Slack** (ID của kênh, `C…`, ở chi tiết kênh → About) hoặc **Một nhóm Telegram** (ID của nhóm, `-…`). |
+| Lắng nghe ở | **Tin nhắn riêng gửi bot**, **Một kênh Slack** (ID của kênh, `C…`, ở chi tiết kênh → About) hoặc **Một nhóm Telegram** (ID của nhóm, `-…`). |
 | Từ lệnh | Một từ: chữ, số, `-` hoặc `_`, tối đa 32 ký tự. Không phân biệt hoa thường; dấu `/` ở đầu được bỏ đi. |
-| Nội dung tin nhắn vào | Trường input nhận phần còn lại của tin nhắn. Trường kiểu danh sách nhận một danh sách một phần tử. |
+| Ghi nội dung tin nhắn vào | Trường input nhận phần còn lại của tin nhắn. Trường kiểu danh sách nhận một danh sách một phần tử. |
 | Trả lời bằng | Trường của state mà bot hiện khi run kết thúc. |
 
 Hộp thoại hiện mẫu tin nhắn mọi người sẽ gõ. Mỗi nơi chỉ một trigger trả lời

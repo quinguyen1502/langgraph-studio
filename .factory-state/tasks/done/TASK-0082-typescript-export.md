@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0082
-- Status: review (draft PR, stacked on TASK-0081; REV-0075, QA-0075)
+- Status: done (PR #112)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -37,3 +37,7 @@ Export a workflow as a runnable LangGraph.js TypeScript file next to the Python 
 
 - `tests/test_typescript_export.py` (snapshot `tests/snapshots/typescript_export_demo.ts`), `test_python_export.py`
   unchanged and green, vitest `code-export.test.ts`, e2e `code-export.spec.ts`.
+
+## Progress Log
+
+- 2026-10-23: owner approved the merge; merged into develop (PR #112).

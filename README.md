@@ -1,10 +1,16 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-lockup-dark.svg">
-    <img src="frontend/public/brand/superstep-lockup.svg" alt="Superstep" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/readme-avatar-dark.svg">
+    <img src="frontend/public/brand/readme-avatar.svg" alt="Superstep logo" width="200" height="200">
   </picture>
 
+  <h3><b>Superstep</b></h3>
+  <p>✨ ✨ ✨</p>
+  <p>Open-source visual LangGraph studio<br>Drag-and-drop graphs • Live run streaming • Human-in-the-loop approvals • Python code nodes</p>
+
   <p>
+    <a href="https://github.com/quinguyen1502/superstep/stargazers"><img src="https://img.shields.io/github/stars/quinguyen1502/superstep?style=social" alt="GitHub stars"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/quinguyen1502/superstep" alt="License"></a>
     <a href="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://quinguyen1502.github.io/superstep/"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg" alt="Handbook"></a>
   </p>

@@ -48,6 +48,8 @@ const SAME_OK = new Set([
   'chatTriggers.bot',
   'code.adminImage',
   'code.adminRuntime',
+  'code.languages.python',
+  'code.languages.typescript',
   'code.runtimeLabel',
   'code.traceback',
   'codeView.language',
@@ -70,6 +72,7 @@ const SAME_OK = new Set([
   'creds.titlePh',
   'decision.id',
   'decision.model',
+  'editor.codeMode',
   'editor.idBadge',
   'editor.jsonTitle',
   'editor.llmMode',
@@ -141,6 +144,14 @@ describe('locales', () => {
   it('placeholders match', () => {
     const bad = Object.keys(EN).filter((k) => k in VI && vars(EN[k]).join() !== vars(VI[k]).join())
     expect(bad).toEqual([])
+  })
+  it('the subprocess-runtime badge reads "Runs on host" with a tooltip (glossary)', () => {
+    expect([EN['code.notIsolatedShort'], EN['code.notIsolatedNode']]).toEqual(['Runs on host', 'Runs on host'])
+    expect([VI['code.notIsolatedShort'], VI['code.notIsolatedNode']]).toEqual(['Chạy trực tiếp trên server', 'Chạy trên server'])
+    expect(EN['code.notIsolatedTip']).toBe('Code runs directly on the server, without Docker limiting its access. Use only for trusted code.')
+    expect(VI['code.notIsolatedTip']).toBe('Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy.')
+    expect(Object.entries(EN).filter(([, v]) => /not isolated|without isolation|unisolated/i.test(v)).map(([k]) => k)).toEqual([])
+    expect(Object.entries(VI).filter(([, v]) => /không cách ly/i.test(v)).map(([k]) => k)).toEqual([])
   })
   it('vi follows the glossary', () => {
     const bad = Object.entries(VI).flatMap(([k, v]) =>

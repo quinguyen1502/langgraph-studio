@@ -214,7 +214,7 @@
       "each": "each: chạy các bước lặp cho phần tử tiếp theo",
       "done": "done: sau phần tử cuối"
     },
-    "pythonCode": "Code Python"
+    "codeMode": "Code ({{language}})"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -1116,7 +1116,7 @@
       "workflow_transfer": "Chuyển quyền sở hữu",
       "workflow_delete": "Xoá workflow",
       "policy_org_resources": "Đổi chính sách tài nguyên tổ chức",
-      "system_code_runtime_subprocess": "Node Code chạy không cách ly"
+      "system_code_runtime_subprocess": "Node Code chạy trực tiếp trên server"
     },
     "types": {
       "user": "Người dùng",
@@ -1553,9 +1553,11 @@
     "result": "Kết quả ({{ms}} ms)",
     "stdout": "Nội dung đã in",
     "traceback": "Traceback",
-    "notIsolated": "Code chạy trực tiếp trên máy chủ này, không cách ly: nó có thể dùng mạng và đọc các file mà máy chủ đọc được.",
-    "notIsolatedShort": "Không cách ly",
-    "runUnisolated": "Node Code trong run này đã chạy trên máy chủ mà không cách ly (runtime subprocess).",
+    "notIsolated": "Code chạy trực tiếp trên máy chủ này, không có Docker giới hạn quyền: nó có thể dùng mạng và đọc các file mà máy chủ đọc được. Chỉ nên dùng cho code tin cậy.",
+    "notIsolatedShort": "Chạy trực tiếp trên server",
+    "notIsolatedNode": "Chạy trên server",
+    "notIsolatedTip": "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy.",
+    "runUnisolated": "Node Code trong run này đã chạy trực tiếp trên server, không có Docker giới hạn quyền (runtime subprocess).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Node Code",
     "adminIntro": "Nơi chạy node Tool ở chế độ Code và các giới hạn.",
@@ -1566,9 +1568,24 @@
     "adminRisk": "Runtime subprocess không phải sandbox: code người dùng ra được mạng và đọc được file mà máy chủ đọc được; trên macOS không giới hạn được bộ nhớ. Hãy dùng Docker, trừ khi chỉ dùng nội bộ và tin cậy.",
     "runtimes": {
       "docker": "Sandbox Docker",
-      "subprocess": "Subprocess trên máy chủ (không cách ly)",
+      "subprocess": "Chạy trực tiếp trên server (subprocess)",
       "off": "Tắt"
-    }
+    },
+    "languages": {
+      "python": "Python",
+      "typescript": "TypeScript"
+    },
+    "languageOff": "Máy chủ này không cung cấp {{language}} (STUDIO_CODE_LANGUAGES).",
+    "languageKept": "Code của bạn được giữ nguyên. Hãy viết lại bằng {{language}} trước khi chạy.",
+    "stateType": "Kiểu State",
+    "stateTypeHint": "Tạo từ schema của state. Dùng như `state: State`; Deno bỏ kiểu đi mà không kiểm tra nên không cần khai báo. Gõ state. để xem tên các trường.",
+    "tsPackages": "Web API và các package: {{packages}} (import đúng như ghi, kèm phiên bản, ví dụ \"npm:zod@3\").",
+    "tsNoPackages": "Chỉ có Web API; ở đây không import được package nào.",
+    "adminLanguages": "Ngôn ngữ",
+    "languageReady": "Sẵn sàng",
+    "languageNotReady": "Chưa sẵn sàng",
+    "adminPackages": "Package: {{packages}}",
+    "adminNoPackages": "Không có package thêm"
   },
   "inbox": {
     "title": "Duyệt",

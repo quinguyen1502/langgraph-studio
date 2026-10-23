@@ -214,7 +214,7 @@
       "each": "each: chạy các bước lặp cho phần tử tiếp theo",
       "done": "done: sau phần tử cuối"
     },
-    "codeMode": "Code (Python hoặc TypeScript)"
+    "codeMode": "Code ({{language}})"
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -1569,7 +1569,6 @@
       "subprocess": "Subprocess trên máy chủ (không cách ly)",
       "off": "Tắt"
     },
-    "language": "Ngôn ngữ",
     "languages": {
       "python": "Python",
       "typescript": "TypeScript"

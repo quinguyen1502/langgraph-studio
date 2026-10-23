@@ -214,7 +214,7 @@
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
     },
-    "codeMode": "Code (Python or TypeScript)"
+    "codeMode": "Code ({{language}})"
   },
   "nodes": {
     "start": "Start point",
@@ -1569,7 +1569,6 @@
       "subprocess": "Host subprocess (not isolated)",
       "off": "Off"
     },
-    "language": "Language",
     "languages": {
       "python": "Python",
       "typescript": "TypeScript"

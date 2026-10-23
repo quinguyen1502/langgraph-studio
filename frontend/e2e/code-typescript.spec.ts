@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { login, N, newWorkflow } from './helpers'
-// TASK-0081: TypeScript in Tool node Code mode. An admin switches a Code node to TypeScript (the untouched Python
+// TASK-0081: TypeScript in Tool node Code mode. An admin picks "Code (TypeScript)" in the Mode select (the untouched Python
 // starter becomes the TypeScript one), sees the generated State type, tests and runs the code; the canvas shows "TS";
 // the admin card lists both languages. Needs a server that can run TypeScript (Deno on the host with
 // E2E_CODE_RUNTIME=subprocess, or Docker with studio-code-ts:1); skips otherwise.
@@ -24,7 +24,12 @@ test('code mode in TypeScript: switch language, State type, test, run, admin car
   await page.locator('#tool-mode').click(); await page.getByRole('option', { name: /^Code \(Python/ }).click()
   await expect(page.locator('#code-source')).toContainText('def main(state)')
 
-  await page.locator('#code-language').click(); await page.locator('#code-language-typescript').click()
+  // one Mode option per available language, each with the "Not isolated" badge in subprocess mode
+  await page.locator('#tool-mode').click()
+  await expect(page.locator('#tool-mode-code-python [data-testid="mode-unisolated"]')).toBeVisible()
+  await page.locator('#tool-mode-code-typescript').click()
+  await expect(page.locator('#tool-mode')).toContainText('Code (TypeScript)')
+  await expect(page.locator('#code-language')).toHaveCount(0)  // no separate language picker
   await expect(page.locator('#code-source')).toContainText('export function main(state: State)')  // starter swapped
   await expect(page.locator('#code-source')).toHaveAttribute('data-language', 'typescript')
   await expect(page.locator('#code-language-kept')).toHaveCount(0)
@@ -43,10 +48,10 @@ test('code mode in TypeScript: switch language, State type, test, run, admin car
   expect(overflow.sw).toBeLessThanOrEqual(overflow.cw)
 
   // edited code is kept when switching back, with a hint
-  await page.locator('#code-language').click(); await page.locator('#code-language-python').click()
+  await page.locator('#tool-mode').click(); await page.locator('#tool-mode-code-python').click()
   await expect(page.locator('#code-language-kept')).toBeVisible()
   await expect(page.locator('#code-source')).toContainText('export function main')
-  await page.locator('#code-language').click(); await page.locator('#code-language-typescript').click()
+  await page.locator('#tool-mode').click(); await page.locator('#tool-mode-code-typescript').click()
 
   await page.locator('#save-btn').click(); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
   const saved = (await (await page.request.get(`/api/workflows/${wid}`, { headers: H })).json()).data

@@ -72,6 +72,7 @@ const SAME_OK = new Set([
   'creds.titlePh',
   'decision.id',
   'decision.model',
+  'editor.codeMode',
   'editor.idBadge',
   'editor.jsonTitle',
   'editor.llmMode',

@@ -4,7 +4,7 @@
 
 - Project: superstep
 - Task ID: TASK-0081
-- Status: review (draft PR, stacked; REV-0074, QA-0074)
+- Status: done (PR #111)
 - Owner: Thái Quí Nguyễn
 - Created: 2026-10-23
 - Updated: 2026-10-23
@@ -34,3 +34,7 @@ Let people with `code.write` pick Python or TypeScript in Code mode and see the 
 ## Tests
 
 - vitest (`state-type`, `code-editor`), e2e `code-typescript.spec.ts`.
+
+## Progress Log
+
+- 2026-10-23: owner approved the merge; merged into develop (PR #111).

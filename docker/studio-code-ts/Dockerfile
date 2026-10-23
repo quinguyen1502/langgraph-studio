@@ -12,5 +12,6 @@ RUN deno cache --no-config --no-lock deps.ts \
     && chmod -R a+rX /opt/deno-cache \
     && rm -f deps.ts
 WORKDIR /tmp
-USER 1993:1993  # the image's deno user; the studio runs it with its own --user anyway
+# the image's deno user; the studio runs it with its own --user anyway
+USER 1993:1993
 CMD ["deno", "eval", "console.log('studio-code-ts: run by the studio, not directly')"]

@@ -51,7 +51,7 @@ export function WorkflowsPage() {
   const create = async () => {
     setBusy(true)
     try {
-      const r = await api('/api/workflows', { method: 'POST', json: { name: 'Untitled workflow', state: [{ name: 'message', type: 'string' }],
+      const r = await api('/api/workflows', { method: 'POST', json: { name: t('list.untitled'), state: [{ name: 'message', type: 'string' }],
         nodes: [{ id: 'start', type: 'start', position: { x: 80, y: 200 }, data: { label: 'Start' } }, { id: 'end', type: 'end', position: { x: 480, y: 200 }, data: { label: 'End' } }],
         edges: [{ id: 'e1', source: 'start', target: 'end' }] } })
       nav(`/workflows/${r.id}`)

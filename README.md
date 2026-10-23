@@ -32,7 +32,7 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Open <http://localhost:5173> and create an account with **Sign up**. The API docs are at <http://localhost:8000/docs>.
+Open <http://localhost:5173> and create an account with **Sign up** (outside production a demo account, `admin@example.com` / `admin123`, also exists). The API docs are at <http://localhost:8000/docs>.
 LLM nodes answer from a deterministic offline mock until you add a model
 credential. The [Quickstart](https://quinguyen1502.github.io/superstep/start/quickstart/)
 builds, runs, approves and triggers a first workflow in about ten minutes.
@@ -47,12 +47,16 @@ docker compose up --build   # http://localhost:8080
 ## Features
 
 1. **Visual editor:** 13 node types (LLM, Tool, Condition, For each, Join,
-   Subgraph, MCP, Retriever, Decision, Send email, Human, Start, End), a typed
-   state with reducers, and `{{state.field}}` references checked before a run.
+   Subgraph, MCP, Retriever, Decision, Send email, Human, Start, End) plus
+   read-only Code nodes from imported repos, a typed state with reducers,
+   `{{state.field}}` references checked before a run, and a template library
+   to start from.
 2. **Run traces:** duration, tokens and cost per node, the input, output and
-   state diff of every step, step-by-step and run-to-node debugging.
+   state diff of every step, step-by-step and run-to-node debugging. Test
+   cases check a workflow's results, and test runs can be compared.
 3. **Human in the loop:** a Human node pauses a run from a checkpoint; approve
-   in the studio, or from Slack, Telegram, WhatsApp, e-mail or Teams.
+   in the studio's Approvals inbox, or from Slack, Telegram, WhatsApp, email
+   or Teams; deadlines send reminders, escalate or expire a waiting run.
 4. **Triggers:** per-workflow API tokens, sync and async runs, signed result
    webhooks with retries, cron schedules with time zones, and chat triggers: a
    command to the Slack app or Telegram bot starts a run and the bot replies.
@@ -66,7 +70,7 @@ docker compose up --build   # http://localhost:8080
    to OTLP or LangSmith.
 8. **Learn LangGraph:** the Code tab shows any workflow as one readable LangGraph
    Python file that runs on its own (offline with a mock model), with the
-   selected node's code highlighted.
+   selected node's code highlighted, and exports it to your own project.
 
 ## How it works
 
@@ -90,7 +94,7 @@ Details: [Architecture](https://quinguyen1502.github.io/superstep/reference/arch
 | --- | --- |
 | Install, quickstart, concepts | [Get started](https://quinguyen1502.github.io/superstep/start/) |
 | Editor, nodes, state, Code mode, knowledge, MCP | [Build](https://quinguyen1502.github.io/superstep/guide/) |
-| Traces, human approval, API triggers, schedules, chat triggers | [Run](https://quinguyen1502.github.io/superstep/run/) |
+| Traces, tests, human approval, API triggers, schedules, chat triggers | [Run](https://quinguyen1502.github.io/superstep/run/) |
 | Deployment, accounts, roles, providers, channels | [Operate](https://quinguyen1502.github.io/superstep/operate/) |
 | Configuration, HTTP API, error codes, architecture | [Reference](https://quinguyen1502.github.io/superstep/reference/) |
 

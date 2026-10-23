@@ -12,22 +12,22 @@ Tab Logs hiện câu hỏi kèm **Duyệt** (`approved`), **Từ chối** (`reje
 hoặc **Gửi phản hồi** bằng văn bản tự do. Ở đây chỉ chủ của run mới mở, trả lời
 hoặc huỷ run được.
 
-## Trang Phê duyệt
+## Trang Duyệt
 
-**Phê duyệt** (`/approvals`, biểu tượng hình người trên thanh trên) liệt kê mọi
+**Duyệt** (`/approvals`, biểu tượng hình người trên thanh trên) liệt kê mọi
 bước đang chờ bạn, ở tất cả workflow: run của bạn, và run mà bạn là **người
 duyệt** của node Human đang chờ. Mỗi dòng hiện workflow, bước, câu hỏi, người
 chạy, thời gian đã chờ và kênh đã gửi yêu cầu. Trả lời bằng **Duyệt**, **Từ
 chối** hoặc văn bản, ngay trên dòng đó.
 
-![Trang Phê duyệt](../images/approvals.png)
+![Trang Duyệt](../images/approvals.png)
 
-- Ghi e-mail người duyệt vào ô **Người duyệt** của node Human. Ô này dùng được cả
+- Ghi email người duyệt vào ô **Người duyệt** của node Human. Ô này dùng được cả
   khi node có hoặc không có kênh duyệt. Mỗi địa chỉ phải là một tài khoản trong
   studio.
 - Người duyệt chỉ thấy yêu cầu: không thấy workflow, trace hay dữ liệu của run.
-  **Mở lượt chạy** chỉ hiện với chủ run, và với chủ workflow hoặc admin.
-- Câu trả lời đầu tiên được tính, dù đến từ editor, trang Phê duyệt hay nút
+  **Mở run** chỉ hiện với chủ run, và với chủ workflow hoặc admin.
+- Câu trả lời đầu tiên được tính, dù đến từ editor, trang Duyệt hay nút
   trên chat. Các câu trả lời sau bị từ chối. Trả lời ở đây sẽ đóng yêu cầu trên
   chat và sửa lại tin nhắn.
 - Nhãn trên thanh trên đếm số bước đang chờ bạn, và trang **Workflows** hiện
@@ -60,22 +60,22 @@ bước này chờ đến khi có người trả lời hoặc đến `STUDIO_WAI
 | **Chờ tối đa** | Bước này chờ bao lâu, tính bằng phút, giờ hoặc ngày. |
 | **Nhắc lại mỗi** | Không bắt buộc. Gửi lời nhắc theo chu kỳ này, tối đa 5 lần. |
 | **Khi hết hạn** | **Từ chối** hoặc **Duyệt**: run đi tiếp như thể đã có câu trả lời đó. **Chuyển cho người duyệt khác**: xem bên dưới. |
-| **Chuyển cho** | E-mail của người dùng studio, dùng với **Chuyển cho người duyệt khác**. |
+| **Chuyển cho** | Email của người dùng studio, dùng với **Chuyển cho người duyệt khác**. |
 
 - **Lời nhắc** đến chủ run và người duyệt dưới dạng thông báo (chuông, và
-  e-mail nếu họ bật). Với node có kênh duyệt, lời nhắc còn là một tin nhắn mới
+  email nếu họ bật). Với node có kênh duyệt, lời nhắc còn là một tin nhắn mới
   có nút mới; tin nhắn cũ ghi là đã nhắc lại, và nút của nó ngừng hoạt động.
 - **Từ chối** và **Duyệt** khi hết hạn đi theo các nhánh bình thường của node.
   Trace của run (`run_resumed`, `by: {"channel": "deadline"}`) và Audit log
   (**Hết hạn chờ**) ghi rõ là do hạn chờ, không phải do người trả lời.
 - **Chuyển cho người duyệt khác** chỉ xảy ra một lần. Những người được ghi tên trở
-  thành người duyệt, nhận yêu cầu trên kênh và trong trang **Phê duyệt** của họ,
+  thành người duyệt, nhận yêu cầu trên kênh và trong trang **Duyệt** của họ,
   và có thêm một khoảng thời gian như trên. Nếu vẫn không ai trả lời, bước này bị
   từ chối. Địa chỉ không có tài khoản studio sẽ bị bỏ qua và ghi vào log.
 - Nút trên chat hết hạn đúng hạn chờ nếu hạn chờ đến trước.
 - Hạn chờ phải ngắn hơn `STUDIO_WAIT_TTL` (gấp đôi nếu có chuyển tiếp); nếu không,
   bước kiểm tra workflow sẽ báo lỗi.
-- Trang **Phê duyệt** hiện hạn của từng bước, hoặc **Quá hạn**, bước gần hạn nhất
+- Trang **Duyệt** hiện hạn của từng bước, hoặc **Quá hạn**, bước gần hạn nhất
   lên đầu.
 
 Thời gian tính theo đồng hồ thực, không có giờ làm việc. Hạn chờ được kích hoạt từ
@@ -91,7 +91,7 @@ loại thông báo ở **Cài đặt → Hồ sơ**.
 | Kênh | Thiết lập |
 | --- | --- |
 | Chuông trong app | Luôn bật |
-| E-mail | `SMTP_HOST` (và `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` hoặc `SMTP_SSL`); link dùng `STUDIO_PUBLIC_URL` |
+| Email | `SMTP_HOST` (và `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM`, `SMTP_STARTTLS` hoặc `SMTP_SSL`); link dùng `STUDIO_PUBLIC_URL` |
 | Webhook | `STUDIO_NOTIFY_WEBHOOK_URL` nhận JSON cho mỗi run `waiting` hoặc `expired`, có chữ ký bằng `STUDIO_NOTIFY_WEBHOOK_SECRET` nếu đặt |
 
 ## Duyệt qua chat
@@ -103,7 +103,7 @@ Node Human cũng có thể gửi yêu cầu tới một **kênh duyệt**:
 | Slack | Nút Duyệt / Từ chối | bấm nút bằng tài khoản Slack đã xác minh |
 | Telegram | Nút Duyệt / Từ chối | bấm nút bằng tài khoản Telegram đã xác minh |
 | WhatsApp | Hai nút trả lời | trả lời từ số điện thoại đã xác minh |
-| E-mail | Link Duyệt / Từ chối tới `/approve?token=…` | xác nhận trong studio sau khi đăng nhập |
+| Email | Link Duyệt / Từ chối tới `/approve?token=…` | xác nhận trong studio sau khi đăng nhập |
 | Microsoft Teams | Adaptive Card có link | xác nhận trong studio sau khi đăng nhập |
 
 Quy tắc giống nhau ở mọi kênh: chỉ chủ run hoặc người duyệt có tên trên node,

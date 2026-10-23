@@ -55,7 +55,7 @@ flowchart LR
    cần không (ví dụ chế độ Code).
 2. **Compiler** dựng `StateGraph` của LangGraph: mỗi node thành một hàm node;
    edge thành `add_edge`; Condition hoặc For each thành `add_conditional_edges`
-   với bảng nhãn; nhiều edge đi vào Join thành một edge gom. Field của state
+   với bảng nhãn; nhiều edge đi vào Join thành một edge gom. Trường của state
    được gắn reducer.
 3. **Runtime** stream graph và chuyển các cập nhật của LangGraph thành sự kiện
    của studio (`node_started`, `node_token`, `node_finished`, …), áp các giới
@@ -88,20 +88,20 @@ sequenceDiagram
 ```
 
 Run bus nằm trong bộ nhớ khi chỉ có một process, hoặc trên Redis khi có nhiều
-process; với Redis, job có worker bị chết sẽ được giữ lại bởi worker khác và chạy
+process; với Redis, job của worker bị chết sẽ được worker khác nhận lại và chạy
 tiếp từ checkpoint cuối.
 
 ## Side effect gần như đúng một lần
 
 | Cơ chế | Ngăn điều gì |
 | --- | --- |
-| Idempotency key theo run, node và lượt lặp | Bên nhận áp dụng hai lần một lời gọi HTTP hay tool bị retry (header `Idempotency-Key`, `X-Studio-Run-Id`, `X-Studio-Attempt`; `idempotency_key` cho tool Python) |
+| Idempotency key theo run, node và lượt lặp | Bên nhận áp dụng hai lần một lời gọi HTTP hay công cụ bị retry (header `Idempotency-Key`, `X-Studio-Run-Id`, `X-Studio-Attempt`; `idempotency_key` cho công cụ Python) |
 | Sổ kết quả node | Run được khôi phục lặp lại lời gọi LLM, Tool, Decision hay Send email đã xong (`reused` trong trace) |
 | Fencing theo lease (`runs.lease_gen`) | Worker đã mất quyền giữ ghi đè lên tiến độ của worker mới |
 | Checkpoint mỗi superstep | Sập hoặc khởi động lại làm mất các bước đã xong |
 
 Sổ kết quả được xoá khi run kết thúc. Node đang chạy dở lúc worker chết có thể
-chạy lại, nên endpoint HTTP và tool nên chấp nhận idempotency key.
+chạy lại, nên endpoint HTTP và công cụ nên chấp nhận idempotency key.
 
 ## Frontend
 

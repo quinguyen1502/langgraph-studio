@@ -38,7 +38,7 @@ Chạy thử đi qua `POST /api/code/test`, tối đa
 | --- | --- |
 | Điểm vào | Hàm tên `main` nhận một tham số là state. |
 | Input | Bản sao JSON của state. Sửa nó không làm thay đổi run. |
-| Output | Giá trị trả về, phải là JSON: dict, list, string, số, bool hoặc `None`. |
+| Output | Giá trị trả về, phải là JSON: dict, danh sách, string, số, bool hoặc `None`. |
 | Phần in ra | `print()` và stderr hiện trong trace, tối đa 64 KB (dài hơn bị cắt). |
 | Kích thước | Mã nguồn tối đa 64 KB; state và kết quả mỗi thứ tối đa 1 MB. |
 | Package | Thư viện chuẩn cộng các package trong image: `pydantic` và `python-dateutil` với image mặc định. |

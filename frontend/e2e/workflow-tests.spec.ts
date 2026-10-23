@@ -93,7 +93,7 @@ test('workflow tests: save as test case from a run, regression against the previ
   await page.request.post('/api/workflows', { headers: H, data: saved })
   await page.reload(); await page.locator('#tests-tab').click(); await page.locator('#tests-run-all').click()
   await expect(page.getByTestId('result-status')).toHaveText('Không đạt', { timeout: 30_000 })
-  await expect(page.getByTestId('result-change')).toHaveText('Hỏng mới')
+  await expect(page.getByTestId('result-change')).toHaveText('Mới lỗi')
   await expect(page.locator('#tests-compare')).toContainText('So với v1'); await expect(page.getByTestId('compare-regression')).toContainText('1')
 
   // run against v1 again: it passes there, and the history lists the three suite runs

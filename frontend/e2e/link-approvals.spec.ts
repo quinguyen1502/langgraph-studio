@@ -14,7 +14,7 @@ test('Teams card → /approve → run resumes; the link works once', async ({ pa
   const H = await login(page)
   const ch = (await (await page.request.post('/api/approvals/channels', { headers: H, data: { kind: 'teams', webhook_url: hook } })).json()).data
   await page.goto('/settings/channels')
-  await expect(page.locator(`[data-channel-id="${ch.id}"]`)).toContainText('trang phê duyệt của studio')  // no callback URL for a link channel
+  await expect(page.locator(`[data-channel-id="${ch.id}"]`)).toContainText('trang duyệt của studio')  // no callback URL for a link channel
 
   const wid = (await (await page.request.post('/api/workflows', { headers: H, data: WF(`Teams ${Date.now()}`, { channel_id: ch.id, channel: 'teams', target: '' }) })).json()).data.id
   await page.goto(`/workflows/${wid}`)

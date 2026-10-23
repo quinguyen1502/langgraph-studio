@@ -43,6 +43,12 @@ produce the same trace, and appear in **History**.
 
     A message to the Slack app or Telegram bot starts a run; the bot answers.
 
+-   :material-chat-processing-outline:{ .lg .middle } **[Chat](chat.md)**
+
+    ---
+
+    Chat with a workflow in the studio, with memory and its steps.
+
 -   :material-flask-outline:{ .lg .middle } **[Workflow tests](tests.md)**
 
     ---

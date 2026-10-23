@@ -43,6 +43,12 @@ cùng một kiểu trace và hiện trong **Lịch sử**.
 
     Tin nhắn tới Slack app hoặc bot Telegram chạy workflow; bot trả lời.
 
+-   :material-chat-processing-outline:{ .lg .middle } **[Chat](chat.md)**
+
+    ---
+
+    Chat với workflow ngay trong studio, có bộ nhớ và các bước.
+
 -   :material-flask-outline:{ .lg .middle } **[Kiểm thử workflow](tests.md)**
 
     ---

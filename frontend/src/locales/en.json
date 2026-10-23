@@ -1754,5 +1754,85 @@
     "selectHint": "Select a node on the canvas to find its code",
     "download": "Download .{{ext}}",
     "languageLabel": "Language"
+  },
+  "chat": {
+    "tab": "Chat",
+    "new": "New chat",
+    "sessions": "Chats",
+    "noSessions": "No chats yet.",
+    "untitled": "New chat",
+    "delete": "Delete chat",
+    "deleteTitle": "Delete this chat?",
+    "deleteBody": "“{{title}}” and its messages are deleted. Its runs stay in History.",
+    "viewBuilder": "Builder",
+    "viewVisitor": "Visitor",
+    "stepsHint": {
+      "full": "Every step, with its input and output",
+      "labels": "Visitors see step names",
+      "none": "Visitors see no steps"
+    },
+    "unsaved": "Chat uses the saved workflow",
+    "off": "Chat is off for this workflow. Turn it on in the Chat settings to try it here.",
+    "empty": "Send a message to start the chat.",
+    "thinking": "Working…",
+    "saving": "Saving the answer…",
+    "scrollEnd": "Scroll to the latest message",
+    "failed": "The run failed.",
+    "message": "Message",
+    "placeholder": "Type a message… (Enter sends, Shift+Enter adds a line)",
+    "send": "Send",
+    "stop": "Stop",
+    "waitingReviewer": "Waiting for approval by a reviewer.",
+    "openApprovals": "Open Approvals",
+    "needsAnswer": "Your answer is needed",
+    "step": {
+      "ok": "Done",
+      "error": "Failed",
+      "waiting": "Waiting",
+      "running": "Running",
+      "input": "Input",
+      "output": "Output"
+    },
+    "settings": {
+      "title": "Chat settings",
+      "open": "Open Chat settings",
+      "desc": "Let people chat with this workflow. Each message starts a run of the saved workflow.",
+      "enabled": "Chat",
+      "enabledHint": "Turn chat on for this workflow.",
+      "access": "Who can chat",
+      "accessHint": "Now only people who can run this workflow in the studio. Public links come later.",
+      "later": "Later",
+      "inputField": "Message field",
+      "replyField": "Reply field",
+      "messagesField": "Conversation field",
+      "messagesHint": "A list field that gets the earlier messages, so the workflow remembers the conversation.",
+      "noMemory": "None (no memory)",
+      "pickField": "Pick a field",
+      "maxTurns": "Messages remembered",
+      "maxTurnsHint": "Exchanges sent back to the workflow.",
+      "retention": "Retention (days)",
+      "retentionHint": "Chats idle this long are deleted.",
+      "steps": "Steps shown to visitors",
+      "stepsHint": "Builders always see every step in the studio."
+    },
+    "access": {
+      "studio": "Studio users",
+      "anonymous": "Anyone with the link",
+      "signed_in": "Signed-in users"
+    },
+    "steps": {
+      "none": "None",
+      "labels": "Step names",
+      "full": "Full (input and output)"
+    },
+    "answeredBy": "Answered by",
+    "answeredByOpt": {
+      "visitor": "The person chatting",
+      "reviewer": "A reviewer"
+    },
+    "answeredByHint": {
+      "visitor": "In a chat, the question is asked and answered in the chat.",
+      "reviewer": "In a chat, the person chatting waits while a reviewer answers in Approvals."
+    }
   }
 }

@@ -19,11 +19,12 @@ import { api } from '@/lib/api'
 import { EditorTestsPanel, TestCaseDialog, type TestCase } from './editor-tests-panel'
 import { EditorCodePanel } from './editor-code-panel'
 import { useStudioCtx } from './studio-context'
+import { ChatPanel } from '@/components/chat/chat-panel'
 
-/** Bottom panel: run input, logs, history, tests (TASK-0067) and the workflow as code (TASK-0071). */
+/** Bottom panel: run input, logs, history, chat (TASK-0085), tests (TASK-0067) and the workflow as code (TASK-0071). */
 export function EditorRunPanel() {
   const { t } = useTranslation()
-  const { input, setInput, log, setLog, errors, history, tab, setTab, running, traceSel, setTraceSel, replay, setReplay, openRun, respond, trace, traceMeta, wid, source, edit } = useStudioCtx()
+  const { input, setInput, log, setLog, errors, history, tab, setTab, running, traceSel, setTraceSel, replay, setReplay, openRun, respond, trace, traceMeta, wid, source, edit, access, isDirty } = useStudioCtx()
   // the "Test runs" switch lists the workflow's test runs instead of its other runs (TASK-0067)
   const [testRuns, setTestRuns] = useState<any[] | null>(null)
   const showTests = (on: boolean) => { if (!on || !wid) { setTestRuns(null); return } api<any[]>(`/api/workflows/${wid}/runs?tests=true`).then(setTestRuns).catch(() => setTestRuns([])) }
@@ -40,7 +41,7 @@ export function EditorRunPanel() {
       <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
         <div className="flex items-center gap-3 px-3 py-2 border-b">
           <TabsList><TabsTrigger value="input">{t('editor.tabInput')}</TabsTrigger><TabsTrigger value="logs">{t('editor.tabLogs')} {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
-            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger>{!source && <TabsTrigger value="tests" id="tests-tab">{t('tests.tab')}</TabsTrigger>}
+            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger>{wid && !source && <TabsTrigger value="chat" id="chat-tab">{t('chat.tab')}</TabsTrigger>}{!source && <TabsTrigger value="tests" id="tests-tab">{t('tests.tab')}</TabsTrigger>}
             {!source && <TabsTrigger value="code" id="code-tab">{t('codeView.tab')}</TabsTrigger>}</TabsList>
           {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
         </div>
@@ -89,6 +90,7 @@ export function EditorRunPanel() {
             {canSave && <span className="flex w-6 shrink-0 justify-center">{finished(h.status) && saveButton(h.id)}</span>}</div>)}
           </div></ScrollArea>
         </TabsContent>
+        {wid && !source && <TabsContent value="chat" className="flex-1 min-h-0"><ChatPanel wid={wid} active={tab === 'chat'} canConfigure={access === 'owner'} dirty={edit && isDirty()} /></TabsContent>}
         <TabsContent value="tests" className="flex-1 min-h-0"><EditorTestsPanel select={picked} /></TabsContent>
         <TabsContent value="code" className="flex-1 min-h-0"><EditorCodePanel /></TabsContent>
       </Tabs>

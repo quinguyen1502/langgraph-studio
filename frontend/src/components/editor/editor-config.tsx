@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { applyMode, codeChoices, modeValue, nodeLanguage, type ToolModeValue } from '@/lib/code-mode'
 import { api } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
+import { ANSWERED_BY } from '@/lib/chat'
 import { HumanApprovalSettings } from '@/components/human-approval-settings'
 import { HumanDeadlineSettings } from '@/components/human-deadline-settings'
 import { CredentialsDialog, type Credential } from '@/components/credentials-dialog'
@@ -67,6 +68,10 @@ export function EditorConfig() {
           {selNode.type === 'human' && <>
             <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={4} id="human-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+            <F label={t('chat.answeredBy')}><Select value={d.answered_by || 'visitor'} onValueChange={v => upd('answered_by', v)} disabled={!edit}>
+              <SelectTrigger className="w-full" id="human-answered-by"><SelectValue /></SelectTrigger>
+              <SelectContent>{ANSWERED_BY.map(a => <SelectItem key={a} value={a}>{t(`chat.answeredByOpt.${a}`)}</SelectItem>)}</SelectContent></Select>
+              <p className="text-[11px] text-muted-foreground" id="human-answered-by-hint">{t(`chat.answeredByHint.${d.answered_by || 'visitor'}`)}</p></F>
             <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
             <HumanDeadlineSettings key={`${selNode.id}-deadline`} value={d.deadline} onChange={v => upd('deadline', v)} />
           </>}

@@ -1,0 +1,91 @@
+# Chat
+
+Tab **Chat** ở bảng dưới của editor cho bạn trò chuyện với một workflow như
+người chat sẽ làm. Mỗi tin nhắn chạy một run của workflow **đã lưu**; các bước
+và câu trả lời hiện dần trong lúc run chạy, và cuộc trò chuyện được lưu lại để
+workflow có thể nhớ.
+
+![Tab Chat](../images/chat-tab.png)
+
+!!! note "Giai đoạn 1"
+    Chat hiện dùng trong studio, cho những người được chạy workflow. Link chat
+    công khai, người chat đã đăng nhập, tệp đính kèm và widget nhúng sẽ có sau;
+    phần cài đặt đã chừa chỗ cho chúng.
+
+## Bật chat
+
+1. Mở workflow và chọn **⋯ → Cài đặt Chat**, hoặc nút bánh răng trong tab Chat.
+   Bạn cần quyền chủ sở hữu để đổi cài đặt (chủ workflow hoặc admin).
+2. Bật **Chat** và kiểm tra các trường:
+    - **Trường tin nhắn**: trường state nhận mỗi tin nhắn (`string` hoặc `list`).
+    - **Trường trả lời**: trường state hiện làm câu trả lời.
+    - **Trường cuộc trò chuyện**: một trường `list` nhận các tin nhắn trước đó
+      (xem [Bộ nhớ](#bo-nho)). Chọn **Không** cho chat không nhớ.
+3. Lưu. Khi lưu, các trường được kiểm tra có trong state của workflow.
+
+![Cài đặt Chat](../images/chat-settings.png)
+
+| Cài đặt | Tác dụng | Mặc định |
+|---|---|---|
+| Ai được chat | Hiện chỉ **Người dùng studio**. *Ai có link* và *Người đã đăng nhập* có trong danh sách nhưng chưa dùng được. | Người dùng studio |
+| Số lượt nhớ | Số lượt hỏi–đáp trước đó (một tin nhắn và câu trả lời của nó) gửi vào trường cuộc trò chuyện. | 10 |
+| Bước hiện cho người chat | **Không**, **Tên bước** hoặc **Đầy đủ** (kèm input và output của từng bước). | Tên bước |
+| Thời gian lưu (ngày) | Cuộc trò chuyện không có tin nhắn mới quá thời gian này sẽ bị xoá. | 30 |
+
+## Trò chuyện
+
+Nhập tin nhắn rồi nhấn ++enter++ (++shift+enter++ để xuống dòng). Câu trả lời
+là Markdown: danh sách, bảng, link và khối code được định dạng; HTML thô và ảnh
+từ trang khác không hiện, link mở ở tab mới.
+
+- **Cuộc trò chuyện mới** bắt đầu một cuộc trò chuyện chưa có gì để nhớ. Các
+  cuộc trò chuyện cũ vẫn ở danh sách, mới nhất trên cùng, đặt tên theo tin nhắn
+  đầu tiên.
+- **Người dựng / Người chat** ở trên cùng đổi cách xem. *Người dựng* thấy mọi
+  bước kèm input và output (bấm vào một bước để mở); *Người chat* chỉ thấy những
+  gì **Bước hiện cho người chat** cho phép.
+- Mỗi tin nhắn là một run trong **Lịch sử** với nhãn *Chat*, nên bạn mở được
+  trace đầy đủ ở đó.
+- Chat dùng workflow đã lưu: hãy lưu thay đổi trước khi thử.
+
+## Bộ nhớ
+
+Khi có trường cuộc trò chuyện, mỗi run nhận *n* lượt hỏi–đáp gần nhất cùng tin
+nhắn mới trong trường đó, dạng list các mục `{"role": "user" | "assistant",
+"content": "…"}`. Dùng nó trong prompt, ví dụ:
+
+```text
+Cuộc trò chuyện đến giờ:
+{{state.messages}}
+
+Trả lời tin nhắn cuối của người dùng.
+```
+
+## Node Human trong chat
+
+Tuỳ chọn **Người trả lời** của node Human quyết định ai trả lời khi workflow
+chạy từ chat:
+
+- **Người chat** (mặc định): câu hỏi hiện trong chat với **Duyệt**, **Từ chối**
+  và ô trả lời. Câu trả lời vào trường output của node và run chạy tiếp.
+- **Người duyệt**: chat báo đang chờ duyệt, còn câu hỏi đến trang
+  [Duyệt](human-approval.md) (và các kênh của nó) như thường lệ. Chat hiện câu
+  trả lời khi run chạy tiếp.
+
+Không gửi được tin nhắn mới khi chat đang chờ trả lời. [Hạn chờ](human-approval.md#han-cho)
+của node áp dụng cho cả hai cách; khi quá hạn, hành động khi hết hạn quyết định
+điều gì xảy ra.
+
+## Lỗi
+
+| Mã | Ý nghĩa |
+|---|---|
+| `CHAT_NOT_ENABLED` | Chat đang tắt cho workflow này. |
+| `CHAT_SETTINGS_INVALID` | Một cài đặt bị sai; `field` cho biết cài đặt nào. |
+| `CHAT_ACCESS_NOT_AVAILABLE` | Lựa chọn *Ai được chat* đó chưa dùng được. |
+| `CHAT_SESSION_NOT_FOUND` | Cuộc trò chuyện không tồn tại, hoặc không phải của bạn. |
+| `CHAT_MESSAGE_EMPTY` / `CHAT_MESSAGE_TOO_LONG` | Tin nhắn trống, hoặc dài quá 4000 ký tự. |
+| `CHAT_RUN_WAITING` | Chat đang chờ câu trả lời cho một node Human. |
+| `CHAT_ANSWER_BY_REVIEWER` | Bước này do người duyệt trả lời, ở trang Duyệt. |
+
+Xem thêm [Chạy từ chat](chat-triggers.md) cho Slack và Telegram.

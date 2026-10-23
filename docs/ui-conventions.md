@@ -63,6 +63,14 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | replay | xem lại | |
     | test case, test run | test case, run test | |
     | Python, TypeScript, Deno, npm, package, Web API | keep in English | Mode options read "Code (Python)" / "Code (TypeScript)" in both locales; "Ngôn ngữ" for a language label |
+    | Chat (the tab, the setting) | Chat | "Cài đặt Chat", "Bật chat"; not "trò chuyện" for the feature name (TASK-0085) |
+    | conversation, chat (one session) | cuộc trò chuyện | "Cuộc trò chuyện mới" for New chat |
+    | message | tin nhắn | |
+    | step (a node run shown in a chat) | bước | "Tên bước" for the labels mode |
+    | visitor (the person chatting) | người chat | the Human "Answered by" option too |
+    | builder (the studio view of a chat) | người dựng | |
+    | answered by | người trả lời | the option "A reviewer" is "Người duyệt" |
+    | retention | thời gian lưu | "Thời gian lưu (ngày)" |
     | Runs on host (subprocess Code runtime; never "not isolated" / "without isolation") | Chạy trực tiếp trên server; "Chạy trên server" on the canvas node; never "không cách ly" | longer texts say "without Docker limiting its access" / "không có Docker giới hạn quyền"; "cách ly" / "isolation" only for what the Docker sandbox does | warning badge with a tooltip: "Code runs directly on the server, without Docker limiting its access. Use only for trusted code." / "Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy." |
 
 ## Review checklist

@@ -53,10 +53,16 @@ test('the person chatting answers a Human node in the chat; a reviewer step wait
   await say(page, 'refund A1')
   await expect(page.locator('#chat-confirmation')).toBeVisible({ timeout: 20_000 })
   await expect(page.getByTestId('chat-answer').last()).toContainText('Sure about refund A1?')
-  await page.locator('#chat-confirmation').getByTestId('answer-approve').click()
+  await page.locator('#chat-approve').click()
   await expect(page.getByTestId('chat-mine').last()).toHaveText('approved')
   await expect(page.getByTestId('chat-answer').last()).toContainText('Answer approved', { timeout: 20_000 })
   await expect(page.locator('#chat-confirmation')).toHaveCount(0)
+
+  // a typed answer goes through the message box (Confirmation pattern + Prompt Input)
+  await say(page, 'refund A2')
+  await expect(page.locator('#chat-confirmation')).toBeVisible({ timeout: 20_000 })
+  await say(page, 'only half')
+  await expect(page.getByTestId('chat-answer').last()).toContainText('Answer only half', { timeout: 20_000 })
 
   // the node's "Answered by" option in the config panel
   await page.locator('.react-flow__node[data-id="ask"]').click()
@@ -76,12 +82,12 @@ test('step visibility: builders see every step, visitors what the settings allow
   await say(page, 'hi')
   await expect(page.getByTestId('chat-answer').last()).toHaveAttribute('data-status', 'ok', { timeout: 20_000 })
   const steps = page.getByTestId('chat-steps').last()
-  await expect(steps).toHaveAttribute('data-mode', 'full'); await expect(steps.locator('[data-slot=trace-title]')).toHaveText(['Bot'])
+  await expect(steps).toHaveAttribute('data-mode', 'full'); await expect(steps.locator('[data-slot=trace-title]')).toHaveText(['Đã chạy Bot'])
   await steps.getByTestId('chat-step').click(); await expect(page.getByTestId('chat-step-detail')).toBeVisible()
 
   await page.locator('#chat-view-visitor').click()
   await expect(page.getByTestId('chat-steps').last()).toHaveAttribute('data-mode', 'labels')
-  await expect(page.locator('[data-slot=trace-title]')).toHaveText(['Bot']); await expect(page.getByTestId('chat-step-detail')).toHaveCount(0)
+  await expect(page.locator('[data-slot=trace-title]')).toHaveText(['Đã chạy Bot']); await expect(page.getByTestId('chat-step-detail')).toHaveCount(0)
 
   await enable(page, H, wid, { steps: 'none' })
   await page.locator('#chat-view-builder').click(); await page.locator('#chat-view-visitor').click()

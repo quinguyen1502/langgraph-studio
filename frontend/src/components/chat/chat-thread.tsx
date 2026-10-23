@@ -1,51 +1,73 @@
-/** A chat's messages (TASK-0085) on the shadcn Message Scroller, Message and Bubble: the saved turns, then the
- *  message being sent and the live answer (its steps and the reply streaming in). */
+/** A chat's thread (TASK-0085), built as the shadcn Chat pattern: Message Scroller (autoScroll, a messageId on every
+ *  item, the person's turns as scroll anchors), the person's turns as muted Bubbles, the agent's as Trace steps then
+ *  Markdown with a Message footer of actions (Message pattern), an Empty state, and the scroll button. */
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Bot, Loader2 } from 'lucide-react'
+import { ArrowDown, Check, Copy, LoaderCircle, MessageCircleDashed } from 'lucide-react'
 import { MessageScroller, MessageScrollerButton, MessageScrollerContent, MessageScrollerItem, MessageScrollerProvider, MessageScrollerViewport } from '@/components/ui/message-scroller'
-import { Message, MessageAvatar, MessageContent, MessageFooter } from '@/components/ui/message'
+import { Message, MessageContent, MessageFooter } from '@/components/ui/message'
 import { Bubble, BubbleContent } from '@/components/ui/bubble'
+import { Button } from '@/components/ui/button'
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { Trace, TraceIcon, TraceLine, TraceTitle } from '@/components/ui/trace'
 import { errorText } from '@/lib/i18n'
 import { liveReply, liveSteps, waitingTurn, type ChatSettings, type ChatStep, type ChatTurn, type StepsMode } from '@/lib/chat'
-import type { RunEvent, Trace } from '@/lib/trace'
+import type { RunEvent, Trace as RunTrace } from '@/lib/trace'
 import { ChatMarkdown } from './chat-markdown'
 import { ChatSteps } from './chat-steps'
 import { ChatConfirmation } from './chat-confirmation'
 
-function Answer({ text, steps, mode, status, code, footer }: { text: string; steps?: ChatStep[]; mode: StepsMode; status?: string | null; code?: string | null; footer?: React.ReactNode }) {
+/** The Message pattern's action: a ghost icon button with a tooltip, its label as the aria-label. */
+function MessageAction({ label, children, ...props }: React.ComponentProps<typeof Button> & { label: string }) {
+  return <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon-sm" aria-label={label} {...props}>{children}</Button></TooltipTrigger>
+    <TooltipContent><p>{label}</p></TooltipContent></Tooltip>
+}
+
+function CopyAction({ text }: { text: string }) {
+  const { t } = useTranslation(); const [copied, setCopied] = useState(false)
+  useEffect(() => { if (!copied) return; const id = setTimeout(() => setCopied(false), 2000); return () => clearTimeout(id) }, [copied])
+  return <MessageAction label={copied ? t('chat.copied') : t('chat.copy')} data-testid="chat-copy"
+    onClick={() => navigator.clipboard.writeText(text).then(() => setCopied(true)).catch(() => {})}>{copied ? <Check /> : <Copy />}</MessageAction>
+}
+
+function Answer({ text, steps, mode, status, code, live, children }: { text: string; steps?: ChatStep[]; mode: StepsMode; status?: string | null; code?: string | null; live?: string; children?: React.ReactNode }) {
   const { t } = useTranslation(); const failed = status && !['ok', 'waiting'].includes(status)
   return <Message data-testid="chat-answer" data-status={status ?? 'running'}>
-    <MessageAvatar className="bg-muted text-muted-foreground"><Bot className="size-4" /></MessageAvatar>
-    <MessageContent>
+    <MessageContent className="gap-3">
       <ChatSteps steps={steps ?? []} mode={mode} />
+      {live && <Trace><TraceLine status="running" id="chat-thinking"><TraceIcon><LoaderCircle className="animate-spin" /></TraceIcon><TraceTitle>{live}</TraceTitle></TraceLine></Trace>}
       {failed ? <Bubble variant="destructive"><BubbleContent data-testid="chat-error">{code ? errorText({ code, message: text }) : text || t('chat.failed')}</BubbleContent></Bubble>
-        : text ? <Bubble variant="ghost"><BubbleContent><ChatMarkdown text={text} /></BubbleContent></Bubble> : null}
-      {footer}
+        : text ? <ChatMarkdown text={text} /> : null}
+      {children}
+      {status === 'ok' && text && <MessageFooter className="px-0"><CopyAction text={text} /></MessageFooter>}
     </MessageContent>
   </Message>
 }
 
 const Mine = ({ text }: { text: string }) => <Message align="end" data-testid="chat-mine">
-  <MessageContent><Bubble align="end" variant="secondary"><BubbleContent className="whitespace-pre-wrap">{text}</BubbleContent></Bubble></MessageContent></Message>
+  <MessageContent><Bubble align="end" variant="muted"><BubbleContent className="whitespace-pre-wrap">{text}</BubbleContent></Bubble></MessageContent></Message>
 
 export function ChatThread({ turns, mode, settings, events, trace, pending, running, onAnswer }: {
-  turns: ChatTurn[]; mode: StepsMode; settings: ChatSettings; events: RunEvent[]; trace: Trace; pending: string | null; running: boolean
+  turns: ChatTurn[]; mode: StepsMode; settings: ChatSettings; events: RunEvent[]; trace: RunTrace; pending: string | null; running: boolean
   onAnswer: (runId: string, response: string) => void }) {
   const { t } = useTranslation(); const wait = waitingTurn(turns); const reply = liveReply(events, settings.reply_field)
-  return <MessageScrollerProvider><MessageScroller className="flex-1">
-    <MessageScrollerViewport><MessageScrollerContent className="mx-auto max-w-3xl gap-4 p-4" id="chat-thread">
-      {!turns.length && !pending && <p className="m-auto text-center text-sm text-muted-foreground" id="chat-empty">{t('chat.empty')}</p>}
-      {turns.map(x => <MessageScrollerItem key={x.id}>
+  const live = liveSteps(trace.spans, mode)
+  if (!turns.length && pending === null) return <Empty className="flex-1" id="chat-empty">
+    <EmptyHeader><EmptyMedia variant="icon"><MessageCircleDashed /></EmptyMedia>
+      <EmptyTitle>{t('chat.emptyTitle')}</EmptyTitle><EmptyDescription>{t('chat.empty')}</EmptyDescription></EmptyHeader></Empty>
+  return <MessageScrollerProvider autoScroll><MessageScroller className="min-h-0 flex-1">
+    <MessageScrollerViewport><MessageScrollerContent aria-busy={running} className="mx-auto max-w-3xl gap-6 px-4 py-4" id="chat-thread">
+      {turns.map(x => <MessageScrollerItem key={x.id} messageId={x.id} scrollAnchor={x.role === 'user'}>
         {x.role === 'user' ? <Mine text={x.text} />
-          : <Answer text={x.text} steps={x.steps} mode={mode} status={x.status} code={x.code}
-              footer={x === wait && !running ? <ChatConfirmation turn={x} busy={running} onAnswer={r => onAnswer(x.run_id!, r)} /> : undefined} />}
+          : <Answer text={x.text} steps={x.steps} mode={mode} status={x.status} code={x.code}>
+              {x === wait && !running && <ChatConfirmation turn={x} busy={running} onAnswer={r => onAnswer(x.run_id!, r)} />}</Answer>}
       </MessageScrollerItem>)}
-      {pending !== null && <MessageScrollerItem scrollAnchor><Mine text={pending} /></MessageScrollerItem>}
-      {pending !== null && <MessageScrollerItem>
-        <Answer text={reply} steps={liveSteps(trace.spans, mode)} mode={mode}
-          footer={<MessageFooter className="gap-1.5" id="chat-thinking"><Loader2 className="size-3 animate-spin" />{running ? t('chat.thinking') : t('chat.saving')}</MessageFooter>} />
+      {pending !== null && <MessageScrollerItem messageId="pending-user" scrollAnchor><Mine text={pending} /></MessageScrollerItem>}
+      {pending !== null && <MessageScrollerItem messageId="pending-answer">
+        <Answer text={reply} steps={live} mode={mode} live={!running ? t('chat.saving') : !live.some(s => s.status === 'running') ? t('chat.thinking') : undefined} />
       </MessageScrollerItem>}
     </MessageScrollerContent></MessageScrollerViewport>
-    <MessageScrollerButton aria-label={t('chat.scrollEnd')} />
+    <MessageScrollerButton><ArrowDown /><span className="sr-only">{t('chat.scrollEnd')}</span></MessageScrollerButton>
   </MessageScroller></MessageScrollerProvider>
 }

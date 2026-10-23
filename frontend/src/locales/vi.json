@@ -1786,12 +1786,13 @@
     "openApprovals": "Mở trang Duyệt",
     "needsAnswer": "Cần bạn trả lời",
     "step": {
-      "ok": "Xong",
-      "error": "Lỗi",
-      "waiting": "Đang chờ",
-      "running": "Đang chạy",
+      "ok": "Đã chạy {{label}}",
+      "error": "Lỗi: {{label}}",
+      "waiting": "Đang chờ ở {{label}}",
+      "running": "Đang chạy {{label}}",
       "input": "Input",
-      "output": "Output"
+      "output": "Output",
+      "errorDetail": "Lỗi"
     },
     "settings": {
       "title": "Cài đặt Chat",
@@ -1833,6 +1834,11 @@
     "answeredByHint": {
       "visitor": "Trong chat, câu hỏi được hỏi và trả lời ngay trong chat.",
       "reviewer": "Trong chat, người chat chờ trong khi người duyệt trả lời ở trang Duyệt."
-    }
+    },
+    "emptyTitle": "Bắt đầu chat",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "answerHint": "Duyệt, từ chối, hoặc nhập câu trả lời bên dưới.",
+    "answerPlaceholder": "Nhập câu trả lời…"
   }
 }

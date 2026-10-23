@@ -14,7 +14,7 @@ import { api } from '@/lib/api'
 import { fmtDate } from '@/lib/i18n'
 import { useLoadWhen } from '@/lib/use-when'
 import { cn } from '@/lib/utils'
-import type { ChatSession, ChatSettings } from '@/lib/chat'
+import { waitingTurn, type ChatSession, type ChatSettings } from '@/lib/chat'
 import { useChatRun, type ChatView } from './use-chat-run'
 import { ChatThread } from './chat-thread'
 import { ChatComposer } from './chat-composer'
@@ -35,6 +35,7 @@ export function ChatPanel({ wid, active, canConfigure, dirty }: { wid: string; a
     api<ChatSession>(`/api/workflows/${wid}/chat/sessions`, { method: 'POST' }).then(s => list(s.id)).catch(e => { first.current = ''; setErr(e.message) }) }
   useEffect(() => { if (first.current && sid && session?.id === sid) { const x = first.current; first.current = ''; say(x) } }, [sid, session, say])
   const remove = (s: ChatSession) => api(`/api/chat/sessions/${s.id}`, { method: 'DELETE' }).then(() => { if (sid === s.id) setSid(null); list() }).catch(e => setErr(e.message))
+  const waiting = waitingTurn(chat.session?.turns ?? [])   // a typed message answers the waiting Human node
   const mode = view === 'builder' ? 'full' : chat.session?.steps_mode ?? settings?.steps ?? 'labels'
   const off = settings && !settings.enabled
   return <div className="flex h-full min-h-0" id="chat-panel">
@@ -65,7 +66,9 @@ export function ChatPanel({ wid, active, canConfigure, dirty }: { wid: string; a
           {canConfigure && <Button size="sm" id="chat-turn-on" onClick={() => setCfg(true)}><Settings2 />{t('chat.settings.open')}</Button>}</div>
         : settings && <ChatThread turns={chat.session?.turns ?? []} mode={mode} settings={settings} events={chat.events} trace={chat.trace}
             pending={chat.pending} running={chat.running} onAnswer={chat.answer} />}
-      {!off && <ChatComposer disabled={!settings} running={chat.running} onSend={send} onStop={chat.cancel} />}
+      {!off && <ChatComposer disabled={!settings || waiting?.answered_by === 'reviewer'} running={chat.running} onStop={chat.cancel}
+        placeholder={waiting ? t(waiting.answered_by === 'reviewer' ? 'chat.waitingReviewer' : 'chat.answerPlaceholder') : undefined}
+        onSend={text => waiting?.run_id ? chat.answer(waiting.run_id, text) : send(text)} />}
     </div>
     <ChatSettingsDialog wid={wid} open={cfg} onOpenChange={setCfg} onSaved={setSettings} />
     <AlertDialog open={!!del} onOpenChange={o => { if (!o) setDel(null) }}><AlertDialogContent>

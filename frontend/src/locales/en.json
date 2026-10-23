@@ -1786,12 +1786,13 @@
     "openApprovals": "Open Approvals",
     "needsAnswer": "Your answer is needed",
     "step": {
-      "ok": "Done",
-      "error": "Failed",
-      "waiting": "Waiting",
-      "running": "Running",
+      "ok": "Ran {{label}}",
+      "error": "Failed: {{label}}",
+      "waiting": "Waiting at {{label}}",
+      "running": "Running {{label}}",
       "input": "Input",
-      "output": "Output"
+      "output": "Output",
+      "errorDetail": "Error"
     },
     "settings": {
       "title": "Chat settings",
@@ -1833,6 +1834,11 @@
     "answeredByHint": {
       "visitor": "In a chat, the question is asked and answered in the chat.",
       "reviewer": "In a chat, the person chatting waits while a reviewer answers in Approvals."
-    }
+    },
+    "emptyTitle": "Start a chat",
+    "copy": "Copy",
+    "copied": "Copied",
+    "answerHint": "Approve, reject, or type your answer below.",
+    "answerPlaceholder": "Type your answer…"
   }
 }

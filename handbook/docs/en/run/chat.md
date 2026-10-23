@@ -66,7 +66,7 @@ A Human node's **Answered by** option decides who answers it when the workflow
 runs from a chat:
 
 - **The person chatting** (default): the question appears in the chat with
-  **Approve**, **Reject** and a text reply. The answer goes to the node's
+  **Approve** and **Reject**; or type your answer in the message box. The answer goes to the node's
   output field and the run goes on.
 - **A reviewer**: the chat says it is waiting for approval, and the question
   goes to the [Approvals](human-approval.md) page (and its channels) as usual.

@@ -7,7 +7,7 @@ const html = (text: string) => renderToStaticMarkup(<ChatMarkdown text={text} />
 describe('ChatMarkdown (TASK-0085)', () => {
   it('renders GitHub-flavoured Markdown', () => {
     const out = html('**bold** and a list:\n\n- one\n- two\n\n| a | b |\n|---|---|\n| 1 | 2 |')
-    expect(out).toContain('<strong>bold</strong>'); expect(out).toContain('<li>one</li>'); expect(out).toContain('<table')
+    expect(out).toContain('class="typeset typeset-chat"'); expect(out).toContain('<strong>bold</strong>'); expect(out).toContain('<li>one</li>'); expect(out).toContain('<table')
   })
   it('drops raw HTML, scripts, unsafe links and remote images', () => {
     const out = html('<script>alert(1)</script>\n\nhi <b onclick="x()">b</b> [x](javascript:alert(1)) ![pic](https://evil.test/p.png)')

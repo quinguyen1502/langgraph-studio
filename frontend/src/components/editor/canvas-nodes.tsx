@@ -50,6 +50,7 @@ export function StudioNode({ data, type, selected }: NodeProps) {
         <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</div>
         <div className="text-sm font-medium truncate">{d.label}</div>
         {type === 'tool' && d.mode === 'code' && <UnisolatedBadge />}
+        {type === 'tool' && d.mode === 'code' && d.language === 'typescript' && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]" data-testid="node-language">TS</Badge>}
         {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" className="h-4 px-1 text-[9px] gap-0.5"><Sparkles className="size-2.5" />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
       </div>
     </div>

@@ -62,6 +62,7 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
     | email | email | not "e-mail" |
     | replay | xem lại | |
     | test case, test run | test case, run test | |
+    | Python, TypeScript, Deno, npm, package, Web API | keep in English | "Ngôn ngữ" for the Code-mode language picker |
 
 ## Review checklist
 

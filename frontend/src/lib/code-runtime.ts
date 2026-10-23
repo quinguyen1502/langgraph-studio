@@ -2,9 +2,18 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api'
 
+export type CodeLanguageInfo = { id: 'python' | 'typescript'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string }
 export type CodeRuntime = {
   code_runtime: 'docker' | 'subprocess' | 'off'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string
   limits: { memory: string; cpus: string; pids: number; seconds: number; source_kb: number }
+  languages?: CodeLanguageInfo[]  // TASK-0079: one entry per offered language; the top level is Python's
+}
+
+/** The facts of one language; falls back to the top-level (Python) facts for servers from before TASK-0079. */
+export function languageInfo(rt: CodeRuntime | null, id: string): CodeLanguageInfo | null {
+  if (!rt) return null
+  return rt.languages?.find(l => l.id === id)
+    ?? (id === 'python' ? { id: 'python', available: rt.available, problem: rt.problem, image: rt.image, packages: rt.packages, starter: rt.starter } : null)
 }
 export type CodeTestResult = { ok: boolean; value?: unknown; stdout?: string; traceback?: string; runtime?: string; duration_ms?: number
   error?: { code: string; message: string; details?: Record<string, unknown> } }

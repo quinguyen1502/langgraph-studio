@@ -22,7 +22,7 @@ test('code mode: write, test with sample state, run, traceback, read-only for ed
   const wid = await newWorkflow(page, H, WF(`Code ${Date.now()}`))
   await page.goto(`/workflows/${wid}`)
   await page.locator('.react-flow__node[data-id="c"]').click()
-  await page.locator('#tool-mode').click(); await page.getByRole('option', { name: 'Code Python' }).click()
+  await page.locator('#tool-mode').click(); await page.getByRole('option', { name: /^Code \(Python/ }).click()
   await expect(page.locator('#code-source')).toContainText('def main(state)')  // starter
   await expect(page.locator('#code-packages')).toContainText('pydantic')
   await setCode(page, UPPER)

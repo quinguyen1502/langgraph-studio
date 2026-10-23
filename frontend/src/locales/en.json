@@ -214,7 +214,7 @@
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
     },
-    "pythonCode": "Python code"
+    "codeMode": "Code (Python or TypeScript)"
   },
   "nodes": {
     "start": "Start point",
@@ -1568,7 +1568,23 @@
       "docker": "Docker sandbox",
       "subprocess": "Host subprocess (not isolated)",
       "off": "Off"
-    }
+    },
+    "language": "Language",
+    "languages": {
+      "python": "Python",
+      "typescript": "TypeScript"
+    },
+    "languageOff": "{{language}} is not offered on this server (STUDIO_CODE_LANGUAGES).",
+    "languageKept": "Your code was kept. Rewrite it in {{language}} before you run it.",
+    "stateType": "State type",
+    "stateTypeHint": "Generated from the state schema. Use it as `state: State`; Deno removes types without checking them, so no declaration is needed. Type state. for field names.",
+    "tsPackages": "Web APIs and these packages: {{packages}} (import them as written, e.g. \"npm:zod\").",
+    "tsNoPackages": "Web APIs only; no packages can be imported here.",
+    "adminLanguages": "Languages",
+    "languageReady": "Ready",
+    "languageNotReady": "Not ready",
+    "adminPackages": "Packages: {{packages}}",
+    "adminNoPackages": "No extra packages"
   },
   "inbox": {
     "title": "Approvals",

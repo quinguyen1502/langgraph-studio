@@ -67,15 +67,17 @@ export function EditorConfig() {
             <HumanDeadlineSettings key={`${selNode.id}-deadline`} value={d.deadline} onChange={v => upd('deadline', v)} />
           </>}
           {selNode.type === 'tool' && <>
-            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, code: codeRt?.starter ?? '' }) : upd('mode', v)}>
+            <F label={t('field.mode')}><Select value={d.mode} onValueChange={v => v === 'code' && !d.code ? mark(selNode.id, { mode: v, language: 'python', code: codeRt?.starter ?? '' }) : upd('mode', v)}>
               <SelectTrigger className="w-full" id="tool-mode"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem>
-                <SelectItem value="code" id="tool-mode-code" disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>{t('editor.pythonCode')}
+                <SelectItem value="code" id="tool-mode-code" disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>{t('editor.codeMode')}
                   {codeRt?.code_runtime === 'subprocess' && <Badge variant="warning" className="ml-1 h-4 px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge>}</SelectItem></SelectContent></Select>
               {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
               {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
             {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={selNode.id} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}
-                editable={edit} input={input} nodeId={selNode.id} timeout={typeof d.timeout === 'number' ? d.timeout : undefined} /></F>
+                editable={edit} input={input} nodeId={selNode.id} timeout={typeof d.timeout === 'number' ? d.timeout : undefined}
+                language={d.language === 'typescript' ? 'typescript' : 'python'} fields={state}
+                onLanguage={(language, code) => mark(selNode.id, code === undefined ? { language } : { language, code })} /></F>
             : d.mode === 'http' ? <>
               <F label={t('field.method')}><Sel value={d.method} onChange={v => upd('method', v)} opts={['GET', 'POST', 'PUT', 'DELETE']} /></F>
               <F label={t('field.url')}><TemplateEditor {...tpl} singleLine id="http-url" placeholder="https://…" value={d.url || ''} onChange={v => upd('url', v)} /></F>

@@ -48,6 +48,8 @@ const SAME_OK = new Set([
   'chatTriggers.bot',
   'code.adminImage',
   'code.adminRuntime',
+  'code.languages.python',
+  'code.languages.typescript',
   'code.runtimeLabel',
   'code.traceback',
   'codeView.language',

@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { PythonEditor, type LineRange } from '@/components/python-editor'
+import { PythonEditor, type LineRange } from '@/components/code-editor'
 import { api } from '@/lib/api'
 import { useStudioCtx } from './studio-context'
 

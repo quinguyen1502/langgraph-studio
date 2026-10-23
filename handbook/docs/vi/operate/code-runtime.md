@@ -1,6 +1,6 @@
 # Môi trường chạy Code
 
-[Chế độ Code](../guide/code-mode.md) cho admin viết Python trong node Tool.
+[Chế độ Code](../guide/code-mode.md) cho admin viết Python hoặc TypeScript trong node Tool.
 Trang này nói về phía server: cách bật và cái gì cách ly nó.
 
 ## Bật lên
@@ -44,6 +44,31 @@ Mỗi lần gọi có một container mới:
 | `STUDIO_CODE_TEST_PER_MINUTE` | `20` | Số run thử trong trình soạn thảo cho mỗi người mỗi phút |
 
 Huỷ run sẽ kill container của nó.
+
+## TypeScript
+
+Node TypeScript chạy trên Deno trong image riêng, với cùng cách ly và giới
+hạn. Mặc định cả hai ngôn ngữ đều được cung cấp (`STUDIO_CODE_LANGUAGES`, ví
+dụ `python` để chỉ cung cấp Python).
+
+```bash
+docker build -t studio-code-ts:1 docker/studio-code-ts
+```
+
+| Biến | Mặc định | Ý nghĩa |
+| --- | --- | --- |
+| `STUDIO_CODE_LANGUAGES` | `python,typescript` | Các ngôn ngữ trình soạn thảo cung cấp |
+| `STUDIO_CODE_TS_IMAGE` | `studio-code-ts:1` | Image Deno |
+| `STUDIO_CODE_TS_PACKAGES` | `npm:zod,npm:date-fns` | Các package duy nhất code được import; giữ khớp với `docker/studio-code-ts/deps.ts` |
+| `STUDIO_DENO` | `deno` trong `PATH` | File chạy Deno cho chế độ subprocess |
+| `STUDIO_CODE_TS_DENO_DIR` | trống | Cache Deno chứa các package được phép, cho chế độ subprocess |
+
+Deno chạy không có cờ quyền nào, cùng `--no-remote` và `--cached-only`. Code
+không đọc hay ghi được file, không dùng được mạng, không đọc được biến môi
+trường và không chạy được tiến trình, kể cả ở chế độ subprocess, và chỉ
+import được package đã có trong cache của image. Bộ nhớ bị giới hạn qua heap
+V8 (ba phần tư `STUDIO_CODE_MEMORY`). Thẻ admin trong **Cài đặt → Người dùng**
+hiện từng ngôn ngữ và cho biết ngôn ngữ đó đã sẵn sàng chưa.
 
 ## Không có Docker
 

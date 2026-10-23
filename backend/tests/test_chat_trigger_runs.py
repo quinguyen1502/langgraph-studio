@@ -239,3 +239,23 @@ def test_telegram_messages_and_buttons_share_the_webhook(c, api):
     cb = {"update_id": 2, "callback_query": {"id": "q1", "from": {"id": 4242}, "data": "a.nope.bad"}}
     assert post(cb).json()["data"]["outcome"] == "refused"
     assert len([r for r in runs_of(wid) if r.status == "ok"]) == 2
+
+
+def test_settled_survives_a_cancelled_handler(c, monkeypatch):
+    """TASK-0083: the studio socket closes on run_summary, which cancels the handler while settled() waits for a
+    thread. With every executor thread busy, a plain to_thread job was dropped and the chat reply never went out."""
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+    svc, answered, busy = run_service(), [], threading.Event()
+    monkeypatch.setattr(svc, "chat", lambda: type("Chat", (), {"on_settled": lambda self, rid: answered.append(rid)})())
+    monkeypatch.setattr(svc, "deliveries", None)
+
+    async def main():
+        asyncio.get_running_loop().set_default_executor(pool := ThreadPoolExecutor(1))
+        asyncio.get_running_loop().run_in_executor(None, busy.wait)  # the only thread is taken
+        task = asyncio.create_task(svc.settled("r-cancel", "chat")); await asyncio.sleep(0)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError): await task
+        busy.set(); await asyncio.to_thread(lambda: None); pool.shutdown(wait=True)
+    asyncio.run(main())
+    assert answered == ["r-cancel"]

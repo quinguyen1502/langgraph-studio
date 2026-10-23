@@ -27,7 +27,7 @@ curl -X POST http://localhost:8080/api/hooks/workflows/<wid>/runs \
   -d '{"input": {"message": "hi"}, "mode": "sync"}'
 ```
 
-| Field | Nghĩa |
+| Trường | Nghĩa |
 | --- | --- |
 | `input` | State ban đầu. |
 | `mode` | `async` (mặc định) trả về ngay `202 {run_id, status: "queued"}`. `sync` chờ `final_state`, tối đa `STUDIO_SYNC_WAIT_MAX` giây (mặc định 30), quá thì trả `202` kèm `poll_url`. |

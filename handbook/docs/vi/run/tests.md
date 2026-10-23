@@ -30,7 +30,7 @@ sửa để biết cái gì vẫn chạy đúng và thay đổi nào làm hỏng
 | Điều kiện | Đạt khi |
 | --- | --- |
 | Trạng thái run | Run kết thúc `ok`, `error` hoặc `waiting`, như đã chọn. Không có điều kiện trạng thái thì run phải kết thúc `ok`. |
-| Trường state | Một field bằng, chứa, không chứa hoặc khớp mẫu (biểu thức chính quy), hoặc rỗng hay không rỗng. Object và list so sánh dạng JSON. |
+| Trường state | Một trường bằng, chứa, không chứa hoặc khớp mẫu (biểu thức chính quy), hoặc rỗng hay không rỗng. Object và danh sách so sánh dạng JSON. |
 | Node | Một node có chạy, hoặc không chạy. |
 | Thời gian | Run chạy không quá số giây này. |
 | Chi phí | Run tốn không quá số US$ này. Không kiểm khi model chưa có giá. |
@@ -43,7 +43,7 @@ Mỗi workflow có tối đa 50 test case (`STUDIO_TEST_CASES_MAX`), mỗi test 
 - **Chạy tất cả** chạy mọi test case trên version đã lưu hiện tại; nút chạy trên
   một test case chỉ chạy test case đó.
 - Tối đa 4 test case chạy cùng lúc (`STUDIO_TEST_PARALLEL`). Mỗi workflow chỉ có
-  một lần chạy test tại một thời điểm; **Huỷ** để dừng.
+  một run test tại một thời điểm; **Huỷ** để dừng.
 - **Dùng model mock offline** chạy mọi node LLM và Decision bằng mock offline:
   không gọi model, không tốn tiền, lần nào cũng ra cùng câu trả lời. Khi tắt,
   test dùng model thật và credential của chúng.
@@ -61,8 +61,8 @@ test kiểm đúng những gì run thật làm. Chỉ những gì tới tay ngư
 
 | Không | Thay vào đó |
 | --- | --- |
-| Gửi e-mail | Node Send email chạy thử: output cho thấy thư lẽ ra sẽ gửi. |
-| Gửi yêu cầu duyệt tới kênh, hay thêm bước vào hộp thư Phê duyệt | Câu trả lời của test case tiếp tục run. |
+| Gửi email | Node Send email chạy thử: output cho thấy thư lẽ ra sẽ gửi. |
+| Gửi yêu cầu duyệt tới kênh, hay thêm bước vào hộp thư Duyệt | Câu trả lời của test case tiếp tục run. |
 | Gửi thông báo | — |
 | Gọi API callback | — |
 
@@ -71,7 +71,7 @@ thống thử nghiệm khi chúng thay đổi dữ liệu.
 
 ## So sánh với version trước
 
-Mỗi kết quả được so với lần chạy test xong gần nhất trên một version cũ hơn.
+Mỗi kết quả được so với run test xong gần nhất trên một version cũ hơn.
 Thanh phía trên danh sách hiện số lượng và version đó; mỗi test case có nhãn
 của nó.
 
@@ -86,7 +86,7 @@ của nó.
 
 Test case vẫn là chính nó khi bạn sửa. Khi chưa có kết quả trước, thanh báo như
 vậy: **Chạy trên version** chạy test trên một version cũ đã lưu để có kết quả
-đó. **Lịch sử test** liệt kê các lần chạy test gần đây (version, ai chạy, lúc
+đó. **Lịch sử test** liệt kê các run test gần đây (version, ai chạy, lúc
 nào, số đạt và không đạt) và mở lại được.
 
 ## Lưu một run thành test case
@@ -97,14 +97,14 @@ Một run chạy đúng là một test tốt. **Lưu thành test case** trên m�
 - input của run;
 - các câu trả lời đã đưa cho node Human, theo thứ tự;
 - các điều kiện run đó đạt: trạng thái, từng node đã chạy (trừ Start và End),
-  và từng field nó ghi. Giá trị dài hơn 200 ký tự được kiểm bằng "chứa" 200 ký
+  và từng trường nó ghi. Giá trị dài hơn 200 ký tự được kiểm bằng "chứa" 200 ký
   tự đầu.
 
 Bỏ những gì không cần rồi lưu.
 
 ## Điều kiện không còn khớp graph
 
-Điều kiện nhắc tới node hoặc field state mà graph không còn có được đánh dấu
+Điều kiện nhắc tới node hoặc trường state mà graph không còn có được đánh dấu
 **Không còn trong graph**, và không đạt với lý do đó khi chạy. Sửa hoặc bỏ
 điều kiện đó.
 

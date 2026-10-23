@@ -41,6 +41,28 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
 
 9. **Template fields use `TemplateEditor`** (TASK-0041). Any node field that the backend renders with `{{state.field}}` (`engine/templating.py`) uses `components/template-editor.tsx`, not an Input or Textarea. It shows references as tags (path and filters included), marks fields missing from the state schema and unknown filters, suggests fields after `{{` and filters after `|`, opens a tag as text on double-click, and has an insert-field menu (DEC-0034). Pass `readOnly` for viewers: CodeMirror ignores a disabled `fieldset`.
 
+10. **Vietnamese strings follow the glossary** (TASK-0078). `frontend/src/locales/vi.json`, `README.vi.md` and `handbook/docs/vi` use the terms below. Address the user as "bạn"; buttons are short imperatives; "vui lòng" only in error messages. Use the new-style tone marks: xoá, huỷ, khoá, tuỳ, mã hoá. `src/lib/__tests__/locales.test.ts` checks key and placeholder parity, the banned terms, and that every vi string left identical to en is on its reviewed allowlist.
+
+    | English | Vietnamese | Note |
+    |---|---|---|
+    | workflow, node, edge, run, state, reducer, schema, subgraph, trace, checkpoint, token, webhook, trigger, cron, prompt, credential, API key, model | keep in English | "nút" means a button, never a node; no "lượt chạy"/"lần chạy", no "thông tin xác thực" |
+    | node type names (Start, End, LLM, Tool, Condition, Human, Join, Subgraph, …) | keep in English | match the canvas; write "node LLM", "node Code" |
+    | input, output | keep in English ("Trường input", "Input của run") | |
+    | field | trường | "trường state" |
+    | key (stored secret, dict key) | khoá | "API key" stays |
+    | provider | nhà cung cấp | |
+    | server | máy chủ | "MCP server" = máy chủ MCP |
+    | tool | công cụ | MCP tool = công cụ MCP; the node type "Tool" stays |
+    | knowledge base | kho tri thức | |
+    | approve, approval, approver | duyệt, yêu cầu duyệt, người duyệt | not "phê duyệt" |
+    | template | mẫu | "prompt template" stays |
+    | version, rollback | phiên bản, khôi phục | |
+    | label | nhãn | |
+    | optional | tuỳ chọn | not "không bắt buộc" |
+    | email | email | not "e-mail" |
+    | replay | xem lại | |
+    | test case, test run | test case, run test | |
+
 ## Review checklist
 
 - [ ] No custom widget where shadcn has a component.
@@ -51,4 +73,5 @@ Applies to all frontend code in `frontend/src`. Coding agents and reviewers must
 - [ ] Every new delete/remove/revoke/unlink goes through `ConfirmDeleteDialog` (type the name; UI-only, the API stays a plain DELETE).
 - [ ] Node fields rendered as `{{state.field}}` templates use `TemplateEditor`.
 - [ ] Warning/alert icons: destructive for danger, `variant="warning"` / `text-warning` for cautions; none left in the neutral default colour.
+- [ ] New vi strings follow the glossary (rule 10) and `npm test` passes the locale checks.
 - [ ] Screenshots are taken in both light and dark mode for UI changes.

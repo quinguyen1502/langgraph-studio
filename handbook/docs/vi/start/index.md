@@ -9,7 +9,7 @@ Superstep gồm ba phần:
 | **Worker** | Chạy các job trong hàng đợi: run gọi qua API, lịch chạy, run được khôi phục và việc gửi webhook. Mặc định worker chạy ngay trong process API. |
 
 Workflow là JSON gồm state schema, các node và các edge. Trình soạn thảo ghi
-JSON đó, và backend kiểm tra lại mỗi lần lưu và mỗi lần chạy.
+JSON đó, và backend kiểm tra lại mỗi lần lưu và mỗi run.
 
 ```mermaid
 flowchart LR

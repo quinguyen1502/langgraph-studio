@@ -25,7 +25,8 @@ git clone https://github.com/quinguyen1502/superstep.git
 cd superstep && ./dev.sh
 ```
 
-Mở <http://localhost:5173> và tạo tài khoản bằng **Đăng ký**. Tài liệu API ở
+Mở <http://localhost:5173> và tạo tài khoản bằng **Đăng ký** (ngoài production
+còn có sẵn tài khoản demo `admin@example.com` / `admin123`). Tài liệu API ở
 <http://localhost:8000/docs>. Node LLM trả lời bằng bản mock offline cố định
 cho tới khi bạn thêm credential của model. Phần
 [Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/)
@@ -42,26 +43,31 @@ docker compose up --build   # http://localhost:8080
 
 1. **Trình soạn thảo trực quan:** 13 loại node (LLM, Tool, Condition, For
    each, Join, Subgraph, MCP, Retriever, Decision, Send email, Human, Start,
-   End), state có kiểu và reducer, tham chiếu `{{state.field}}` được kiểm tra
-   trước khi chạy.
+   End) cùng node Code chỉ đọc từ repo đã import, state có kiểu và reducer,
+   tham chiếu `{{state.field}}` được kiểm tra trước khi chạy, và thư viện mẫu
+   để bắt đầu nhanh.
 2. **Trace của run:** thời gian, token và chi phí từng node, input, output và
-   state diff của mỗi bước, debug từng bước và chạy tới node đã chọn.
-3. **Người trong vòng lặp:** node Human dừng run tại checkpoint; duyệt trong
-   studio, hoặc qua Slack, Telegram, WhatsApp, e-mail hay Teams.
+   state diff của mỗi bước, debug từng bước và chạy tới node đã chọn. Test
+   case kiểm tra kết quả của workflow, và có thể so sánh các run test.
+3. **Duyệt giữa chừng (human-in-the-loop):** node Human dừng run tại
+   checkpoint; duyệt trong hộp Duyệt của studio, hoặc qua Slack, Telegram,
+   WhatsApp, email hay Teams; hạn chờ gửi nhắc, chuyển người duyệt hoặc cho run
+   hết hạn.
 4. **Trigger:** token API cho từng workflow, run đồng bộ và bất đồng bộ,
    webhook kết quả có chữ ký và retry, lịch cron theo múi giờ, và chạy từ
    chat: một lệnh gửi Slack app hoặc bot Telegram chạy workflow, bot trả lời.
 5. **Độ tin cậy:** checkpoint trong database, job của worker có lease, side
-   effect gần như đúng một lần nhờ idempotency key và sổ ghi kết quả.
+   effect thực hiện gần như đúng một lần (effectively-once) nhờ idempotency
+   key và sổ ghi kết quả.
 6. **Model và công cụ:** OpenAI, Anthropic, OpenRouter, Ollama, LM Studio và
    server tương thích OpenAI; kho tri thức pgvector; máy chủ MCP; code Python
-   chạy trong container Docker khoá chặt.
+   chạy trong container Docker bị giới hạn chặt.
 7. **Vận hành:** phiên bản bất biến có diff và khôi phục, vai trò admin,
    editor và viewer, chia sẻ và nhóm, nhật ký audit, trace OpenTelemetry gửi
    tới OTLP hoặc LangSmith.
 8. **Học LangGraph:** tab Code hiện mọi workflow dưới dạng một file Python
    LangGraph dễ đọc, chạy được độc lập (offline với model mock), tô sáng code
-   của node đang chọn.
+   của node đang chọn, và xuất ra để dùng trong dự án của bạn.
 
 ## Cách hoạt động
 
@@ -75,7 +81,7 @@ flowchart LR
   G --> M[Nhà cung cấp LLM] & T[HTTP · MCP · SMTP] & S[Sandbox Docker]
 ```
 
-Run chạy từ trình soạn thảo thực thi trong process API và gửi sự kiện qua
+Run khởi chạy từ trình soạn thảo được thực thi ngay trong process API và gửi sự kiện qua
 WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi qua hàng
 đợi tới worker. Chi tiết:
 [Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/).
@@ -86,7 +92,7 @@ WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi 
 | --- | --- |
 | Cài đặt, bắt đầu nhanh, khái niệm | [Bắt đầu](https://quinguyen1502.github.io/superstep/vi/start/) |
 | Trình soạn thảo, node, state, chế độ Code, kho tri thức, MCP | [Xây dựng](https://quinguyen1502.github.io/superstep/vi/guide/) |
-| Trace, duyệt bởi người, API trigger, lịch chạy, chạy từ chat | [Chạy](https://quinguyen1502.github.io/superstep/vi/run/) |
+| Trace, test, duyệt giữa chừng, API trigger, lịch chạy, chạy từ chat | [Chạy](https://quinguyen1502.github.io/superstep/vi/run/) |
 | Triển khai, tài khoản, vai trò, nhà cung cấp, kênh duyệt | [Vận hành](https://quinguyen1502.github.io/superstep/vi/operate/) |
 | Cấu hình, HTTP API, mã lỗi, kiến trúc | [Tham chiếu](https://quinguyen1502.github.io/superstep/vi/reference/) |
 

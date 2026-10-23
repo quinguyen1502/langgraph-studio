@@ -54,6 +54,7 @@
     "resetDone": "Password changed. Sign in with the new password."
   },
   "list": {
+    "untitled": "Untitled workflow",
     "count": "{{count}} workflows",
     "filtered": "{{shown}} / {{total}} workflows",
     "search": "Search workflows…",

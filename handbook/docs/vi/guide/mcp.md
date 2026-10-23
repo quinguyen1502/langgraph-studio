@@ -1,7 +1,7 @@
 # Máy chủ MCP
 
 Máy chủ [Model Context Protocol](https://modelcontextprotocol.io) cung cấp
-tool. Đăng ký máy chủ một lần, rồi gọi tool của nó từ các node
+công cụ. Đăng ký máy chủ một lần, rồi gọi công cụ của nó từ các node
 [MCP tool](nodes.md#mcp-tool).
 
 ![Máy chủ MCP](../images/settings-mcp.png)
@@ -38,9 +38,9 @@ Mở **Cài đặt → Máy chủ MCP**, chọn **Thêm máy chủ MCP**.
 tổ chức; admin chọn vai trò nào được dùng máy chủ của tổ chức. Secret được mã
 hoá, API chỉ trả về tên và giá trị đã che.
 
-## Gọi tool
+## Gọi công cụ
 
-Trong node MCP tool, chọn máy chủ và tool; mô tả của tool hiện trong cấu
+Trong node MCP tool, chọn máy chủ và công cụ; mô tả của công cụ hiện trong cấu
 hình. Chuỗi trong arguments là [template](state.md#tham-chieu).
 Argument đúng bằng một tham chiếu thì giữ nguyên kiểu. Kết quả ghi vào
 `output_field`.

@@ -20,9 +20,9 @@ JSON đó.
 
 ## State
 
-State là một bản ghi có kiểu, dùng chung cho mọi node. Node đọc field qua tham
+State là một bản ghi có kiểu, dùng chung cho mọi node. Node đọc trường qua tham
 chiếu `{{state.field}}` và ghi kết quả vào một `output_field`. Khi nhiều nhánh
-song song cùng ghi một field, field đó cần **reducer**: `append` cho list,
+song song cùng ghi một trường, trường đó cần **reducer**: `append` cho danh sách,
 `merge` cho object, `add` cho số. Mặc định là `replace`. Xem
 [State và tham chiếu](../guide/state.md).
 
@@ -31,7 +31,7 @@ song song cùng ghi một field, field đó cần **reducer**: `append` cho list
 | Nhóm | Node |
 | --- | --- |
 | Gọi model | LLM, Decision (Jev) |
-| Dữ liệu và tool | Tool (function, HTTP hoặc code Python), MCP tool, Retriever, Send email |
+| Dữ liệu và công cụ | Tool (function, HTTP hoặc code Python), MCP tool, Retriever, Send email |
 | Điều khiển luồng | Condition, For each, Join, Subgraph |
 | Con người | Human |
 | Biên | Start, End |
@@ -42,7 +42,7 @@ Condition chọn một edge đi ra theo nhãn của edge. Xem
 
 ## Run
 
-Run là một lần chạy graph đã lưu (hoặc chưa lưu) với input JSON. Run phát ra
+Run là một run graph đã lưu (hoặc chưa lưu) với input JSON. Run phát ra
 các sự kiện như `run_started`, `node_started`, `node_token`, `node_finished`,
 `run_waiting`, `run_paused`, `error` và `run_finished`. Trạng thái cuối là
 `ok`, `error`, `cancelled`, `timeout` và `paused`; run đang chờ ở node Human
@@ -63,10 +63,10 @@ chạy tiếp từ checkpoint cuối, không chạy lại từ đầu.
 
 ## Side effect gần như đúng một lần
 
-Mỗi lần chạy LLM hoặc Tool có một idempotency key cố định theo run, node và
+Mỗi run LLM hoặc Tool có một idempotency key cố định theo run, node và
 lượt lặp. Node có side effect đã xong được ghi vào sổ kết quả, nên run được
 khôi phục sẽ dùng lại kết quả (`reused` trong trace) thay vì gọi dịch vụ lần
-nữa. HTTP tool cũng gửi `Idempotency-Key`. Xem
+nữa. HTTP công cụ cũng gửi `Idempotency-Key`. Xem
 [Kiến trúc](../reference/architecture.md).
 
 ## Phiên bản

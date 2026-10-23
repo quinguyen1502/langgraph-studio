@@ -44,7 +44,7 @@ và có thể được dịch vụ khác gọi qua HTTP.
 
 ## 3. Cấu hình node LLM
 
-State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có một field
+State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có một trường
 `message`, chứa input của run.
 
 1. Chọn node **LLM**. Cấu hình của nó mở ở panel **Cấu hình**.
@@ -55,12 +55,12 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
     Viết một câu trả lời ngắn, lịch sự cho tin nhắn của khách: {{state.message}}
     ```
 
-    `{{state.message}}` hiện thành một thẻ. Gõ `{{` để chọn field trong state;
-    field không có trong state bị đánh dấu là không xác định.
+    `{{state.message}}` hiện thành một thẻ. Gõ `{{` để chọn trường trong state;
+    trường không có trong state bị đánh dấu là không xác định.
 
-4. Ở **State schema** trong panel trái, chọn **Thêm field** và đặt tên field
+4. Ở **State schema** trong panel trái, chọn **Thêm trường** và đặt tên trường
    mới là `reply`.
-5. Đặt **Output field** là `reply`. Node ghi câu trả lời vào đó.
+5. Đặt **Trường output** là `reply`. Node ghi câu trả lời vào đó.
 
 ![Cấu hình node LLM](../images/quickstart-llm.png)
 
@@ -75,11 +75,11 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
     {{state.reply}}
     ```
 
-3. Thêm field `decision` vào state và chọn nó làm **Output field**. Field này
+3. Thêm trường `decision` vào state và chọn nó làm **Trường output**. Trường này
    nhận `approved`, `rejected` hoặc câu trả lời được gõ vào.
-4. Tuỳ chọn: ở **Kênh phê duyệt**, đặt **Gửi yêu cầu phê duyệt tới** một kênh
-   Slack, Telegram, WhatsApp, e-mail hoặc Teams đã kết nối, rồi điền đích gửi
-   (với Slack là channel id). **Người duyệt (e-mail)** liệt kê những người khác
+4. Tuỳ chọn: ở **Kênh duyệt**, đặt **Gửi yêu cầu duyệt tới** một kênh
+   Slack, Telegram, WhatsApp, email hoặc Teams đã kết nối, rồi điền đích gửi
+   (với Slack là channel id). **Người duyệt (email)** liệt kê những người khác
    được trả lời. Kênh được kết nối ở **Cài đặt → Kênh**; xem
    [Kênh duyệt](../operate/channels.md). Làm theo hướng dẫn này chỉ cần
    **Chỉ trong Studio**.
@@ -91,7 +91,7 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
 
 !!! info "Kiểm tra graph"
     Lưu và Chạy đều kiểm tra graph trước: node không tới được, tham chiếu tới
-    field không có trong state, cạnh trỏ tới node không tồn tại đều được liệt
+    trường không có trong state, cạnh trỏ tới node không tồn tại đều được liệt
     kê trước khi chạy. Xem [Trình soạn thảo](../guide/editor.md).
 
 ## 5. Chạy và duyệt
@@ -110,10 +110,10 @@ State là bản ghi có kiểu mà mọi node đọc và ghi. Workflow mới có
 3. Đọc câu hỏi và câu trả lời đã soạn, rồi chọn **Duyệt**. Run chạy tiếp từ
    checkpoint và kết thúc.
 
-!!! tip "Trả lời từ chat hoặc e-mail"
+!!! tip "Trả lời từ chat hoặc email"
     Khi node Human có kênh, cùng yêu cầu đó cũng được gửi tới kênh: nút
     **Duyệt** và **Từ chối** trên Slack và Telegram, hai nút trả lời trên
-    WhatsApp, và link trong e-mail và Teams mở về studio. Chỉ chủ của run và
+    WhatsApp, và link trong email và Teams mở về studio. Chỉ chủ của run và
     những người duyệt được liệt kê mới trả lời được, và chỉ một lần. Trả lời
     trong studio sẽ đóng yêu cầu ở mọi nơi. Xem
     [Duyệt bởi người](../run/human-approval.md#duyet-qua-chat).
@@ -158,18 +158,18 @@ Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó m
 
 1. Mở **⋯ → Lịch chạy**.
 2. Nhập tên và biểu thức cron `0 9 * * 1-5` (9 giờ sáng các ngày trong tuần).
-   Hộp thoại hiện trước các lần chạy kế tiếp theo múi giờ đã chọn.
+   Hộp thoại hiện trước các run kế tiếp theo múi giờ đã chọn.
 3. Chọn **Thêm lịch**.
 
 ## Bạn đã học được
 
 - Workflow là một graph gồm các node có kiểu trên một state chung; node đọc
-  state bằng `{{state.field}}` và ghi vào một **Output field**
+  state bằng `{{state.field}}` và ghi vào một **Trường output**
   ([State và tham chiếu](../guide/state.md)).
 - Mỗi lần lưu là một phiên bản, và mỗi run ghi lại phiên bản nó dùng
   ([Phiên bản](../guide/versions.md)).
 - Node Human dừng run ở trạng thái `waiting` và chạy tiếp từ checkpoint; yêu
-  cầu duyệt có thể gửi cả tới chat hoặc e-mail
+  cầu duyệt có thể gửi cả tới chat hoặc email
   ([Duyệt bởi người](../run/human-approval.md)).
 - Mỗi bước của run giữ input, output và state diff
   ([Run và trace](../run/traces.md)).
@@ -185,7 +185,7 @@ Chọn **Soạn trả lời** trên canvas hoặc trong **Logs**. Bước đó m
   [Kiểm thử workflow](../run/tests.md).
 - Xem workflow dưới dạng Python LangGraph và chạy nó độc lập:
   [Xuất ra Python](../guide/python-export.md).
-- Gửi yêu cầu duyệt tới Slack, Telegram, WhatsApp, e-mail hoặc Teams:
+- Gửi yêu cầu duyệt tới Slack, Telegram, WhatsApp, email hoặc Teams:
   [Kênh duyệt](../operate/channels.md).
 - Chạy đủ stack với Postgres, Redis và worker:
   [Triển khai bằng Compose](../operate/deploy.md).

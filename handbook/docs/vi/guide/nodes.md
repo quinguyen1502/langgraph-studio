@@ -4,16 +4,16 @@
 | --- | --- | --- |
 | [Start](#start-va-end), [End](#start-va-end) | Điểm vào và điểm ra của graph | — |
 | [LLM](#llm) | Gọi model với prompt template | `output_field` |
-| [Decision (Jev)](#decision-jev) | Câu trả lời có kiểu từ TypeSafe Jev | mỗi câu hỏi một field, cộng `output_field` |
-| [Retriever](#retriever) | Tìm trong kho tri thức | `output_field` (list) |
+| [Decision (Jev)](#decision-jev) | Câu trả lời có kiểu từ TypeSafe Jev | mỗi câu hỏi một trường, cộng `output_field` |
+| [Retriever](#retriever) | Tìm trong kho tri thức | `output_field` (danh sách) |
 | [Tool](#tool) | Hàm Python, request HTTP, hoặc code Python của bạn | `output_field` |
-| [MCP tool](#mcp-tool) | Gọi tool trên máy chủ MCP | `output_field` |
-| [Send email](#send-email) | Gửi một e-mail qua SMTP | `output_field` (tuỳ chọn) |
-| [Condition](#condition) | Chọn một edge đi ra theo giá trị của field | — |
-| [For each](#for-each) | Lặp qua một list, từng phần tử | `item_field`, `index_field` |
+| [MCP tool](#mcp-tool) | Gọi công cụ trên máy chủ MCP | `output_field` |
+| [Send email](#send-email) | Gửi một email qua SMTP | `output_field` (tuỳ chọn) |
+| [Condition](#condition) | Chọn một edge đi ra theo giá trị của trường | — |
+| [For each](#for-each) | Lặp qua một danh sách, từng phần tử | `item_field`, `index_field` |
 | [Human](#human) | Dừng tới khi có người trả lời | `output_field` |
 | [Join](#join) | Chờ mọi nhánh đi vào | — |
-| [Subgraph](#subgraph) | Chạy một workflow đã lưu bên trong workflow này | các field dùng chung |
+| [Subgraph](#subgraph) | Chạy một workflow đã lưu bên trong workflow này | các trường dùng chung |
 | [Code (imported)](#code-imported) | Node chỉ đọc từ repo đã import | — |
 
 ## Cấu hình thực thi
@@ -33,7 +33,7 @@ trong cấu hình:
 ## Start và End
 
 Graph nào cũng có đúng một Start. Node End kết thúc một nhánh. Không xoá và
-không copy được hai node này. Start nhận input của run làm state ban đầu.
+không sao chép được hai node này. Start nhận input của run làm state ban đầu.
 
 ## LLM
 
@@ -42,7 +42,7 @@ không copy được hai node này. Start nhận input của run làm state ban 
 | Credential | Một nhà cung cấp trong **Credentials**. Để trống thì dùng `OPENAI_API_KEY`, không có nữa thì dùng mock offline. |
 | Model | Chọn trong danh sách model của nhà cung cấp, hoặc gõ tay. |
 | Prompt template | Văn bản có tham chiếu `{{state.field}}` và filter. |
-| Output field | Field của state nhận câu trả lời. |
+| Trường output | Trường của state nhận câu trả lời. |
 
 Trong lúc chạy, từng đoạn token tới dưới dạng sự kiện `node_token` và hiện ở
 dòng Logs lẫn tab Output. Các đoạn này không lưu vào lịch sử run; văn bản cuối
@@ -75,7 +75,7 @@ dùng lại câu trả lời cũ.
 | Kho tri thức | Một [kho tri thức](knowledge.md) của bạn. |
 | Query | Một template, thường là `{{state.message}}`. |
 | Top K | 1–20 kết quả. |
-| Output field | Nhận một list `{text, score, filename, …}`. |
+| Trường output | Nhận một danh sách `{text, score, filename, …}`. |
 
 ## Tool
 
@@ -109,13 +109,13 @@ template; argument nào đúng bằng một `{{state.x}}` thì giữ nguyên ki�
 
 ## Send email
 
-Gửi một e-mail qua credential SMTP (**Credentials → SMTP**: host, port,
+Gửi một email qua credential SMTP (**Credentials → SMTP**: host, port,
 STARTTLS / SSL / không, tên đăng nhập, người gửi; mật khẩu được mã hoá).
 
 ![Node Send email trong một run](../images/email-node.png)
 
 - `to`, `cc`, `bcc` và `reply_to` là template, các địa chỉ cách nhau bằng dấu
-  phẩy; một `{{state.x}}` cũng có thể chứa list. Tối đa 50 người nhận.
+  phẩy; một `{{state.x}}` cũng có thể chứa danh sách. Tối đa 50 người nhận.
 - `subject` và `body` là template. Với định dạng **HTML**, giá trị lấy từ state
   được escape và có thêm phần văn bản thường.
 - `output_field` (tuỳ chọn, object) nhận
@@ -129,12 +129,12 @@ STARTTLS / SSL / không, tên đăng nhập, người gửi; mật khẩu đư�
 - Các node của một chủ workflow gửi tới tối đa
   `STUDIO_EMAIL_NODE_HOURLY_LIMIT` người nhận mỗi giờ (mặc định 100).
 
-Đặt node Human phía trước để duyệt bản nháp e-mail.
+Đặt node Human phía trước để duyệt bản nháp email.
 
 ## Condition
 
-Đặt **Field** là một field của state. Nhãn các edge đi ra được so với giá trị
-của field:
+Đặt **Trường state để rẽ nhánh** là một trường của state. Nhãn các edge đi ra được so với giá trị
+của trường:
 
 1. khớp chính xác;
 2. khớp không phân biệt hoa thường, sau khi bỏ khoảng trắng và dấu câu;
@@ -150,7 +150,7 @@ là cách duy nhất để đóng một vòng lặp.
 ## Nhánh song song
 
 Nhiều edge đi ra từ một node không phải Condition sẽ chạy trong cùng một
-superstep. Field được nhiều nhánh ghi cần reducer (`append`, `merge` hoặc
+superstep. Trường được nhiều nhánh ghi cần reducer (`append`, `merge` hoặc
 `add`); thiếu reducer thì không qua được kiểm tra. Dùng [Join](#join) để chờ
 mọi nhánh.
 
@@ -158,7 +158,7 @@ mọi nhánh.
 
 | Cấu hình | Ghi chú |
 | --- | --- |
-| `items_field` | Field kiểu list để lặp qua. |
+| `items_field` | Trường kiểu danh sách để lặp qua. |
 | `item_field` | Nhận phần tử hiện tại. |
 | `index_field` | Tuỳ chọn, kiểu integer hoặc number: chỉ số tính từ 0. |
 | `max_items` | 1–1000, mặc định 100. List dài hơn thì node lỗi. |
@@ -171,8 +171,8 @@ tiếp rồi đi theo `each`; sau phần tử cuối thì đi theo `done`.
 ![Vòng For each sau khi chạy](../images/loop-run.png)
 
 Các phần tử chạy lần lượt, nên dừng ở Human, khôi phục và idempotency key đều
-hoạt động theo từng phần tử. Gom kết quả vào một field list có reducer
-`append`. Vòng lặp lồng nhau được; list bên trong bắt đầu lại cho mỗi phần tử
+hoạt động theo từng phần tử. Gom kết quả vào một trường danh sách có reducer
+`append`. Vòng lặp lồng nhau được; danh sách bên trong bắt đầu lại cho mỗi phần tử
 bên ngoài. Các bước của vòng lặp không tính vào `STUDIO_RECURSION_LIMIT`, giới
 hạn đó chỉ áp cho các vòng lặp khác.
 
@@ -190,7 +190,7 @@ nhận edge đi thẳng từ Condition.
 ## Subgraph
 
 `workflow_id` của một workflow đã lưu của bạn. State dùng chung theo tên
-field. Node bên trong hiện trong trace dạng `Subgraph › node` (id `sub/node`).
+trường. Node bên trong hiện trong trace dạng `Subgraph › node` (id `sub/node`).
 Vòng tham chiếu, workflow con không tồn tại hoặc là workflow import, và lồng
 sâu quá năm cấp đều lỗi khi lưu và khi chạy (`WORKFLOW_INVALID`).
 

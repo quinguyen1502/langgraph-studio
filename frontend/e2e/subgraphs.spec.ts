@@ -40,7 +40,7 @@ test('parallel branches, Join and a Subgraph node', async ({ page }) => {
   const run = (await (await page.request.get(`/api/workflows/${saved.id}/runs`, { headers: auth })).json()).data[0]
   expect(run.final_state.notes).toHaveLength(2); expect(run.final_state.summary).toBeTruthy()
   // a parallel write without a reducer is reported on save
-  await page.locator('#reducer-notes').click(); await page.getByRole('option', { name: 'Thay thế (ghi sau cùng thắng)' }).click()
+  await page.locator('#reducer-notes').click(); await page.getByRole('option', { name: 'Thay thế (giữ giá trị ghi sau cùng)' }).click()
   await page.getByRole('button', { name: 'Lưu', exact: true }).click()
   await expect(page.locator('#validation-errors')).toContainText('state.notes')
 })

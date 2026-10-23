@@ -125,6 +125,8 @@ def test_step_visibility_modes():
     assert steps_of(events, "none") == []
     assert steps_of(events, "labels") == [{"node": "bot", "label": "Bot", "type": "llm", "status": "ok"}]
     assert steps_of(events, "full")[0]["delta"] == {"reply": "x"} and steps_of(events, "full")[0]["duration_ms"] == 3.0
+    waiting = [{"type": "node_started", "node": "ask", "label": "Ask", "node_type": "human"}, {"type": "run_waiting", "node": "ask", "prompt": "?"}]
+    assert steps_of(waiting, "labels") == [{"node": "ask", "label": "Ask", "type": "human", "status": "waiting"}]
     tok = user(); wid, sid = chat(tok, steps="none")
     say(tok, {"chat_session_id": sid, "message": "hi"})
     wait_turns(tok, sid, 2)

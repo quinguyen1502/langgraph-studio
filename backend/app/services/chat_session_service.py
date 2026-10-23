@@ -26,7 +26,7 @@ STEPS = ("none", "labels", "full")
 ANSWERED_BY = ("visitor", "reviewer")
 DEFAULTS = {"access": "studio", "messages_field": "", "max_turns": 10, "steps": "labels", "retention_days": 30}
 MAX_TURNS, RETENTION_MAX, TEXT_MAX, TITLE_MAX = 50, 3650, 4000, 60
-STEP_EVENTS = ("node_started", "node_finished", "error")
+STEP_EVENTS = ("node_started", "node_finished", "error", "run_waiting")
 
 
 def answered_by(node_data: Optional[dict]) -> str:
@@ -47,6 +47,7 @@ def steps_of(events: list, mode: str) -> list[dict]:
         s = out.setdefault(key, {"node": nid, "label": e.get("label") or nid, "type": e.get("node_type") or e.get("kind"), "status": "running"})
         if t == "node_finished": s["status"] = "ok"
         if t == "error": s["status"] = "error"
+        if t == "run_waiting": s["status"] = "waiting"  # a Human node that waits for its answer
         if mode == "full":
             for k in ("duration_ms", "input", "delta", "errors", "code"):
                 if k in e: s[k] = e[k]

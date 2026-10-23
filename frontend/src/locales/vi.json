@@ -1721,7 +1721,7 @@
     "saveFirst": "Lưu workflow để xem nó dưới dạng mã LangGraph.",
     "version": "v{{n}}",
     "unsaved": "Thay đổi chưa lưu chưa có trong mã",
-    "showing": "Đang chỉ “{{node}}”",
+    "showing": "Đang hiển thị mã của “{{node}}”",
     "noCode": "Node này không có mã riêng",
     "selectHint": "Chọn một node trên canvas để tìm mã của nó",
     "download": "Tải .py",

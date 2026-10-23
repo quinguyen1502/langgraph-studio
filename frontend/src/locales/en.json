@@ -156,6 +156,9 @@
     "httpRequest": "HTTP request",
     "readOnly": "read-only",
     "reducer": "Reducer",
+    "fieldName": "Field name",
+    "fieldType": "Field type",
+    "removeField": "Remove the field {{name}}",
     "reducers": {
       "replace": "Replace (last write wins)",
       "append": "Append (collect all)",

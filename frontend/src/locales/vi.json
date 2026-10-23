@@ -156,6 +156,9 @@
     "httpRequest": "Request HTTP",
     "readOnly": "chỉ đọc",
     "reducer": "Reducer",
+    "fieldName": "Tên trường",
+    "fieldType": "Kiểu trường",
+    "removeField": "Xoá trường {{name}}",
     "reducers": {
       "replace": "Thay thế (giữ giá trị ghi sau cùng)",
       "append": "Nối (gom tất cả)",

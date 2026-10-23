@@ -39,7 +39,7 @@ export function EditorConfig() {
   const chatCreds = creds.filter(c => (providers.find(p => p.id === c.provider)?.kind ?? 'chat') === 'chat')  // TypeSafe keys: Decision nodes; SMTP: Send email
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0" id="config-panel">
-      <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:block!"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
+      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}

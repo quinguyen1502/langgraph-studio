@@ -227,4 +227,4 @@ attachments/embed later and retention; DEC-0052, DEC-0053, DEC-0054). Phase 1: t
 
 - TASK-0084 Web chat backend: chat sessions and turns (migration 0035), the `web` chat trigger with its settings, one
   `source="chat"` run per message over the run socket with the history window, reply-once answers, `node_token.field`,
-  Human `answered_by`, retention cleanup, `CHAT_*` errors. **draft PR** (REV-0077, QA-0077).
+  Human `answered_by`, retention cleanup, `CHAT_*` errors. **draft PR #116** (REV-0077, QA-0077).

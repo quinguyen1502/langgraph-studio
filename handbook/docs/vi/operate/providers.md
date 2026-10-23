@@ -50,7 +50,7 @@ Trong lúc chạy, lỗi từ nhà cung cấp thành sự kiện `error` của n
 ## Cách gọi chat
 
 Chat dùng LangChain (`ChatOllama`, hoặc `ChatOpenAI` với `base_url`), nên
-stream và tool calling chạy được khi model hỗ trợ. Chat với OpenAI và
+stream và công cụ calling chạy được khi model hỗ trợ. Chat với OpenAI và
 Anthropic đi theo đường HTTP thuần của chúng.
 
 ## Model chạy ở máy

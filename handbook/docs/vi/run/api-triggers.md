@@ -3,7 +3,7 @@
 Workflow nào cũng có thể được một dịch vụ khác khởi chạy qua HTTP. Để chạy
 bằng tin nhắn Slack hoặc Telegram, xem [Chạy từ chat](chat-triggers.md).
 
-![Kích hoạt qua API](../images/api-trigger.png)
+![Chạy qua API](../images/api-trigger.png)
 
 ## Trước khi bắt đầu
 
@@ -27,7 +27,7 @@ curl -X POST http://localhost:8080/api/hooks/workflows/<wid>/runs \
   -d '{"input": {"message": "hi"}, "mode": "sync"}'
 ```
 
-| Field | Nghĩa |
+| Trường | Nghĩa |
 | --- | --- |
 | `input` | State ban đầu. |
 | `mode` | `async` (mặc định) trả về ngay `202 {run_id, status: "queued"}`. `sync` chờ `final_state`, tối đa `STUDIO_SYNC_WAIT_MAX` giây (mặc định 30), quá thì trả `202` kèm `poll_url`. |

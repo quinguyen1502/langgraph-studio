@@ -2,7 +2,7 @@
 
 ## State schema
 
-Khai báo state ở mục **State schema** của panel trái. Mỗi field có tên và
+Khai báo state ở mục **State schema** của panel trái. Mỗi trường có tên và
 kiểu:
 
 | Kiểu | Giá trị JSON | Reducer |
@@ -18,17 +18,17 @@ Input của run là state ban đầu.
 
 ## Reducer
 
-Reducer quyết định một lần ghi kết hợp với giá trị đang có trong field thế
+Reducer quyết định một lần ghi kết hợp với giá trị đang có trong trường thế
 nào. `replace` (mặc định) ghi đè. Các reducer khác có tác dụng khi nhiều node
 ghi trong cùng một superstep, hoặc khi vòng lặp gom kết quả:
 
 | Reducer | Tác dụng |
 | --- | --- |
-| `append` | Thêm phần tử (hoặc các phần tử) mới vào list. |
+| `append` | Thêm phần tử (hoặc các phần tử) mới vào danh sách. |
 | `merge` | Gộp các key mới vào object. |
 | `add` | Cộng thêm số. |
 
-Các nhánh song song cùng ghi một field mà không có reducer sẽ không qua được
+Các nhánh song song cùng ghi một trường mà không có reducer sẽ không qua được
 kiểm tra, vì LangGraph không biết lần ghi nào thắng.
 
 ## Tham chiếu
@@ -50,10 +50,10 @@ Thiếu một bước trên đường dẫn thì kết quả rỗng.
 | --- | --- |
 | `upper`, `lower`, `trim` | Chữ hoa/thường và khoảng trắng |
 | `json` | Giá trị dạng JSON |
-| `length` | Độ dài của list, object hoặc văn bản |
-| `first`, `last` | Phần tử đầu hoặc cuối của list |
+| `length` | Độ dài của danh sách, object hoặc văn bản |
+| `first`, `last` | Phần tử đầu hoặc cuối của danh sách |
 | `default("text")` | `text` khi giá trị rỗng |
-| `join(", ")` | Nối các phần tử list bằng dấu phân cách |
+| `join(", ")` | Nối các phần tử danh sách bằng dấu phân cách |
 | `truncate(80)` | Cắt văn bản còn 80 ký tự |
 
 Argument của MCP (và `text` của Decision) đúng bằng một tham chiếu thì giữ
@@ -61,7 +61,7 @@ nguyên kiểu của giá trị, nên `{{state.items | length}}` truyền đi m�
 
 ## Trong trình soạn thảo
 
-Tham chiếu hiện thành tag. Gõ `{{` để chọn field của state, gõ `|` bên trong
-tham chiếu để chọn filter. Nhấp đúp vào tag để sửa dạng văn bản. Field không
+Tham chiếu hiện thành tag. Gõ `{{` để chọn trường của state, gõ `|` bên trong
+tham chiếu để chọn filter. Nhấp đúp vào tag để sửa dạng văn bản. Trường không
 có trong state hoặc filter không tồn tại sẽ đỏ, và Lưu sẽ liệt kê chúng. Run
 từ chối tham chiếu sai với `TEMPLATE_REF_INVALID`.

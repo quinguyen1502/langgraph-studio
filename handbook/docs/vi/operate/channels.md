@@ -12,7 +12,7 @@ của node Human và trong **Cài đặt → Nhật ký**.
 | Slack | Nút bấm | `STUDIO_PUBLIC_URL` HTTPS công khai, một Slack app |
 | Telegram | Nút bấm | `STUDIO_PUBLIC_URL` HTTPS công khai, một bot |
 | WhatsApp | Nút trả lời | `STUDIO_PUBLIC_URL` HTTPS công khai, một Meta app có WhatsApp |
-| E-mail | Link | `STUDIO_PUBLIC_URL`, `SMTP_HOST` |
+| Email | Link | `STUDIO_PUBLIC_URL`, `SMTP_HOST` |
 | Microsoft Teams | Link trong Adaptive Card | `STUDIO_PUBLIC_URL`, một webhook của Workflows |
 
 Mỗi kết nối là cá nhân (dùng cho workflow của bạn) hoặc toàn tổ chức (do
@@ -25,13 +25,13 @@ bạn URL HTTPS công khai.
 1. Tạo app ở <https://api.slack.com/apps>. Bot scope: `chat:write`,
    `im:write`, và `chat:write.public` nếu bot cần đăng vào kênh công khai mà nó
    chưa tham gia.
-2. Cài app, copy bot token (`xoxb-…`) và signing secret.
+2. Cài app, sao chép bot token (`xoxb-…`) và signing secret.
 3. Trong **Cài đặt → Kênh**, dán cả hai rồi lưu.
 4. Copy request URL vào **Interactivity & Shortcuts**:
    `POST {STUDIO_PUBLIC_URL}/api/approvals/callback/slack` (định tuyến theo
    `team_id`, nên một người kết nối được nhiều workspace).
 5. Mời bot vào kênh và dùng id của kênh (`C…`) trên node.
-6. Mỗi người duyệt copy Slack member id của mình, nhận mã 6 chữ số qua DM, và
+6. Mỗi người duyệt sao chép Slack member id của mình, nhận mã 6 chữ số qua DM, và
    xác minh ở **Tài khoản của tôi**.
 
 `SLACK_CLIENT_ID`, `SLACK_CLIENT_SECRET` và `SLACK_SIGNING_SECRET` bật **Add
@@ -74,14 +74,14 @@ Người duyệt xác minh số của mình bằng mã, mã cũng chỉ tới đ
 giờ đó. WhatsApp không sửa được tin đã gửi, nên kết quả được gửi thành tin trả
 lời yêu cầu.
 
-## E-mail và Microsoft Teams
+## Email và Microsoft Teams
 
 Đây là kênh dạng link: tin nhắn có link Duyệt và Từ chối tới
 `/approve?token=…`. Người nhận đăng nhập studio và xác nhận ở đó, nên không cần
 liên kết tài khoản chat, và việc mở link (ví dụ do trình quét thư) không quyết
 định gì.
 
-- **E-mail** dùng cấu hình SMTP của studio (`SMTP_HOST`, …). Đích của node là
+- **Email** dùng cấu hình SMTP của studio (`SMTP_HOST`, …). Đích của node là
   một hoặc nhiều địa chỉ, cách nhau bằng dấu phẩy.
 - **Teams:** trong kênh, thêm template của Workflows "Post to a channel when a
   webhook request is received", rồi dán URL HTTPS của nó. Node không cần đích.

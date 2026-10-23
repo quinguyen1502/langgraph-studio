@@ -16,7 +16,7 @@ cd superstep
 ./dev.sh
 ```
 
-Lần chạy đầu tạo `backend/.venv`, cài backend kèm phần dev, và chạy
+Run đầu tạo `backend/.venv`, cài backend kèm phần dev, và chạy
 `npm install` trong `frontend/`. Sau đó script khởi động:
 
 | Dịch vụ | URL |
@@ -26,7 +26,7 @@ Lần chạy đầu tạo `backend/.venv`, cài backend kèm phần dev, và ch�
 
 Tạo tài khoản bằng **Đăng ký**. Tài khoản mới có sẵn một bản sao của workflow ví
 dụ **Customer Support** và vai trò `editor`. Muốn tài khoản đó là admin, khởi động
-studio với `STUDIO_ADMIN_EMAILS` là e-mail đó, ví dụ
+studio với `STUDIO_ADMIN_EMAILS` là email đó, ví dụ
 `STUDIO_ADMIN_EMAILS=you@example.com ./dev.sh`, rồi mới đăng ký (xem
 [Vai trò và chia sẻ](../operate/access.md)).
 

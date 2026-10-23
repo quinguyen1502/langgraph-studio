@@ -2,8 +2,8 @@
 
 **⋯ → Chạy từ chat** trong trình soạn thảo chạy workflow bằng một tin nhắn gửi
 tới Slack app hoặc bot Telegram của bạn. Một từ lệnh chọn workflow, phần còn
-lại của tin nhắn điền vào một field input, và bot trả lời trong thread bằng
-một field của state.
+lại của tin nhắn điền vào một trường input, và bot trả lời trong thread bằng
+một trường của state.
 
 ![Hộp thoại Chạy từ chat](../images/chat-triggers.png)
 
@@ -57,14 +57,14 @@ Kết nối tạo trước khi có tính năng chạy từ chat cần làm các 
 
 ## Thêm trigger
 
-| Field | Ý nghĩa |
+| Trường | Ý nghĩa |
 | --- | --- |
 | Tên | Hiện trong danh sách và trong Lịch sử. |
 | Kết nối | Một Slack app hoặc bot Telegram ở **Cài đặt → Kênh**. |
-| Nghe ở | **Tin nhắn riêng gửi bot**, **Một kênh Slack** (ID của kênh, `C…`, ở chi tiết kênh → About) hoặc **Một nhóm Telegram** (ID của nhóm, `-…`). |
+| Lắng nghe ở | **Tin nhắn riêng gửi bot**, **Một kênh Slack** (ID của kênh, `C…`, ở chi tiết kênh → About) hoặc **Một nhóm Telegram** (ID của nhóm, `-…`). |
 | Từ lệnh | Một từ: chữ, số, `-` hoặc `_`, tối đa 32 ký tự. Không phân biệt hoa thường; dấu `/` ở đầu được bỏ đi. |
-| Nội dung tin nhắn vào | Field input nhận phần còn lại của tin nhắn. Field kiểu list nhận một list một phần tử. |
-| Trả lời bằng | Field của state mà bot hiện khi run kết thúc. |
+| Ghi nội dung tin nhắn vào | Trường input nhận phần còn lại của tin nhắn. Trường kiểu danh sách nhận một danh sách một phần tử. |
+| Trả lời bằng | Trường của state mà bot hiện khi run kết thúc. |
 
 Hộp thoại hiện mẫu tin nhắn mọi người sẽ gõ. Mỗi nơi chỉ một trigger trả lời
 một lệnh: cùng từ đó trên cùng kết nối và cùng nơi sẽ bị từ chối
@@ -92,7 +92,7 @@ Telegram là trả lời tin nhắn đó):
 
 - **Bắt đầu:** `▶️ Đã chạy Đơn nghỉ phép (lượt chạy 1a2b3c4d5e)` ngay khi run
   vào hàng đợi.
-- **Xong:** `✅ Đơn nghỉ phép đã xong: …` kèm field trả lời, cắt còn 3000 ký
+- **Xong:** `✅ Đơn nghỉ phép đã xong: …` kèm trường trả lời, cắt còn 3000 ký
   tự.
 - **Lỗi:** `❌ … bị lỗi: …` kèm thông báo lỗi.
 - **Đang chờ:** `⏸ … đang chờ phê duyệt ở Quản lý duyệt` khi một node Human

@@ -13,7 +13,7 @@ test('right-click the canvas to add a node; the state schema stays in view', asy
 
   // both halves of the left panel are visible without scrolling the panel
   await expect(page.locator('#palette-nodes')).toBeInViewport()
-  await expect(page.locator('#palette-state').getByRole('button', { name: 'Thêm field' })).toBeInViewport()
+  await expect(page.locator('#palette-state').getByRole('button', { name: 'Thêm trường' })).toBeInViewport()
 
   const pane = page.locator('.react-flow__pane'); const box = (await pane.boundingBox())!
   await pane.click({ button: 'right', position: { x: 80, y: box.height - 80 } })

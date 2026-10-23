@@ -36,9 +36,9 @@ Một lần kéo là một bước, gõ liên tục trong cùng một node cũng
 nhập văn bản giữ undo riêng của trình duyệt. Nhãn **Unsaved changes** biến mất
 khi bạn undo về đúng graph đã lưu.
 
-++ctrl+c++, ++ctrl+x++, ++ctrl+v++ và ++ctrl+d++ để copy, cut, paste và nhân bản
+++ctrl+c++, ++ctrl+x++, ++ctrl+v++ và ++ctrl+d++ để sao chép, cut, paste và nhân bản
 node. Chỉ những edge nối giữa các node được chọn mới đi theo, node dán vào có
-id mới. Start và End không bao giờ được copy. Clipboard nằm trong
+id mới. Start và End không bao giờ được sao chép. Clipboard nằm trong
 `localStorage` (`superstep/nodes` v1), nên có thể dán sang workflow
 khác trong cùng trình duyệt. Credential mà bạn không có quyền dùng sẽ bị xoá
 khi dán.
@@ -70,8 +70,8 @@ Lưu và Chạy đều kiểm tra graph. Trình kiểm tra từ chối:
 - edge tự nối vào chính nó (trừ ở Condition);
 - vòng lặp không đi qua Condition hay For each;
 - node không tới được;
-- field được nhiều nhánh song song ghi mà không có reducer;
-- tham chiếu `{{state.x}}` tới field không có, hoặc filter không tồn tại.
+- trường được nhiều nhánh song song ghi mà không có reducer;
+- tham chiếu `{{state.x}}` tới trường không có, hoặc filter không tồn tại.
 
 Lỗi hiện cạnh tab Input.
 

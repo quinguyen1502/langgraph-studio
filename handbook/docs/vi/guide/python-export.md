@@ -11,7 +11,7 @@ nghiệm sang dự án của bạn.
 
 - Mở tab **Code** ở panel dưới, hoặc chọn **Xem dạng code** trong menu **⋯**
   hay bảng lệnh (++ctrl+k++).
-- Tab hiện **version đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
+- Tab hiện **phiên bản đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
   trong code sau khi **Lưu**.
 - Chọn một node trên canvas: code của nó được tô sáng và cuộn tới. Start và End
   chỉ tới các cạnh `START` và `END` của chúng.
@@ -59,13 +59,13 @@ Final state: {...}
 
 | Canvas | Code |
 | --- | --- |
-| Các field state | `class State(TypedDict, total=False)`; field có reducer là `Annotated[kiểu, reducer]` |
+| Các trường state | `class State(TypedDict, total=False)`; trường có reducer là `Annotated[kiểu, reducer]` |
 | Start và End | `START` và `END` trong các cạnh |
 | LLM | `render(PROMPT, state)`, rồi `call_llm(prompt, model)` |
 | Condition | một node không đổi gì, và `add_conditional_edges` với hàm router và bảng nhãn → node |
 | Human | `interrupt(...)` dừng run; `Command(resume=answer)` chạy tiếp |
 | Join | một node, và `add_edge([nhánh, nhánh], join)`: chạy một lần khi mọi nhánh xong |
-| For each | một field vị trí vòng lặp và một router trả về `each` hoặc `done` |
+| For each | một trường vị trí vòng lặp và một router trả về `each` hoặc `done` |
 | Decision | `decide(text, question)` cho từng câu hỏi |
 | Subgraph | workflow con thành graph riêng `build_<child>()`, được thêm như một node |
 | Tool: function | code của hàm, được chép vào |
@@ -73,11 +73,11 @@ Final state: {...}
 | Tool: Code | code của node, nằm trong hàm của node |
 | Retriever, MCP, Send email | hàm stub có `TODO`: chúng cần dịch vụ của studio |
 | Note | một comment |
-| Retry, cache, input fields | `RetryPolicy`, `CachePolicy`, `input_schema` trong `add_node` |
+| Retry, cache, trường input | `RetryPolicy`, `CachePolicy`, `input_schema` trong `add_node` |
 | Timeout | một comment: LangGraph không dừng được node đang chặn |
 
 Hàm của node được đặt theo nhãn (`Read the request` → `read_the_request`). Tên
-trùng với một field state hay một tên của Python được thêm `_node`, ví dụ
+trùng với một trường state hay một tên của Python được thêm `_node`, ví dụ
 `decision_node`.
 
 ### State và reducer
@@ -94,7 +94,7 @@ class State(TypedDict, total=False):
     loop_each_piece_of_feedback: int  # loop position of a For each node
 ```
 
-Một node chỉ trả về các field nó đổi, và LangGraph gộp chúng vào state. Field
+Một node chỉ trả về các trường nó đổi, và LangGraph gộp chúng vào state. Trường
 không có reducer bị thay thế; `labelled` gom một nhãn cho mỗi phản hồi.
 
 ### Một Condition
@@ -140,7 +140,7 @@ def build_review_step():
 builder.add_node("review", build_review_step())  # a compiled graph is a node of another graph
 ```
 
-Subgraph có class state riêng và dùng chung field với graph cha theo tên.
+Subgraph có class state riêng và dùng chung trường với graph cha theo tên.
 
 ## Những gì không có trong file
 
@@ -152,7 +152,7 @@ Subgraph có class state riêng và dùng chung field với graph cha theo tên.
   gì cả, hoặc thư lẽ ra sẽ gửi.
 
 Hai kết quả có thể khác studio: node Decision với model thật hỏi LLM thay vì
-TypeSafe Jev, và một field có reducer mà subgraph cũng ghi sẽ được gộp thêm một
+TypeSafe Jev, và một trường có reducer mà subgraph cũng ghi sẽ được gộp thêm một
 lần khi subgraph trả về.
 
 ## API

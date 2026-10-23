@@ -23,14 +23,14 @@ mẫu có sẵn hiện theo ngôn ngữ giao diện.
 | **Hỏi đáp RAG** | Tìm các đoạn liên quan trong kho tri thức rồi trả lời dựa trên đó. |
 | **Quy trình duyệt** | Soạn câu trả lời, nhờ người duyệt trong studio, rồi chỉnh lại hoặc dừng. |
 | **Định tuyến** | Phân loại yêu cầu rồi chuyển tới nhánh chuyên trách. |
-| **Duyệt hoàn tiền** | Tài chính duyệt hoàn tiền trên Slack. Khách nhận e-mail xác nhận, hoặc thư từ chối lịch sự do LLM soạn. |
-| **Đơn nghỉ phép** | Quản lý duyệt đơn nghỉ trên Microsoft Teams. Nhân viên nhận kết quả qua e-mail, HR được cc. |
+| **Duyệt hoàn tiền** | Tài chính duyệt hoàn tiền trên Slack. Khách nhận email xác nhận, hoặc thư từ chối lịch sự do LLM soạn. |
+| **Đơn nghỉ phép** | Quản lý duyệt đơn nghỉ trên Microsoft Teams. Nhân viên nhận kết quả qua email, HR được cc. |
 | **Duyệt bài đăng mạng xã hội** | Biên tập viên duyệt bài trên Telegram, hoặc trả lời kèm góp ý để bài được viết lại và gửi duyệt lại. |
 | **Kiểm tra đơn hàng lớn** | Node Decision đánh giá từng đơn. Đơn có rủi ro chờ quản lý bán hàng xác nhận trên WhatsApp; đơn khác đi thẳng. |
-| **Duyệt chi phí công tác** | LLM đối chiếu khoản chi với chính sách công tác, người duyệt trả lời qua link e-mail, rồi nhân viên được báo kết quả. |
-| **Đề nghị mua sắm** | Trưởng nhóm duyệt trên Slack, sau đó tài chính duyệt qua e-mail. Người đề nghị luôn nhận kết quả. |
+| **Duyệt chi phí công tác** | LLM đối chiếu khoản chi với chính sách công tác, người duyệt trả lời qua link email, rồi nhân viên được báo kết quả. |
+| **Đề nghị mua sắm** | Trưởng nhóm duyệt trên Slack, sau đó tài chính duyệt qua email. Người đề nghị luôn nhận kết quả. |
 | **Hỗ trợ có chuyển cấp** | Trả lời từ kho tri thức; node Decision chuyển câu trả lời chưa chắc chắn cho nhân viên hỗ trợ trong studio. |
-| **Tổng hợp phản hồi khách hàng** | Vòng For each gắn nhãn từng phản hồi, rồi LLM viết báo cáo và gửi e-mail cho team. |
+| **Tổng hợp phản hồi khách hàng** | Vòng For each gắn nhãn từng phản hồi, rồi LLM viết báo cáo và gửi email cho team. |
 
 Mẫu có kênh duyệt chỉ ghi loại kênh. Sau khi tạo, chọn kết nối, người nhận và
 người duyệt trên node Human (xem [Kênh duyệt](../operate/channels.md)). Trước
@@ -55,7 +55,7 @@ tổ chức cần quyền `org.manage`.
 
 Mẫu không bao giờ mang theo credential, kho tri thức, máy chủ MCP, kết nối kênh
 duyệt, người nhận hay người duyệt, liên kết subgraph, header hay API key. Các
-field đó được để trống, sau khi tạo bạn tự chọn lại. Node Human chỉ giữ loại kênh
+trường đó được để trống, sau khi tạo bạn tự chọn lại. Node Human chỉ giữ loại kênh
 mà nó dùng, và hạn chờ của nó (không kèm địa chỉ chuyển tiếp).
 
 ## Xuất và nhập

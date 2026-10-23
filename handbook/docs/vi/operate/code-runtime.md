@@ -41,7 +41,7 @@ Mỗi lần gọi có một container mới:
 | `STUDIO_CODE_PIDS` | `64` | Số process |
 | `STUDIO_CODE_MAX_SECONDS` | `30` | Trần cho timeout của node |
 | `STUDIO_CODE_CONCURRENCY` | `4` | Số container cùng lúc trên mỗi process server |
-| `STUDIO_CODE_TEST_PER_MINUTE` | `20` | Số lần chạy thử trong trình soạn thảo cho mỗi người mỗi phút |
+| `STUDIO_CODE_TEST_PER_MINUTE` | `20` | Số run thử trong trình soạn thảo cho mỗi người mỗi phút |
 
 Huỷ run sẽ kill container của nó.
 

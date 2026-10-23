@@ -20,7 +20,7 @@ const T = {
     message: 'My order A100 arrived broken. Can I get a refund?', token: 'billing-service', schedule: 'Weekday check', history: 'History', wfName: 'Workflow name',
   },
   vi: {
-    name: 'Trả lời hoàn tiền', draft: 'Soạn trả lời', approve: 'Duyệt trả lời', label: 'Nhãn', output: 'Output field', addField: 'Thêm field',
+    name: 'Trả lời hoàn tiền', draft: 'Soạn trả lời', approve: 'Duyệt trả lời', label: 'Nhãn', output: 'Trường output', addField: 'Thêm trường',
     prompt: 'Viết một câu trả lời ngắn, lịch sự cho tin nhắn của khách: {{state.message}}',
     question: 'Gửi câu trả lời này cho khách?\n\n{{state.reply}}',
     message: 'Đơn A100 của tôi bị vỡ khi nhận. Tôi được hoàn tiền không?', token: 'billing-service', schedule: 'Kiểm tra ngày thường', history: 'Lịch sử', wfName: 'Tên workflow',

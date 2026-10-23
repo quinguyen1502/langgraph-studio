@@ -24,4 +24,4 @@ dùng chung cho bộ xử lý phím, bảng phím tắt và bảng lệnh.
 
 Khi đang gõ trong một ô, các phím tắt khác ngoài lưu, chạy, dừng và bảng lệnh
 đều bị bỏ qua; hộp thoại đang mở cũng tắt chúng. Ô nhập văn bản giữ undo và
-copy riêng của trình duyệt.
+sao chép riêng của trình duyệt.

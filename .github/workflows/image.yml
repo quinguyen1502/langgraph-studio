@@ -65,7 +65,7 @@ jobs:
             -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID \
             -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
           scripts/image_smoke.sh http://localhost:8080 rv
-          test "$(docker top rv -o uid,args | awk '/uvicorn/ {print $1; exit}')" = 10001 || { docker top rv -o uid,args; exit 1; }  # dropped root
+          test "$(docker top rv -o pid,uid,args | awk '/uvicorn/ {print $2; exit}')" = 10001 || { docker top rv -o pid,uid,args; exit 1; }  # dropped root
           sudo test -f "$RUNNER_TEMP/rootdata/studio.db"
       - name: Production refuses a missing STUDIO_SECRET_KEY
         run: |

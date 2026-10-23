@@ -21,7 +21,7 @@ REQ-0046 adds TypeScript to the Tool node Code mode (feasibility study, Option A
 
 1. `engine/sandbox/code_runner.ts` (Deno, std only): stdin `{source, state, stdout_max}`, one JSON result line, console capture, `<code>` frames only, `not_json` for undefined/BigInt/functions/cycles, sync or async `main`.
 2. `TypeScript` strategy in `code_languages.py`: static check (export main, import allowlist), `deno run --no-prompt` with no `--allow-*` flag, V8 heap cap from `STUDIO_CODE_MEMORY`, `--no-remote`, `--cached-only`, `--no-config`, own `DENO_DIR` per call on the host.
-3. Config: `STUDIO_CODE_LANGUAGES` default `python,typescript`, `STUDIO_CODE_TS_IMAGE` (`studio-code-ts:1`), `STUDIO_CODE_TS_PACKAGES`, `STUDIO_DENO` (binary for the subprocess runtime).
+3. Config: `STUDIO_CODE_LANGUAGES` default `python,typescript`, `STUDIO_CODE_TS_IMAGE` (`studio-code-ts:1`), `STUDIO_CODE_TS_PACKAGES` (pinned `name@major`, default `npm:zod@3,npm:date-fns@4`, equal to `deps.ts`; imports must use the same major), `STUDIO_DENO` (binary for the subprocess runtime).
 4. `docker/studio-code-ts/Dockerfile` (denoland/deno, pre-cached allowlisted npm packages, non-root, no network at run time); compose env.
 5. Backend tests for both languages (subprocess runtime with a real Deno).
 

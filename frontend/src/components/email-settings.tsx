@@ -32,7 +32,7 @@ export function EmailSettings({ data, fields, creds, providers, readOnly, onChan
       {!data.credential_id && <p className="text-[11px] text-muted-foreground" id="email-dry-hint">{t('email.dryRunHint')}</p>}
     </Row>
     <Row label={t('email.to')}>{tpl('to', 1, 'customer@example.com, {{state.email}}')}</Row>
-    {!more && <Button variant="ghost" size="sm" className="-mt-1 h-7 px-2 text-xs" id="email-more" onClick={() => setMore(true)}><ChevronDown />{t('email.more')}</Button>}
+    {!more && <Button variant="ghost" size="xs" className="-mt-1" id="email-more" onClick={() => setMore(true)}><ChevronDown />{t('email.more')}</Button>}
     {more && <>
       <Row label={t('email.cc')}>{tpl('cc')}</Row>
       <Row label={t('email.bcc')}>{tpl('bcc')}</Row>

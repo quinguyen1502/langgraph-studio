@@ -125,7 +125,7 @@ test.describe('runtime states', () => {
         { id: 'lonely', type: 'tool', position: { x: 260, y: 300 }, data: { label: 'Unreachable tool', mode: 'function', function: 'lookup_order', output_field: 'message' } },
         { id: 'e', type: 'end', position: { x: 700, y: 150 }, data: { label: 'End' } }],
       edges: [{ id: '1', source: 's', target: 'a' }, { id: '2', source: 'a', target: 'b' }, { id: '3', source: 'b', target: 'a' }, { id: '4', source: 'lonely', target: 'e' }] })
-    await page.locator('#run-btn').click(); await page.getByRole('tab', { name: 'Input' }).click()
+    await page.locator('#run-btn').click(); await page.locator('#run-tab').click()
     await expect(page.locator('#validation-errors')).toBeVisible(); await page.mouse.move(5, 5); await page.waitForTimeout(300)
     await page.screenshot({ path: out('runtime-validation-errors') })
   })

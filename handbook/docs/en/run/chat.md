@@ -1,11 +1,25 @@
 # Chat
 
-The **Chat** tab in the editor's bottom panel lets you talk to a workflow the way
+The **Chat** panel at the right of the editor lets you talk to a workflow the way
 a person chatting with it would. Each message starts a run of the **saved**
 workflow; the steps and the reply stream in as it runs, and the conversation is
 kept so the workflow can remember it.
 
-![The Chat tab](../images/chat-tab.png)
+![The Chat panel beside the canvas](../images/chat-tab.png)
+
+## Open the panel
+
+- **Chat** in the top bar, or ++shift+c++ on the canvas, opens and closes the
+  panel. It stays open, at the width you dragged it to (340–760 px), the next
+  time you open the editor in this browser.
+- **Config** stays beside it, so you can change a node and try it again at once.
+- **Fullscreen** (the arrows) shows the chat over the whole window, with the list
+  of your chats on the left. ++esc++ goes back; the conversation and what you
+  were typing stay.
+- In the narrow panel, pick an earlier chat from the menu next to
+  **Builder / Visitor**, or start one with the **+** button.
+
+![Chat in fullscreen](../images/chat-fullscreen.png)
 
 !!! note "Phase 1"
     Chat works inside the studio for people who may run the workflow. Public
@@ -15,7 +29,7 @@ kept so the workflow can remember it.
 ## Turn chat on
 
 1. Open the workflow and choose **⋯ → Chat settings**, or the gear in the Chat
-   tab. You need owner access to change them (its owner, or an admin).
+   panel. You need owner access to change them (its owner, or an admin).
 2. Turn **Chat** on and check the fields:
     - **Message field**: the state field that gets each message (`string` or `list`).
     - **Reply field**: the state field shown as the answer.
@@ -43,8 +57,8 @@ images from other sites are not shown, and links open in a new tab.
 - **Builder / Visitor** at the top switches the view. *Builder* shows every step
   with its input and output (click a step to open it); *Visitor* shows only what
   **Steps shown to visitors** allows.
-- Each message is a run in **History** with the *Chat* badge, so you can open
-  its full trace there.
+- Each message is a run in the run history (**Run → View all**) with the *Chat*
+  badge, so you can open its full trace there.
 - Chat uses the saved workflow: save your changes before you try them.
 
 ## Memory

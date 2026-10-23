@@ -57,7 +57,7 @@ export function ChatThread({ turns, mode, settings, events, trace, pending, runn
     <EmptyHeader><EmptyMedia variant="icon"><MessageCircleDashed /></EmptyMedia>
       <EmptyTitle>{t('chat.emptyTitle')}</EmptyTitle><EmptyDescription>{t('chat.empty')}</EmptyDescription></EmptyHeader></Empty>
   return <MessageScrollerProvider autoScroll><MessageScroller className="min-h-0 flex-1">
-    <MessageScrollerViewport><MessageScrollerContent aria-busy={running} className="mx-auto max-w-3xl gap-6 px-4 py-4" id="chat-thread">
+    <MessageScrollerViewport><MessageScrollerContent /* ui-class-ok: reading padding of the message column, a layout container, not a control */ aria-busy={running} className="mx-auto max-w-3xl gap-6 px-4 py-4" id="chat-thread">
       {turns.map(x => <MessageScrollerItem key={x.id} messageId={x.id} scrollAnchor={x.role === 'user'}>
         {x.role === 'user' ? <Mine text={x.text} />
           : <Answer text={x.text} steps={x.steps} mode={mode} status={x.status} code={x.code}>

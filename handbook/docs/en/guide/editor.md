@@ -6,16 +6,21 @@
 
 | Area | What it holds |
 | --- | --- |
-| Top bar | Name, **Save**, **Run**, **Step**, **Run to here**, undo and redo. Everything else is in the **⋯** (More actions) menu: layout, versions, schedules, API, share, save as template, workflow JSON, view as code, transfer, delete. |
+| Top bar | Name, **Save**, **Run**, **Step**, **Run to here**, [**Chat**](../run/chat.md), undo and redo. Everything else is in the **⋯** (More actions) menu: layout, versions, schedules, API, share, save as template, workflow JSON, view as code, transfer, delete. |
 | Left | **Node palette** and the **State schema** editor. |
 | Centre | The React Flow canvas. |
 | Right | **Config** for the selected node or edge. |
-| Bottom | **Input** (JSON), **Logs** (the live trace), **History**, [**Tests**](../run/tests.md) and [**Code**](python-export.md) (the workflow as LangGraph Python). |
+| Bottom | Three tabs. **Run**: the input (JSON) and the logs (the live trace) side by side, a picker with the last 10 runs and **View all** for the whole run history. [**Tests**](../run/tests.md). [**Code**](python-export.md) (the workflow as LangGraph Python). |
+| Far right | The [**Chat**](../run/chat.md) panel, when it is open. |
 
 Drag the border of the left, right or bottom panel to resize it. The
 minimums are 180 px, 260 px and 140 px, and the canvas keeps at least
 280 × 160 px. Sizes are stored in this browser (`localStorage.lgs.editorPanels`),
-not in the workflow.
+not in the workflow. The border between the input and the logs drags too.
+
+On a narrow screen (less than 1100 px left for the editor once the chat panel
+is open) **Config** folds away while nothing is selected and comes back when you
+select a node or an edge.
 
 ## Editing the canvas
 
@@ -72,7 +77,7 @@ Save and Run both validate the graph. The validator rejects:
 - a state field written by parallel branches without a reducer;
 - a `{{state.x}}` reference to a field that does not exist, or an unknown filter.
 
-Problems appear next to the Input tab.
+Problems appear under the input in the **Run** tab.
 
 ![Validation errors](../images/validation.png)
 

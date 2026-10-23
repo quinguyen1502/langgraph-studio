@@ -82,7 +82,7 @@ async function shot(page: Page, lang: Lang, name: string) {
   await page.screenshot({ path: `../handbook/docs/${lang}/images/${name}.png` })
 }
 async function setInput(page: Page, json: string) {
-  await page.getByRole('tab', { name: /^(Input|Đầu vào)$/ }).first().click()
+  await page.locator('#run-tab').click()
   await page.locator('#run-input').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.insertText(json)
 }
 async function run(page: Page, status = 'ok') {
@@ -210,7 +210,7 @@ for (const lang of ['en', 'vi'] as Lang[]) {
         edges: [{ id: '1', source: 'start', target: 'draft' }, { id: '2', source: 'draft', target: 'refine' }, { id: '3', source: 'refine', target: 'draft' },
           { id: '4', source: 'lonely', target: 'end' }] }
       await page.goto(`/workflows/${await make(broken)}`); await expect(page.locator('.react-flow__node')).toHaveCount(5); await fit(page)
-      await page.locator('#run-btn').click(); await page.getByRole('tab', { name: /^(Input|Đầu vào)$/ }).first().click()
+      await page.locator('#run-btn').click(); await page.locator('#run-tab').click()
       await expect(page.locator('#validation-errors')).toBeVisible()
       await shot(page, lang, 'validation')
 

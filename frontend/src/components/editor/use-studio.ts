@@ -5,6 +5,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { freeSpot, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
 import { SHORTCUTS } from '@/lib/shortcuts'
+import { chatStore } from '@/lib/panel-sizes'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
@@ -155,6 +156,10 @@ export function useStudio() {
   }
     // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
+  // the Chat side panel (TASK-0085): open state survives a reload, like its width (lib/panel-sizes.ts)
+  const [chatOpen, setChatOpenState] = useState(() => chatStore.read().open)
+  const canChat = !!wid && !source
+  const setChatOpen = (open: boolean) => { setChatOpenState(open); chatStore.write({ open }) }
   const handlers: Record<string, () => void | boolean> = {
     save: () => { if (edit) save() },
     run: () => { if (!running) run() },
@@ -173,6 +178,7 @@ export function useStudio() {
     duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
     undo: () => { if (edit) hist.undo() },
     redo: () => { if (edit) hist.redo() },
+    chat: () => { if (!canChat) return false; setChatOpen(!chatOpen) },
   }
   useShortcuts(handlers)
   // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
@@ -295,7 +301,7 @@ export function useStudio() {
     hist, load, openRun, toJSON, save, mark, run, respond, cancelRun, removeIds,
     clipNote, note, insert, editable, layoutDir, cheat, setCheat, insertAround, addNode, addNote, dlg, setDlg, ctx, setCtx,
     delWf, isDirty, saves, paletteCmds, trace, traceMeta, step, continueRun, nodesView, onNodeClick, onConnect, onDrop,
-    selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds,
+    selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds, chatOpen: chatOpen && canChat, setChatOpen, canChat,
   }
 }
 

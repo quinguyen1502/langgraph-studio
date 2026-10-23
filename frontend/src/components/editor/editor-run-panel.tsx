@@ -1,12 +1,15 @@
 import { useState } from 'react'
-import { ExternalLink, AlertTriangle, FlaskConical, ShieldAlert } from 'lucide-react'
+import { ExternalLink, AlertTriangle, FlaskConical, ShieldAlert, History } from 'lucide-react'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { JsonEditor } from '@/components/json-editor'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { HumanPanel } from '@/components/human-panel'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import i18n from '@/lib/i18n'
@@ -19,12 +22,12 @@ import { api } from '@/lib/api'
 import { EditorTestsPanel, TestCaseDialog, type TestCase } from './editor-tests-panel'
 import { EditorCodePanel } from './editor-code-panel'
 import { useStudioCtx } from './studio-context'
-import { ChatPanel } from '@/components/chat/chat-panel'
 
-/** Bottom panel: run input, logs, history, chat (TASK-0085), tests (TASK-0067) and the workflow as code (TASK-0071). */
+/** Bottom panel (TASK-0085): Run (input | logs side by side, a picker for the last runs and a dialog with all of them),
+ * Test (TASK-0067) and Code (TASK-0071). Chat lives in its own side panel (components/chat/chat-side-panel.tsx). */
 export function EditorRunPanel() {
   const { t } = useTranslation()
-  const { input, setInput, log, setLog, errors, history, tab, setTab, running, traceSel, setTraceSel, replay, setReplay, openRun, respond, trace, traceMeta, wid, source, edit, access, isDirty } = useStudioCtx()
+  const { input, setInput, log, setLog, errors, history, tab, setTab, running, traceSel, setTraceSel, replay, setReplay, openRun, respond, trace, traceMeta, wid, source, edit } = useStudioCtx()
   // the "Test runs" switch lists the workflow's test runs instead of its other runs (TASK-0067)
   const [testRuns, setTestRuns] = useState<any[] | null>(null)
   const showTests = (on: boolean) => { if (!on || !wid) { setTestRuns(null); return } api<any[]>(`/api/workflows/${wid}/runs?tests=true`).then(setTestRuns).catch(() => setTestRuns([])) }
@@ -35,34 +38,58 @@ export function EditorRunPanel() {
   const saveCase = (rid: string) => api<Omit<TestCase, 'id' | 'last'>>(`/api/workflows/${wid}/tests/from-run/${rid}`, { method: 'POST' })
     .then(d => { setDraftErr(''); setDraft({ ...d, id: '', last: null }) }).catch(e => setDraftErr(e.message))
   const saveButton = (rid: string) => <Tip tip={t('tests.saveFromRun')}>
-    <Button size="icon" variant="ghost" className="size-6" data-testid="save-test" aria-label={t('tests.saveFromRun')} onClick={() => saveCase(rid)}><FlaskConical className="size-3.5" /></Button></Tip>
+    <Button size="icon-xs" variant="ghost" data-testid="save-test" aria-label={t('tests.saveFromRun')} onClick={() => saveCase(rid)}><FlaskConical /></Button></Tip>
   const finished = (s: string) => s !== 'running' && s !== 'queued' && s !== 'idle'
+  const mode = tab === 'tests' ? 'test' : tab === 'code' ? 'code' : 'run'
+  const [allOpen, setAllOpen] = useState(false)
+  const pick = rows.find(h => h.id === trace.runId)
   return <section className="h-full min-h-0 flex flex-col">
-      <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
-        <div className="flex items-center gap-3 px-3 py-2 border-b">
-          <TabsList><TabsTrigger value="input">{t('editor.tabInput')}</TabsTrigger><TabsTrigger value="logs">{t('editor.tabLogs')} {trace.spans.length > 0 && <Badge variant={trace.status === 'error' ? 'destructive' : 'secondary'} className="ml-1">{trace.spans.length}</Badge>}</TabsTrigger>
-            <TabsTrigger value="history">{t('editor.tabHistory')}</TabsTrigger>{wid && !source && <TabsTrigger value="chat" id="chat-tab">{t('chat.tab')}</TabsTrigger>}{!source && <TabsTrigger value="tests" id="tests-tab">{t('tests.tab')}</TabsTrigger>}
-            {!source && <TabsTrigger value="code" id="code-tab">{t('codeView.tab')}</TabsTrigger>}</TabsList>
-          {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
-        </div>
-        <TabsContent value="input" className="flex-1 min-h-0 p-3 flex gap-3">
-          <JsonEditor id="run-input" value={input} onChange={setInput} className="h-full min-h-0 flex-1" />
-          {errors.length > 0 && <ScrollArea className="w-1/2"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="run-toolbar">
+        <Tabs value={mode} onValueChange={v => setTab(v === 'test' ? 'tests' : v === 'code' ? 'code' : 'logs')}>
+          <TabsList aria-label={t('editor.panelModes')}>
+            <TabsTrigger value="run" id="run-tab">{t('editor.tabRun')}</TabsTrigger>
+            {!source && <TabsTrigger value="test" id="tests-tab">{t('tests.tab')}</TabsTrigger>}
+            {!source && <TabsTrigger value="code" id="code-tab">{t('codeView.tab')}</TabsTrigger>}
+          </TabsList>
+        </Tabs>
+        {mode === 'run' && <>
+          <Select value={pick ? pick.id : ''} onValueChange={id => { const h = rows.find(x => x.id === id); if (h) openRun(h) }}>
+            <SelectTrigger variant="ghost" className="w-auto min-w-56" id="run-picker" aria-label={t('editor.pickRun')}><SelectValue placeholder={t('editor.pickRun')} /></SelectTrigger>
+            <SelectContent>{rows.slice(0, 10).map(h => <SelectItem key={h.id} value={h.id}>
+              <Badge variant={h.status === 'ok' ? 'success' : h.status === 'waiting' ? 'outline' : h.status === 'cancelled' ? 'secondary' : 'destructive'}>{t(`status.${h.status}`)}</Badge>
+              <span className="inline-flex items-baseline gap-1.5 text-xs"><span className="tabular-nums text-muted-foreground" data-slot="run-time">{new Date(h.started * 1000).toLocaleTimeString(i18n.resolvedLanguage)}</span>
+              <span className="font-mono tabular-nums" data-slot="run-id">{h.id}</span></span></SelectItem>)}</SelectContent></Select>
+          <Button variant="ghost" id="history-all" onClick={() => setAllOpen(true)}><History />{t('editor.viewAllRuns')}</Button>
+        </>}
+        {errors.length > 0 && <Badge variant="destructive">{t('editor.errorsBadge', { count: errors.length })}</Badge>}
+      </div>
+      {mode === 'run' && <ResizablePanelGroup orientation="horizontal" className="min-h-0 flex-1">
+        <ResizablePanel id="run-input-panel" defaultSize="35%" minSize="20%" className="min-h-0"><div className="flex h-full min-h-0 flex-col gap-2 p-3">
+          <span className="text-xs font-medium text-muted-foreground">{t('editor.tabInput')}</span>
+          <JsonEditor id="run-input" value={input} onChange={setInput} className="min-h-0 flex-1" />
+          {errors.length > 0 && <ScrollArea className="max-h-40 shrink-0"><Alert variant="destructive" id="validation-errors"><AlertTriangle /><AlertTitle>{t('editor.errorsTitle', { count: errors.length })}</AlertTitle>
             <AlertDescription><ul className="list-disc pl-4 space-y-0.5 text-xs">{errors.map((e, i) => <li key={i} className="break-words">{e}</li>)}</ul></AlertDescription></Alert></ScrollArea>}
-        </TabsContent>
-        <TabsContent value="logs" className="flex-1 min-h-0">
+        </div></ResizablePanel>
+        <ResizableHandle withHandle />
+        <ResizablePanel id="run-logs-panel" minSize="30%" className="min-h-0"><div className="flex h-full min-h-0 flex-col">
           {trace.waiting?.runId && !running && <HumanPanel waiting={trace.waiting} onRespond={r => respond(trace.waiting!.runId!, r)} />}
           <RunTrace trace={trace} events={log as any} meta={traceMeta} selected={traceSel} onSelect={sp => setTraceSel(sp?.key ?? null)}
             replay={replay ?? undefined} onExitReplay={() => { setReplay(null); setLog([]); setTraceSel(null) }}
-            actions={canSave && !running && trace.runId && finished(trace.status) ? <Button variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs" id="trace-save-test"
-              onClick={() => saveCase(trace.runId!)}><FlaskConical className="size-3.5" />{t('tests.saveFromRun')}</Button> : undefined} />
-        </TabsContent>
-        <TabsContent value="history" className="flex-1 min-h-0">
-          <ScrollArea className="h-full"><div className="p-3 space-y-1">
+            actions={canSave && !running && trace.runId && finished(trace.status) ? <Button variant="ghost" size="xs" id="trace-save-test"
+              onClick={() => saveCase(trace.runId!)}><FlaskConical />{t('tests.saveFromRun')}</Button> : undefined} />
+        </div></ResizablePanel>
+      </ResizablePanelGroup>}
+      {mode === 'test' && <div className="min-h-0 flex-1"><EditorTestsPanel select={picked} /></div>}
+      {mode === 'code' && <div className="min-h-0 flex-1"><EditorCodePanel /></div>}
+      <Dialog open={allOpen} onOpenChange={setAllOpen}>
+        <DialogContent className="flex max-h-[80vh] flex-col sm:max-w-4xl" id="history-dialog">
+          <DialogHeader><DialogTitle>{t('editor.tabHistory')}</DialogTitle><DialogDescription>{t('editor.historyDesc')}</DialogDescription></DialogHeader>
+          <ScrollArea className="min-h-0 flex-1"><div onClick={e => { if ((e.target as HTMLElement).closest('[data-testid=history-row]')) setAllOpen(false) }}>
+          <div className="p-3 space-y-1">
             {wid && !source && <div className="flex items-center gap-2 pb-1"><Switch id="history-tests" checked={testRuns !== null} onCheckedChange={showTests} />
               <Label htmlFor="history-tests" className="text-xs font-normal">{t('tests.showRuns')}</Label></div>}
             {!rows.length && <span className="text-muted-foreground text-xs">{t('editor.noRuns')}</span>}
-            {draftErr && <Alert variant="destructive" className="py-2"><AlertDescription>{draftErr}</AlertDescription></Alert>}
+            {draftErr && <Alert variant="destructive"><AlertDescription>{draftErr}</AlertDescription></Alert>}
             {rows.map(h => <div key={h.id} className="flex items-center gap-1">
               <button data-testid="history-row" onClick={() => openRun(h)}
               className="min-w-0 flex-1 flex items-center gap-3 rounded-md px-2 py-1.5 text-left text-xs hover:bg-accent">
@@ -88,12 +115,10 @@ export function EditorRunPanel() {
               </span>
             </button>
             {canSave && <span className="flex w-6 shrink-0 justify-center">{finished(h.status) && saveButton(h.id)}</span>}</div>)}
+          </div>
           </div></ScrollArea>
-        </TabsContent>
-        {wid && !source && <TabsContent value="chat" className="flex-1 min-h-0"><ChatPanel wid={wid} active={tab === 'chat'} canConfigure={access === 'owner'} dirty={edit && isDirty()} /></TabsContent>}
-        <TabsContent value="tests" className="flex-1 min-h-0"><EditorTestsPanel select={picked} /></TabsContent>
-        <TabsContent value="code" className="flex-1 min-h-0"><EditorCodePanel /></TabsContent>
-      </Tabs>
+        </DialogContent>
+      </Dialog>
       {draft && wid && <TestCaseDialog wid={wid} value={draft} onClose={() => setDraft(null)} onSaved={c => { setDraft(null); setPicked(c.id); setTab('tests') }} />}
     </section>
 }

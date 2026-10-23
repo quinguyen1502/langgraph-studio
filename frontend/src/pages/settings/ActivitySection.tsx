@@ -53,9 +53,9 @@ export function ActivitySection() {
           <TableCell className="pr-4 max-w-80 text-xs text-muted-foreground"><div className="line-clamp-2 break-words">{detailText(e)}</div></TableCell>
         </TableRow>)}
         {!data && !err && Array.from({ length: 6 }, (_, i) => <TableRow key={i} className="hover:bg-transparent" aria-busy={i === 0 || undefined}>
-          <TableCell colSpan={5} className="py-2 pl-4">{i === 0 && <span className="sr-only">{t('common.loading')}</span>}<Skeleton className="h-4 w-full" /></TableCell>
+          <TableCell /* ui-class-ok: empty/loading table row spacing, layout not control sizing */ colSpan={5} className="py-2 pl-4">{i === 0 && <span className="sr-only">{t('common.loading')}</span>}<Skeleton className="h-4 w-full" /></TableCell>
         </TableRow>)}
-        {data && !data.items.length && <TableRow><TableCell colSpan={5} className="py-10 text-center text-muted-foreground" id="activity-empty">{t('activity.empty')}</TableCell></TableRow>}
+        {data && !data.items.length && <TableRow><TableCell /* ui-class-ok: empty/loading table row spacing, layout not control sizing */ colSpan={5} className="py-10 text-center text-muted-foreground" id="activity-empty">{t('activity.empty')}</TableCell></TableRow>}
       </TableBody></Table></Card>
     {data && data.total > LIMIT && <div className="flex items-center justify-end gap-2 text-sm text-muted-foreground">
       {t('activity.range', { from: offset + 1, to: Math.min(offset + LIMIT, data.total), total: data.total })}

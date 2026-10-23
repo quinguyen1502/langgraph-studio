@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test'
 import { login, newWorkflow, N } from './helpers'
-// TASK-0085 (REQ-0048 phase 1): the editor's Chat tab. Multi-turn memory through the conversation field, a Human node
+// TASK-0085 (REQ-0048 phase 1): the editor's Chat side panel. Multi-turn memory through the conversation field, a Human node
 // answered by the person chatting (and one left to a reviewer), and the step visibility modes.
 const STATE = [{ name: 'message', type: 'string' }, { name: 'messages', type: 'list' }, { name: 'reply', type: 'string' }, { name: 'ok', type: 'string' }]
 const ECHO = (name: string) => ({ name, state: STATE,
@@ -12,7 +12,10 @@ const ASK = (name: string, by: 'visitor' | 'reviewer') => ({ name, state: STATE,
   edges: [{ id: '1', source: 's', target: 'ask' }, { id: '2', source: 'ask', target: 'bot' }, { id: '3', source: 'bot', target: 'e' }] })
 
 async function openChat(page: Page, wid: string) {
-  await page.goto(`/workflows/${wid}`); await page.locator('#chat-tab').click(); await expect(page.locator('#chat-panel')).toBeVisible()
+  await page.goto(`/workflows/${wid}`); await expect(page.locator('#chat-open')).toBeVisible()
+  // the panel's open state is remembered in this browser, so open it only when it is closed
+  if (await page.locator('#chat-open').getAttribute('aria-pressed') !== 'true') await page.locator('#chat-open').click()
+  await expect(page.locator('#chat-panel')).toBeVisible()
 }
 async function say(page: Page, text: string) {
   await page.locator('#chat-input').fill(text); await page.keyboard.press('Enter')
@@ -32,6 +35,9 @@ test('chat remembers the conversation across turns', async ({ page }) => {
 
   await say(page, 'hello one')
   await expect(page.getByTestId('chat-answer').last()).toHaveAttribute('data-status', 'ok', { timeout: 20_000 })
+  // the narrow panel picks sessions from a Select; fullscreen shows the session list
+  await expect(page.locator('#chat-session-picker')).toContainText('hello one')
+  await page.locator('#chat-fullscreen').click(); await expect(page.locator('#chat-side')).toHaveAttribute('data-fullscreen', 'true')
   await expect(page.getByTestId('chat-session').first()).toContainText('hello one')
   await say(page, 'and two')
   await expect(page.getByTestId('chat-answer')).toHaveCount(2, { timeout: 20_000 })

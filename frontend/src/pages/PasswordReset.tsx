@@ -40,7 +40,7 @@ export function ForgotPasswordPage() {
         {sent && <div id="reset-sent" role="status" className="flex items-start gap-2 rounded-md border bg-muted px-3 py-2 text-sm"><CircleCheck className="mt-0.5 size-4 shrink-0 text-success" />{t('reset.sent')}</div>}
         {error && <Alert variant="destructive"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
         <div className="space-y-1.5"><Label htmlFor="reset-email">{t('auth.email')}</Label>
-          <Input id="reset-email" className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} /></div>
+          <Input id="reset-email" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="email" autoComplete="email" required disabled={busy} value={email} onChange={e => setEmail(e.target.value)} /></div>
       </CardContent>
       <CardFooter className="flex-col gap-3 mt-6"><Button type="submit" id="reset-request" size="lg" className="w-full" disabled={busy || !email.trim()}>{busy && <Loader2 className="animate-spin" />}{t('reset.send')}</Button></CardFooter>
     </form>}
@@ -66,10 +66,10 @@ export function ResetPasswordPage() {
       <CardContent className="space-y-4">
         {error && <Alert variant="destructive" id="reset-error"><AlertCircle /><AlertDescription>{error}</AlertDescription></Alert>}
         <div className="space-y-1.5"><Label htmlFor="new-password">{t('reset.newPassword')}</Label>
-          <Input id="new-password" className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby="new-pw-rules" />
+          <Input id="new-password" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={password} onChange={e => setPassword(e.target.value)} aria-describedby="new-pw-rules" />
           <PasswordRules id="new-pw-rules" password={password} /></div>
         <div className="space-y-1.5"><Label htmlFor="new-confirm">{t('auth.confirm')}</Label>
-          <Input id="new-confirm" className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
+          <Input id="new-confirm" /* ui-class-ok: auth card uses 40px fields as large touch targets; Input has no size variant */ className="h-10" type="password" autoComplete="new-password" required disabled={busy} value={confirm} onChange={e => setConfirm(e.target.value)} aria-invalid={mismatch} />
           {mismatch && <p className="text-xs text-destructive">{t('auth.mismatch')}</p>}</div>
       </CardContent>
       <CardFooter className="flex-col gap-3 mt-6">

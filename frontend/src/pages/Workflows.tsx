@@ -69,7 +69,7 @@ export function WorkflowsPage() {
   const askDelete = (w: W) => del.ask(w)
   const shown = useMemo(() => { const k = q.trim().toLowerCase(); return k ? items.filter(w => w.name.toLowerCase().includes(k) || w.id.includes(k)) : items }, [items, q])
   const empty = (icon: React.ReactNode, title: string, body: React.ReactNode, id: string) =>
-    <TableRow className="hover:bg-transparent"><TableCell colSpan={5} className="py-14" id={id}><div className="flex flex-col items-center gap-2 text-center">
+    <TableRow className="hover:bg-transparent"><TableCell /* ui-class-ok: empty/loading table row spacing, layout not control sizing */ colSpan={5} className="py-14" id={id}><div className="flex flex-col items-center gap-2 text-center">
       <div className="rounded-full bg-muted p-3 text-muted-foreground">{icon}</div><div className="font-medium">{title}</div><div className="text-sm text-muted-foreground">{body}</div></div></TableCell></TableRow>
 
   return <div className="min-h-screen bg-background text-foreground">
@@ -83,7 +83,7 @@ export function WorkflowsPage() {
         <div className="flex gap-2">
           {can(me, 'workflows.all') && <div className="flex items-center gap-2 px-1"><Switch id="wf-all" checked={all} onCheckedChange={v => { setLoading(true); setAll(v) }} /><Label htmlFor="wf-all" className="text-sm font-normal whitespace-nowrap">{t('list.showAll')}</Label></div>}
           <div className="relative"><Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input id="wf-search" aria-label={t('list.searchLabel')} className="pl-8 pr-8 w-64" placeholder={t('list.search')} value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => e.key === 'Escape' && setQ('')} />
-            {q && <Button variant="ghost" size="icon" aria-label={t('list.clearSearch')} className="absolute right-0.5 top-0.5 size-7 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
+            {q && <Button variant="ghost" size="icon-sm" aria-label={t('list.clearSearch')} className="absolute right-0.5 top-0.5 text-muted-foreground" onClick={() => setQ('')}><X /></Button>}</div>
           {can(me, 'resources.manage') && <CredentialsDialog />}
           {creates && importsOn && <ImportDialog />}
           {creates && <Button onClick={() => setGallery(true)} id="new-wf"><Plus />{t('common.newWorkflow')}</Button>}

@@ -1,11 +1,25 @@
 # Chat
 
-Tab **Chat** ở bảng dưới của editor cho bạn trò chuyện với một workflow như
+Khung **Chat** ở bên phải editor cho bạn trò chuyện với một workflow như
 người chat sẽ làm. Mỗi tin nhắn chạy một run của workflow **đã lưu**; các bước
 và câu trả lời hiện dần trong lúc run chạy, và cuộc trò chuyện được lưu lại để
 workflow có thể nhớ.
 
-![Tab Chat](../images/chat-tab.png)
+![Khung Chat cạnh canvas](../images/chat-tab.png)
+
+## Mở khung chat
+
+- Nút **Chat** trên thanh trên, hoặc ++shift+c++ trên canvas, mở và đóng khung.
+  Khung vẫn mở, đúng độ rộng bạn đã kéo (340–760 px), ở lần mở editor sau trên
+  trình duyệt này.
+- **Cấu hình** vẫn ở cạnh, nên bạn sửa một node rồi thử lại được ngay.
+- **Toàn màn hình** (nút mũi tên) hiện chat trên cả cửa sổ, với danh sách các
+  cuộc trò chuyện ở bên trái. ++esc++ để quay lại; cuộc trò chuyện và nội dung
+  đang gõ vẫn còn.
+- Trong khung hẹp, chọn cuộc trò chuyện cũ ở menu cạnh **Người dựng / Người
+  chat**, hoặc bắt đầu cuộc mới bằng nút **+**.
+
+![Chat toàn màn hình](../images/chat-fullscreen.png)
 
 !!! note "Giai đoạn 1"
     Chat hiện dùng trong studio, cho những người được chạy workflow. Link chat
@@ -14,7 +28,7 @@ workflow có thể nhớ.
 
 ## Bật chat
 
-1. Mở workflow và chọn **⋯ → Cài đặt Chat**, hoặc nút bánh răng trong tab Chat.
+1. Mở workflow và chọn **⋯ → Cài đặt Chat**, hoặc nút bánh răng trong khung Chat.
    Bạn cần quyền chủ sở hữu để đổi cài đặt (chủ workflow hoặc admin).
 2. Bật **Chat** và kiểm tra các trường:
     - **Trường tin nhắn**: trường state nhận mỗi tin nhắn (`string` hoặc `list`).
@@ -44,8 +58,8 @@ từ trang khác không hiện, link mở ở tab mới.
 - **Người dựng / Người chat** ở trên cùng đổi cách xem. *Người dựng* thấy mọi
   bước kèm input và output (bấm vào một bước để mở); *Người chat* chỉ thấy những
   gì **Bước hiện cho người chat** cho phép.
-- Mỗi tin nhắn là một run trong **Lịch sử** với nhãn *Chat*, nên bạn mở được
-  trace đầy đủ ở đó.
+- Mỗi tin nhắn là một run trong lịch sử run (**Chạy → Xem tất cả**) với nhãn
+  *Chat*, nên bạn mở được trace đầy đủ ở đó.
 - Chat dùng workflow đã lưu: hãy lưu thay đổi trước khi thử.
 
 ## Bộ nhớ

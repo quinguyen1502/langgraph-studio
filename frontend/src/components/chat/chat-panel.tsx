@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tip } from '@/components/tip'
 import { api } from '@/lib/api'
@@ -20,7 +21,7 @@ import { ChatThread } from './chat-thread'
 import { ChatComposer } from './chat-composer'
 import { ChatSettingsDialog } from './chat-settings-dialog'
 
-export function ChatPanel({ wid, active, canConfigure, dirty }: { wid: string; active: boolean; canConfigure: boolean; dirty: boolean }) {
+export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, actions }: { wid: string; active: boolean; canConfigure: boolean; dirty: boolean; compact?: boolean; actions?: React.ReactNode }) {
   const { t } = useTranslation()
   const [settings, setSettings] = useState<ChatSettings | null>(null); const [sessions, setSessions] = useState<ChatSession[]>([])
   const [sid, setSid] = useState<string | null>(null); const [view, setView] = useState<ChatView>('builder')
@@ -39,7 +40,7 @@ export function ChatPanel({ wid, active, canConfigure, dirty }: { wid: string; a
   const mode = view === 'builder' ? 'full' : chat.session?.steps_mode ?? settings?.steps ?? 'labels'
   const off = settings && !settings.enabled
   return <div className="flex h-full min-h-0" id="chat-panel">
-    <aside className="flex w-56 shrink-0 flex-col border-r">
+    {!compact && <aside className="flex w-56 shrink-0 flex-col border-r">
       <div className="p-2"><Button size="sm" variant="outline" className="w-full justify-start" id="chat-new" disabled={!!off} onClick={fresh}><MessageSquarePlus />{t('chat.new')}</Button></div>
       <ScrollArea className="min-h-0 flex-1"><nav className="space-y-0.5 px-2 pb-2" aria-label={t('chat.sessions')}>
         {!sessions.length && <p className="px-2 py-1 text-xs text-muted-foreground">{t('chat.noSessions')}</p>}
@@ -50,15 +51,19 @@ export function ChatPanel({ wid, active, canConfigure, dirty }: { wid: string; a
           <Button size="icon-xs" variant="ghost" className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100" aria-label={t('chat.delete')} data-testid="chat-delete" onClick={() => setDel(s)}><Trash2 /></Button>
         </div>)}
       </nav></ScrollArea>
-    </aside>
+    </aside>}
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className="flex items-center gap-2 border-b px-3 py-1.5">
-        <Tabs value={view} onValueChange={v => setView(v as ChatView)}><TabsList className="h-7">
-          <TabsTrigger value="builder" id="chat-view-builder" className="text-xs">{t('chat.viewBuilder')}</TabsTrigger>
-          <TabsTrigger value="visitor" id="chat-view-visitor" className="text-xs">{t('chat.viewVisitor')}</TabsTrigger></TabsList></Tabs>
-        <span className="truncate text-xs text-muted-foreground" id="chat-mode-hint">{t(`chat.stepsHint.${mode}`)}</span>
-        {dirty && <span className="truncate text-xs text-warning" id="chat-unsaved">{t('chat.unsaved')}</span>}
-        {canConfigure && <Tip tip={t('chat.settings.title')}><Button size="icon-sm" variant="ghost" className="ml-auto" id="chat-settings-btn" aria-label={t('chat.settings.title')} onClick={() => setCfg(true)}><Settings2 /></Button></Tip>}
+      <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="chat-toolbar">
+        <Tabs value={view} onValueChange={v => setView(v as ChatView)}><TabsList size="sm">
+          <TabsTrigger value="builder" id="chat-view-builder">{t('chat.viewBuilder')}</TabsTrigger>
+          <TabsTrigger value="visitor" id="chat-view-visitor">{t('chat.viewVisitor')}</TabsTrigger></TabsList></Tabs>
+        <span className={cn('truncate text-xs text-muted-foreground', compact && 'hidden')} id="chat-mode-hint">{t(`chat.stepsHint.${mode}`)}</span>
+        {dirty && !compact && <span className="truncate text-xs text-warning" id="chat-unsaved">{t('chat.unsaved')}</span>}
+        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" className="w-40" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
+          <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.title || t('chat.untitled')}</SelectItem>)}</SelectContent></Select>
+          <Tip tip={t('chat.new')}><Button size="icon-sm" variant="ghost" id="chat-new" aria-label={t('chat.new')} disabled={!!off} onClick={fresh}><MessageSquarePlus /></Button></Tip></>}
+        <span className="ml-auto" />
+        {canConfigure && <Tip tip={t('chat.settings.title')}><Button size="icon-sm" variant="ghost" id="chat-settings-btn" aria-label={t('chat.settings.title')} onClick={() => setCfg(true)}><Settings2 /></Button></Tip>}{actions}
       </div>
       {(err || chat.error) && <Alert variant="destructive" className="m-3 w-auto"><AlertCircle /><AlertDescription id="chat-error-banner">{err || chat.error}</AlertDescription></Alert>}
       {off ? <div className="m-auto max-w-sm space-y-3 p-6 text-center" id="chat-off">

@@ -22,6 +22,7 @@ export const SHORTCUTS: Shortcut[] = [
   { id: 'zoomIn', keys: ['mod+='], group: 'canvas' },
   { id: 'zoomOut', keys: ['mod+-'], group: 'canvas' },
   { id: 'layout', keys: ['shift+l'], group: 'canvas' },
+  { id: 'chat', keys: ['shift+c'], group: 'general' },  // toggle the Chat side panel (TASK-0085)
 ]
 export const GROUPS: ShortcutGroup[] = ['general', 'canvas', 'history', 'clipboard', 'run']
 

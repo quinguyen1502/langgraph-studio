@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint",
+    "lint": "oxlint && npm run lint:ui",
+    "lint:ui": "node scripts/check-ui-classes.mjs --strict",
     "preview": "vite preview",
     "e2e": "playwright test",
     "test": "vitest run"

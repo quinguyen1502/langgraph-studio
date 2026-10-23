@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react'
-import { Redo2, Undo2, Play, Save, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square } from 'lucide-react'
+import { Redo2, Undo2, Play, Save, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square, MessagesSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -34,7 +34,7 @@ const isMacPlatform = isMac()
 /** Top bar: name, run controls, undo/redo, the ⋯ menu, dialogs, and account controls (TASK-0040). */
 export function EditorHeader() {
   const { t } = useTranslation()
-  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo } = useStudioCtx()
+  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo, chatOpen, setChatOpen, canChat } = useStudioCtx()
   // ⋯ tooltip: hidden while the menu is open and until the pointer leaves after closing it
   const [moreOpen, setMoreOpen] = useState(false); const [moreTip, setMoreTip] = useState(false); const moreTipBlock = useRef(false)
   return <header className="h-14 shrink-0 grid grid-cols-[minmax(min-content,1fr)_minmax(0,auto)_minmax(min-content,1fr)] items-center border-b px-4">
@@ -45,16 +45,17 @@ export function EditorHeader() {
           <div className="@container min-w-0 flex-1"><span className="hidden whitespace-nowrap @[8.5rem]:inline">Superstep</span></div></div>
       </div>
       <div className="flex min-w-0 items-center gap-2">
-      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="h-8 w-72 min-w-28" aria-label={t('editor.nameLabel')} />
+      <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-28" aria-label={t('editor.nameLabel')} />
       {edit && isDirty() && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
       {!edit && <Tip tip={ownerEmail}><Badge variant="secondary" id="view-only">{t('editor.viewOnly')}</Badge></Tip>}
       {edit && ownerEmail && <Tip tip={ownerEmail}><Badge variant="outline" id="shared-editor">{t('list.sharedBy', { email: ownerEmail })}</Badge></Tip>}
-      <Tip tip={t('editor.saveTip')}><Button variant="outline" size="sm" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
-      <Tip tip={t('editor.runTip')}><Button size="sm" id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
-      {!source && <Tip tip={t('editor.stepTip')}><Button size="sm" variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}
-      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button size="sm" variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair /><span className="max-lg:sr-only">{t('editor.runTo')}</span></Button></Tip>}
-      {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button size="sm" variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
-      {running && <Tip tip={t('editor.cancelTip')}><Button size="sm" variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
+      <Tip tip={t('editor.saveTip')}><Button variant="outline" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
+      <Tip tip={t('editor.runTip')}><Button id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
+      {!source && <Tip tip={t('editor.stepTip')}><Button variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}
+      {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair /><span className="max-lg:sr-only">{t('editor.runTo')}</span></Button></Tip>}
+      {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
+      {canChat && <Tip tip={t('chat.openTip')}><Button variant={chatOpen ? 'secondary' : 'outline'} id="chat-open" aria-pressed={chatOpen} onClick={() => setChatOpen(!chatOpen)}><MessagesSquare /><span className="max-lg:sr-only">{t('chat.tab')}</span></Button></Tip>}
+      {running && <Tip tip={t('editor.cancelTip')}><Button variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
         <Tip tip={t('history.redoTip')}><Button variant="ghost" size="icon" id="redo-btn" aria-label={t('history.redo')} disabled={!hist.canRedo} onClick={hist.redo}><Redo2 /></Button></Tip></div>}

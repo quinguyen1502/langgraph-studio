@@ -44,6 +44,8 @@ Human node's "Answered by" option, docs, handbook and tests.
 ## Activity Log
 
 - 2026-10-23: implemented on `feat/agent-chat-p2-ui` (stacked on `feat/agent-chat-p1-backend`); draft PR #117 (base #116).
+- 2026-10-23: owner approved the panel layout mockup; implemented on #117: bottom panel Run · Test · Code, Chat as a
+  resizable side panel with fullscreen (REV-0078 revision 3, QA-0078 revision 3).
 
 ## Handoff Notes
 

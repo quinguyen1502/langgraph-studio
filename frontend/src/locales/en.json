@@ -214,7 +214,12 @@
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
     },
-    "codeMode": "Code ({{language}})"
+    "codeMode": "Code ({{language}})",
+    "panelModes": "Bottom panel",
+    "tabRun": "Run",
+    "pickRun": "Pick a run…",
+    "viewAllRuns": "View all",
+    "historyDesc": "Every run of this workflow. Open one to replay it in the logs."
   },
   "nodes": {
     "start": "Start point",
@@ -1214,7 +1219,8 @@
       "paste": "Paste nodes",
       "duplicate": "Duplicate selected nodes",
       "layout": "Tidy up the layout",
-      "palette": "Open the command palette"
+      "palette": "Open the command palette",
+      "chat": "Open or close the chat panel"
     }
   },
   "history": {
@@ -1839,6 +1845,10 @@
     "copy": "Copy",
     "copied": "Copied",
     "answerHint": "Approve, reject, or type your answer below.",
-    "answerPlaceholder": "Type your answer…"
+    "answerPlaceholder": "Type your answer…",
+    "openTip": "Chat with this workflow",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen (Esc)",
+    "resize": "Resize the chat panel"
   }
 }

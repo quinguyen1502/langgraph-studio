@@ -40,8 +40,8 @@ function Summary({ trace, replay, onExitReplay, raw, setRaw, actions }: { trace:
     {trace.tokens != null && <span id="trace-tokens" className="flex items-center gap-1 text-muted-foreground"><Coins className="size-3.5" />{t('trace.tokens', { count: trace.tokens })}</span>}
     {trace.metrics && <span id="trace-cost" className="flex items-center gap-1 text-muted-foreground"><DollarSign className="size-3.5" />{fmtCost(trace.metrics.cost_usd)}</span>}
     {trace.metrics && trace.metrics.error_count > 0 && <Badge variant="destructive" id="trace-error-count">{t('trace.errorCount', { count: trace.metrics.error_count })}</Badge>}
-    {trace.traceUrl && <Button asChild variant="ghost" size="sm" className="h-6 gap-1 px-2 text-xs" id="trace-link"><a href={trace.traceUrl} target="_blank" rel="noreferrer"><ExternalLink className="size-3.5" />{t('trace.openTrace')}</a></Button>}
-    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" className="size-4" aria-label={t('trace.exitReplay')} onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
+    {trace.traceUrl && <Button asChild variant="ghost" size="xs" id="trace-link"><a href={trace.traceUrl} target="_blank" rel="noreferrer"><ExternalLink />{t('trace.openTrace')}</a></Button>}
+    {replay && <Badge variant="outline" className="gap-1">Replay {replay}{onExitReplay && <Button variant="ghost" size="icon" /* ui-class-ok: 16px close button inside a Badge; smaller than icon-xs */ className="size-4" aria-label={t('trace.exitReplay')} onClick={onExitReplay}><X className="size-3" /></Button>}</Badge>}
     {actions}
     <div className="ml-auto flex items-center gap-2">
       <Switch id="raw-toggle" size="sm" checked={raw} onCheckedChange={setRaw} />
@@ -61,8 +61,8 @@ function Row({ s, trace, meta, selected, onClick }: { s: Span; trace: Trace; met
     <span className="flex items-center gap-1.5 min-w-0">
       <span className={cn('rounded p-0.5', m.color)}><I className="size-3" /></span>
       <span className={cn('truncate font-medium shrink-0 max-w-[45%]', s.status === 'error' && 'text-destructive')}>{s.label}</span>
-      {s.iter > 1 && <Badge variant="secondary" className="h-4 px-1 text-[10px]">#{s.iter}</Badge>}
-      {s.code?.runtime === 'subprocess' && <Badge variant="warning" className="h-4 px-1 text-[10px]" data-testid="span-unisolated">{t('code.runtimeLabel', { runtime: s.code.runtime })}</Badge>}
+      {s.iter > 1 && <Badge variant="secondary" size="sm">#{s.iter}</Badge>}
+      {s.code?.runtime === 'subprocess' && <Badge variant="warning" size="sm" data-testid="span-unisolated">{t('code.runtimeLabel', { runtime: s.code.runtime })}</Badge>}
       <span className="truncate shrink-0 max-w-[25%] text-muted-foreground font-mono text-[10px]">{s.node}</span>
       {s.tokens != null && <Tooltip><TooltipTrigger asChild><span className="text-muted-foreground text-[10px]" data-testid="span-tokens">· {t('trace.tokensShort', { count: s.tokens })}{s.cost ? ` · ${fmtCost(s.cost)}` : ''}</span></TooltipTrigger>
         <TooltipContent>{t('trace.usageDetail', { model: s.usage?.model ?? '—', tin: s.usage?.tokens_in ?? 0, tout: s.usage?.tokens_out ?? 0, cost: fmtCost(s.cost) })}{s.usage?.estimated ? ` ${t('trace.estimated')}` : ''}</TooltipContent></Tooltip>}
@@ -98,14 +98,14 @@ function Detail({ s, meta, onClose }: { s: Span; meta: Meta; onClose: () => void
     <div className="flex items-center gap-2 px-3 py-1.5 border-b text-xs">
       <span className={cn('rounded p-0.5', m.color)}><I className="size-3.5" /></span>
       <span className="font-medium truncate">{s.label}{s.iter > 1 && ` #${s.iter}`}</span>
-      <Badge variant="outline" className="h-4 px-1 text-[10px]">{m.label}</Badge>
+      <Badge variant="outline" size="sm">{m.label}</Badge>
       <span className="text-muted-foreground tabular-nums">{fmtMs(s.duration)}</span>
-      <Button variant="ghost" size="icon" className="size-6 ml-auto" onClick={onClose} aria-label={t('trace.closeDetail')}><X className="size-3.5" /></Button>
+      <Button variant="ghost" size="icon-xs" className="ml-auto" onClick={onClose} aria-label={t('trace.closeDetail')}><X /></Button>
     </div>
     <Tabs value={tab} onValueChange={setTab} className="flex-1 min-h-0 flex flex-col gap-0">
-      <TabsList className="mx-3 mt-1.5 h-7">{['input', 'output', 'diff', 'raw'].map(k => <TabsTrigger key={k} value={k} className="text-xs h-5 px-2">{t(`trace.${k}`)}</TabsTrigger>)}</TabsList>
+      <TabsList size="sm" className="mx-3 mt-1.5">{['input', 'output', 'diff', 'raw'].map(k => <TabsTrigger key={k} value={k}>{t(`trace.${k}`)}</TabsTrigger>)}</TabsList>
       <ScrollArea className="flex-1 min-h-0"><div className="p-3 pt-2">
-        {s.error && <Alert variant="destructive" className="mb-2 py-2 text-xs"><AlertTriangle /><AlertDescription className="break-all text-xs">{s.error}</AlertDescription></Alert>}
+        {s.error && <Alert variant="destructive" className="mb-2 text-xs"><AlertTriangle /><AlertDescription className="break-all text-xs">{s.error}</AlertDescription></Alert>}
         <TabsContent value="input"><JsonView value={s.input} /></TabsContent>
         <TabsContent value="output">{s.status === 'running' && s.live
           ? <div className="space-y-1" id="trace-live"><div className="flex items-center gap-1 text-[11px] text-muted-foreground"><Loader2 className="size-3 animate-spin" />{t('trace.streaming')}</div>
@@ -132,9 +132,9 @@ export function RunTrace({ trace, events, meta, selected, onSelect, replay, onEx
       <ScrollArea className="flex-1 min-h-0"><div className="py-1" id="trace-timeline">
         {raw ? <div className="px-3 font-mono text-[11px] space-y-0.5" id="raw-events">{events.map((e, i) => <div key={i} className={cn('flex gap-2', e.type === 'error' && 'text-destructive')}><span className="w-6 shrink-0 select-none text-right text-muted-foreground tabular-nums">{i}</span><span className="min-w-0 break-all">{JSON.stringify(e)}</span></div>)}</div>
         : <>{trace.spans.map(s => <Row key={s.key} s={s} trace={trace} meta={meta} selected={s.key === selected} onClick={() => onSelect(s.key === selected ? null : s)} />)}
-          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'warning' : 'destructive'} id="trace-run-error" className="mx-3 my-1 w-auto py-2">{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
-          {trace.status === 'cancelled' && <Alert variant="warning" className="mx-3 my-1 w-auto py-2" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
-          {trace.spans.some(s => s.code?.runtime === 'subprocess') && <Alert variant="warning" className="mx-3 my-1 w-auto py-2" id="trace-code-unisolated"><ShieldAlert /><AlertDescription className="text-xs">{t('code.runUnisolated')}</AlertDescription></Alert>}
+          {trace.errors.length > 0 && !trace.spans.some(s => s.error) && <Alert variant={trace.status === 'timeout' ? 'warning' : 'destructive'} id="trace-run-error" className="mx-3 my-1 w-auto">{trace.status === 'timeout' ? <TimerOff /> : <AlertTriangle />}<AlertDescription className="text-xs">{trace.errors.join('; ')}</AlertDescription></Alert>}
+          {trace.status === 'cancelled' && <Alert variant="warning" className="mx-3 my-1 w-auto" id="trace-cancelled"><Ban /><AlertDescription className="text-xs">{t(events.some(e => e.reason === 'disconnect') ? 'trace.cancelledDisconnect' : 'trace.cancelledMsg')}</AlertDescription></Alert>}
+          {trace.spans.some(s => s.code?.runtime === 'subprocess') && <Alert variant="warning" className="mx-3 my-1 w-auto" id="trace-code-unisolated"><ShieldAlert /><AlertDescription className="text-xs">{t('code.runUnisolated')}</AlertDescription></Alert>}
           {trace.status === 'ok' && <div className="px-3 pt-1 text-[11px] text-muted-foreground" id="trace-done">{t('trace.done', { count: Object.keys(trace.final || {}).length })}</div>}</>}
       </div></ScrollArea>
       {sel && !raw && <Detail key={sel.key} s={sel} meta={meta} onClose={() => onSelect(null)} />}

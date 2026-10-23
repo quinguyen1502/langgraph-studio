@@ -40,7 +40,7 @@ Human "answered by", retention and errors.
 
 ## Activity Log
 
-- 2026-10-23: implemented on `feat/agent-chat-p1-backend`; draft PR into develop.
+- 2026-10-23: implemented on `feat/agent-chat-p1-backend`; draft PR #116 into develop.
 
 ## Handoff Notes
 

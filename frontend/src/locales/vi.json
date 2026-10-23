@@ -530,6 +530,7 @@
     "CODE_MEMORY": "Node Code {{node}} dùng quá bộ nhớ cho phép ({{limit}})",
     "CODE_RESULT_NOT_JSON": "Node Code {{node}}: main() trả về {{type}}, không lưu được dưới dạng JSON",
     "CODE_TOO_LARGE": "Node Code {{node}}: {{what}} lớn hơn {{max_kb}} KB",
+    "CODE_LANGUAGE_UNSUPPORTED": "Node Code {{node}}: máy chủ này không hỗ trợ {{language}}",
     "CODE_WRITE_FORBIDDEN": "Vai trò của bạn không được thêm node Code hay sửa code của nó (code.write)"
   },
   "lang": {

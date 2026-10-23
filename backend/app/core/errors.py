@@ -200,6 +200,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "CODE_MEMORY": (400, "Code node {node} ran out of memory (limit {limit})"),
     "CODE_RESULT_NOT_JSON": (400, "Code node {node}: main() returned {type}, which cannot be stored as JSON"),
     "CODE_TOO_LARGE": (413, "Code node {node}: the {what} is larger than {max_kb} KB"),
+    "CODE_LANGUAGE_UNSUPPORTED": (400, "Code node {node}: {language} is not available on this server"),
     "CODE_WRITE_FORBIDDEN": (403, "Your role may not add Code nodes or change their code (code.write)"),
 }
 

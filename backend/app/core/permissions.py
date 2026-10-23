@@ -40,10 +40,16 @@ def best_share(roles) -> str | None:
 ORG_RESOURCE_DEFAULT = ("admin", "editor")
 
 
+def _lang_prefix(data: dict) -> str:
+    lang = str(data.get("language") or "python")
+    return "" if lang == "python" else f"[{lang}]\n"
+
+
 def code_sources(graph: dict | None) -> dict[str, str]:
-    """Node id -> source of every Tool node in Code mode (TASK-0054)."""
+    """Node id -> language and source of every Tool node in Code mode (TASK-0054; the language since TASK-0079, so
+    switching a node to another language is writing code too). Python nodes keep the bare source (no language key)."""
     nodes = (graph or {}).get("nodes") if isinstance(graph, dict) else None
-    return {str(n.get("id")): str((n.get("data") or {}).get("code") or "") for n in (nodes or [])
+    return {str(n.get("id")): _lang_prefix(n.get("data") or {}) + str((n.get("data") or {}).get("code") or "") for n in (nodes or [])
             if isinstance(n, dict) and n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code"}
 
 

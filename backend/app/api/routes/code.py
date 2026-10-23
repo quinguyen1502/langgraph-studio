@@ -10,4 +10,4 @@ def runtime(user=Depends(current_user), svc=Depends(code_service)): return svc.r
 
 @router.post("/code/test", dependencies=[Depends(limit_body)])
 async def test_code(body: CodeTest, user=Depends(current_user), svc=Depends(code_service)):
-    return await svc.test(user["id"], body.source, body.state, body.node, body.timeout)
+    return await svc.test(user["id"], body.source, body.state, body.node, body.timeout, body.language)

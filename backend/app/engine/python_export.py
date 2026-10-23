@@ -755,6 +755,11 @@ class _Writer:
             self.add("    except ValueError:")
             self.add("        result = response.text")
             self.add(ret("result"))
+        elif mode == "code" and (d.get("language") or "python") != "python":
+            lang = str(d.get("language"))  # TASK-0079: another language cannot be pasted into a Python file
+            self.add(f"def {name}(state: {cls}) -> dict:")
+            self.add(f'    """{head}: written in {lang} on the canvas, which this Python file cannot run."""')
+            self.add(f"    raise NotImplementedError({lit(f'{head} is {lang} code; port it to Python to run it here')})")
         elif mode == "code":
             self.add(f"def {name}(state: {cls}) -> dict:")
             self.add(f'    """{head}: the node\'s Python code as written on the canvas; main(state) gives the result.')

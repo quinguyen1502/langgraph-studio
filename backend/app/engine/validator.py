@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List
 from ..core import config
-from . import code_runtime, deadlines, decisions, emails, foreach
+from . import code_languages, code_runtime, deadlines, decisions, emails, foreach
 from .node_policy import errors as policy_errors
 from .templating import ref_errors, refs
 from .reducers import field_errors, reducer_of
@@ -113,7 +113,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
             if d.get("mode") == "http" and not d.get("url"):
                 errs.append(f"Node {nid}: URL is missing")
             if d.get("mode") == "code":
-                errs.extend(f"Node {nid}: {why}" for why in code_runtime.problems(d.get("code")))
+                errs.extend(f"Node {nid}: {why}" for why in code_runtime.problems(d.get("code"), code_languages.language_of(d)))
         if t == "join":
             inc = [e for e in edges if e["target"] == nid]
             if len(inc) < 2: errs.append(f"Join node {nid}: needs at least two incoming edges (the branches it waits for)")
@@ -176,8 +176,11 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         for n in nodes:
             if n.get("type") == "note": continue
             if n["id"] not in seen: errs.append(f"Node {n['id']} is not reachable from Start")
-    if any(n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code" for n in nodes):
-        why = code_runtime.unavailable()  # Docker and the image, checked at most every 30 s (TASK-0053)
-        if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)")
-        elif why: errs.append(f"Code nodes cannot run on this server: {why}")
+    used = sorted({code_languages.language_of(n.get("data")) for n in nodes
+                   if n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code"})
+    for lang in used:  # per language: Docker and its image, checked at most every 30 s (TASK-0053, TASK-0079)
+        why = code_runtime.unavailable(lang)
+        if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)"); break
+        elif why: errs.append(f"Code nodes cannot run on this server: {why}" if lang == code_languages.DEFAULT
+                              else f"{lang} Code nodes cannot run on this server: {why}")
     return errs

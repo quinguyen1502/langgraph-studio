@@ -140,6 +140,20 @@ for (const lang of ['en', 'vi'] as const) {
     await page.locator('#chat-view').click(); await expect(page.getByRole('menu')).toContainText(lang === 'vi' ? 'Xem dưới góc nhìn' : 'View as')
     await expect(page.locator('#chat-view-visitor')).toContainText(lang === 'vi' ? 'Khách chat' : 'Chat visitor')
     await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Người dựng' : 'Builder')
+    for (const v of ['builder', 'visitor'] as const) {
+      if (v === 'visitor') { await page.locator('#chat-view-visitor').click(); await page.locator('#chat-view').click() }
+      // the View as trigger reads as a menu: its chevron sits right after the label, inside the panel
+      const chevron = page.locator('#chat-view > svg'); await expect(chevron).toBeVisible()
+      const label = await page.locator('#chat-view').evaluate(e => { const r = document.createRange(); r.selectNodeContents(e.firstChild!); const b = r.getBoundingClientRect(); return { right: b.right } })
+      const cb = (await chevron.boundingBox())!
+      expect(cb.x - label.right, `${v}: chevron right after the label`).toBeLessThanOrEqual(8)
+      expect(cb.x - label.right).toBeGreaterThanOrEqual(0)
+      const ob = (await page.locator('#chat-view').boundingBox())!
+      expect(cb.x + cb.width, 'chevron inside its button').toBeLessThanOrEqual(ob.x + ob.width)
+      expect((await page.locator('#chat-session-picker').boundingBox())!.width, `${v}: session picker width`).toBeGreaterThanOrEqual(128)
+      const sw = await page.locator('#chat-toolbar').evaluate(e => e.scrollWidth - e.clientWidth); expect(sw, 'toolbar overflow').toBeLessThanOrEqual(0)
+      if (v === 'visitor') { await page.keyboard.press('Escape'); await page.locator('#chat-visitor-exit').click(); await page.locator('#chat-view').click() }
+    }
     await page.locator('#chat-view-visitor').click(); await expect(page.locator('#chat-view')).toHaveAttribute('aria-label', lang === 'vi' ? 'Xem dưới góc nhìn: Khách chat' : 'View as: Chat visitor')
     await expect(page.locator('#chat-view')).toHaveText(lang === 'vi' ? 'Khách' : 'Visitor')
     // the session picker's chevron hugs its title

@@ -3,7 +3,7 @@
  *  the Chat settings give visitors. Runs use the saved workflow, like a chat trigger. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Eye, Settings2, SquarePen, Trash2 } from 'lucide-react'
+import { AlertCircle, ChevronDown, Eye, Settings2, SquarePen, Trash2 } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -55,12 +55,12 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
       </nav></ScrollArea>
     </aside>}
     <div className="flex min-w-0 flex-1 flex-col">
-      <div className={cn("flex h-11 shrink-0 items-center border-b px-3", compact ? "gap-1" : "gap-2")} id="chat-toolbar">
+      <div className={cn("flex h-11 shrink-0 items-center border-b", compact ? "gap-1 px-1.5" : "gap-2 px-3")} id="chat-toolbar">
         {compact
           // compact: a short "Builder" / "Visitor" trigger keeps the row for the session picker; its menu names and explains
           // both views and holds Chat settings
           ? <DropdownMenu><Tip tip={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}><DropdownMenuTrigger asChild>
-              <Button size="sm" variant="ghost" id="chat-view" aria-label={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}>{t(`chat.views.${view}.short`)}</Button>
+              <Button size="sm" variant="ghost" className="px-1.5" id="chat-view" aria-label={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}>{t(`chat.views.${view}.short`)}<ChevronDown data-icon="inline-end" className="text-muted-foreground" /></Button>
             </DropdownMenuTrigger></Tip>
             <DropdownMenuContent align="start" className="w-72"><DropdownMenuLabel>{t('chat.viewAs')}</DropdownMenuLabel>
               <DropdownMenuRadioGroup value={view} onValueChange={v => setView(v as ChatView)}>

@@ -86,7 +86,7 @@ The studio makes it visible everywhere:
 
 - a start-up `WARNING` in the log;
 - `code_runtime: "subprocess"` in `GET /api/meta/runtime`;
-- an alert in the Code config, and a **Not isolated** badge on the node and in
+- an alert in the Code config, and a **Runs on host** badge (with a tooltip) on the node and in
   the mode picker;
 - `runtime: subprocess` on trace rows, plus one warning per run;
 - a mark in run history (`code_runtime` on each run);

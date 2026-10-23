@@ -34,7 +34,7 @@ export function StatusBadge({ s }: { s?: string }) {
 function UnisolatedBadge() {
   const { t } = useTranslation(); const rt = useCodeRuntime()
   if (rt?.code_runtime !== 'subprocess') return null
-  return <Tip tip={t('code.notIsolated')}><Badge variant="warning" className="h-4 px-1 text-[9px] gap-0.5 mt-0.5" data-testid="node-unisolated"><ShieldAlert className="size-2.5" />{t('code.notIsolatedShort')}</Badge></Tip>
+  return <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" className="h-4 px-1 text-[9px] gap-0.5 mt-0.5" data-testid="node-unisolated"><ShieldAlert className="size-2.5" />{t('code.notIsolatedNode')}</Badge></Tip>
 }
 
 export function StudioNode({ data, type, selected }: NodeProps) {

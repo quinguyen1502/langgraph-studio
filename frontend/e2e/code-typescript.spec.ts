@@ -24,9 +24,9 @@ test('code mode in TypeScript: switch language, State type, test, run, admin car
   await page.locator('#tool-mode').click(); await page.getByRole('option', { name: /^Code \(Python/ }).click()
   await expect(page.locator('#code-source')).toContainText('def main(state)')
 
-  // one Mode option per available language, each with the "Not isolated" badge in subprocess mode
+  // one Mode option per available language, each with the "Runs on host" badge in subprocess mode
   await page.locator('#tool-mode').click()
-  await expect(page.locator('#tool-mode-code-python [data-testid="mode-unisolated"]')).toBeVisible()
+  await expect(page.locator('#tool-mode-code-python [data-testid="mode-unisolated"]')).toHaveText('Chạy trực tiếp trên server')
   await page.locator('#tool-mode-code-typescript').click()
   await expect(page.locator('#tool-mode')).toContainText('Code (TypeScript)')
   await expect(page.locator('#code-language')).toHaveCount(0)  // no separate language picker

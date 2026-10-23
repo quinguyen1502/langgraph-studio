@@ -22,7 +22,7 @@ async function say(page: Page, text: string) {
   await expect(page.getByTestId('chat-mine').last()).toHaveText(text)
 }
 /** the chat's View as Select (Workflow builder / Chat visitor) */
-const viewAs = async (page: Page, v: 'builder' | 'visitor') => { await page.locator('#chat-view').click(); await page.locator(`#chat-view-${v}`).click(); await expect(page.locator('[role=listbox]')).toHaveCount(0) }
+const viewAs = async (page: Page, v: 'builder' | 'visitor') => { await page.locator('#chat-view').click(); await page.locator(`#chat-view-${v}`).click(); await expect(page.locator('[role=listbox], [role=menu]')).toHaveCount(0) }
 const enable = (page: Page, H: Record<string, string>, wid: string, extra: Record<string, unknown> = {}) =>
   page.request.put(`/api/workflows/${wid}/chat`, { headers: H, data: { enabled: true, ...extra } })
 

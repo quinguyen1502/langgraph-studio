@@ -3,10 +3,11 @@
  *  the Chat settings give visitors. Runs use the saved workflow, like a chat trigger. */
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle, Settings2, SquarePen, Trash2 } from 'lucide-react'
+import { AlertCircle, Settings2, SquarePen, Trash2, UserRound, Workflow } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tip } from '@/components/tip'
@@ -55,15 +56,25 @@ export function ChatPanel({ wid, active, canConfigure, dirty, compact = false, a
     </aside>}
     <div className="flex min-w-0 flex-1 flex-col">
       <div className="flex h-11 shrink-0 items-center gap-2 border-b px-3" id="chat-toolbar">
-        <Select value={view} onValueChange={v => setView(v as ChatView)}>
-          <SelectTrigger size="sm" className="w-auto min-w-0 shrink" id="chat-view" aria-label={t('chat.viewAs')}><SelectValue>{t(`chat.views.${view}.title`)}</SelectValue></SelectTrigger>
-          <SelectContent position="popper" align="start"><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
-            {(['builder', 'visitor'] as const).map(v => <SelectItem key={v} value={v} id={`chat-view-${v}`} className="max-w-80">
-              <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs whitespace-normal text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></SelectItem>)}
-          </SelectGroup></SelectContent></Select>
+        {compact
+          // compact: an icon trigger keeps the row for the session picker; the menu still names and explains both views
+          ? <DropdownMenu><Tip tip={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}><DropdownMenuTrigger asChild>
+              <Button size="icon-sm" variant="ghost" id="chat-view" aria-label={`${t('chat.viewAs')}: ${t(`chat.views.${view}.title`)}`}>{view === 'builder' ? <Workflow /> : <UserRound />}</Button>
+            </DropdownMenuTrigger></Tip>
+            <DropdownMenuContent align="start" className="w-72"><DropdownMenuLabel>{t('chat.viewAs')}</DropdownMenuLabel>
+              <DropdownMenuRadioGroup value={view} onValueChange={v => setView(v as ChatView)}>
+                {(['builder', 'visitor'] as const).map(v => <DropdownMenuRadioItem key={v} value={v} id={`chat-view-${v}`}>
+                  <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></DropdownMenuRadioItem>)}
+              </DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>
+          : <Select value={view} onValueChange={v => setView(v as ChatView)}>
+            <SelectTrigger size="sm" variant="ghost" className="w-auto min-w-0 shrink" id="chat-view" aria-label={t('chat.viewAs')}><SelectValue>{t(`chat.views.${view}.title`)}</SelectValue></SelectTrigger>
+            <SelectContent position="popper" align="start"><SelectGroup><SelectLabel>{t('chat.viewAs')}</SelectLabel>
+              {(['builder', 'visitor'] as const).map(v => <SelectItem key={v} value={v} id={`chat-view-${v}`} className="max-w-80">
+                <span className="flex flex-col gap-0.5"><span>{t(`chat.views.${v}.title`)}</span><span className="text-xs whitespace-normal text-muted-foreground">{t(`chat.views.${v}.desc`)}</span></span></SelectItem>)}
+            </SelectGroup></SelectContent></Select>}
         <span className={cn('truncate text-xs text-muted-foreground', compact && 'hidden')} id="chat-mode-hint">{t(`chat.stepsHint.${mode}`)}</span>
         {dirty && !compact && <span className="truncate text-xs text-warning" id="chat-unsaved">{t('chat.unsaved')}</span>}
-        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" className="min-w-0 flex-1 max-w-40" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
+        {compact && <><Select value={sid ?? ''} onValueChange={setSid}><SelectTrigger size="sm" variant="ghost" className="min-w-32 flex-1" id="chat-session-picker" aria-label={t('chat.sessions')}><SelectValue placeholder={t('chat.noSessions')} /></SelectTrigger>
           <SelectContent>{sessions.map(s => <SelectItem key={s.id} value={s.id}>{s.title || t('chat.untitled')}</SelectItem>)}</SelectContent></Select>
           {newChat}</>}
         {!compact && <span className="ml-auto" />}

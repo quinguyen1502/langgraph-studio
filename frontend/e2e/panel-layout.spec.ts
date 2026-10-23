@@ -121,3 +121,24 @@ for (const lang of ['en', 'vi'] as const) {
     expect(Math.round((await field.locator('input').boundingBox())!.height)).toBe(32)
   })
 }
+
+// The compact chat toolbar at the 340px minimum: View as is an icon menu, so the session picker keeps a usable width.
+for (const lang of ['en', 'vi'] as const) {
+  test(`compact chat toolbar keeps the session picker usable (${lang})`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const H = await login(page)
+    const wid = await newWorkflow(page, H, { name: 'Compact', state: [{ name: 'message', type: 'string' }], nodes: [N('s', 'start', 40), N('e', 'end', 300)], edges: [{ id: '1', source: 's', target: 'e' }] })
+    await page.request.put(`/api/workflows/${wid}/chat`, { headers: H, data: { enabled: true } })
+    await page.evaluate(l => { localStorage.setItem('lang', l); localStorage.setItem('lgs.chatPanel', JSON.stringify({ open: true, width: 340 })) }, lang)
+    await page.goto(`/workflows/${wid}`); await expect(page.locator('#chat-session-picker')).toBeVisible()
+    const tb = (await page.locator('#chat-toolbar').boundingBox())!
+    expect(Math.round(tb.width)).toBeLessThanOrEqual(341)
+    expect((await page.locator('#chat-session-picker').boundingBox())!.width, 'session picker width').toBeGreaterThanOrEqual(128)
+    const row = await page.locator('#chat-toolbar > button:visible, #chat-toolbar > [data-slot=select-trigger]:visible').all()
+    await expectRowAligned(row, { label: 'compact chat toolbar' })
+    for (const r of row) { const b = (await r.boundingBox())!; expect(b.x + b.width, 'toolbar control past the panel edge').toBeLessThanOrEqual(tb.x + tb.width + 0.5) }
+    await page.locator('#chat-view').click(); await expect(page.getByRole('menu')).toContainText(lang === 'vi' ? 'Xem dưới góc nhìn' : 'View as')
+    await expect(page.locator('#chat-view-visitor')).toContainText(lang === 'vi' ? 'Khách chat' : 'Chat visitor')
+    await page.locator('#chat-view-visitor').click(); await expect(page.locator('#chat-view')).toHaveAttribute('aria-label', lang === 'vi' ? 'Xem dưới góc nhìn: Khách chat' : 'View as: Chat visitor')
+  })
+}

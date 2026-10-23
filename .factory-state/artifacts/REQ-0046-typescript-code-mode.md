@@ -30,4 +30,5 @@
 
 ## Out Of Scope
 
-- Type-check diagnostics (`deno check`), a LangGraph.js export of the workflow, full TypeScript IntelliSense (P3).
+- Type-check diagnostics (`deno check`) and full TypeScript IntelliSense (P3). The LangGraph.js export moved into
+  scope on 2026-10-23 as REQ-0047 (TASK-0082).

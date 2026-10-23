@@ -71,6 +71,8 @@ WS /ws/run
     GET    /api/workflows/{wid}/transfer        POST   /api/workflows/{wid}/transfer
     GET    /api/workflows/{wid}/python          (the code, node lines; ?version=n)
     GET    /api/workflows/{wid}/export/python   (the .py file to download)
+    GET    /api/workflows/{wid}/code            (?language=python|typescript; same data as /python)
+    GET    /api/workflows/{wid}/export/{language}  (python: the .py file, typescript: the LangGraph.js .ts file)
     ```
 
 ??? abstract "Runs"

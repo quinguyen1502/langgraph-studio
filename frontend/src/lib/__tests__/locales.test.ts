@@ -52,7 +52,6 @@ const SAME_OK = new Set([
   'code.languages.typescript',
   'code.runtimeLabel',
   'code.traceback',
-  'codeView.language',
   'codeView.tab',
   'codeView.version',
   'creds.anthropic',

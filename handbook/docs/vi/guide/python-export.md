@@ -3,7 +3,8 @@
 Tab **Code** trong trình soạn thảo hiện workflow dưới dạng một file Python
 LangGraph: state, mỗi node một hàm, và graph được dựng từ các hàm đó. Dùng nó
 để xem một graph trên canvas được viết bằng code thế nào, hoặc mang bản thử
-nghiệm sang dự án của bạn.
+nghiệm sang dự án của bạn. Tab cũng có thể viết graph dưới dạng TypeScript
+LangGraph.js: xem [TypeScript (LangGraph.js)](#typescript-langgraphjs).
 
 ![Tab Code với node Manager approval đang được chọn](../images/code-tab.png)
 
@@ -142,6 +143,42 @@ builder.add_node("review", build_review_step())  # a compiled graph is a node of
 
 Subgraph có class state riêng và dùng chung trường với graph cha theo tên.
 
+## TypeScript (LangGraph.js)
+
+Chọn **TypeScript** trong menu ngôn ngữ của tab Code để có cùng graph dưới dạng
+một file [LangGraph.js](https://langchain-ai.github.io/langgraphjs/). Menu nhớ
+lựa chọn của bạn; **Tải .ts** lưu file.
+
+```bash
+deno run --allow-env --allow-read leave_request.ts
+```
+
+Các package là import `npm:` (`npm:@langchain/langgraph@^1.5`), nên Deno tự tải
+ở lần chạy đầu và `deno check` kiểm tra kiểu của file. Với Node, bỏ tiền tố
+`npm:` và phiên bản, chạy `npm i @langchain/langgraph @langchain/core`, rồi
+`npx tsx leave_request.ts`.
+
+| Canvas | TypeScript |
+| --- | --- |
+| Trường state | `Annotation.Root({...})`; reducer là `Annotation({ reducer, default })` |
+| LLM | `render(PROMPT, state)`, rồi `callLlm(prompt, model)`: mock, hoặc `initChatModel` khi đặt `LLM_PROVIDER` |
+| Condition, For each | `addConditionalEdges` với một hàm router |
+| Human | `interrupt(...)`; `new Command({ resume })` chạy tiếp |
+| Join | `addEdge([nhánh, nhánh], join)` |
+| Decision | `decide(text, question)` cho từng câu hỏi |
+| Subgraph | `build_<child>()`, một graph đã compile được thêm làm node |
+| Tool: Code bằng TypeScript | code của node giữ nguyên; các import được chuyển lên đầu file |
+| Tool: Code bằng Python | stub ném lỗi `not implemented in TS export`: hãy chuyển sang TypeScript |
+| Tool: function | stub ném lỗi: hàm là Python trên server |
+| Tool: HTTP | `fetch`, không đi theo chuyển hướng |
+| Retriever, MCP, Send email | stub có `TODO`, như file Python |
+| Retry, cache, trường đầu vào, timeout | `retryPolicy`, `cachePolicy`, `input`, `timeout` trong `addNode` |
+
+API key và các thiết lập khác được đọc từ biến môi trường (`LLM_PROVIDER`,
+`OPENAI_API_KEY`, …), không bao giờ ghi vào file. Node không nối tới Start bị bỏ
+ra, kèm một chú thích: LangGraph.js không nhận node không tới được. File Python
+cũng có stub tương tự cho Code node TypeScript (`NotImplementedError`).
+
 ## Những gì không có trong file
 
 - Credential, API key, cấu hình SMTP, kho tri thức, máy chủ MCP, kênh duyệt,
@@ -159,4 +196,5 @@ lần khi subgraph trả về.
 
 `GET /api/workflows/{wid}/python` trả về code, tên file, version và các dòng
 của từng node; `GET /api/workflows/{wid}/export/python` tải file. Cả hai nhận
-`?version=n`. Xem [HTTP API](../reference/api.md).
+`?version=n` và `?language=python|typescript` (`GET /api/workflows/{wid}/code`
+và `/export/typescript` cũng vậy, với tên trung lập). Xem [HTTP API](../reference/api.md).

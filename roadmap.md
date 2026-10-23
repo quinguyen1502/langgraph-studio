@@ -213,3 +213,8 @@ REQ-0046, Accepted 2026-10-23 (feasibility study Option A: Deno; owner approved 
 - TASK-0079 Code-mode language registry (`engine/code_languages.py`), `data.language` (default Python), `STUDIO_CODE_LANGUAGES`, `CODE_LANGUAGE_UNSUPPORTED`, DEC-0048. **merged** (PR #109, REV-0072, QA-0072).
 - TASK-0080 TypeScript on Deno: `code_runner.ts`, zero-permission `deno run`, V8 heap cap, npm allowlist (`STUDIO_CODE_TS_PACKAGES`), `docker/studio-code-ts`, compose and CI (Deno for pytest, a Docker job that builds both Code images), DEC-0049. **merged** (PR #110, REV-0073, QA-0073).
 - TASK-0081 Editor: `CodeEditor` (CodeMirror Python/TypeScript) with a language picker, TypeScript starter, generated `State` type and `state.` completions, "TS" canvas badge, per-language admin card, en/vi, glossary, handbook (en, vi), vitest and e2e `code-typescript.spec.ts`, DEC-0050. **merged** (PR #111, REV-0074, QA-0074).
+
+REQ-0047, Accepted 2026-10-23, Implemented 2026-10-23: the LangGraph.js export, deferred as P3 of REQ-0046, is now in scope (the other P3
+items, type-check diagnostics and full IntelliSense, stay out).
+
+- TASK-0082 TypeScript export: `export_common.GraphWriter` shared by both exporters, `typescript_export.to_typescript`, the `exporters` registry, `?language=` on the export API (`EXPORT_LANGUAGE_UNSUPPORTED`, `TYPESCRIPT_EXPORT_UNAVAILABLE`), Code tab language picker, en/vi, handbook (en, vi), snapshot + `deno check` tests, DEC-0051. **merged** (PR #112, REV-0075, QA-0075).

@@ -428,6 +428,8 @@
     "TEST_SUITE_RUNNING": "Các test của workflow này đang chạy",
     "TEST_NOT_SUPPORTED": "Workflow LangGraph đã import không hỗ trợ test",
     "PYTHON_EXPORT_UNAVAILABLE": "Workflow LangGraph đã import vốn là mã Python nên không cần xuất.",
+    "TYPESCRIPT_EXPORT_UNAVAILABLE": "Workflow LangGraph đã import là mã Python nên không xuất ra TypeScript được.",
+    "EXPORT_LANGUAGE_UNSUPPORTED": "Không xuất được sang {{language}}: hãy chọn một trong {{supported}}.",
     "CALLBACK_URL_INVALID": "callback_url phải là URL http(s) công khai",
     "VERSION_NOT_FOUND": "Phiên bản này không còn tồn tại.",
     "RUN_EXPIRED": "Run này đã chờ phản hồi quá lâu và đã hết hạn.",
@@ -1742,7 +1744,7 @@
     "showing": "Đang hiển thị mã của “{{node}}”",
     "noCode": "Node này không có mã riêng",
     "selectHint": "Chọn một node trên canvas để xem mã của node đó",
-    "download": "Tải .py",
-    "language": "Python"
+    "download": "Tải .{{ext}}",
+    "languageLabel": "Ngôn ngữ"
   }
 }

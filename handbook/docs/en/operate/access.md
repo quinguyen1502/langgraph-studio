@@ -52,8 +52,8 @@ Creating them, and registering stdio MCP servers, needs `org.manage`.
 ## Activity log
 
 **Settings → Activity** is the admin audit log: role changes, shares,
-transfers, password changes, and system events such as the first unisolated
-Code call after a start.
+transfers, password changes, and system events such as the first Code call that
+runs on host (directly on the server) after a start.
 
 ## Deleting a user
 

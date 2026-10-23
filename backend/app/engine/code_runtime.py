@@ -68,8 +68,8 @@ def claim_first_unisolated_call() -> bool:
 def warn_if_unisolated() -> None:
     """One start-up WARNING when Code nodes run on the host without isolation (TASK-0056)."""
     if config.code_runtime() == "subprocess":
-        get_logger("code").warning("Code nodes run on this host WITHOUT isolation (STUDIO_CODE_RUNTIME=subprocess): user code can use "
-                                   "the network and read files the server user can read. Use Docker for anything but trusted local use.")
+        get_logger("code").warning("Code nodes run directly on this host, WITHOUT Docker limiting their access "
+                                   "(STUDIO_CODE_RUNTIME=subprocess): user code can use the network and read files the server user can read. Use Docker for anything but trusted local use.")
 
 
 def unavailable(language: Optional[str] = None) -> Optional[str]:

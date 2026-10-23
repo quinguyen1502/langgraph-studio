@@ -75,7 +75,7 @@ def test_first_unisolated_call_is_announced_once(host):
 
 def test_start_up_warning(host, caplog):
     with caplog.at_level(logging.WARNING): cr.warn_if_unisolated()
-    assert any("WITHOUT isolation" in r.getMessage() for r in caplog.records)
+    assert any("WITHOUT Docker limiting" in r.getMessage() for r in caplog.records)
 
 
 def test_no_silent_fallback_from_docker(monkeypatch):

@@ -149,7 +149,8 @@ describe('locales', () => {
     expect([VI['code.notIsolatedShort'], VI['code.notIsolatedNode']]).toEqual(['Chạy trực tiếp trên server', 'Chạy trên server'])
     expect(EN['code.notIsolatedTip']).toBe('Code runs directly on the server, without Docker limiting its access. Use only for trusted code.')
     expect(VI['code.notIsolatedTip']).toBe('Code đang chạy trực tiếp trên máy chủ, không có Docker giới hạn quyền. Chỉ nên dùng cho code tin cậy.')
-    expect(Object.values(EN).some((v) => /not isolated\)?$|^Not isolated$/i.test(v))).toBe(false)
+    expect(Object.entries(EN).filter(([, v]) => /not isolated|without isolation|unisolated/i.test(v)).map(([k]) => k)).toEqual([])
+    expect(Object.entries(VI).filter(([, v]) => /không cách ly/i.test(v)).map(([k]) => k)).toEqual([])
   })
   it('vi follows the glossary', () => {
     const bad = Object.entries(VI).flatMap(([k, v]) =>

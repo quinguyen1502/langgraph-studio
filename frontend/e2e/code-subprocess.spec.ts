@@ -17,7 +17,7 @@ test('subprocess runtime: every surface warns that code is not isolated', async 
   await page.locator('.react-flow__node[data-id="c"] [data-testid="node-unisolated"]').hover()
   await expect(page.getByRole('tooltip')).toContainText('không có Docker giới hạn quyền')
   await page.locator('.react-flow__node[data-id="c"]').click()
-  await expect(page.locator('#code-not-isolated')).toContainText('không cách ly')
+  await expect(page.locator('#code-not-isolated')).toContainText('không có Docker giới hạn quyền')
   await page.locator('#tool-mode').click(); await expect(page.getByRole('option', { name: /^Code \(Python/ }).getByTestId('mode-unisolated')).toBeVisible(); await page.keyboard.press('Escape')
 
   await page.locator('#run-btn').click()

@@ -205,3 +205,9 @@ REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts wit
 REQ-0045, Approved 2026-10-23 (owner approved the glossary and fix plan steps 1-8; archive tags and branch pruning skipped), Implemented 2026-10-23.
 
 - TASK-0078 Glossary (ui-conventions rule 10), vi locale polish and natural-Vietnamese pass, locale parity/glossary test, README features, Vietnamese handbook wording. **merged** (PR #107).
+
+## TypeScript in Code mode
+
+REQ-0046, Accepted 2026-10-23 (feasibility study Option A: Deno; owner approved P0-P2, P3 out of scope).
+
+- TASK-0079 Code-mode language registry (`engine/code_languages.py`), `data.language` (default Python), `STUDIO_CODE_LANGUAGES`, `CODE_LANGUAGE_UNSUPPORTED`, DEC-0048. **draft PR** (REV-0072, QA-0072).

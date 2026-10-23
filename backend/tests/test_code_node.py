@@ -31,7 +31,7 @@ def runner(source, state=None, limit=65536):
 def local(monkeypatch):
     """Run the sandbox command with this interpreter instead of Docker, to test run_code without a daemon."""
     monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1")
-    monkeypatch.setattr(cr, "unavailable", lambda: None)
+    monkeypatch.setattr(cr, "unavailable", lambda *_: None)
     monkeypatch.setattr(container, "build_code", lambda **kw: [sys.executable, *kw["command"][1:]])
 
 
@@ -79,10 +79,10 @@ def test_container_has_no_network_mounts_or_server_env():
 def test_validator_reports_code_problems_and_runtime(monkeypatch):
     monkeypatch.delenv("STUDIO_ENABLE_CODE_NODES", raising=False)
     assert "Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)" in validate(wf(UPPER))
-    monkeypatch.setattr(cr, "unavailable", lambda: None)
+    monkeypatch.setattr(cr, "unavailable", lambda *_: None)
     assert validate(wf(UPPER)) == []
     assert "Node c: define a top-level function main(state)" in validate(wf("x = 1"))
-    monkeypatch.setattr(cr, "unavailable", lambda: "Docker is not installed")
+    monkeypatch.setattr(cr, "unavailable", lambda *_: "Docker is not installed")
     assert "Code nodes cannot run on this server: Docker is not installed" in validate(wf(UPPER))
     plain = wf(UPPER); plain["nodes"][1]["data"] = {"label": "c", "function": "lookup_order", "output_field": "out"}
     assert validate(plain) == []  # workflows without Code nodes never need Docker

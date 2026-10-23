@@ -154,6 +154,10 @@ def code_runtime() -> str:
     if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
     choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
     return choice if choice in CODE_RUNTIMES else "off"
+def code_languages() -> list[str]:
+    """STUDIO_CODE_LANGUAGES (TASK-0079): the Code-mode languages offered, comma-separated; ``python`` by default."""
+    raw = os.environ.get("STUDIO_CODE_LANGUAGES") or "python"
+    return [x.strip().lower() for x in raw.split(",") if x.strip()]
 def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
 def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
 def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"

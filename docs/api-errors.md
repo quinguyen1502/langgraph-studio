@@ -166,6 +166,7 @@
 | `CODE_MEMORY` | 400 | Code node {node} ran out of memory (limit {limit}) |
 | `CODE_RESULT_NOT_JSON` | 400 | Code node {node}: main() returned {type}, which cannot be stored as JSON |
 | `CODE_TOO_LARGE` | 413 | Code node {node}: the {what} is larger than {max_kb} KB |
+| `CODE_LANGUAGE_UNSUPPORTED` | 400 | Code node {node}: {language} is not available on this server |
 | `CODE_WRITE_FORBIDDEN` | 403 | Your role may not add Code nodes or change their code (code.write) |
 | `RUN_NOT_WAITING` | 409 | This run is not waiting for a response |
 | `RUN_RESPONSE_INVALID` | 400 | The response must be text (max {max} characters) |
@@ -232,6 +233,8 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 ### Code mode of Tool nodes (TASK-0053)
 
 The `CODE_*` codes are the `code` of a run `error` event from a Tool node in Code mode. `CODE_FAILED`, `CODE_INVALID` (raised by the code itself), `CODE_RESULT_NOT_JSON`, `CODE_TIMEOUT` and `CODE_MEMORY` events also carry `code_output` with `stdout`, `traceback` and `runtime`. `CODE_RUNTIME_OFF` and `CODE_RUNTIME_UNAVAILABLE` mean the server cannot run code at all: the mode is off (`STUDIO_ENABLE_CODE_NODES`), Docker is not reachable, or the image (`STUDIO_CODE_IMAGE`, default `studio-code:1`) is missing.
+
+`CODE_LANGUAGE_UNSUPPORTED` (TASK-0079) means the node's `data.language` is unknown or not in `STUDIO_CODE_LANGUAGES` on this server (`python` by default). Nodes without a `language` are Python. It is raised before anything runs, by a run and by *Test with sample state*; saving such a graph reports the same problem as a validation error.
 
 `CODE_WRITE_FORBIDDEN` (TASK-0054) comes from saving a workflow, restoring a version, using or importing a template, and any other write that adds a Code node or changes its `code`, when the user's role lacks `code.write` (admins only by default). Running, moving, renaming or deleting a Code node, and duplicating a workflow, stay allowed. Nothing is stored when it is refused.
 <!-- --8<-- [end:catalog] -->

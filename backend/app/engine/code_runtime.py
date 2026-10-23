@@ -1,26 +1,27 @@
 """Tool node Code mode (TASK-0053, REQ-0039, DEC-0041): user Python runs in a separate process, never in this one.
 
-`run_code` sends {source, state} to `sandbox/code_runner.py` on stdin and reads one JSON result line. The server only
+`run_code` sends {source, state} to the language's runner (`code_languages`, TASK-0079) on stdin and reads one JSON result line. The server only
 parses the source (`problems`); it never executes it. A call is killed at its time limit or when the run is cancelled.
 - docker (default): a fresh container with no network, no mounts, an empty environment, memory/CPU/process limits.
 - subprocess (TASK-0056, STUDIO_CODE_RUNTIME=subprocess): a child of this server with an empty environment, a temporary
   working directory and (on Linux) rlimits. It is NOT isolation: the code can use the network and read what the server
   user can read. It exists only for servers without Docker, and every surface labels it."""
 from __future__ import annotations
-import ast, json, os, re, signal, subprocess, sys, tempfile, threading, time
+import json, os, re, signal, subprocess, sys, tempfile, threading, time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
 from ..core import config
 from ..core.errors import AppError
 from ..core.logging import get_logger
+from . import code_languages as langs
 from .sandbox import container
 
-RUNNER = os.path.join(os.path.dirname(__file__), "sandbox", "code_runner.py")
 SOURCE_MAX = 64 * 1024
 STATE_MAX = 1024 * 1024
 RESULT_MAX = 1024 * 1024
 STDOUT_MAX = 64 * 1024
-STARTER = 'def main(state):\n    """Return the value for the output field."""\n    return state.get("message", "")\n'
+RUNNER = os.path.join(langs.SANDBOX, "code_runner.py")  # the Python runner
+STARTER = langs.LANGUAGES["python"].starter  # kept for callers from before TASK-0079
 _slots: Dict[int, threading.BoundedSemaphore] = {}
 _checked: Dict[str, tuple[float, Optional[str]]] = {}  # image -> (when, problem or None)
 CHECK_TTL = 30.0
@@ -44,17 +45,13 @@ class CodeFailure(AppError):
         AppError.__init__(self, code, **params); self.output = output
 
 
-def problems(source: Any) -> List[str]:
-    """Why this source cannot run, from parsing alone (it is never executed here). Empty when it can."""
+def problems(source: Any, language: Optional[str] = None) -> List[str]:
+    """Why this source cannot run, from reading it alone (it is never executed here). Empty when it can."""
+    lang = language or langs.DEFAULT
+    if lang not in langs.enabled(): return [f"{lang} is not available on this server"]
     if not isinstance(source, str) or not source.strip(): return ["the code is empty"]
     if len(source.encode()) > SOURCE_MAX: return [f"the code is larger than {SOURCE_MAX // 1024} KB"]
-    try: tree = ast.parse(source, "<code>")
-    except SyntaxError as e: return [f"syntax error on line {e.lineno}: {e.msg}"]
-    mains = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "main"]
-    if not mains: return ["define a top-level function main(state)"]
-    a = mains[-1].args
-    if len(a.posonlyargs) + len(a.args) < 1 and a.vararg is None: return ["main must take the state as its argument: main(state)"]
-    return []
+    return langs.LANGUAGES[lang].problems(source)
 
 
 _first = threading.Lock(); _announced = False
@@ -75,12 +72,15 @@ def warn_if_unisolated() -> None:
                                    "the network and read files the server user can read. Use Docker for anything but trusted local use.")
 
 
-def unavailable() -> Optional[str]:
-    """Why Code nodes cannot run here right now, or None. Docker and the image are checked at most every 30 s."""
+def unavailable(language: Optional[str] = None) -> Optional[str]:
+    """Why Code nodes (of `language`, Python by default) cannot run here right now, or None.
+    Docker and the language's image are checked at most every 30 s."""
     runtime = config.code_runtime()
     if runtime == "off": return "off"
-    if runtime == "subprocess": return None
-    image = config.code_image()
+    lang = language or langs.DEFAULT
+    if lang not in langs.enabled(): return f"{lang} is not enabled (STUDIO_CODE_LANGUAGES)"
+    if runtime == "subprocess": return langs.LANGUAGES[lang].host_problem()
+    image = langs.LANGUAGES[lang].image()
     hit = _checked.get(image)
     if hit and time.monotonic() - hit[0] < CHECK_TTL: return hit[1]
     try:
@@ -95,8 +95,8 @@ def unavailable() -> Optional[str]:
     return problem
 
 
-def runtime_error() -> Optional[AppError]:
-    why = unavailable()
+def runtime_error(language: Optional[str] = None) -> Optional[AppError]:
+    why = unavailable(language)
     if why is None: return None
     return AppError("CODE_RUNTIME_OFF") if why == "off" else AppError("CODE_RUNTIME_UNAVAILABLE", reason=why)
 
@@ -104,10 +104,6 @@ def runtime_error() -> Optional[AppError]:
 def _slot() -> threading.BoundedSemaphore:
     n = config.code_concurrency()
     return _slots.setdefault(n, threading.BoundedSemaphore(n))
-
-
-def _command() -> List[str]:
-    with open(RUNNER, encoding="utf-8") as fh: return ["python", "-I", "-c", fh.read()]
 
 
 def _bytes(size: str) -> int:
@@ -125,9 +121,9 @@ def _rlimits(memory: int, seconds: int, pids: int) -> Callable[[], None]:
     return apply
 
 
-def _host_process(workdir: str, seconds: float) -> Dict[str, Any]:
+def _host_process(workdir: str, seconds: float, lang: "langs.CodeLanguage") -> Dict[str, Any]:
     """Popen arguments for the subprocess runtime: empty environment, its own folder and process group, rlimits on Linux."""
-    env = {"HOME": workdir, "TMPDIR": workdir, "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "PYTHONUNBUFFERED": "1", "PYTHONDONTWRITEBYTECODE": "1"}
+    env = {"HOME": workdir, "TMPDIR": workdir, "PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", **lang.host_env(workdir)}
     kw: Dict[str, Any] = {"cwd": workdir, "env": env, "start_new_session": True}
     if sys.platform.startswith("linux"):
         kw["preexec_fn"] = _rlimits(_bytes(config.code_memory()), int(seconds) + 1, config.code_pids())
@@ -164,10 +160,11 @@ def _exchange(argv: List[str], name: str, payload: str, seconds: float,
 
 
 def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout: Optional[float] = None,
-             cancelled: Optional[Callable[[], bool]] = None) -> CodeResult:
+             cancelled: Optional[Callable[[], bool]] = None, language: Optional[str] = None) -> CodeResult:
     """Call main(state) of `source` once in the sandbox. Raises AppError (CodeFailure when the code itself failed)."""
-    if (err := runtime_error()) is not None: raise err
-    if (why := problems(source)): raise AppError("CODE_INVALID", node=node, reason=why[0])
+    lang = langs.get(language, node)  # CODE_LANGUAGE_UNSUPPORTED before anything else
+    if (err := runtime_error(lang.id)) is not None: raise err
+    if (why := problems(source, lang.id)): raise AppError("CODE_INVALID", node=node, reason=why[0])
     data = json.dumps(state, ensure_ascii=False, default=str)
     if len(data.encode()) > STATE_MAX: raise AppError("CODE_TOO_LARGE", node=node, what="state", max_kb=STATE_MAX // 1024)
     limit = min(float(timeout), config.code_max_seconds()) if timeout else float(config.code_max_seconds())
@@ -178,9 +175,9 @@ def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout:
     try:
         if runtime == "subprocess":
             with tempfile.TemporaryDirectory(prefix="lgs-code-") as tmp:
-                out, err, code, stopped = _exchange([sys.executable, *_command()[1:]], name, payload, limit, cancelled, _host_process(tmp, limit))
+                out, err, code, stopped = _exchange(lang.host_command(tmp), name, payload, limit, cancelled, _host_process(tmp, limit, lang))
         else:
-            argv = container.build_code(name=name, image=config.code_image(), command=_command(),
+            argv = container.build_code(name=name, image=lang.image(), command=lang.command(),
                                         memory=config.code_memory(), cpus=config.code_cpus(), pids=config.code_pids())
             out, err, code, stopped = _exchange(argv, name, payload, limit, cancelled)
     finally: slot.release()
@@ -193,7 +190,7 @@ def run_code(source: str, state: Dict[str, Any], *, node: str = "code", timeout:
     try: res = json.loads(line)
     except ValueError:
         reason = (err or out).strip().splitlines()[-1:] or [f"exit code {code}"]
-        if "Unable to find image" in err or "No such image" in err: _checked.pop(config.code_image(), None)
+        if "Unable to find image" in err or "No such image" in err: _checked.pop(lang.image(), None)
         raise AppError("CODE_RUNTIME_UNAVAILABLE", reason=reason[0][:300]) from None
     output = {"stdout": res.get("stdout") or "", "runtime": runtime, "duration_ms": ms}
     if res.get("ok"): return CodeResult(res.get("value"), output["stdout"], runtime, ms)

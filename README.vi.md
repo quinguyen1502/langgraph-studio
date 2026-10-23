@@ -5,7 +5,6 @@
   </picture>
 
   <h3><b>Superstep</b></h3>
-  <p>✨ ✨ ✨</p>
   <p>Studio LangGraph trực quan, mã nguồn mở<br>Kéo thả đồ thị • Theo dõi run trực tiếp • Duyệt bởi con người • Node code Python &amp; TypeScript</p>
 
   <p>
@@ -31,16 +30,16 @@
 
 <table>
   <tr>
-    <td width="50%" valign="top">🧩 <b>Đồ thị trực quan</b><br>Kéo node, nối cạnh; lưu dạng JSON, biên dịch thành <code>StateGraph</code> của LangGraph</td>
-    <td width="50%" valign="top">▶️ <b>Run trực tiếp</b><br>Trace và thay đổi state của từng node khi đang chạy; debug từng bước</td>
+    <td width="50%" valign="top"><b>Đồ thị trực quan</b><br>Kéo node, nối cạnh; lưu dạng JSON, biên dịch thành <code>StateGraph</code> của LangGraph</td>
+    <td width="50%" valign="top"><b>Run trực tiếp</b><br>Trace và thay đổi state của từng node khi đang chạy; debug từng bước</td>
   </tr>
   <tr>
-    <td width="50%" valign="top">🙋 <b>Con người duyệt</b><br>Dừng chờ duyệt trong studio, Slack, Telegram, email hoặc Teams</td>
-    <td width="50%" valign="top">⚡ <b>Trigger</b><br>HTTP API có token, webhook có chữ ký, lịch cron, lệnh chat</td>
+    <td width="50%" valign="top"><b>Con người duyệt</b><br>Dừng chờ duyệt trong studio, Slack, Telegram, email hoặc Teams</td>
+    <td width="50%" valign="top"><b>Trigger</b><br>HTTP API có token, webhook có chữ ký, lịch cron, lệnh chat</td>
   </tr>
   <tr>
-    <td width="50%" valign="top">🐍 <b>Code Python & TypeScript</b><br>Node code trong sandbox Docker khoá chặt; mọi model, MCP và pgvector</td>
-    <td width="50%" valign="top">📄 <b>Học LangGraph</b><br>Xuất workflow thành một file Python dễ đọc, chạy độc lập</td>
+    <td width="50%" valign="top"><b>Code Python & TypeScript</b><br>Node code trong sandbox Docker khoá chặt; mọi model, MCP và pgvector</td>
+    <td width="50%" valign="top"><b>Học LangGraph</b><br>Xuất workflow thành một file Python dễ đọc, chạy độc lập</td>
   </tr>
 </table>
 

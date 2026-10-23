@@ -5,7 +5,6 @@
   </picture>
 
   <h3><b>Superstep</b></h3>
-  <p>✨ ✨ ✨</p>
   <p>Open-source visual LangGraph studio<br>Drag-and-drop graphs • Live run streaming • Human-in-the-loop approvals • Python &amp; TypeScript code nodes</p>
 
   <p>
@@ -31,16 +30,16 @@
 
 <table>
   <tr>
-    <td width="50%" valign="top">🧩 <b>Visual graphs</b><br>Drag nodes, wire edges; saved as JSON, compiled to a LangGraph <code>StateGraph</code></td>
-    <td width="50%" valign="top">▶️ <b>Live runs</b><br>Per-node trace and state diff as it runs; step and run-to-node debugging</td>
+    <td width="50%" valign="top"><b>Visual graphs</b><br>Drag nodes, wire edges; saved as JSON, compiled to a LangGraph <code>StateGraph</code></td>
+    <td width="50%" valign="top"><b>Live runs</b><br>Per-node trace and state diff as it runs; step and run-to-node debugging</td>
   </tr>
   <tr>
-    <td width="50%" valign="top">🙋 <b>Human in the loop</b><br>Pause for approval in the studio, Slack, Telegram, email or Teams</td>
-    <td width="50%" valign="top">⚡ <b>Triggers</b><br>HTTP API with tokens, signed webhooks, cron schedules, chat commands</td>
+    <td width="50%" valign="top"><b>Human in the loop</b><br>Pause for approval in the studio, Slack, Telegram, email or Teams</td>
+    <td width="50%" valign="top"><b>Triggers</b><br>HTTP API with tokens, signed webhooks, cron schedules, chat commands</td>
   </tr>
   <tr>
-    <td width="50%" valign="top">🐍 <b>Python & TypeScript code</b><br>Code nodes in a locked Docker sandbox; any model, MCP and pgvector</td>
-    <td width="50%" valign="top">📄 <b>Learn LangGraph</b><br>Export any workflow as one readable Python file that runs on its own</td>
+    <td width="50%" valign="top"><b>Python & TypeScript code</b><br>Code nodes in a locked Docker sandbox; any model, MCP and pgvector</td>
+    <td width="50%" valign="top"><b>Learn LangGraph</b><br>Export any workflow as one readable Python file that runs on its own</td>
   </tr>
 </table>
 

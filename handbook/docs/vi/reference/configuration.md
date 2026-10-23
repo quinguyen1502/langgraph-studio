@@ -15,7 +15,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `DATABASE_URL` | SQLite `backend/studio.db` | URL SQLAlchemy, ví dụ `postgresql://…` |
 | `STUDIO_DB` | `backend/studio.db` | Đường dẫn SQLite khi `DATABASE_URL` trống |
 | `REDIS_URL` | trống | Run bus, hàng đợi và bộ đếm; trống thì nằm trong bộ nhớ |
-| `STUDIO_PUBLIC_URL` | trống | URL công khai cho link trong e-mail, yêu cầu duyệt và webhook |
+| `STUDIO_PUBLIC_URL` | trống | URL công khai cho link trong email, yêu cầu duyệt và webhook |
 | `STUDIO_CORS_ORIGINS` | `*` khi phát triển, không có khi production | Các origin trình duyệt được phép |
 | `STUDIO_COOKIE_SECURE` | `1` khi production | Cờ `Secure` của cookie phiên |
 | `WEB_PORT` | `8080` | Compose: cổng của dịch vụ `web` |
@@ -54,7 +54,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `STUDIO_WAIT_TTL` | `604800` | Run đang chờ hết hạn sau thời gian này (giây); `0` là không bao giờ |
 | `STUDIO_VERSION_KEEP` | `0` | Số phiên bản giữ cho mỗi workflow; `0` giữ tất cả |
 | `STUDIO_TEST_CASES_MAX` | `50` | Số [test case](../run/tests.md) mỗi workflow |
-| `STUDIO_TEST_PARALLEL` | `4` | Số test case của một lần chạy test chạy cùng lúc |
+| `STUDIO_TEST_PARALLEL` | `4` | Số test case của một run test chạy cùng lúc |
 | `STUDIO_ENABLE_DEMO_TOOLS` | `0` | Đăng ký `sleep_demo` để thử huỷ và timeout |
 
 ## Worker và hàng đợi
@@ -80,7 +80,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `STUDIO_WEBHOOK_BACKOFF_MAX` | `300` | Trần backoff (giây) |
 | `STUDIO_SECRET_GRACE` | `86400` | Secret cũ còn hiệu lực sau khi xoay (giây) |
 
-## Tool, e-mail và MCP
+## Tool, email và MCP
 
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
@@ -97,7 +97,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
 | `STUDIO_ENABLE_CODE_NODES` | `0` | Bật chế độ Code |
-| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, hoặc `subprocess` (không cách ly) |
+| `STUDIO_CODE_RUNTIME` | `docker` | `docker`, hoặc `subprocess` (chạy trực tiếp trên server, không có Docker giới hạn quyền) |
 | `STUDIO_CODE_IMAGE` | `studio-code:1` | Image sandbox |
 | `STUDIO_CODE_PACKAGES` | theo image | Package hiện trong trình soạn thảo |
 | `STUDIO_CODE_MEMORY` | `256m` | Bộ nhớ mỗi lần gọi |
@@ -105,14 +105,14 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 | `STUDIO_CODE_PIDS` | `64` | Số process mỗi lần gọi |
 | `STUDIO_CODE_MAX_SECONDS` | `30` | Trần thời gian mỗi lần gọi |
 | `STUDIO_CODE_CONCURRENCY` | `4` | Số container cùng lúc trên mỗi process |
-| `STUDIO_CODE_TEST_PER_MINUTE` | `20` | Số lần chạy thử mỗi người mỗi phút |
+| `STUDIO_CODE_TEST_PER_MINUTE` | `20` | Số run thử mỗi người mỗi phút |
 
 ## Import repo
 
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
 | `STUDIO_ENABLE_IMPORT` | `0` | Bật import |
-| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` chỉ dùng khi test (không cách ly) |
+| `STUDIO_IMPORT_RUNTIME` | Docker | `subprocess` chỉ dùng khi test (chạy trực tiếp trên server, không có Docker giới hạn quyền) |
 | `STUDIO_IMPORT_DIR` | `~/.superstep/imports` | Thư mục job |
 | `STUDIO_IMPORT_HOST_DIR` | trống | Đường dẫn trên host của thư mục đó khi dùng Compose |
 | `STUDIO_IMPORT_IMAGE` | `python:3.12-slim` | Image sandbox |
@@ -130,7 +130,7 @@ liệt kê mọi biến mà Compose truyền vào; trang này gom chúng theo nh
 
 | Biến | Mặc định | Nghĩa |
 | --- | --- | --- |
-| `SMTP_HOST` | trống | E-mail của studio (thông báo, link đặt lại, duyệt qua e-mail); trống là tắt mail |
+| `SMTP_HOST` | trống | Email của studio (thông báo, link đặt lại, duyệt qua email); trống là tắt mail |
 | `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | `587`, trống, trống, `studio@localhost` | Cấu hình SMTP |
 | `SMTP_STARTTLS`, `SMTP_SSL` | `1`, `0` | Bảo mật đường truyền |
 | `STUDIO_NOTIFY_WEBHOOK_URL`, `STUDIO_NOTIFY_WEBHOOK_SECRET` | trống | Webhook JSON cho run đang chờ và hết hạn |

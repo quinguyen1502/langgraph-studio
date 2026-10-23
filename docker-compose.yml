@@ -85,6 +85,10 @@ services:
       STUDIO_CODE_MEMORY: ${STUDIO_CODE_MEMORY:-256m}
       STUDIO_CODE_CPUS: ${STUDIO_CODE_CPUS:-0.5}
       STUDIO_CODE_MAX_SECONDS: ${STUDIO_CODE_MAX_SECONDS:-30}
+      # TypeScript Code nodes (TASK-0080) run on Deno in their own image: docker build -t studio-code-ts:1 docker/studio-code-ts
+      STUDIO_CODE_LANGUAGES: ${STUDIO_CODE_LANGUAGES:-python,typescript}
+      STUDIO_CODE_TS_IMAGE: ${STUDIO_CODE_TS_IMAGE:-studio-code-ts:1}
+      STUDIO_CODE_TS_PACKAGES: ${STUDIO_CODE_TS_PACKAGES:-npm:zod@3,npm:date-fns@4}
     # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
     # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
     extra_hosts: &host-gw ["host.docker.internal:host-gateway"]

@@ -26,7 +26,7 @@ Năm trường: `phút giờ ngày-trong-tháng tháng thứ-trong-tuần`.
 | Viết tắt | `@hourly`, `@daily`, `@weekly`, `@monthly`, `@yearly` | |
 
 Khi cả hai trường ngày đều được đặt, một ngày khớp nếu khớp một trong hai.
-Hộp thoại hiện các lần chạy kế tiếp ngay khi bạn gõ.
+Hộp thoại hiện các run kế tiếp ngay khi bạn gõ.
 
 ## Múi giờ và giờ mùa hè
 

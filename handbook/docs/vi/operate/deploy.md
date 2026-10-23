@@ -28,7 +28,7 @@ biến hay dùng nhất có ở [Cấu hình](../reference/configuration.md).
 | `JWT_SECRET` | Ký phiên đăng nhập. Dài và ngẫu nhiên. |
 | `STUDIO_SECRET_KEY` | Khoá Fernet cho credential đã lưu. Nên đặt rõ ràng; mất khoá thì credential cũ không đọc được nữa. |
 | `STUDIO_ADMIN_EMAILS` | Tạo admin đầu tiên (production không có admin demo). |
-| `STUDIO_PUBLIC_URL` | URL công khai dùng cho link trong e-mail, yêu cầu duyệt và webhook. |
+| `STUDIO_PUBLIC_URL` | URL công khai dùng cho link trong email, yêu cầu duyệt và webhook. |
 | `STUDIO_CORS_ORIGINS` | Chỉ cần khi trình duyệt ở origin khác gọi API. Production mặc định không cho origin nào. |
 | `STUDIO_TRUSTED_PROXIES` | CIDR của các proxy phía trước, để đọc đúng IP client cho giới hạn tần suất. |
 | TLS | Kết thúc HTTPS ở phía trước `web`. Cookie phiên là `Secure` trong production. |
@@ -55,10 +55,10 @@ Kiểm tra thêm những chỗ còn dùng tên cũ:
 
 - **Telemetry:** `OTEL_SERVICE_NAME` mặc định giờ là `superstep`. Đặt
   thành `langgraph-studio` để giữ các dashboard hiện có.
-- **E-mail:** tiêu đề bắt đầu bằng `[Superstep]`. Hãy cập nhật bộ lọc thư.
+- **Email:** tiêu đề bắt đầu bằng `[Superstep]`. Hãy cập nhật bộ lọc thư.
 - **Chạy ở máy (không Docker):** khoá và thư mục import chuyển sang
   `~/.superstep/`. `~/.langgraph-studio/` vẫn được dùng khi thư mục mới chưa có.
-- **File:** template đã export và node đã copy từ v0.1.0 vẫn nhập và dán được.
+- **File:** template đã export và node đã sao chép từ v0.1.0 vẫn nhập và dán được.
 
 ## Database
 

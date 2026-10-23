@@ -54,6 +54,7 @@
     "resetDone": "Password changed. Sign in with the new password."
   },
   "list": {
+    "untitled": "Untitled workflow",
     "count": "{{count}} workflows",
     "filtered": "{{shown}} / {{total}} workflows",
     "search": "Search workflows…",
@@ -213,7 +214,7 @@
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
     },
-    "pythonCode": "Python code"
+    "codeMode": "Code ({{language}})"
   },
   "nodes": {
     "start": "Start point",
@@ -427,6 +428,8 @@
     "TEST_SUITE_RUNNING": "The tests of this workflow are already running",
     "TEST_NOT_SUPPORTED": "Imported LangGraph workflows cannot have tests",
     "PYTHON_EXPORT_UNAVAILABLE": "Imported LangGraph workflows are Python code already: there is nothing to export.",
+    "TYPESCRIPT_EXPORT_UNAVAILABLE": "Imported LangGraph workflows are Python code: they cannot be exported as TypeScript.",
+    "EXPORT_LANGUAGE_UNSUPPORTED": "Cannot export to {{language}}: use one of {{supported}}.",
     "CALLBACK_URL_INVALID": "callback_url must be a public http(s) URL",
     "VERSION_NOT_FOUND": "That version no longer exists.",
     "RUN_EXPIRED": "This run waited too long for a response and has expired.",
@@ -529,6 +532,7 @@
     "CODE_MEMORY": "Code node {{node}} ran out of memory (limit {{limit}})",
     "CODE_RESULT_NOT_JSON": "Code node {{node}}: main() returned {{type}}, which cannot be stored as JSON",
     "CODE_TOO_LARGE": "Code node {{node}}: the {{what}} is larger than {{max_kb}} KB",
+    "CODE_LANGUAGE_UNSUPPORTED": "Code node {{node}}: {{language}} is not available on this server",
     "CODE_WRITE_FORBIDDEN": "Your role may not add Code nodes or change their code (code.write)"
   },
   "lang": {
@@ -1114,7 +1118,7 @@
       "workflow_transfer": "Ownership transferred",
       "workflow_delete": "Workflow deleted",
       "policy_org_resources": "Org resource policy changed",
-      "system_code_runtime_subprocess": "Code nodes ran without isolation"
+      "system_code_runtime_subprocess": "Code nodes ran directly on the server (runs on host)"
     },
     "types": {
       "user": "User",
@@ -1551,9 +1555,11 @@
     "result": "Result ({{ms}} ms)",
     "stdout": "Printed output",
     "traceback": "Traceback",
-    "notIsolated": "Code runs directly on this server, without isolation: it can use the network and read files the server can read.",
-    "notIsolatedShort": "Not isolated",
-    "runUnisolated": "Code nodes in this run ran on the server without isolation (subprocess runtime).",
+    "notIsolated": "Code runs directly on this server, without Docker limiting its access: it can use the network and read files the server can read. Use only for trusted code.",
+    "notIsolatedShort": "Runs on host",
+    "notIsolatedNode": "Runs on host",
+    "notIsolatedTip": "Code runs directly on the server, without Docker limiting its access. Use only for trusted code.",
+    "runUnisolated": "Code nodes in this run ran directly on the server, without Docker limiting their access (subprocess runtime).",
     "runtimeLabel": "runtime: {{runtime}}",
     "adminTitle": "Code nodes",
     "adminIntro": "Where Tool nodes in Code mode run, and with which limits.",
@@ -1564,9 +1570,24 @@
     "adminRisk": "The host subprocess runtime is not a sandbox. User code can reach the network and read files the server user can read; on macOS the memory limit does not apply. Use Docker for anything but trusted local use.",
     "runtimes": {
       "docker": "Docker sandbox",
-      "subprocess": "Host subprocess (not isolated)",
+      "subprocess": "Runs on host (subprocess)",
       "off": "Off"
-    }
+    },
+    "languages": {
+      "python": "Python",
+      "typescript": "TypeScript"
+    },
+    "languageOff": "{{language}} is not offered on this server (STUDIO_CODE_LANGUAGES).",
+    "languageKept": "Your code was kept. Rewrite it in {{language}} before you run it.",
+    "stateType": "State type",
+    "stateTypeHint": "Generated from the state schema. Use it as `state: State`; Deno removes types without checking them, so no declaration is needed. Type state. for field names.",
+    "tsPackages": "Web APIs and these packages: {{packages}} (import them with the version as written, e.g. \"npm:zod@3\").",
+    "tsNoPackages": "Web APIs only; no packages can be imported here.",
+    "adminLanguages": "Languages",
+    "languageReady": "Ready",
+    "languageNotReady": "Not ready",
+    "adminPackages": "Packages: {{packages}}",
+    "adminNoPackages": "No extra packages"
   },
   "inbox": {
     "title": "Approvals",
@@ -1723,7 +1744,7 @@
     "showing": "Showing “{{node}}”",
     "noCode": "This node has no code of its own",
     "selectHint": "Select a node on the canvas to find its code",
-    "download": "Download .py",
-    "language": "Python"
+    "download": "Download .{{ext}}",
+    "languageLabel": "Language"
   }
 }

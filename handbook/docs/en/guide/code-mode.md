@@ -1,7 +1,7 @@
 # Code mode
 
-A Tool node in **Python code** mode runs Python you write in the node. The
-code defines `main(state)`; its return value goes to the node's
+A Tool node in **Code** mode runs Python or TypeScript you write in the node.
+The code defines `main(state)`; its return value goes to the node's
 `output_field`.
 
 ```python
@@ -20,8 +20,10 @@ def main(state):
 
 ## Write and test
 
-1. Select a Tool node and set **Mode** to **Python code**. The field starts
-   with a `main(state)` stub and highlights Python.
+1. Select a Tool node and set **Mode** to **Code (Python)** or
+   **Code (TypeScript)**. The field starts with that language's `main(state)`
+   stub (see [TypeScript](#typescript)). Mode only lists the languages this
+   server can run.
 2. Below the editor, the node lists the packages in the image and the limits.
 3. Put sample input in the run panel's **Input** tab.
 4. Press **Test with sample state**. It runs `main(state)` once with that
@@ -47,6 +49,38 @@ Tests go through `POST /api/code/test`, limited to
 
 The code changes the run only through its return value.
 
+## TypeScript
+
+Set **Mode** to **Code (TypeScript)**. If you have not changed
+the code yet, the stub becomes the TypeScript one; edited code is kept, and
+the node asks you to rewrite it. The canvas marks the node **TS**.
+
+```ts
+export function main(state: State) {
+  console.log("seen:", state.message)   // shown in the trace
+  return (state.message ?? "").toUpperCase()
+}
+```
+
+- **Entry point:** export a function `main`, sync or `async`.
+- **`State`:** a type generated from the workflow's state schema, shown
+  above the editor. Type `state.` to complete field names. TypeScript runs on
+  [Deno](https://deno.com), which removes types without checking them, so a
+  type error does not stop the run and you need not declare `State`.
+- **Printed output:** `console.log` and the other `console` methods.
+- **Output:** the value must be JSON. `undefined`, a `BigInt`, a function or
+  a cycle gives `CODE_RESULT_NOT_JSON`.
+- **Packages:** Web APIs (`fetch` aside, see below), plus the packages the
+  server allows, imported as written in the list under the editor, for
+  example `import { z } from "npm:zod@3"`. The default image has `npm:zod@3`
+  and `npm:date-fns@4`. Write the version as listed: `npm:zod` without one, or
+  another major, is `CODE_INVALID` with the allowed spec in the message, and
+  so is any other import.
+- **No permissions:** reading or writing files, the network, environment
+  variables, starting processes and system information all fail with
+  `NotCapable` (`CODE_FAILED`), on every runtime.
+- The same size, time and memory limits as Python apply.
+
 ## Failures
 
 | Code | When |
@@ -58,7 +92,8 @@ The code changes the run only through its return value.
 | `CODE_MEMORY` | The container hit its memory limit. |
 | `CODE_TOO_LARGE` | Source, state or result over the size limits. |
 | `CODE_RUNTIME_OFF`, `CODE_RUNTIME_UNAVAILABLE` | Code mode is off, or Docker or the image is missing. |
-| `CODE_WRITE_FORBIDDEN` | You lack `code.write`. |
+| `CODE_LANGUAGE_UNSUPPORTED` | The node's language is not offered on this server. |
+| `CODE_WRITE_FORBIDDEN` | You lack `code.write`. Switching the language counts as changing the code. |
 
 The node's retry settings apply to failures. A cancelled run kills its
 container.

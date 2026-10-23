@@ -71,6 +71,8 @@ WS /ws/run
     GET    /api/workflows/{wid}/transfer        POST   /api/workflows/{wid}/transfer
     GET    /api/workflows/{wid}/python          (mã, các dòng của node; ?version=n)
     GET    /api/workflows/{wid}/export/python   (file .py để tải về)
+    GET    /api/workflows/{wid}/code            (?language=python|typescript; như /python)
+    GET    /api/workflows/{wid}/export/{language}  (python: file .py, typescript: file .ts LangGraph.js)
     ```
 
 ??? abstract "Runs"
@@ -112,9 +114,9 @@ WS /ws/run
     ```text
     GET    /api/workflows/{wid}/tests          POST   /api/workflows/{wid}/tests
     PUT    /api/workflows/{wid}/tests/{tid}    DELETE /api/workflows/{wid}/tests/{tid}
-    POST   /api/workflows/{wid}/tests/run      ({test_ids?, mock?, version?}: version = một version cũ đã lưu)
+    POST   /api/workflows/{wid}/tests/run      ({test_ids?, mock?, version?}: version = một phiên bản cũ đã lưu)
     GET    /api/workflows/{wid}/tests/runs     (lịch sử các lần chạy test)
-    GET    /api/workflows/{wid}/tests/runs/{sid}   (kèm so sánh với version trước)
+    GET    /api/workflows/{wid}/tests/runs/{sid}   (kèm so sánh với phiên bản trước)
     POST   /api/workflows/{wid}/tests/runs/{sid}/cancel
     POST   /api/workflows/{wid}/tests/from-run/{run_id}   (bản nháp test case từ một run, chưa lưu)
     ```

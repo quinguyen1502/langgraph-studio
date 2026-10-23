@@ -38,7 +38,7 @@ luôn báo là email hoặc mật khẩu không đúng.
 
 Admin mở **Cài đặt → Người dùng**, tạo link dùng một lần (biểu tượng chìa
 khoá), rồi gửi cho người dùng. Khi đã đặt `SMTP_HOST` và `STUDIO_PUBLIC_URL`,
-**Quên mật khẩu?** ở trang đăng nhập sẽ gửi link qua e-mail, và trả lời giống
+**Quên mật khẩu?** ở trang đăng nhập sẽ gửi link qua email, và trả lời giống
 nhau với mọi địa chỉ. Link dùng được một lần, trong
 `STUDIO_PASSWORD_RESET_TTL` giây (mặc định 3600). Đặt mật khẩu mới sẽ đăng xuất
 mọi phiên cũ của tài khoản và gỡ khoá tạm.

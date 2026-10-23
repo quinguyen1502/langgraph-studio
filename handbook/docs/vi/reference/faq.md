@@ -29,8 +29,8 @@ Một vòng lặp không bao giờ đi qua Condition dẫn ra ngoài, hoặc gra
 `STUDIO_RECURSION_LIMIT` bước (mặc định 25). Vòng For each không tính vào giới
 hạn này. Xem [Run và trace](../run/traces.md#gioi-han).
 
-**Hai nhánh cùng ghi một field và Lưu bị lỗi.**
-Đặt reducer cho field đó (`append`, `merge` hoặc `add`), hoặc ghi vào các field
+**Hai nhánh cùng ghi một trường và Lưu bị lỗi.**
+Đặt reducer cho trường đó (`append`, `merge` hoặc `add`), hoặc ghi vào các trường
 khác nhau. Xem [State và tham chiếu](../guide/state.md#reducer).
 
 **Node LLM chạy trong Docker không gọi được Ollama.**
@@ -42,9 +42,9 @@ Trong Compose, `localhost` là chính container. Dùng
 Viết code cần quyền `code.write`, mặc định chỉ admin có. Xem
 [Chế độ Code](../guide/code-mode.md#ai-uoc-viet-code).
 
-**Run được khôi phục có gửi e-mail hai lần không?**
+**Run được khôi phục có gửi email hai lần không?**
 Không. Node có side effect đã xong được phát lại từ sổ kết quả, và `Message-ID`
-của e-mail lấy từ idempotency key của node. Xem
+của email lấy từ idempotency key của node. Xem
 [Kiến trúc](architecture.md#side-effect-gan-nhu-ung-mot-lan).
 
 **Run được lưu ở đâu, bao lâu?**

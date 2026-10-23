@@ -17,7 +17,7 @@ def post_test(tok, **body): return c.post("/api/code/test", json=body, headers=H
 def local(monkeypatch):
     """Sandbox command run with this interpreter (no Docker needed); see test_code_node.py."""
     monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1")
-    monkeypatch.setattr(cr, "unavailable", lambda: None)
+    monkeypatch.setattr(cr, "unavailable", lambda *_: None)
     monkeypatch.setattr(container, "build_code", lambda **kw: [sys.executable, *kw["command"][1:]])
 
 
@@ -26,7 +26,7 @@ def test_runtime_describes_the_mode(monkeypatch):
     r = c.get("/api/meta/runtime", headers=H(editor())).json()["data"]
     assert r["code_runtime"] == "off" and r["available"] is False and r["problem"] is None
     assert r["packages"] == ["pydantic", "python-dateutil"] and r["limits"]["seconds"] == 30 and "def main(state)" in r["starter"]
-    monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1"); monkeypatch.setattr(cr, "unavailable", lambda: "Docker is not installed")
+    monkeypatch.setenv("STUDIO_ENABLE_CODE_NODES", "1"); monkeypatch.setattr(cr, "unavailable", lambda *_: "Docker is not installed")
     r = c.get("/api/meta/runtime", headers=H(editor())).json()["data"]
     assert r["code_runtime"] == "docker" and r["available"] is False and r["problem"] == "Docker is not installed"
     monkeypatch.setenv("STUDIO_CODE_IMAGE", "mine:2"); monkeypatch.setenv("STUDIO_CODE_PACKAGES", "numpy, pandas")
@@ -51,7 +51,7 @@ def test_bad_source_runtime_off_and_permission_are_errors(local, monkeypatch):
     assert r.status_code == 400 and r.json()["error"]["code"] == "CODE_INVALID"
     r = post_test(editor(), source="def main(s): return 1", state={})
     assert r.status_code == 403 and r.json()["error"]["code"] == "CODE_WRITE_FORBIDDEN"
-    monkeypatch.setattr(cr, "unavailable", lambda: "off")
+    monkeypatch.setattr(cr, "unavailable", lambda *_: "off")
     assert post_test(admin(), source="def main(s): return 1", state={}).json()["error"]["code"] == "CODE_RUNTIME_OFF"
 
 

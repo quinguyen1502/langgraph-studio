@@ -54,8 +54,8 @@ MCP stdio, cần quyền `org.manage`.
 ## Nhật ký hoạt động
 
 **Cài đặt → Hoạt động** là nhật ký kiểm tra cho admin: đổi vai trò, chia sẻ,
-chuyển quyền, đổi mật khẩu, và các sự kiện hệ thống như lần gọi Code không
-cách ly đầu tiên sau khi khởi động.
+chuyển quyền, đổi mật khẩu, và các sự kiện hệ thống như lần gọi Code chạy
+trực tiếp trên server đầu tiên sau khi khởi động.
 
 ## Xoá người dùng
 

@@ -15,7 +15,7 @@ Bấm vào một dòng, hoặc vào node trên canvas, để mở chi tiết:
 | --- | --- |
 | Input | State mà node nhận vào |
 | Output | Kết quả node trả về (token đang stream nếu là node LLM đang chạy) |
-| State diff | Các field mà bước này thêm, đổi hoặc xoá |
+| State diff | Các trường mà bước này thêm, đổi hoặc xoá |
 | Raw | Sự kiện gốc của bước |
 
 ![State diff](../images/trace-detail.png)
@@ -60,7 +60,7 @@ Lỗi gói trong một dòng, `sk-…`, `Bearer …` và `api_key=…` được 
 | --- | --- | --- |
 | `STUDIO_RECURSION_LIMIT` | 25 | Số bước tối đa mỗi run. Vòng lặp không bao giờ đi qua Condition sẽ dừng với lỗi. Bước của For each không tính. |
 | `STUDIO_RUN_TIMEOUT` | 120 giây | Thời gian tối đa của run, quá thì `timeout`. Thời gian chờ ở node Human không tính. |
-| `STUDIO_EVENT_MAX_BYTES` | 262144 | Kích thước tối đa của một sự kiện. Field quá lớn thành `{"_truncated": true, …}`. |
+| `STUDIO_EVENT_MAX_BYTES` | 262144 | Kích thước tối đa của một sự kiện. Trường quá lớn thành `{"_truncated": true, …}`. |
 | `STUDIO_RUN_MAX_BYTES` | 2097152 | Dung lượng sự kiện tối đa lưu cho một run. Phần giữa được thay bằng `{"type": "truncated", "dropped": n}`. |
 | `STUDIO_INPUT_MAX_BYTES` | 262144 | Input tối đa của run. |
 | `STUDIO_WORKFLOW_MAX_BYTES` | 1048576 | JSON workflow tối đa. Lưu lớn hơn trả về HTTP 413. |

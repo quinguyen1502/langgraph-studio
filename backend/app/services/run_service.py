@@ -438,17 +438,23 @@ class RunService:
     async def settled(self, rid: str, source: Optional[str] = None) -> None:
         """Every run segment ends here (first run, studio/Slack/Telegram resume, recovery): an API run's callback_url
         gets the result or the next pause, once (DeliveryService.for_run is idempotent). A test run (`source`) goes to its
-        suite instead, which records it or answers its Human node (TASK-0067)."""
+        suite instead, which records it or answers its Human node (TASK-0067). A chat run answers its thread (TASK-0075).
+        The work is one thread job submitted at once and never cancelled (_write_in_thread): the handler is often cancelled
+        right after the run ends (the client closes the socket on run_summary), and a cancelled plain to_thread would drop
+        the queued job, so the chat reply or callback would silently never happen (TASK-0083)."""
+        await _write_in_thread(self._settle, rid, source)
+
+    def _settle(self, rid: str, source: Optional[str]) -> None:
         if source == "test":
             if self.tests:
-                try: await asyncio.to_thread(self.tests().on_settled, rid)
+                try: self.tests().on_settled(rid)
                 except Exception: log.exception("recording test run %s failed", rid)
             return
         if source == "chat" and self.chat:
-            try: await asyncio.to_thread(self.chat().on_settled, rid)
+            try: self.chat().on_settled(rid)
             except Exception: log.exception("answering chat run %s failed", rid)
         if not self.deliveries: return
-        try: await asyncio.to_thread(self.deliveries().for_run, self.runs.get(rid))
+        try: self.deliveries().for_run(self.runs.get(rid))
         except Exception: log.exception("queueing the callback of run %s failed", rid)
 
     async def _execute(self, rid, plan, send, listen, uid) -> str:

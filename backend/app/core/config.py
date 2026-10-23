@@ -154,6 +154,11 @@ def code_runtime() -> str:
     if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
     choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
     return choice if choice in CODE_RUNTIMES else "off"
+def code_languages() -> list[str]:
+    """STUDIO_CODE_LANGUAGES (TASK-0079): the Code-mode languages offered, comma-separated; ``python,typescript`` by
+    default since TASK-0080 (TypeScript reports itself unavailable until its image or the deno binary is there)."""
+    raw = os.environ.get("STUDIO_CODE_LANGUAGES") or "python,typescript"
+    return [x.strip().lower() for x in raw.split(",") if x.strip()]
 def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
 def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
 def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"
@@ -163,6 +168,24 @@ def code_concurrency() -> int: return max(1, _int("STUDIO_CODE_CONCURRENCY", 4))
 def test_cases_max() -> int: return max(1, _int("STUDIO_TEST_CASES_MAX", 50))  # test cases per workflow (TASK-0067)
 def test_parallel() -> int: return max(1, _int("STUDIO_TEST_PARALLEL", 4))     # test runs of one suite at a time (TASK-0067)
 def code_test_per_minute() -> int: return max(1, _int("STUDIO_CODE_TEST_PER_MINUTE", 20))  # Test with sample state, per user
+# --- TASK-0080 (DEC-0049): TypeScript on Deno ---
+CODE_TS_DEFAULT_PACKAGES = ["npm:zod@3", "npm:date-fns@4"]  # exactly what docker/studio-code-ts caches (deps.ts)
+def code_ts_image() -> str: return os.environ.get("STUDIO_CODE_TS_IMAGE", "studio-code-ts:1") or "studio-code-ts:1"
+def code_ts_packages() -> list[str]:
+    """STUDIO_CODE_TS_PACKAGES (comma-separated `npm:`/`jsr:` specifiers pinned
+    to a major version, `name@major`, e.g. `npm:zod@3`) when set; the default image's
+    packages for that image; else none. Only these may be imported, and only if they are in Deno's cache."""
+    raw = os.environ.get("STUDIO_CODE_TS_PACKAGES")
+    if raw is not None: return [x.strip() for x in raw.split(",") if x.strip()]
+    return list(CODE_TS_DEFAULT_PACKAGES) if code_ts_image() == "studio-code-ts:1" else []
+def deno_exe() -> str | None:
+    """STUDIO_DENO, else `deno` on PATH: the binary of the host subprocess runtime for TypeScript."""
+    import shutil
+    return os.environ.get("STUDIO_DENO") or shutil.which("deno")
+def code_ts_deno_dir() -> str:
+    """STUDIO_CODE_TS_DENO_DIR: a Deno cache with the allowlisted packages for the host runtime (``deno cache``).
+    Empty = a fresh, empty cache per call (no packages)."""
+    return os.environ.get("STUDIO_CODE_TS_DENO_DIR", "")
 CODE_DEFAULT_PACKAGES = ["pydantic", "python-dateutil"]  # what docker/studio-code adds to the standard library
 def code_packages() -> list[str]:
     """STUDIO_CODE_PACKAGES (comma-separated) when set; the default image's packages for that image; else unknown ([])."""

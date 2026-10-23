@@ -78,6 +78,8 @@ CATALOG: dict[str, tuple[int, str]] = {
     "TEST_SUITE_RUNNING": (409, "The tests of this workflow are already running"),
     "TEST_NOT_SUPPORTED": (400, "Imported LangGraph workflows cannot have tests"),
     "PYTHON_EXPORT_UNAVAILABLE": (400, "Imported LangGraph workflows are Python code already: there is nothing to export"),
+    "TYPESCRIPT_EXPORT_UNAVAILABLE": (400, "Imported LangGraph workflows are Python code: they cannot be exported as TypeScript"),
+    "EXPORT_LANGUAGE_UNSUPPORTED": (400, "Cannot export to {language}: use one of {supported}"),
     "RUN_EXPIRED": (410, "This run waited too long for a response and expired"),
     "RATE_LIMITED": (429, "Too many requests, retry in {retry_after} s"),
     "NOTIFICATION_NOT_FOUND": (404, "Notification not found"),
@@ -200,6 +202,7 @@ CATALOG: dict[str, tuple[int, str]] = {
     "CODE_MEMORY": (400, "Code node {node} ran out of memory (limit {limit})"),
     "CODE_RESULT_NOT_JSON": (400, "Code node {node}: main() returned {type}, which cannot be stored as JSON"),
     "CODE_TOO_LARGE": (413, "Code node {node}: the {what} is larger than {max_kb} KB"),
+    "CODE_LANGUAGE_UNSUPPORTED": (400, "Code node {node}: {language} is not available on this server"),
     "CODE_WRITE_FORBIDDEN": (403, "Your role may not add Code nodes or change their code (code.write)"),
 }
 

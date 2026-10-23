@@ -199,3 +199,23 @@ REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts wit
 - TASK-0075 Slack events and Telegram messages start `source="chat"` runs; thread replies (started, result, error, waiting), private refusals, dedupe, rate limit, audit. **merged** (PR #99, REV-0069, QA-0069).
 - TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
 - TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).
+- TASK-0083 Settling a run (chat reply, callback, test record) survives a cancelled handler: `settled()` uses `_write_in_thread`; fixes the flaky `test_waiting_then_finished_and_errors`. **merged** (PR #113, REV-0076, QA-0076).
+
+## Vietnamese language quality
+
+REQ-0045, Approved 2026-10-23 (owner approved the glossary and fix plan steps 1-8; archive tags and branch pruning skipped), Implemented 2026-10-23.
+
+- TASK-0078 Glossary (ui-conventions rule 10), vi locale polish and natural-Vietnamese pass, locale parity/glossary test, README features, Vietnamese handbook wording. **merged** (PR #107).
+
+## TypeScript in Code mode
+
+REQ-0046, Accepted 2026-10-23 (feasibility study Option A: Deno; owner approved P0-P2, P3 out of scope), Implemented 2026-10-23.
+
+- TASK-0079 Code-mode language registry (`engine/code_languages.py`), `data.language` (default Python), `STUDIO_CODE_LANGUAGES`, `CODE_LANGUAGE_UNSUPPORTED`, DEC-0048. **merged** (PR #109, REV-0072, QA-0072).
+- TASK-0080 TypeScript on Deno: `code_runner.ts`, zero-permission `deno run`, V8 heap cap, npm allowlist (`STUDIO_CODE_TS_PACKAGES`), `docker/studio-code-ts`, compose and CI (Deno for pytest, a Docker job that builds both Code images), DEC-0049. **merged** (PR #110, REV-0073, QA-0073).
+- TASK-0081 Editor: `CodeEditor` (CodeMirror Python/TypeScript) with a language picker, TypeScript starter, generated `State` type and `state.` completions, "TS" canvas badge, per-language admin card, en/vi, glossary, handbook (en, vi), vitest and e2e `code-typescript.spec.ts`, DEC-0050. **merged** (PR #111, REV-0074, QA-0074).
+
+REQ-0047, Accepted 2026-10-23, Implemented 2026-10-23: the LangGraph.js export, deferred as P3 of REQ-0046, is now in scope (the other P3
+items, type-check diagnostics and full IntelliSense, stay out).
+
+- TASK-0082 TypeScript export: `export_common.GraphWriter` shared by both exporters, `typescript_export.to_typescript`, the `exporters` registry, `?language=` on the export API (`EXPORT_LANGUAGE_UNSUPPORTED`, `TYPESCRIPT_EXPORT_UNAVAILABLE`), Code tab language picker, en/vi, handbook (en, vi), snapshot + `deno check` tests, DEC-0051. **merged** (PR #112, REV-0075, QA-0075).

@@ -3,7 +3,8 @@
 The **Code** tab in the editor shows the workflow as one LangGraph Python file:
 the state, one function per node, and the graph built from them. Use it to see
 how a graph on the canvas is written in code, or to carry a prototype into your
-own project.
+own project. It can also write the graph as LangGraph.js TypeScript: see
+[TypeScript (LangGraph.js)](#typescript-langgraphjs).
 
 ![The Code tab with the Manager approval node selected](../images/code-tab.png)
 
@@ -142,6 +143,43 @@ builder.add_node("review", build_review_step())  # a compiled graph is a node of
 
 The subgraph has its own state class and shares fields with the parent by name.
 
+## TypeScript (LangGraph.js)
+
+Pick **TypeScript** in the language menu of the Code tab to get the same graph as
+one [LangGraph.js](https://langchain-ai.github.io/langgraphjs/) file. The menu
+remembers your choice; **Download .ts** saves the file.
+
+```bash
+deno run --allow-env --allow-read leave_request.ts
+```
+
+The packages are `npm:` imports (`npm:@langchain/langgraph@^1.5`), so Deno
+fetches them on the first run and `deno check` type-checks the file. For Node,
+drop the `npm:` prefixes and versions, run `npm i @langchain/langgraph
+@langchain/core`, then `npx tsx leave_request.ts`.
+
+| Canvas | TypeScript |
+| --- | --- |
+| State fields | `Annotation.Root({...})`; a reducer is `Annotation({ reducer, default })` |
+| LLM | `render(PROMPT, state)`, then `callLlm(prompt, model)`: the mock, or `initChatModel` when `LLM_PROVIDER` is set |
+| Condition, For each | `addConditionalEdges` with a router function |
+| Human | `interrupt(...)`; `new Command({ resume })` continues the run |
+| Join | `addEdge([branch, branch], join)` |
+| Decision | `decide(text, question)` for each question |
+| Subgraph | `build_<child>()`, a compiled graph added as a node |
+| Tool: Code in TypeScript | the node's code as written; its imports move to the top of the file |
+| Tool: Code in Python | a stub that throws `not implemented in TS export`: port it |
+| Tool: function | a stub that throws: the function is Python on the server |
+| Tool: HTTP | `fetch`, without following redirects |
+| Retriever, MCP, Send email | stubs with a `TODO`, as in the Python file |
+| Retry, cache, input fields, timeout | `retryPolicy`, `cachePolicy`, `input`, `timeout` on `addNode` |
+
+API keys and other settings are read from environment variables
+(`LLM_PROVIDER`, `OPENAI_API_KEY`, …), never written in the file. A node that
+nothing connects to Start is left out, with a comment: LangGraph.js refuses
+unreachable nodes. The Python file has the same kind of stub for TypeScript Code
+nodes (`NotImplementedError`).
+
 ## What is not in the file
 
 - Credentials, API keys, SMTP settings, knowledge bases, MCP servers, approval
@@ -159,5 +197,7 @@ writes is combined again when the subgraph returns.
 
 `GET /api/workflows/{wid}/python` returns the code, the file name, the version
 and the line ranges of each node; `GET /api/workflows/{wid}/export/python`
-downloads the file. Both take `?version=n`. See the
+downloads the file. Both take `?version=n` and `?language=python|typescript`
+(`GET /api/workflows/{wid}/code` and `/export/typescript` are the same with a
+neutral name). See the
 [HTTP API](../reference/api.md).

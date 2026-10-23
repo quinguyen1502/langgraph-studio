@@ -33,7 +33,7 @@ khoản, phân quyền, nhà cung cấp, kênh duyệt và các môi trường c
 
     ---
 
-    Slack, Telegram, WhatsApp, e-mail và Microsoft Teams.
+    Slack, Telegram, WhatsApp, email và Microsoft Teams.
 
 -   :material-language-python:{ .lg .middle } **[Môi trường chạy Code](code-runtime.md)**
 

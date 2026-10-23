@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { python } from '@codemirror/lang-python'
+import { javascript } from '@codemirror/lang-javascript'
+import { autocompletion } from '@codemirror/autocomplete'
+import { stateCompletions } from '@/lib/state-type'
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
 import { StateEffect, StateField, type EditorState } from '@codemirror/state'
 import { Decoration, type DecorationSet, EditorView } from '@codemirror/view'
@@ -33,8 +36,14 @@ const marksField = StateField.define<DecorationSet>({
 })
 const markTheme = EditorView.theme({ '.cm-node-mark': { backgroundColor: 'color-mix(in oklch, var(--info) 16%, transparent)' } })
 
-/** Python source with highlighting (Tool node Code mode, TASK-0055); same look as the JSON editor. */
-export function PythonEditor({ value, onChange, readOnly, id, className, marks }: {
+export type CodeLanguageId = 'python' | 'typescript'
+const LABEL: Record<CodeLanguageId, string> = { python: 'Python', typescript: 'TypeScript' }
+
+/** Source code with highlighting (Tool node Code mode, TASK-0055; TypeScript since TASK-0081); same look as the JSON
+ * editor. `fields` adds `state.` completions. */
+export function CodeEditor({ value, onChange, readOnly, id, className, marks, language = 'python', fields }: {
+  language?: CodeLanguageId
+  fields?: { name: string; detail?: string }[]
   value: string
   onChange?: (value: string) => void
   readOnly?: boolean
@@ -50,18 +59,25 @@ export function PythonEditor({ value, onChange, readOnly, id, className, marks }
     const first = ranges[0] && view.state.doc.lines >= ranges[0][0] ? view.state.doc.line(ranges[0][0]).from : null
     view.dispatch({ effects: [setMarks.of(ranges), ...(first === null ? [] : [EditorView.scrollIntoView(first, { y: 'start', yMargin: 24 })])] })
   }, [view, key, value])
+  const fieldKey = JSON.stringify(fields ?? [])
   const extensions = useMemo(() => [
-    python(),
+    language === 'typescript' ? javascript({ typescript: true }) : python(),
+    ...(fieldKey !== '[]' ? [autocompletion({ override: [stateCompletions(JSON.parse(fieldKey))], icons: false })] : []),
     syntaxHighlighting(highlight),
     editorTheme,
     marksField,
     markTheme,
     EditorView.lineWrapping,  // a long line must not widen the config panel
-    ...(id ? [EditorView.contentAttributes.of({ id, 'aria-label': 'Python' })] : []),
-  ], [id])
+    ...(id ? [EditorView.contentAttributes.of({ id, 'aria-label': LABEL[language], 'data-language': language })] : []),
+  ], [id, language, fieldKey])
   return <div className={cn('min-h-0 min-w-0 overflow-hidden rounded-lg border bg-muted/30', className)}>
     <CodeMirror value={value} height="100%" theme="none" editable={!readOnly} readOnly={!!readOnly}
-      basicSetup={{ lineNumbers: true, foldGutter: false, highlightActiveLine: !readOnly, indentOnInput: true, tabSize: 4 }}
+      basicSetup={{ lineNumbers: true, foldGutter: false, highlightActiveLine: !readOnly, indentOnInput: true, tabSize: language === 'typescript' ? 2 : 4 }}
       extensions={extensions} onChange={onChange} onCreateEditor={setView} className="h-full text-xs" />
   </div>
+}
+
+/** The Python view of `CodeEditor` (the Code tab's export, TASK-0071). */
+export function PythonEditor(props: Omit<Parameters<typeof CodeEditor>[0], 'language'>) {
+  return <CodeEditor {...props} language="python" />
 }

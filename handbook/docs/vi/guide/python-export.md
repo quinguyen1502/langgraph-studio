@@ -3,7 +3,8 @@
 Tab **Code** trong trình soạn thảo hiện workflow dưới dạng một file Python
 LangGraph: state, mỗi node một hàm, và graph được dựng từ các hàm đó. Dùng nó
 để xem một graph trên canvas được viết bằng code thế nào, hoặc mang bản thử
-nghiệm sang dự án của bạn.
+nghiệm sang dự án của bạn. Tab cũng có thể viết graph dưới dạng TypeScript
+LangGraph.js: xem [TypeScript (LangGraph.js)](#typescript-langgraphjs).
 
 ![Tab Code với node Manager approval đang được chọn](../images/code-tab.png)
 
@@ -11,7 +12,7 @@ nghiệm sang dự án của bạn.
 
 - Mở tab **Code** ở panel dưới, hoặc chọn **Xem dạng code** trong menu **⋯**
   hay bảng lệnh (++ctrl+k++).
-- Tab hiện **version đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
+- Tab hiện **phiên bản đã lưu mới nhất**. Thay đổi chưa lưu được đánh dấu và có
   trong code sau khi **Lưu**.
 - Chọn một node trên canvas: code của nó được tô sáng và cuộn tới. Start và End
   chỉ tới các cạnh `START` và `END` của chúng.
@@ -59,13 +60,13 @@ Final state: {...}
 
 | Canvas | Code |
 | --- | --- |
-| Các field state | `class State(TypedDict, total=False)`; field có reducer là `Annotated[kiểu, reducer]` |
+| Các trường state | `class State(TypedDict, total=False)`; trường có reducer là `Annotated[kiểu, reducer]` |
 | Start và End | `START` và `END` trong các cạnh |
 | LLM | `render(PROMPT, state)`, rồi `call_llm(prompt, model)` |
 | Condition | một node không đổi gì, và `add_conditional_edges` với hàm router và bảng nhãn → node |
 | Human | `interrupt(...)` dừng run; `Command(resume=answer)` chạy tiếp |
 | Join | một node, và `add_edge([nhánh, nhánh], join)`: chạy một lần khi mọi nhánh xong |
-| For each | một field vị trí vòng lặp và một router trả về `each` hoặc `done` |
+| For each | một trường vị trí vòng lặp và một router trả về `each` hoặc `done` |
 | Decision | `decide(text, question)` cho từng câu hỏi |
 | Subgraph | workflow con thành graph riêng `build_<child>()`, được thêm như một node |
 | Tool: function | code của hàm, được chép vào |
@@ -73,11 +74,11 @@ Final state: {...}
 | Tool: Code | code của node, nằm trong hàm của node |
 | Retriever, MCP, Send email | hàm stub có `TODO`: chúng cần dịch vụ của studio |
 | Note | một comment |
-| Retry, cache, input fields | `RetryPolicy`, `CachePolicy`, `input_schema` trong `add_node` |
+| Retry, cache, trường input | `RetryPolicy`, `CachePolicy`, `input_schema` trong `add_node` |
 | Timeout | một comment: LangGraph không dừng được node đang chặn |
 
 Hàm của node được đặt theo nhãn (`Read the request` → `read_the_request`). Tên
-trùng với một field state hay một tên của Python được thêm `_node`, ví dụ
+trùng với một trường state hay một tên của Python được thêm `_node`, ví dụ
 `decision_node`.
 
 ### State và reducer
@@ -94,7 +95,7 @@ class State(TypedDict, total=False):
     loop_each_piece_of_feedback: int  # loop position of a For each node
 ```
 
-Một node chỉ trả về các field nó đổi, và LangGraph gộp chúng vào state. Field
+Một node chỉ trả về các trường nó đổi, và LangGraph gộp chúng vào state. Trường
 không có reducer bị thay thế; `labelled` gom một nhãn cho mỗi phản hồi.
 
 ### Một Condition
@@ -140,7 +141,43 @@ def build_review_step():
 builder.add_node("review", build_review_step())  # a compiled graph is a node of another graph
 ```
 
-Subgraph có class state riêng và dùng chung field với graph cha theo tên.
+Subgraph có class state riêng và dùng chung trường với graph cha theo tên.
+
+## TypeScript (LangGraph.js)
+
+Chọn **TypeScript** trong menu ngôn ngữ của tab Code để có cùng graph dưới dạng
+một file [LangGraph.js](https://langchain-ai.github.io/langgraphjs/). Menu nhớ
+lựa chọn của bạn; **Tải .ts** lưu file.
+
+```bash
+deno run --allow-env --allow-read leave_request.ts
+```
+
+Các package là import `npm:` (`npm:@langchain/langgraph@^1.5`), nên Deno tự tải
+ở lần chạy đầu và `deno check` kiểm tra kiểu của file. Với Node, bỏ tiền tố
+`npm:` và phiên bản, chạy `npm i @langchain/langgraph @langchain/core`, rồi
+`npx tsx leave_request.ts`.
+
+| Canvas | TypeScript |
+| --- | --- |
+| Trường state | `Annotation.Root({...})`; reducer là `Annotation({ reducer, default })` |
+| LLM | `render(PROMPT, state)`, rồi `callLlm(prompt, model)`: mock, hoặc `initChatModel` khi đặt `LLM_PROVIDER` |
+| Condition, For each | `addConditionalEdges` với một hàm router |
+| Human | `interrupt(...)`; `new Command({ resume })` chạy tiếp |
+| Join | `addEdge([nhánh, nhánh], join)` |
+| Decision | `decide(text, question)` cho từng câu hỏi |
+| Subgraph | `build_<child>()`, một graph đã compile được thêm làm node |
+| Tool: Code bằng TypeScript | code của node giữ nguyên; các import được chuyển lên đầu file |
+| Tool: Code bằng Python | stub ném lỗi `not implemented in TS export`: hãy chuyển sang TypeScript |
+| Tool: function | stub ném lỗi: hàm là Python trên server |
+| Tool: HTTP | `fetch`, không đi theo chuyển hướng |
+| Retriever, MCP, Send email | stub có `TODO`, như file Python |
+| Retry, cache, trường đầu vào, timeout | `retryPolicy`, `cachePolicy`, `input`, `timeout` trong `addNode` |
+
+API key và các thiết lập khác được đọc từ biến môi trường (`LLM_PROVIDER`,
+`OPENAI_API_KEY`, …), không bao giờ ghi vào file. Node không nối tới Start bị bỏ
+ra, kèm một chú thích: LangGraph.js không nhận node không tới được. File Python
+cũng có stub tương tự cho Code node TypeScript (`NotImplementedError`).
 
 ## Những gì không có trong file
 
@@ -152,11 +189,12 @@ Subgraph có class state riêng và dùng chung field với graph cha theo tên.
   gì cả, hoặc thư lẽ ra sẽ gửi.
 
 Hai kết quả có thể khác studio: node Decision với model thật hỏi LLM thay vì
-TypeSafe Jev, và một field có reducer mà subgraph cũng ghi sẽ được gộp thêm một
+TypeSafe Jev, và một trường có reducer mà subgraph cũng ghi sẽ được gộp thêm một
 lần khi subgraph trả về.
 
 ## API
 
 `GET /api/workflows/{wid}/python` trả về code, tên file, version và các dòng
 của từng node; `GET /api/workflows/{wid}/export/python` tải file. Cả hai nhận
-`?version=n`. Xem [HTTP API](../reference/api.md).
+`?version=n` và `?language=python|typescript` (`GET /api/workflows/{wid}/code`
+và `/export/typescript` cũng vậy, với tên trung lập). Xem [HTTP API](../reference/api.md).

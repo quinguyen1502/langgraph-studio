@@ -1,6 +1,6 @@
 # Code runtime
 
-[Code mode](../guide/code-mode.md) lets admins write Python in Tool nodes.
+[Code mode](../guide/code-mode.md) lets admins write Python or TypeScript in Tool nodes.
 This page is the server side: how to turn it on and what isolates it.
 
 ## Turn it on
@@ -44,6 +44,48 @@ Every call gets a new container:
 
 A cancelled run kills its container.
 
+## TypeScript
+
+TypeScript nodes run on Deno in their own image, with the same isolation and
+limits. Both languages are offered by default (`STUDIO_CODE_LANGUAGES`, for
+example `python` to offer Python only).
+
+```bash
+docker build -t studio-code-ts:1 docker/studio-code-ts
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `STUDIO_CODE_LANGUAGES` | `python,typescript` | Languages the editor offers |
+| `STUDIO_CODE_TS_IMAGE` | `studio-code-ts:1` | The Deno image |
+| `STUDIO_CODE_TS_PACKAGES` | `npm:zod@3,npm:date-fns@4` | The only packages code may import, each pinned as `name@major`; keep it equal to `docker/studio-code-ts/deps.ts` |
+| `STUDIO_DENO` | `deno` on `PATH` | The Deno binary for subprocess mode |
+| `STUDIO_CODE_TS_DENO_DIR` | empty | A Deno cache with the allowed packages, for subprocess mode |
+
+Code must import a package with the same pinned major as the list, for
+example `npm:zod@3` (or `npm:zod@3.25.1`, `npm:zod@3/mini`). An unversioned
+`npm:zod` or another major is refused when you save, with `CODE_INVALID` and a
+reason that names the allowed spec, because Deno would otherwise look for the
+newest version, which the cache does not have.
+
+In subprocess mode there is no image, so fill a cache with the same specs and
+point the server at it (with no `STUDIO_CODE_TS_DENO_DIR` and no
+`STUDIO_CODE_TS_PACKAGES`, no package is allowed):
+
+```bash
+export DENO_DIR=/var/lib/studio/deno-cache
+printf 'import "npm:zod@3";\nimport "npm:date-fns@4";\n' > deps.ts
+deno cache --no-config --no-lock deps.ts
+export STUDIO_CODE_TS_DENO_DIR=$DENO_DIR STUDIO_CODE_TS_PACKAGES=npm:zod@3,npm:date-fns@4
+```
+
+Deno runs with no permission flag, `--no-remote` and `--cached-only`. Code
+cannot read or write files, use the network, read environment variables or
+start processes, even in subprocess mode, and it can import only packages
+already in the image's cache. Memory is capped through the V8 heap
+(three quarters of `STUDIO_CODE_MEMORY`). The admin card under **Settings →
+Users** shows each language and whether it is ready.
+
 ## Without Docker
 
 `STUDIO_CODE_RUNTIME=subprocess` runs the code as a child process of the
@@ -61,7 +103,7 @@ The studio makes it visible everywhere:
 
 - a start-up `WARNING` in the log;
 - `code_runtime: "subprocess"` in `GET /api/meta/runtime`;
-- an alert in the Code config, and a **Not isolated** badge on the node and in
+- an alert in the Code config, and a **Runs on host** badge (with a tooltip) on the node and in
   the mode picker;
 - `runtime: subprocess` on trace rows, plus one warning per run;
 - a mark in run history (`code_runtime` on each run);

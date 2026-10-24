@@ -131,7 +131,9 @@ Zeabur PostgreSQL service to the project and set `DATABASE_URL` to its connectio
 
 ## Northflank
 
-No template is published. In the Northflank UI:
+No template is published. The free Developer Sandbox plan (2 services, 2 jobs, 1 addon) still asks for a
+default payment method before it creates any service or addon (the API answers `409 Please complete your account by
+adding a default payment method`), so add one first. In the Northflank UI:
 
 1. **Create service → Deployment**, external image `ghcr.io/quinguyen1502/superstep:latest`, port 8000 (HTTP, public).
 2. **Secret group** linked to the service with `JWT_SECRET`, `STUDIO_SECRET_KEY` (random strings) and

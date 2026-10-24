@@ -133,7 +133,9 @@ vụ Zeabur PostgreSQL vào project và đặt `DATABASE_URL` bằng chuỗi k�
 
 ## Northflank
 
-Chưa có mẫu được phát hành. Trong giao diện Northflank:
+Chưa có mẫu được phát hành. Gói miễn phí Developer Sandbox (2 dịch vụ, 2 job, 1 addon) vẫn yêu cầu thêm phương thức
+thanh toán mặc định trước khi tạo bất kỳ dịch vụ hay addon nào (API trả về `409 Please complete your account by
+adding a default payment method`), nên hãy thêm trước. Trong giao diện Northflank:
 
 1. **Create service → Deployment**, image ngoài `ghcr.io/quinguyen1502/superstep:latest`, cổng 8000 (HTTP, public).
 2. **Secret group** liên kết với dịch vụ, gồm `JWT_SECRET`, `STUDIO_SECRET_KEY` (chuỗi ngẫu nhiên) và

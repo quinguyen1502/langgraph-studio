@@ -5,7 +5,8 @@ from .base import Base
 
 
 class WorkflowChatTrigger(Base):
-    """A command word that starts a workflow from a Slack or Telegram message (TASK-0074, DEC-0046)."""
+    """A command word that starts a workflow from a Slack or Telegram message (TASK-0074, DEC-0046), or a workflow's web chat
+    (TASK-0084, DEC-0052): channel_id = place = "web", command = the chat's slug for the published page (phase 2)."""
     __tablename__ = "workflow_chat_triggers"
     __table_args__ = (Index("uq_workflow_chat_triggers_command", "channel_id", "place", "command", unique=True),)  # one trigger per message
     id: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -22,3 +23,4 @@ class WorkflowChatTrigger(Base):
     last_message: Mapped[Optional[float]] = mapped_column(Float)
     last_run_id: Mapped[Optional[str]] = mapped_column(Text)
     created: Mapped[float] = mapped_column(Float, nullable=False)
+    settings: Mapped[Optional[str]] = mapped_column(Text)  # JSON: the web chat's settings (TASK-0084); None for Slack/Telegram

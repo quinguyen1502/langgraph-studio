@@ -1,5 +1,5 @@
 import { Fragment, useRef, useState } from 'react'
-import { Redo2, Undo2, Play, Save, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square } from 'lucide-react'
+import { Redo2, Undo2, Play, Save, Loader2, GitFork, Check, MoreHorizontal, StepForward, FastForward, Crosshair, ArrowLeft, Square, MessagesSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom'
 import { ApiTriggerDialog } from '@/components/api-trigger-dialog'
 import { SchedulesDialog } from '@/components/schedules-dialog'
 import { ChatTriggersDialog } from '@/components/chat-triggers-dialog'
+import { ChatSettingsDialog } from '@/components/chat/chat-settings-dialog'
 import { VersionsDialog } from '@/components/versions-dialog'
 import { ShareDialog } from '@/components/share-dialog'
 import { SaveTemplateDialog } from '@/components/save-template-dialog'
@@ -33,7 +34,7 @@ const isMacPlatform = isMac()
 /** Top bar: name, run controls, undo/redo, the ⋯ menu, dialogs, and account controls (TASK-0040). */
 export function EditorHeader() {
   const { t } = useTranslation()
-  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo } = useStudioCtx()
+  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo, chatOpen, setChatOpen, canChat } = useStudioCtx()
   // ⋯ tooltip: hidden while the menu is open and until the pointer leaves after closing it
   const [moreOpen, setMoreOpen] = useState(false); const [moreTip, setMoreTip] = useState(false); const moreTipBlock = useRef(false)
   return <header className="h-14 shrink-0 grid grid-cols-[minmax(min-content,1fr)_minmax(0,auto)_minmax(min-content,1fr)] items-center border-b px-4">
@@ -53,6 +54,7 @@ export function EditorHeader() {
       {!source && <Tip tip={t('editor.stepTip')}><Button variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}
       {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair /><span className="max-lg:sr-only">{t('editor.runTo')}</span></Button></Tip>}
       {!running && trace.paused && <Tip tip={t('editor.continueTip')}><Button variant="outline" id="continue-btn" onClick={continueRun}><FastForward />{t('editor.continueRun')}</Button></Tip>}
+      {canChat && <Tip tip={t('chat.openTip')}><Button variant={chatOpen ? 'secondary' : 'outline'} id="chat-open" aria-pressed={chatOpen} onClick={() => setChatOpen(!chatOpen)}><MessagesSquare /><span className="max-lg:sr-only">{t('chat.tab')}</span></Button></Tip>}
       {running && <Tip tip={t('editor.cancelTip')}><Button variant="outline" id="cancel-btn" onClick={cancelRun}><Square />{t('common.cancel')}</Button></Tip>}
       {edit && <div className="flex items-center" role="group" aria-label={t('history.group')}>
         <Tip tip={t('history.undoTip')}><Button variant="ghost" size="icon" id="undo-btn" aria-label={t('history.undo')} disabled={!hist.canUndo} onClick={hist.undo}><Undo2 /></Button></Tip>
@@ -81,6 +83,7 @@ export function EditorHeader() {
       {access === 'owner' && <ApiTriggerDialog wid={wid} open={dlg === 'api'} onOpenChange={v => setDlg(v ? 'api' : null)} />}
       {access === 'owner' && <SchedulesDialog wid={wid} open={dlg === 'schedules'} onOpenChange={v => setDlg(v ? 'schedules' : null)} defaultInput={input} />}
       {access === 'owner' && !source && <ChatTriggersDialog wid={wid} open={dlg === 'chat'} onOpenChange={v => setDlg(v ? 'chat' : null)} />}
+      {access === 'owner' && !source && <ChatSettingsDialog wid={wid} open={dlg === 'chatSettings'} onOpenChange={v => setDlg(v ? 'chatSettings' : null)} />}
       <Dialog open={dlg === 'json'} onOpenChange={v => setDlg(v ? 'json' : null)}>
         <DialogContent className="flex max-h-[85vh] w-full min-w-0 flex-col overflow-hidden sm:max-w-2xl">
           <DialogHeader className="shrink-0 pr-8"><DialogTitle>{t('editor.jsonTitle')}</DialogTitle><DialogDescription>{t('editor.jsonDesc')}</DialogDescription></DialogHeader>

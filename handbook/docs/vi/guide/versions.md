@@ -16,7 +16,7 @@ làm gì.
 
 ## Run và phiên bản
 
-Mỗi run trong **Lịch sử** có nhãn `vN`, hoặc **chưa lưu** khi trình soạn thảo
+Mỗi run trong lịch sử run (**Xem tất cả**) có nhãn `vN`, hoặc **chưa lưu** khi trình soạn thảo
 đang có sửa đổi chưa lưu. Phiên bản đã được run dùng thì không bao giờ bị xoá.
 
 ## Giữ lại bao nhiêu

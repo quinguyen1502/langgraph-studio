@@ -4,6 +4,7 @@ from ..core import config, security
 from ..core.logging import get_logger
 from ..models.database import Database
 from ..repositories import UserRepository, WorkflowRepository, RunRepository, WorkflowVersionRepository
+from . import demo_service
 from .workflow_service import WorkflowService
 
 log = get_logger("seed")
@@ -50,3 +51,4 @@ def bootstrap(db: Database) -> None:
     wfs.adopt_unowned(uid)  # legacy rows created before multi-user support
     if not wfs.exists("example"):
         WorkflowService(wfs, RunRepository(db), WorkflowVersionRepository(db)).seed_example(uid, "example")
+    if config.demo_mode(): demo_service.seed(db, uid)  # every boot: the free plan wipes SQLite when it sleeps

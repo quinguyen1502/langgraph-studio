@@ -540,6 +540,9 @@
     "EMAIL_RECIPIENTS_MISSING": "Node Send email {{node}}: chưa có người nhận (Đến, Cc hoặc Bcc)",
     "EMAIL_TOO_MANY_RECIPIENTS": "Node Send email {{node}}: tối đa {{max}} người nhận",
     "EMAIL_RATE_LIMITED": "Node Send email chỉ được gửi tới {{limit}} người nhận mỗi giờ; thử lại sau {{retry}} giây",
+    "DEMO_CODE_DISABLED": "Node Code đang tắt trong bản demo công khai",
+    "DEMO_NODE_DISABLED": "Node {{node}} đang tắt trong bản demo công khai",
+    "DEMO_READ_ONLY": "Bản demo công khai chỉ cho xem: bạn có thể mở, sửa và chạy workflow nhưng không lưu được thay đổi",
     "CODE_RUNTIME_OFF": "Node Code đang tắt trên máy chủ này (STUDIO_ENABLE_CODE_NODES)",
     "CODE_RUNTIME_UNAVAILABLE": "Máy chủ này chưa chạy được node Code: {{reason}}",
     "CODE_INVALID": "Node Code {{node}}: {{reason}}",
@@ -1605,7 +1608,8 @@
     "languageReady": "Sẵn sàng",
     "languageNotReady": "Chưa sẵn sàng",
     "adminPackages": "Package: {{packages}}",
-    "adminNoPackages": "Không có package thêm"
+    "adminNoPackages": "Không có package thêm",
+    "demoOff": "Node Code đang tắt trong bản demo công khai này. Hãy tự triển khai Superstep để dùng."
   },
   "inbox": {
     "title": "Duyệt",
@@ -1764,6 +1768,12 @@
     "selectHint": "Chọn một node trên canvas để xem mã của node đó",
     "download": "Tải .{{ext}}",
     "languageLabel": "Ngôn ngữ"
+  },
+  "demo": {
+    "banner": "Đây là bản demo công khai. Dữ liệu được đặt lại khi máy chủ nghỉ, và lần tải đầu có thể mất khoảng 30 giây. Thay đổi không được lưu; node Code, HTTP và Send email đang tắt, model trả lời bằng mock.",
+    "hide": "Ẩn",
+    "try": "Dùng thử demo",
+    "tryHint": "Đăng nhập bằng tài khoản demo dùng chung. Bạn có thể mở, sửa và chạy workflow nhưng không lưu được thay đổi."
   },
   "chat": {
     "tab": "Chat",

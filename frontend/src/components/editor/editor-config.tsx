@@ -24,7 +24,7 @@ import { DecisionSettings } from '@/components/decision-settings'
 import { EmailSettings } from '@/components/email-settings'
 import { TemplateEditor } from '@/components/template-editor'
 import { CodeSettings } from '@/components/code-settings'
-import { useCodeRuntime } from '@/lib/code-runtime'
+import { codeOffKey, useCodeRuntime } from '@/lib/code-runtime'
 import { can, useMe } from '@/lib/rbac'
 import { META, RUNTIME, LOOP_LABELS } from './meta'
 import { Sel, F } from './parts'
@@ -83,7 +83,7 @@ export function EditorConfig() {
                   {t('editor.codeMode', { language: t(`code.languages.${l}`) })}
                   {codeRt?.code_runtime === 'subprocess' && <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" size="sm" className="ml-1 min-w-0 shrink truncate" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge></Tip>}</SelectItem>)}</SelectContent></Select>
               {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
-              {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
+              {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t(codeOffKey(codeRt))}</p>}</F>
             {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={`${selNode.id}-${nodeLanguage(d)}`} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}
                 editable={edit} input={input} nodeId={selNode.id} timeout={typeof d.timeout === 'number' ? d.timeout : undefined}
                 language={nodeLanguage(d)} fields={state} kept={kept === selNode.id} /></F>

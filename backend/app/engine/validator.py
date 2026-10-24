@@ -182,6 +182,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
                    if n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code"})
     for lang in used:  # per language: Docker and its image, checked at most every 30 s (TASK-0053, TASK-0079)
         why = code_runtime.unavailable(lang)
+        if why == "demo": errs.append("Code nodes are turned off in the public demo"); break
         if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)"); break
         elif why: errs.append(f"Code nodes cannot run on this server: {why}" if lang == code_languages.DEFAULT
                               else f"{lang} Code nodes cannot run on this server: {why}")

@@ -77,6 +77,7 @@ def warn_if_unisolated() -> None:
 
 def unavailable(language: Optional[str] = None) -> Optional[str]:
     """Why Code nodes (of `language`, Python by default) cannot run here right now, or None."""
+    if config.demo_mode(): return "demo"
     runtime = config.code_runtime()
     if runtime == "off": return "off"
     lang = language or langs.DEFAULT
@@ -87,6 +88,7 @@ def unavailable(language: Optional[str] = None) -> Optional[str]:
 def runtime_error(language: Optional[str] = None) -> Optional[AppError]:
     why = unavailable(language)
     if why is None: return None
+    if why == "demo": return AppError("DEMO_CODE_DISABLED")
     return AppError("CODE_RUNTIME_OFF") if why == "off" else AppError("CODE_RUNTIME_UNAVAILABLE", reason=why)
 
 

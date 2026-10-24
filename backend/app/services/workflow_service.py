@@ -244,4 +244,8 @@ class WorkflowService:
         self._require(uid, P.WORKFLOWS_CREATE); wid = new_id(); self._write(wid, wf["name"], wf, uid); return wid
 
     def seed_example(self, uid: str, wid: str | None = None) -> str:
-        wid = wid or new_id(); self._write(wid, EXAMPLE["name"], dict(EXAMPLE), uid); return wid
+        return self.seed(uid, wid or new_id(), dict(EXAMPLE))
+
+    def seed(self, uid: str, wid: str, wf: dict) -> str:
+        """A start-up sample (the example, the public demo's samples): written as `uid`, no access check by the caller."""
+        self._write(wid, wf["name"], wf, uid); return wid

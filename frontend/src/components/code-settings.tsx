@@ -9,7 +9,7 @@ import { JsonView } from '@/components/json-view'
 import { CodeEditor, type CodeLanguageId } from '@/components/code-editor'
 import { api } from '@/lib/api'
 import { errorText } from '@/lib/i18n'
-import { languageInfo, type CodeRuntime, type CodeTestResult } from '@/lib/code-runtime'
+import { codeOffKey, languageInfo, type CodeRuntime, type CodeTestResult } from '@/lib/code-runtime'
 import { stateFields, stateType, type StateField } from '@/lib/state-type'
 
 /** stdout and traceback of one call; shared by the test result and the trace detail. */
@@ -49,7 +49,7 @@ export function CodeSettings({ value, onChange, runtime, canWrite, editable, inp
     {runtime?.code_runtime === 'subprocess' && <Alert variant="warning" id="code-not-isolated"><ShieldAlert />
       <AlertDescription className="text-xs">{t('code.notIsolated')}</AlertDescription></Alert>}
     {runtime && !ready && <Alert variant="warning" id="code-runtime-off"><AlertTriangle />
-      <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t('code.off')
+      <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t(codeOffKey(runtime))
         : !info ? t('code.languageOff', { language: t(`code.languages.${language}`) })
         : t('code.unavailable', { problem: info.problem || runtime.problem || '' })}</AlertDescription></Alert>}
     {kept && <p className="text-[11px] text-muted-foreground" id="code-language-kept">{t('code.languageKept', { language: t(`code.languages.${language}`) })}</p>}

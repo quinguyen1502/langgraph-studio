@@ -10,6 +10,7 @@ from ..core.errors import AppError
 from ..core.logging import get_logger
 from ..models import PasswordReset
 from ..repositories import AuthSecurityRepository, UserRepository
+from . import demo_service
 from . import mailer
 
 log = get_logger("auth")
@@ -87,7 +88,8 @@ class AuthService:
     # ---- password reset (TASK-0045) ----
     def options(self) -> dict:
         """What the sign-in page offers: the demo hint, and whether "forgot password" sends e-mail or says to ask an admin."""
-        return {"demo": config.demo_user(), "reset": "email" if config.smtp() and config.public_url() else "admin"}
+        return {"demo": config.demo_user(), "reset": "email" if config.smtp() and config.public_url() else "admin",
+                **({"demo_mode": demo_service.options()} if config.demo_mode() else {})}
 
     def _new_reset(self, uid: str, by: str) -> str:
         token = secrets.token_urlsafe(32); now = time.time()

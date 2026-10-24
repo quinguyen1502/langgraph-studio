@@ -34,7 +34,7 @@ const isMacPlatform = isMac()
 /** Top bar: name, run controls, undo/redo, the ⋯ menu, dialogs, and account controls (TASK-0040). */
 export function EditorHeader() {
   const { t } = useTranslation()
-  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo, chatOpen, setChatOpen, canChat } = useStudioCtx()
+  const { input, name, setName, wid, setErrors, mode, source, setTab, running, access, ownerEmail, edit, canSave, hist, load, toJSON, save, run, cancelRun, layoutDir, cheat, setCheat, dlg, setDlg, delWf, isDirty, paletteCmds, trace, step, continueRun, selNode, d, runTo, chatOpen, setChatOpen, canChat } = useStudioCtx()
   // ⋯ tooltip: hidden while the menu is open and until the pointer leaves after closing it
   const [moreOpen, setMoreOpen] = useState(false); const [moreTip, setMoreTip] = useState(false); const moreTipBlock = useRef(false)
   return <header className="h-14 shrink-0 grid grid-cols-[minmax(min-content,1fr)_minmax(0,auto)_minmax(min-content,1fr)] items-center border-b px-4">
@@ -47,9 +47,9 @@ export function EditorHeader() {
       <div className="flex min-w-0 items-center gap-2">
       <Input value={name} readOnly={!edit} onChange={e => setName(e.target.value)} className="w-72 min-w-28" aria-label={t('editor.nameLabel')} />
       {edit && isDirty() && <Badge variant="outline" id="unsaved-badge" className="border-warning text-warning">{t('history.unsaved')}</Badge>}
-      {!edit && <Tip tip={ownerEmail}><Badge variant="secondary" id="view-only">{t('editor.viewOnly')}</Badge></Tip>}
-      {edit && ownerEmail && <Tip tip={ownerEmail}><Badge variant="outline" id="shared-editor">{t('list.sharedBy', { email: ownerEmail })}</Badge></Tip>}
-      <Tip tip={t('editor.saveTip')}><Button variant="outline" id="save-btn" onClick={save} disabled={!edit}><Save />{t('common.save')}</Button></Tip>
+      {!canSave && <Tip tip={ownerEmail}><Badge variant="secondary" id="view-only">{t('editor.viewOnly')}</Badge></Tip>}
+      {canSave && ownerEmail && <Tip tip={ownerEmail}><Badge variant="outline" id="shared-editor">{t('list.sharedBy', { email: ownerEmail })}</Badge></Tip>}
+      <Tip tip={t('editor.saveTip')}><Button variant="outline" id="save-btn" onClick={save} disabled={!canSave}><Save />{t('common.save')}</Button></Tip>
       <Tip tip={t('editor.runTip')}><Button id="run-btn" onClick={run} disabled={running}>{running ? <Loader2 className="animate-spin" /> : <Play />}{t('editor.run')}</Button></Tip>
       {!source && <Tip tip={t('editor.stepTip')}><Button variant="outline" id="step-btn" onClick={step} disabled={running || trace.status === 'waiting'}>{running ? <Loader2 className="animate-spin" /> : <StepForward />}<span className="max-lg:sr-only">{t('editor.step')}</span></Button></Tip>}
       {!source && <Tip tip={selNode ? t('editor.runToTip', { node: d.label || selNode.id }) : t('editor.runToNeedNode')}><Button variant="outline" id="run-to-btn" onClick={runTo} disabled={running || trace.status === 'waiting' || !selNode || selNode.type === 'note'}><Crosshair /><span className="max-lg:sr-only">{t('editor.runTo')}</span></Button></Tip>}

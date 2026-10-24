@@ -35,6 +35,7 @@ from ..services.run_service import RunService
 from ..services.run_worker import RunWorker
 from ..services.delivery_service import DeliveryService
 from ..services.notification_service import NotificationService
+from ..services.demo_service import DemoService
 from ..services.rate_limit import Counter, RateLimiter, make_counter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.schedule_service import ScheduleService
@@ -156,6 +157,9 @@ def share_service() -> ShareService:
 
 def auth_service() -> AuthService:
     db = get_db(); return AuthService(UserRepository(db), workflow_service(), AuthSecurityRepository(db), audit=audit_service())
+
+def demo_service() -> DemoService:
+    return DemoService(get_rate_limiter())
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,

@@ -7,7 +7,11 @@ export type CodeRuntime = {
   code_runtime: 'docker' | 'subprocess' | 'remote' | 'off'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string
   limits: { memory: string; cpus: string; pids: number; seconds: number; source_kb: number }
   languages?: CodeLanguageInfo[]  // TASK-0079: one entry per offered language; the top level is Python's
+  demo?: boolean  // STUDIO_DEMO_MODE: off because this is the public demo
 }
+
+/** Why Code mode is off: the public demo, or the server setting. */
+export const codeOffKey = (rt: CodeRuntime | null | undefined) => rt?.demo ? 'code.demoOff' : 'code.off'
 
 /** The facts of one language; falls back to the top-level (Python) facts for servers from before TASK-0079. */
 export function languageInfo(rt: CodeRuntime | null, id: string): CodeLanguageInfo | null {

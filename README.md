@@ -117,9 +117,11 @@ Deploy the all-in-one image (UI, API and WebSocket on one port; SQLite on a volu
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/quinguyen1502/superstep)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/quinguyen1502/superstep/tree/main)
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=docker&image=ghcr.io/quinguyen1502/superstep:latest&name=superstep&ports=8000;http;/&env%5BSTUDIO_ADMIN_EMAILS%5D=&env%5BJWT_SECRET%5D=&env%5BSTUDIO_SECRET_KEY%5D=&env%5BDATABASE_URL%5D=)
 
-Railway, Coolify, Dokploy, Postgres and worker variants, the first admin account and the variables:
-[`docs/deploy/`](docs/deploy/README.md). Code nodes there run on the host (no Docker sandbox); read the guide first.
+Fly.io, Railway, Zeabur, Northflank, Coolify and Dokploy (the full-feature path with the Docker sandbox), Postgres and worker variants, the first admin account and the variables:
+[`docs/deploy/`](docs/deploy/README.md). On managed platforms Code nodes run on the host (no Docker sandbox); read the guide first.
 
 ## Documentation
 

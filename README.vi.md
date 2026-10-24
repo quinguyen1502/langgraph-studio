@@ -122,9 +122,11 @@ Triển khai image all-in-one (giao diện, API và WebSocket trên một cổng
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/quinguyen1502/superstep)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/quinguyen1502/superstep/tree/main)
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=docker&image=ghcr.io/quinguyen1502/superstep:latest&name=superstep&ports=8000;http;/&env%5BSTUDIO_ADMIN_EMAILS%5D=&env%5BJWT_SECRET%5D=&env%5BSTUDIO_SECRET_KEY%5D=&env%5BDATABASE_URL%5D=)
 
-Railway, Coolify, Dokploy, các biến thể Postgres và worker, tài khoản admin đầu tiên và các biến môi trường:
-[`docs/deploy/`](docs/deploy/README.vi.md). Node Code ở đó chạy trực tiếp trên server (không có sandbox Docker); hãy đọc hướng dẫn trước.
+Fly.io, Railway, Zeabur, Northflank, Coolify và Dokploy (cách đầy đủ tính năng với sandbox Docker), các biến thể Postgres và worker, tài khoản admin đầu tiên và các biến môi trường:
+[`docs/deploy/`](docs/deploy/README.vi.md). Trên các nền tảng được quản lý, node Code chạy trực tiếp trên server (không có sandbox Docker); hãy đọc hướng dẫn trước.
 
 ## Tài liệu
 

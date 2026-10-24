@@ -1,0 +1,40 @@
+# Fly.io: `fly launch --copy-config --no-deploy`, then the secrets and volume below, then `fly deploy`
+# (docs/deploy/README.md#flyio). Uses the published all-in-one image; to build your fork instead, replace
+# [build] with `dockerfile = "Dockerfile"`.
+app = "superstep"
+primary_region = "sin"
+
+[build]
+  image = "ghcr.io/quinguyen1502/superstep:latest"
+
+[env]
+  PORT = "8000"
+  STUDIO_ENV = "production"
+
+# SQLite + the key file live here: `fly volumes create superstep_data --size 1 --region sin`.
+# Remove this block and set DATABASE_URL (fly secrets) to use Postgres instead.
+[[mounts]]
+  source = "superstep_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"   # stopped machines drop open WebSockets; use "off" for always-on
+  auto_start_machines = true
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 200
+    hard_limit = 250
+
+[[http_service.checks]]
+  grace_period = "30s"
+  interval = "15s"
+  timeout = "3s"
+  method = "GET"
+  path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

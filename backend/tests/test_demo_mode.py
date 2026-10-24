@@ -73,3 +73,12 @@ def test_http_and_email_nodes_are_refused_and_llm_runs_offline(demo, monkeypatch
     assert e.value.code == "DEMO_NODE_DISABLED"
     llm = nodes.node_fn({"id": "l", "type": "llm", "data": {"prompt": "hi", "output_field": "a", "credential_id": "c1"}})
     assert isinstance(llm({})["a"], str)  # the mock answers; no provider, no credential lookup
+
+
+def test_a_run_with_a_code_node_is_refused_with_the_demo_code(demo):
+    from app.api.deps import get_db, run_service
+    seed.bootstrap(get_db())  # the visitor and the samples in the shared test database
+    wf = {"state": [{"name": "x", "type": "string"}], "nodes": [{"id": "s", "type": "start", "data": {}},
+          {"id": "c", "type": "tool", "data": {"mode": "code", "code": "def main(state):\n    return 1", "output_field": "x"}}], "edges": []}
+    with pytest.raises(AppError) as e: run_service().plan(demo_service.VISITOR_ID, {"workflow_id": "example", "workflow": wf, "input": {}})
+    assert e.value.code == "DEMO_CODE_DISABLED"

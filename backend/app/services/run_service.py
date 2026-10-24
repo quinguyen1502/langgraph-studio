@@ -185,6 +185,7 @@ class RunService:
         if config.demo_mode() and not stored.get("source"): edits = True
         wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
+        if config.demo_mode() and P.code_sources(wf): raise AppError("DEMO_CODE_DISABLED")  # the clear code, not WORKFLOW_INVALID
         n = req.get("version")  # a stored version's snapshot instead (workflow tests run against version, TASK-0068)
         if n is not None:
             v = self.versions.get(wid, n) if wid and edits and self.versions is not None and isinstance(n, int) and not isinstance(n, bool) else None

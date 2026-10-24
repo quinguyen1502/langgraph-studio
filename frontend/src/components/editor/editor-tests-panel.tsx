@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check, CircleDashed, Copy, ExternalLink, FlaskConical, GitCompare, History, Loader2, Pencil, Play, Plus, Square, Trash2, X } from 'lucide-react'
+import { Check, CircleDashed, Copy, ExternalLink, Send, FlaskConical, GitCompare, History, Loader2, Pencil, Play, Plus, Square, Trash2, X } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,8 +32,8 @@ export type TestCase = { id: string; name: string; input: Record<string, unknown
 type Result = { id: string; test_id: string; name: string; status: string; run_id: string | null; version: number | null
   reason: string | null; detail: string | null; checks: CheckResult[]; change: Change | null }
 type Suite = { id: string; status: string; mock: boolean; total: number; passed: number; failed: number; version: number | null; started: number
-  by: string | null; results?: Result[]; compare?: { suite_id: string; version: number; counts: Record<Change, number> } | null }
-type Listing = { items: TestCase[]; suites: Suite[]; can_edit: boolean; limit: number }
+  by: string | null; langsmith_url?: string | null; results?: Result[]; compare?: { suite_id: string; version: number; counts: Record<Change, number> } | null }
+type Listing = { items: TestCase[]; suites: Suite[]; can_edit: boolean; limit: number; langsmith?: boolean }
 
 const KINDS: Kind[] = ['status', 'field', 'node', 'duration', 'cost']
 const OPS = ['equals', 'contains', 'not_contains', 'matches', 'empty', 'not_empty']
@@ -79,6 +79,9 @@ export function EditorTestsPanel({ select }: { select?: string | null }) {
   const loadVersions = () => api<{ items: { version: number; created: number; current: boolean }[] }>(`/api/workflows/${wid}/versions`)
     .then(d => setVersions(d.items.filter(v => !v.current))).catch(e => setErr(e.message))
   const cancel = () => suite && act(api<Suite>(`/api/workflows/${wid}/tests/runs/${suite.id}/cancel`, { method: 'POST' }).then(setSuite))
+  const [sending, setSending] = useState(false)
+  const sendToLangSmith = () => { if (!suite) return; setSending(true)
+    act(api<Suite>(`/api/workflows/${wid}/tests/runs/${suite.id}/langsmith`, { method: 'POST' }).then(setSuite)).finally(() => setSending(false)) }
   const openTestRun = (rid: string) => act(api<any[]>(`/api/workflows/${wid}/runs?tests=true`).then(rs => { const h = rs.find(x => x.id === rid); if (h) openRun(h) }))
   const remove = (c: TestCase) => del.ask({ title: t('tests.deleteTitle', { name: c.name }), name: c.name,
     onConfirm: async () => { await api(`/api/workflows/${wid}/tests/${c.id}`, { method: 'DELETE' }); await load() } })
@@ -105,6 +108,9 @@ export function EditorTestsPanel({ select }: { select?: string | null }) {
           : t('tests.summary', { passed: suite.passed, failed: suite.failed, version: suite.version ?? '—' })}
         {suite.status === 'cancelled' && <Badge variant="secondary">{t('status.cancelled')}</Badge>}{suite.mock && <Badge variant="outline">{t('tests.mockBadge')}</Badge>}</span>}
       <span className="ml-auto" />
+      {suite?.langsmith_url && <Button size="sm" variant="ghost" asChild><a id="tests-langsmith-link" href={suite.langsmith_url} target="_blank" rel="noreferrer"><ExternalLink />{t('tests.openLangSmith')}</a></Button>}
+      {edit && list?.langsmith && suite && !running && <Button size="sm" variant="outline" id="tests-langsmith-send" disabled={sending} onClick={sendToLangSmith}>
+        {sending ? <Loader2 className="animate-spin" /> : <Send />}{t('tests.sendLangSmith')}</Button>}
       {!!list?.suites.length && <DropdownMenu>
         <DropdownMenuTrigger asChild><Button size="sm" variant="ghost" id="tests-history"><History />{t('tests.history')}</Button></DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-96">{list.suites.map(h => <DropdownMenuItem key={h.id} data-testid="suite-row" onSelect={() => loadSuite(h.id).catch(e => setErr(e.message))}>

@@ -56,7 +56,8 @@ _SECRET_RES = [
 
 def safe_error(e: BaseException, limit: int = 500) -> str:
     """One-line, secret-redacted error message: no stack traces, capped length."""
-    msg = f"{type(e).__name__}: {e}".strip()
+    from ..core.errors import AppError  # AppError messages are already user-facing (a demo DEMO_NODE_DISABLED): no class prefix
+    msg = (str(e) if isinstance(e, AppError) else f"{type(e).__name__}: {e}").strip()
     msg = msg.splitlines()[0] if msg else type(e).__name__
     for rx, rep in _SECRET_RES: msg = rx.sub(rep, msg)
     return msg[:limit] + ("…" if len(msg) > limit else "")

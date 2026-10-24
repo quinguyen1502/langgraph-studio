@@ -20,13 +20,26 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
   (#120); a remote sandbox service so Code nodes can run isolated where the platform has no Docker (#121).
   Guides in `docs/deploy/`.
 - **Public demo mode** (`STUDIO_DEMO_MODE`): a shared read-only visitor with "Try the demo", seeded samples (the
-  Chatbot with web chat on), Code, HTTP and Send email nodes off, mock models, a per-IP run limit and a demo banner;
+  Chatbot with web chat on), Code, HTTP and Send email nodes off, mock models, a per-IP run limit (unit-tested) and a demo banner; visitors can chat with the Chatbot;
   the live demo runs on Render (#122).
 
 ### Changed
 
 - README restyled: centred header, overview screenshot, feature table; handbook screenshots and text refreshed for the
   new layout and the chat panel (#117).
+
+### Fixed
+
+- The editor top bar no longer overlaps or half-clips its info badges at 1440 px (the demo viewer in Vietnamese was the
+  tightest case): the LLM mode and id badges hide whole when they do not fit; `e2e/alignment.spec.ts` checks the bar for
+  an admin and a viewer in en and vi.
+- Demo-mode node errors ("… nodes are turned off in the public demo") no longer carry a stray `AppError: ` prefix.
+- README feature-row captions are no longer clipped.
+
+### Known limits
+
+- In the public demo every visitor shares one account, so the run history and chats are shared until the next reset
+  (`docs/deploy/demo.md`).
 
 ### Earlier (0.4.0)
 

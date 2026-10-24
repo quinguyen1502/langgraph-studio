@@ -25,9 +25,9 @@
 
 <table>
   <tr>
-    <td width="33%" align="center"><img src="handbook/docs/en/images/chat-tab.png" alt="Chat with a workflow" width="100%"><br><sub>Chat with a workflow</sub></td>
-    <td width="33%" align="center"><img src="handbook/docs/en/images/run-trace.png" alt="Live run trace" width="100%"><br><sub>Live run trace</sub></td>
-    <td width="33%" align="center"><img src="handbook/docs/en/images/code-tab.png" alt="LangGraph code export" width="100%"><br><sub>LangGraph code export</sub></td>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/chat-tab.png" alt="Chat with a workflow" width="100%"><p>Chat with a workflow</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/run-trace.png" alt="Live run trace" width="100%"><p>Live run trace</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/code-tab.png" alt="LangGraph code export" width="100%"><p>LangGraph code export</p></td>
   </tr>
 </table>
 

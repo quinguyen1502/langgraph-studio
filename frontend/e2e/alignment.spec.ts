@@ -92,3 +92,43 @@ for (const lang of ['en', 'vi'] as const) {
     expect(Math.round((await field.locator('input').boundingBox())!.height)).toBe(32)
   })
 }
+
+// The editor top bar at 1440px with the chat panel open, for an admin and a viewer (view-only badge): nothing overflows,
+// nothing overlaps, the controls share one row; the info badges hide whole instead of showing clipped.
+for (const lang of ['en', 'vi'] as const) {
+  test(`editor top bar fits at 1440px (${lang})`, async ({ page, browser }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    const H = await login(page)
+    const wid = await newWorkflow(page, H, { name: 'Customer support assistant', state: [{ name: 'message', type: 'string' }, { name: 'answer', type: 'string' }],
+      nodes: [N('s', 'start', 40), N('e', 'end', 300)], edges: [{ id: '1', source: 's', target: 'e' }] })
+    const email = `bar${lang}${Date.now()}@example.com`
+    expect((await page.request.post('/api/auth/register', { data: { email, password: 'secret12' } })).ok()).toBeTruthy()
+    expect((await page.request.put(`/api/workflows/${wid}/shares`, { headers: H, data: { email, role: 'viewer' } })).ok()).toBeTruthy()
+    const check = async (p: typeof page, who: string) => {
+      await p.evaluate(l => { localStorage.setItem('lang', l); localStorage.setItem('lgs.chatPanel', JSON.stringify({ open: true, width: 420 })) }, lang)
+      await p.goto(`/workflows/${wid}`); await expect(p.locator('#run-btn')).toBeVisible(); await p.waitForTimeout(300)
+      const r = await p.locator('header').first().evaluate(h => {
+        const hb = h.getBoundingClientRect()
+        const els = [...h.querySelectorAll('button, input, a, [data-slot=badge]')].filter(e => (e as HTMLElement).offsetParent && !e.closest('[data-slot=badge] *'))
+        const boxes = els.map(e => ({ id: e.id || e.getAttribute('aria-label') || e.textContent || '', b: e.getBoundingClientRect() }))
+        const clip = (e: Element) => { for (let x = e.parentElement; x && x !== h; x = x.parentElement) { const c = x.getBoundingClientRect(), b = e.getBoundingClientRect()
+          if (getComputedStyle(x).overflow !== 'visible' && (b.left < c.left - 0.5 || b.right > c.right + 0.5)) return true } return false }
+        const overlaps: string[] = []
+        for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) { const a = boxes[i].b, b = boxes[j].b
+          if (a.left < b.right - 0.5 && b.left < a.right - 0.5 && a.top < b.bottom && b.top < a.bottom) overlaps.push(`${boxes[i].id} / ${boxes[j].id}`) }
+        return { sw: h.scrollWidth - h.clientWidth, out: boxes.filter(x => x.b.left < hb.left || x.b.right > hb.right).map(x => x.id),
+          clipped: els.filter(clip).map(e => e.id || e.textContent), overlaps }
+      })
+      expect(r.sw, `${who}: header overflow`).toBeLessThanOrEqual(0)
+      expect(r.out, `${who}: controls outside the header`).toEqual([])
+      expect(r.clipped, `${who}: half-clipped controls`).toEqual([])
+      expect(r.overlaps, `${who}: overlapping controls`).toEqual([])
+      const row = await p.locator('#save-btn, #run-btn, #step-btn, #run-to-btn, #chat-open, #more-btn').all()
+      await expectRowAligned(row, { label: `${who} top bar` })
+    }
+    await check(page, 'admin')
+    const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } }); const other = await ctx.newPage(); await login(other, email, 'secret12')
+    await expect(async () => { await check(other, 'viewer'); await expect(other.locator('#view-only')).toBeVisible() }).toPass({ timeout: 20_000 })
+    await ctx.close()
+  })
+}

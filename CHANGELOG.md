@@ -4,6 +4,23 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
 
 ## Unreleased
 
+### Added
+
+- **Public API and SDKs.** The two workflow-trigger routes (`POST /api/hooks/workflows/{wid}/runs`,
+  `GET /api/hooks/workflows/{wid}/runs/{run_id}`) now have a full OpenAPI contract: `WorkflowToken` (`X-Workflow-Token`)
+  and `WorkflowBearer` security schemes, typed request and response models, error-envelope responses with examples,
+  operation ids `startRun` / `getRun` and a `public` tag. A public-only spec is served at `/openapi.public.json` with a
+  Swagger view at `/docs/public`, and committed as `docs/api/openapi.public.json` by `scripts/gen_public_openapi.py`
+  (a test fails when it is stale). An async start now also sends the poll URL in the `Location` header.
+- **Python SDK** (`sdk/python`, package `superstep`): sync and async clients on httpx, typed models, `run`, `get_run`,
+  `wait`, `run_and_wait` with timeout and poll backoff, errors typed by error code, env var fallback.
+- **TypeScript SDK** (`sdk/typescript`, `@superstep/sdk`): fetch-based, zero runtime dependencies, ESM and CommonJS,
+  types generated from the public spec (`npm run gen`), `run`, `getRun`, `wait`, `runAndWait`, AbortSignal support.
+- Both SDKs have unit tests and a live test against a local backend (`scripts/sdk_integration.sh`), run on CI; a
+  tag-triggered publish workflow (`sdk-py-v*`, `sdk-ts-v*`) is ready but needs the registry setup in `sdk/README.md`.
+- Handbook: **Public API and SDKs** guide and a **Public API reference** page rendered from the spec with a vendored
+  Redoc bundle (works offline), in English and Vietnamese.
+
 ### Changed
 
 - The offline mock model answers in the requester's UI language: English by default, Vietnamese when the studio is in

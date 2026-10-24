@@ -3,6 +3,10 @@
 The UI uses the same API as any client. The interactive OpenAPI page is at
 `/docs` on the API (<http://localhost:8000/docs> in development).
 
+Services that only start workflows use the public API: see
+[Public API and SDKs](../run/public-api.md) and the
+[Public API reference](public-api.md) (`/openapi.public.json`, `/docs/public`).
+
 ## Envelope
 
 Every REST response is an envelope:

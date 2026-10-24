@@ -16,6 +16,7 @@ const vars = (s: string) => [...s.matchAll(/{{\s*([\w.]+)\s*}}/g)].map((m) => m[
 const SAME_OK = new Set([
   'activity.types.workflow',
   'api.button',
+  'timeTravel.state',
   'approvals.col.run',
   'approvals.field.access_token',
   'approvals.field.app_secret',

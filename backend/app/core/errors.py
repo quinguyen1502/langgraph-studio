@@ -53,6 +53,8 @@ CATALOG: dict[str, tuple[int, str]] = {
     "RUN_NOT_FOUND": (404, "Run not found, already finished or not yours"),
     "RUN_NODE_NOT_REACHED": (400, "The run finished without reaching node '{node}'"),
     "RUN_NOT_WAITING": (409, "This run is not waiting for a response"),
+    "CHECKPOINT_NOT_FOUND": (404, "Checkpoint not found in this run, or it cannot be forked"),
+    "RUN_FORK_UNSUPPORTED": (400, "Runs of imported LangGraph graphs cannot be forked"),
     "RUN_RESPONSE_INVALID": (400, "The response must be text (max {max} characters)"),
     "TRIGGER_TOKEN_INVALID": (401, "Missing, invalid or revoked workflow token"),
     "TOKEN_NOT_FOUND": (404, "Token not found"),

@@ -43,6 +43,15 @@ jobs:
           tags: superstep:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      - name: Build the sandbox service
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/studio-sandbox/Dockerfile
+          load: true
+          tags: superstep-sandbox:ci
+          cache-from: type=gha,scope=sandbox
+          cache-to: type=gha,mode=max,scope=sandbox
       - run: pip install httpx websockets
       - name: Smoke on SQLite (volume, production mode, admin from env)
         run: |
@@ -67,12 +76,24 @@ jobs:
           scripts/image_smoke.sh http://localhost:8080 rv
           test "$(docker top rv -o pid,uid,args | awk '/uvicorn/ {print $2; exit}')" = 10001 || { docker top rv -o pid,uid,args; exit 1; }  # dropped root
           sudo test -f "$RUNNER_TEMP/rootdata/studio.db"
+      - name: Remote sandbox (internal network, hardened container, Python + TypeScript, no network)
+        run: |
+          docker network create --internal sbx && docker network create front
+          docker run -d --name sbx --network sbx --read-only --tmpfs /tmp:size=256m --cap-drop ALL \
+            --cap-add SETUID --cap-add SETGID --cap-add CHOWN --cap-add KILL --cap-add DAC_OVERRIDE --cap-add FOWNER \
+            --security-opt no-new-privileges:true -e STUDIO_SANDBOX_TOKEN=ci-sandbox-token-$GITHUB_RUN_ID superstep-sandbox:ci
+          docker create --name rm --network front -p 8090:8000 -e STUDIO_CODE_RUNTIME=remote -e STUDIO_SANDBOX_URL=sbx:8080 \
+            -e STUDIO_SANDBOX_TOKEN=ci-sandbox-token-$GITHUB_RUN_ID -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef \
+            -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
+          docker network connect sbx rm && docker start rm
+          scripts/image_smoke.sh http://localhost:8090 rm
+          python scripts/sandbox_smoke.py http://localhost:8090
       - name: Production refuses a missing STUDIO_SECRET_KEY
         run: |
           if docker run --rm -e JWT_SECRET=ci-jwt-0123456789abcdef0123456789 superstep:ci python -c "import app.main"; then
             echo "started without STUDIO_SECRET_KEY" >&2; exit 1; fi
       - if: failure()
-        run: docker logs sq || true; docker logs pg || true; docker logs rv || true
+        run: docker logs sq || true; docker logs pg || true; docker logs rv || true; docker logs sbx || true; docker logs rm || true
       - name: Trivy (fail on fixable CRITICAL)
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0 (immutable; earlier tags were compromised in March 2026)
         with:
@@ -82,12 +103,26 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           format: table
+      - name: Trivy, sandbox image
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          version: v0.69.3
+          image-ref: superstep-sandbox:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
 
   publish:
-    name: Publish to GHCR
+    name: Publish to GHCR (${{ matrix.image.suffix || 'app' }})
     needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - { suffix: "", file: Dockerfile, scope: "", title: "Superstep", description: "Visual LangGraph studio (all-in-one image)" }
+          - { suffix: "-sandbox", file: docker/studio-sandbox/Dockerfile, scope: sandbox, title: "Superstep sandbox", description: "Code node sandbox service for STUDIO_CODE_RUNTIME=remote" }
     permissions:
       contents: read
       packages: write
@@ -102,7 +137,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
-          images: ghcr.io/${{ github.repository }}
+          images: ghcr.io/${{ github.repository }}${{ matrix.image.suffix }}
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
@@ -110,13 +145,14 @@ jobs:
             type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
             type=sha,prefix=sha-
           labels: |
-            org.opencontainers.image.title=Superstep
-            org.opencontainers.image.description=Visual LangGraph studio (all-in-one image)
+            org.opencontainers.image.title=${{ matrix.image.title }}
+            org.opencontainers.image.description=${{ matrix.image.description }}
       - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
+          file: ${{ matrix.image.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
+          cache-from: type=gha${{ matrix.image.scope && format(',scope={0}', matrix.image.scope) || '' }}
           provenance: true

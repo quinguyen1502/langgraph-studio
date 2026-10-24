@@ -24,8 +24,8 @@ triển khai đầy đủ tính năng trên máy chủ của bạn.
   `STUDIO_SECRET_KEY` mã hoá các credential đã lưu: nếu đổi hoặc mất khoá này, chúng không giải mã được nữa.
 - **Node Code chạy trực tiếp trên server.** Node Code được bật với runtime subprocess. Code đang chạy trực tiếp trên
   máy chủ, không có Docker giới hạn quyền: code có thể dùng mạng và đọc những gì process máy chủ đọc được (kể cả biến
-  môi trường và `/data`). Chỉ nên dùng cho người dùng và code tin cậy, hoặc đặt `STUDIO_ENABLE_CODE_NODES=0`. Một dịch
-  vụ sandbox riêng đang được lên kế hoạch.
+  môi trường và `/data`). Chỉ nên dùng cho người dùng và code tin cậy, hoặc đặt `STUDIO_ENABLE_CODE_NODES=0`, hoặc chạy
+  chúng trong [dịch vụ sandbox](sandbox.vi.md) riêng.
 - **URL công khai.** Đặt `STUDIO_PUBLIC_URL` là địa chỉ https của dịch vụ. Link trong email và callback
   Slack/Telegram cần giá trị này.
 - **Gói miễn phí sẽ ngủ.** Dịch vụ ngủ sẽ ngắt WebSocket đang mở và làm trễ lịch chạy, webhook. Ngoài mục đích dùng
@@ -133,7 +133,9 @@ vụ Zeabur PostgreSQL vào project và đặt `DATABASE_URL` bằng chuỗi k�
 
 ## Northflank
 
-Chưa có mẫu được phát hành. Trong giao diện Northflank:
+Chưa có mẫu được phát hành. Gói miễn phí Developer Sandbox (2 dịch vụ, 2 job, 1 addon) vẫn yêu cầu thêm phương thức
+thanh toán mặc định trước khi tạo bất kỳ dịch vụ hay addon nào (API trả về `409 Please complete your account by
+adding a default payment method`), nên hãy thêm trước. Trong giao diện Northflank:
 
 1. **Create service → Deployment**, image ngoài `ghcr.io/quinguyen1502/superstep:latest`, cổng 8000 (HTTP, public).
 2. **Secret group** liên kết với dịch vụ, gồm `JWT_SECRET`, `STUDIO_SECRET_KEY` (chuỗi ngẫu nhiên) và

@@ -35,7 +35,9 @@ The variables that matter for the all-in-one image. The full list, including cha
 | Variable | Default in the image | Purpose |
 |---|---|---|
 | `STUDIO_ENABLE_CODE_NODES` | `1` | `0` turns Code mode off. |
-| `STUDIO_CODE_RUNTIME` | `subprocess` | Runs on host: code runs directly on the server, without Docker limiting its access. Use only for trusted code. There is no Docker daemon in the image, so `docker` does not work here. |
+| `STUDIO_CODE_RUNTIME` | `subprocess` | Runs on host: code runs directly on the server, without Docker limiting its access. Use only for trusted code. There is no Docker daemon in the image, so `docker` does not work here. `remote` sends Code calls to the [sandbox service](sandbox.md). |
+| `STUDIO_SANDBOX_URL`, `STUDIO_SANDBOX_TOKEN` | empty | The sandbox service and its shared token (16+ characters), for `STUDIO_CODE_RUNTIME=remote`. |
+| `STUDIO_CODE_NO_NETWORK` | empty (`1` in the sandbox image) | `1` = Python Code refuses sockets, new processes and ctypes (an audit hook inside the interpreter). |
 | `STUDIO_CODE_LANGUAGES` | `python,typescript` | Languages offered. TypeScript runs on the bundled Deno. |
 | `STUDIO_CODE_TS_DENO_DIR`, `STUDIO_CODE_TS_PACKAGES` | `/opt/deno-cache`, `npm:zod@3,npm:date-fns@4` | The TypeScript packages cached in the image. Keep them unchanged unless you build your own image. |
 | `STUDIO_CODE_PACKAGES` | `pydantic,python-dateutil` | Python packages shown to users as importable. |

@@ -4,7 +4,7 @@ import { api } from '@/lib/api'
 
 export type CodeLanguageInfo = { id: 'python' | 'typescript'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string }
 export type CodeRuntime = {
-  code_runtime: 'docker' | 'subprocess' | 'off'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string
+  code_runtime: 'docker' | 'subprocess' | 'remote' | 'off'; available: boolean; problem: string | null; image: string; packages: string[]; starter: string
   limits: { memory: string; cpus: string; pids: number; seconds: number; source_kb: number }
   languages?: CodeLanguageInfo[]  // TASK-0079: one entry per offered language; the top level is Python's
 }

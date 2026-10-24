@@ -90,9 +90,15 @@ services:
       STUDIO_CODE_LANGUAGES: ${STUDIO_CODE_LANGUAGES:-python,typescript}
       STUDIO_CODE_TS_IMAGE: ${STUDIO_CODE_TS_IMAGE:-studio-code-ts:1}
       STUDIO_CODE_TS_PACKAGES: ${STUDIO_CODE_TS_PACKAGES:-npm:zod@3,npm:date-fns@4}
+      # Sandbox service instead of Docker (no socket needed): STUDIO_CODE_RUNTIME=remote, STUDIO_SANDBOX_TOKEN set, and
+      # `docker compose --profile sandbox up`. It runs on an internal network with no internet access (docs/deploy/sandbox.md).
+      STUDIO_CODE_RUNTIME: ${STUDIO_CODE_RUNTIME:-}
+      STUDIO_SANDBOX_URL: ${STUDIO_SANDBOX_URL:-http://sandbox:8080}
+      STUDIO_SANDBOX_TOKEN: ${STUDIO_SANDBOX_TOKEN:-}
     # Local LLM servers on the host (TASK-0030): use http://host.docker.internal:11434 (Ollama) or
     # http://host.docker.internal:1234/v1 (LM Studio) as the credential base URL; `localhost` would be the container.
     extra_hosts: &host-gw ["host.docker.internal:host-gateway"]
+    networks: &api-nets [default, sandbox]
     volumes: &import-volumes
       - apidata:/data  # generated secret.key when STUDIO_SECRET_KEY is empty
       # Same directory the daemon bind-mounts into the sandbox. Export STUDIO_IMPORT_HOST_DIR
@@ -114,6 +120,7 @@ services:
       <<: *api-env
       STUDIO_WORKER: "1"
     extra_hosts: *host-gw
+    networks: *api-nets
     volumes: *import-volumes
     group_add: *import-groups
     healthcheck:
@@ -130,6 +137,25 @@ services:
     ports: ["${WEB_PORT:-8080}:80"]
     depends_on:
       api: { condition: service_healthy }
+    restart: unless-stopped
+
+  # Optional sandbox service for STUDIO_CODE_RUNTIME=remote: `docker compose --profile sandbox up`. Only on the internal
+  # `sandbox` network (no internet); holds no studio secrets, only the shared token.
+  sandbox:
+    build: { context: ., dockerfile: docker/studio-sandbox/Dockerfile }
+    profiles: [sandbox]
+    environment:
+      STUDIO_SANDBOX_TOKEN: ${STUDIO_SANDBOX_TOKEN:-}
+      STUDIO_CODE_MAX_SECONDS: ${STUDIO_CODE_MAX_SECONDS:-30}
+      STUDIO_CODE_MEMORY: ${STUDIO_CODE_MEMORY:-256m}
+    networks: [sandbox]
+    read_only: true
+    tmpfs: ["/tmp:size=256m"]
+    cap_drop: [ALL]
+    cap_add: [SETUID, SETGID, CHOWN, KILL, DAC_OVERRIDE, FOWNER]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    pids_limit: 256
     restart: unless-stopped
 
   # Optional trace viewer: `docker compose --profile tracing up`. Jaeger receives OTLP directly (4317 gRPC / 4318 HTTP).
@@ -151,3 +177,7 @@ volumes:
   pgdata: {name: langgraph-studio_pgdata}
   redisdata: {name: langgraph-studio_redisdata}
   apidata: {name: langgraph-studio_apidata}
+
+networks:
+  sandbox:
+    internal: true  # no route to the internet: the sandbox service and the studio services that call it

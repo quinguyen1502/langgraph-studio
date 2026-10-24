@@ -1588,6 +1588,7 @@
     "runtimes": {
       "docker": "Sandbox Docker",
       "subprocess": "Chạy trực tiếp trên server (subprocess)",
+      "remote": "Dịch vụ sandbox (remote)",
       "off": "Tắt"
     },
     "languages": {

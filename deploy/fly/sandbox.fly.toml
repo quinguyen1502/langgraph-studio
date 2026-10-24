@@ -1,0 +1,20 @@
+# Optional sandbox service on Fly.io (docs/deploy/sandbox.md). Private only: no [http_service], so it is reachable
+# from your other Fly apps at http://<this app>.internal:8080 and not from the internet.
+#   fly launch --copy-config --config deploy/fly/sandbox.fly.toml --no-deploy --name <app>-sandbox
+#   fly secrets set --config deploy/fly/sandbox.fly.toml STUDIO_SANDBOX_TOKEN=<token>
+#   fly deploy --config deploy/fly/sandbox.fly.toml
+# then on the studio app: fly secrets set STUDIO_CODE_RUNTIME=remote STUDIO_SANDBOX_TOKEN=<token> \
+#   STUDIO_SANDBOX_URL=http://<app>-sandbox.internal:8080
+app = "superstep-sandbox"
+primary_region = "sin"
+
+[build]
+  image = "ghcr.io/quinguyen1502/superstep-sandbox:latest"
+
+[env]
+  PORT = "8080"
+  STUDIO_SANDBOX_HOST = "::"   # Fly's private network is IPv6
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

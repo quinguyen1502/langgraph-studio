@@ -11,7 +11,7 @@ import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
 import { useDemoMode } from '@/lib/demo'
 import { api, wsUrl, sessionExpired, signedIn } from '@/lib/api'
-import i18n, { eventErrors } from '@/lib/i18n'
+import i18n, { eventErrors, uiLocale } from '@/lib/i18n'
 import { useTranslation } from 'react-i18next'
 import { useTheme } from '@/lib/theme'
 import type { Channels } from '@/lib/approvals'
@@ -104,7 +104,7 @@ export function useStudio() {
     if (resume) setLog(l => l.filter(e => e.type !== 'run_summary'))
     else { setLog([]); setReplay(null); setNodes(ns => ns.map(n => ({ ...n, data: { ...n.data, _status: '', _dur: null } }))) }
     const ws = new WebSocket(wsUrl('/ws/run')); wsRef.current = ws
-    ws.onopen = () => ws.send(JSON.stringify(msg))
+    ws.onopen = () => ws.send(JSON.stringify({ ...msg, locale: uiLocale() }))  // the mock model answers in the UI language
     ws.onmessage = m => {
       const ev: LogItem = JSON.parse(m.data); setLog(l => [...l, ev])
       if (ev.type === 'node_started') mark(canvasId(ev.node!), { _status: 'running' })

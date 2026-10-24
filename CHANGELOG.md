@@ -21,6 +21,20 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
 - Handbook: **Public API and SDKs** guide and a **Public API reference** page rendered from the spec with a vendored
   Redoc bundle (works offline), in English and Vietnamese.
 
+### Changed
+
+- The offline mock model answers in the requester's UI language: English by default, Vietnamese when the studio is in
+  Vietnamese (the studio sends `locale` with run and chat requests; `Accept-Language` is the fallback). The example
+  `lookup_order` tool follows it too, and exported code's mock now answers in English. README overview screenshots
+  regenerated, so the English one shows English replies.
+- Public demo: each "Try the demo" sign-in gets an anonymous visitor account of its own, so run history, chats, waiting
+  runs and notifications are no longer shared between visitors; the samples stay shared and read-only. Visitors older
+  than `STUDIO_DEMO_VISITOR_TTL` (default one day) are removed with their runs and chats.
+
+### Removed from known limits
+
+- Demo visitors no longer see each other's run history and chats, and mock replies are no longer always Vietnamese.
+
 ## 0.5.0 (2026-10-24)
 
 ### Added

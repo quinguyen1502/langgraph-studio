@@ -31,7 +31,7 @@ File không cần gì từ Superstep. Nó chạy input mẫu (input của test c
 tiên nếu workflow có test case), in ra những gì mỗi node trả về, rồi state cuối:
 
 ```text
-[read_the_request] {"details": "[mock:gpt-4o-mini] Trả lời: I'd like leave ..."}
+[read_the_request] {"details": "[mock:gpt-4o-mini] Answer: I'd like leave ..."}
 >> manager_approval: approved
 [manager_approval] {"decision": "approved"}
 (e-mail not sent) to bo@example.com: Your leave request: approved

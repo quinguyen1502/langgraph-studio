@@ -219,3 +219,12 @@ REQ-0047, Accepted 2026-10-23, Implemented 2026-10-23: the LangGraph.js export, 
 items, type-check diagnostics and full IntelliSense, stay out).
 
 - TASK-0082 TypeScript export: `export_common.GraphWriter` shared by both exporters, `typescript_export.to_typescript`, the `exporters` registry, `?language=` on the export API (`EXPORT_LANGUAGE_UNSUPPORTED`, `TYPESCRIPT_EXPORT_UNAVAILABLE`), Code tab language picker, en/vi, handbook (en, vi), snapshot + `deno check` tests, DEC-0051. **merged** (PR #112, REV-0075, QA-0075).
+
+## Agent chat
+
+REQ-0048, Accepted 2026-10-23 (owner decisions 1-6 on audience, access, memory, Human "answered by", step visibility,
+attachments/embed later and retention; DEC-0052, DEC-0053, DEC-0054). Phase 1: the studio Chat tab.
+
+- TASK-0084 Web chat backend: chat sessions and turns (migration 0035), the `web` chat trigger with its settings, one
+  `source="chat"` run per message over the run socket with the history window, reply-once answers, `node_token.field`,
+  Human `answered_by`, retention cleanup, `CHAT_*` errors. **draft PR #116** (REV-0077, QA-0077).

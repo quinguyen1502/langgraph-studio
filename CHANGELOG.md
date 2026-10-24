@@ -6,6 +6,14 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **LangGraph Agent Server API (subset) at `/api/lg`.** The official `langgraph-sdk` clients and `RemoteGraph` can
+  run Superstep workflows: assistants (one per workflow: search, get, graph, schemas), threads (create, get, search,
+  delete, state, history), runs (create, wait, stream with `values` / `updates`, get, list, join, cancel, also
+  without a thread), Human nodes as interrupts resumed with `Command(resume=...)`. Auth with a workflow token or a
+  user JWT (`x-api-key`, `X-Workflow-Token` or `Authorization: Bearer`). New tables `agent_threads` and
+  `agent_thread_runs` (migration 0036), error codes `THREAD_NOT_FOUND`, `THREAD_EXISTS`, `THREAD_BUSY`,
+  `THREAD_WORKFLOW_MISMATCH`. Handbook page **LangGraph-compatible API** (en, vi); design in
+  `docs/agent-server-api.md`; live check `scripts/agent_server_smoke.py`.
 - **Public API and SDKs.** The two workflow-trigger routes (`POST /api/hooks/workflows/{wid}/runs`,
   `GET /api/hooks/workflows/{wid}/runs/{run_id}`) now have a full OpenAPI contract: `WorkflowToken` (`X-Workflow-Token`)
   and `WorkflowBearer` security schemes, typed request and response models, error-envelope responses with examples,

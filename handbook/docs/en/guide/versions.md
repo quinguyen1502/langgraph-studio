@@ -16,7 +16,7 @@ nothing.
 
 ## Runs and versions
 
-Each run in **History** is labelled `vN`, or **unsaved** when the editor had
+Each run in the run history (**View all**) is labelled `vN`, or **unsaved** when the editor had
 edits that were not saved yet. A version that a run used is never deleted.
 
 ## Retention

@@ -33,7 +33,7 @@ export function AuditSection() {
     ]} />
     {err && <ErrorAlert>{err}</ErrorAlert>}
     {items && <p className="text-xs text-muted-foreground" id="audit-count">{t('settings.auditCount', { shown: shown.length, total: items.length })}</p>}
-    {items && !items.length ? <p className="text-sm text-muted-foreground" id="audit-empty">{t('approvals.auditEmpty')}</p> : <Card className="py-0">
+    {items && !items.length ? <p className="text-sm text-muted-foreground" id="audit-empty">{t('approvals.auditEmpty')}</p> : <Card /* ui-class-ok: flush card that wraps a Table; Card has no flush variant */ className="py-0">
       <Table id="approval-audit">
         <TableHeader><TableRow><TableHead>{t('approvals.col.when')}</TableHead><TableHead>{t('approvals.col.action')}</TableHead><TableHead>{t('approvals.col.who')}</TableHead><TableHead>{t('approvals.col.run')}</TableHead></TableRow></TableHeader>
         <TableBody>{shown.map(e => <TableRow key={e.id} data-testid="audit-row">
@@ -43,7 +43,7 @@ export function AuditSection() {
           <TableCell className="whitespace-normal text-xs"><div className="max-w-48 truncate">{e.actor || '—'}</div><div className="flex items-center gap-1 text-muted-foreground"><ChannelLogo kind={e.kind} className="size-3.5" />{t(`approvals.kind.${e.kind}`)}{e.external_id && <span className="font-mono"> · {e.external_id}</span>}</div></TableCell>
           <TableCell className="text-xs"><div className="max-w-48 truncate">{e.workflow_name || '—'}</div><div className="font-mono text-muted-foreground">{e.run_id}</div></TableCell>
         </TableRow>)}
-          {items && items.length > 0 && !shown.length && <TableRow><TableCell colSpan={4} className="py-8 text-center text-sm text-muted-foreground">{t('settings.noMatch')}</TableCell></TableRow>}
+          {items && items.length > 0 && !shown.length && <TableRow><TableCell /* ui-class-ok: empty/loading table row spacing, layout not control sizing */ colSpan={4} className="py-8 text-center text-sm text-muted-foreground">{t('settings.noMatch')}</TableCell></TableRow>}
         </TableBody>
       </Table></Card>}
   </div>

@@ -36,7 +36,7 @@ The Postgres tests need a role with `CREATEDB`.
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) runs pytest on Python 3.12 (also on
-Postgres 17 and Redis 7), the frontend build on Node 20 and 22, and a Compose
+Postgres 17 and Redis 7), the frontend lint and build on Node 20 and 22, and a Compose
 smoke test. `handbook.yml` builds this handbook strictly and publishes it from
 `main`. `factory-verify.yml` checks the factory metadata. End-to-end tests are
 not on CI.
@@ -100,3 +100,10 @@ branch `factory/task-<id>-<name>`, and a merge needs a human approval. Backend
 changes keep the layers; schema changes go through Alembic; new error codes go
 into the catalogue, `docs/api-errors.md` and both locales; UI strings go into
 both locale files.
+
+Frontend code follows `docs/ui-conventions.md`. Its alignment rule (shadcn
+size variants instead of hand-set heights, paddings or line heights; toolbars
+as `flex items-center` rows) is checked twice: `npm run lint` runs
+`scripts/check-ui-classes.mjs`, and `e2e/alignment.spec.ts` measures the main
+toolbars with `e2e/helpers/alignment.ts`. A justified exception carries an
+inline `ui-class-ok: <reason>` comment.

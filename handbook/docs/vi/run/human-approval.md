@@ -8,7 +8,7 @@ nhánh theo nó.
 
 ## Trả lời trong studio
 
-Tab Logs hiện câu hỏi kèm **Duyệt** (`approved`), **Từ chối** (`rejected`),
+Logs trong tab **Chạy** hiện câu hỏi kèm **Duyệt** (`approved`), **Từ chối** (`rejected`),
 hoặc **Gửi phản hồi** bằng văn bản tự do. Ở đây chỉ chủ của run mới mở, trả lời
 hoặc huỷ run được.
 

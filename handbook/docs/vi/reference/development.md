@@ -36,7 +36,7 @@ Test Postgres cần một role có quyền `CREATEDB`.
 ## CI
 
 GitHub Actions (`.github/workflows/ci.yml`) chạy pytest trên Python 3.12 (cả
-trên Postgres 17 và Redis 7), build frontend trên Node 20 và 22, và một smoke
+trên Postgres 17 và Redis 7), lint và build frontend trên Node 20 và 22, và một smoke
 test cho Compose. `handbook.yml` build handbook này ở chế độ strict và xuất bản
 từ `main`. `factory-verify.yml` kiểm tra metadata của factory. Test end-to-end
 không chạy trên CI.
@@ -100,3 +100,10 @@ branch `factory/task-<id>-<name>`, và merge cần người duyệt. Thay đổi
 giữ đúng các lớp; thay đổi schema đi qua Alembic; mã lỗi mới thêm vào danh mục,
 `docs/api-errors.md` và cả hai file ngôn ngữ; chuỗi giao diện thêm vào cả hai
 file ngôn ngữ.
+
+Code frontend theo `docs/ui-conventions.md`. Quy tắc căn chỉnh trong đó (dùng
+size variant của shadcn thay vì tự đặt chiều cao, padding hay line height;
+thanh công cụ là một hàng `flex items-center`) được kiểm tra ở hai chỗ:
+`npm run lint` chạy `scripts/check-ui-classes.mjs`, và `e2e/alignment.spec.ts`
+đo các thanh công cụ chính bằng `e2e/helpers/alignment.ts`. Ngoại lệ có lý do
+chính đáng thì ghi chú thích `ui-class-ok: <lý do>` ngay trên phần tử.

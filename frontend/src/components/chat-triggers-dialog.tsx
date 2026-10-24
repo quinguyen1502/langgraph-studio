@@ -69,8 +69,8 @@ export function ChatTriggersDialog({ wid, open, onOpenChange }: { wid?: string; 
               </div>
             </div>
             {!c.enabled && c.note && <Badge variant="outline" className="border-warning text-warning">{t('chatTriggers.stopped')}</Badge>}
-            <Button variant="ghost" size="icon" className="size-7" aria-label={t('chatTriggers.editFor', { name: c.name })} onClick={() => edit(c)}><Pencil /></Button>
-            <Button variant="ghost" size="icon" className="size-7" aria-label={t('chatTriggers.deleteFor', { name: c.name })} onClick={() => remove(c)}><Trash2 /></Button>
+            <Button variant="ghost" size="icon-sm" aria-label={t('chatTriggers.editFor', { name: c.name })} onClick={() => edit(c)}><Pencil /></Button>
+            <Button variant="ghost" size="icon-sm" aria-label={t('chatTriggers.deleteFor', { name: c.name })} onClick={() => remove(c)}><Trash2 /></Button>
           </div>)}
           {!items.length && <p className="text-xs text-muted-foreground">{t('chatTriggers.empty')}</p>}
         </div>

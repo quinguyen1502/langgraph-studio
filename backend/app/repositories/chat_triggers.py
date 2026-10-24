@@ -4,6 +4,9 @@ from ..models import WorkflowChatTrigger
 from ..models.database import Database
 
 
+WEB = "web"  # channel_id and place of a workflow's web chat trigger (TASK-0084)
+
+
 class ChatTriggerRepository:
     def __init__(self, db: Database): self.db = db
 
@@ -15,7 +18,16 @@ class ChatTriggerRepository:
 
     def list_for_workflow(self, wid: str) -> list[WorkflowChatTrigger]:
         with self.db.session() as s:
-            return list(s.scalars(select(WorkflowChatTrigger).where(WorkflowChatTrigger.workflow_id == wid).order_by(WorkflowChatTrigger.created)))
+            return list(s.scalars(select(WorkflowChatTrigger).where(WorkflowChatTrigger.workflow_id == wid, WorkflowChatTrigger.channel_id != WEB)
+                                  .order_by(WorkflowChatTrigger.created)))  # Slack / Telegram triggers; the web chat has its own settings
+
+    def web(self, wid: str) -> Optional[WorkflowChatTrigger]:
+        """The workflow's web chat (at most one)."""
+        with self.db.session() as s:
+            return s.scalar(select(WorkflowChatTrigger).where(WorkflowChatTrigger.workflow_id == wid, WorkflowChatTrigger.channel_id == WEB))
+
+    def webs(self) -> list[WorkflowChatTrigger]:
+        with self.db.session() as s: return list(s.scalars(select(WorkflowChatTrigger).where(WorkflowChatTrigger.channel_id == WEB)))
 
     def count_for_workflow(self, wid: str) -> int:
         return len(self.list_for_workflow(wid))

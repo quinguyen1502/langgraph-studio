@@ -172,6 +172,7 @@ class RunService:
     def plan(self, uid: str, req) -> RunPlan:
         if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
         steps = _parse_steps(req); until = _parse_until(req)
+        if req.get("chat_session_id"): return self._plan_chat(uid, req, steps, until)
         if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"), steps=steps, until=until)
         wid = req.get("workflow_id"); row = None
         if wid: row = self._workflow(wid, uid, P.RUN)
@@ -195,6 +196,21 @@ class RunService:
             raise AppError("RUN_REQUEST_INVALID")  # imported graphs stay full-run only (TASK-0036)
         return RunPlan(wid, wf, inp, self.credentials.resolver(res) if self.credentials else None, version=version, invalid=invalid,
                        ports=self.ports(res, uid), steps=steps, until=until)
+
+    def _plan_chat(self, uid: str, req: dict, steps, until) -> RunPlan:
+        """A chat message or a visitor's answer from the chat (TASK-0084): the run gets the history as input and
+        source "chat"; ChatRunService.on_settled writes the answer turn."""
+        web = self.chat().web if self.chat else None
+        sid = req["chat_session_id"]
+        if web is None or not isinstance(sid, str): raise AppError("CHAT_NOT_ENABLED")
+        if req.get("resume_run_id"):
+            web.check_answer(uid, sid, str(req["resume_run_id"]))
+            return self.plan_resume(uid, req["resume_run_id"], req.get("response"), steps=steps, until=until)
+        prep = web.input_for(uid, sid, req.get("message"))
+        plan = self.plan(uid, {"workflow_id": prep["workflow_id"], "input": prep["input"]})
+        plan.run_id, plan.source = uuid.uuid4().hex[:10], "chat"
+        web.record(uid, sid, prep["text"], plan.run_id)
+        return plan
 
     def _workflow(self, wid: str, uid: str, action: str = P.VIEW):
         if self.access is not None: return self.access.workflow(wid, uid, action)

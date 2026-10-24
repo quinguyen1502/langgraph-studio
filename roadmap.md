@@ -200,6 +200,7 @@ REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts wit
 - TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
 - TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).
 - TASK-0083 Settling a run (chat reply, callback, test record) survives a cancelled handler: `settled()` uses `_write_in_thread`; fixes the flaky `test_waiting_then_finished_and_errors`. **merged** (PR #113, REV-0076, QA-0076).
+- TASK-0086 Alignment guardrails: ui-conventions rule 11 (one size variant per row, no hand-set heights/paddings/leading, baseline alignment), `e2e/helpers/alignment.ts` + `alignment.spec.ts`, `npm run lint:ui` on CI; editor and list headers fixed. **draft PR** (REQ-0049, DEC-0055, REV-0079, QA-0079).
 
 ## Vietnamese language quality
 
@@ -219,3 +220,15 @@ REQ-0047, Accepted 2026-10-23, Implemented 2026-10-23: the LangGraph.js export, 
 items, type-check diagnostics and full IntelliSense, stay out).
 
 - TASK-0082 TypeScript export: `export_common.GraphWriter` shared by both exporters, `typescript_export.to_typescript`, the `exporters` registry, `?language=` on the export API (`EXPORT_LANGUAGE_UNSUPPORTED`, `TYPESCRIPT_EXPORT_UNAVAILABLE`), Code tab language picker, en/vi, handbook (en, vi), snapshot + `deno check` tests, DEC-0051. **merged** (PR #112, REV-0075, QA-0075).
+
+## Agent chat
+
+REQ-0048, Accepted 2026-10-23 (owner decisions 1-6 on audience, access, memory, Human "answered by", step visibility,
+attachments/embed later and retention; DEC-0052, DEC-0053, DEC-0054). Phase 1: the studio Chat tab.
+
+- TASK-0084 Web chat backend: chat sessions and turns (migration 0035), the `web` chat trigger with its settings, one
+  `source="chat"` run per message over the run socket with the history window, reply-once answers, `node_token.field`,
+  Human `answered_by`, retention cleanup, `CHAT_*` errors. **draft PR #116** (REV-0077, QA-0077).
+- TASK-0085 Studio Chat tab: shadcn Message Scroller / Message / Bubble / Trace / Code Block, a sanitised Markdown answer,
+  chats list and New chat, Builder / Visitor view by the step setting, Human nodes answered in the chat or waiting for
+  a reviewer, the Chat settings dialog, the Human "Answered by" option, handbook pages. **draft PR #117** (REV-0078, QA-0078).

@@ -35,7 +35,7 @@ test('trace timeline: rows, detail tabs, diff, canvas sync, raw toggle, history 
   await page.locator('#raw-toggle').check(); await expect(page.locator('#raw-events')).toContainText('node_finished')
   await page.locator('#raw-toggle').uncheck()
   // history replay uses same timeline
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.locator('#history-all').click()
   await page.getByTestId('history-row').first().click()
   await expect(summary).toContainText('Replay')
   await expect(rows.first()).toBeVisible()

@@ -35,7 +35,7 @@ test('decision node: build questions, run offline, branch on the choice', async 
   expect(qs[1].instructions).toBe('The customer is angry.')
 
   // offline answers pick the option named in the text; the Condition follows it
-  await page.getByRole('tab', { name: 'Input' }).first().click()
+  await page.locator('#run-tab').click()
   await page.locator('#run-input').fill('{"message": "Where is my order A100?"}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })

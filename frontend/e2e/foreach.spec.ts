@@ -37,7 +37,7 @@ test('for each: connect done, configure, run once per item', async ({ page }) =>
   expect(saved.edges.filter((e: { source: string }) => e.source === 'fe').map((e: { label: string }) => e.label).sort()).toEqual(['done', 'each'])
 
   // three items: the body runs three times, the fourth visit leaves the loop
-  await page.getByRole('tab', { name: 'Input' }).first().click()
+  await page.locator('#run-tab').click()
   await page.locator('#run-input').fill('{"items": ["A1", "B2", "C3"]}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })

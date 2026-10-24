@@ -1,7 +1,7 @@
 # Run
 
 A workflow runs in five ways. All of them go through the same engine,
-produce the same trace, and appear in **History**.
+produce the same trace, and appear in the run history (**Run → View all**).
 
 | Started by | How | Badge in History |
 | --- | --- | --- |
@@ -42,6 +42,12 @@ produce the same trace, and appear in **History**.
     ---
 
     A message to the Slack app or Telegram bot starts a run; the bot answers.
+
+-   :material-chat-processing-outline:{ .lg .middle } **[Chat](chat.md)**
+
+    ---
+
+    Chat with a workflow in the studio, with memory and its steps.
 
 -   :material-flask-outline:{ .lg .middle } **[Workflow tests](tests.md)**
 

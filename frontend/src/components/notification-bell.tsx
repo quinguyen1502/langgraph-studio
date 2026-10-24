@@ -53,10 +53,10 @@ export function NotificationBell() {
   const text = (n: Note) => t(`notify.${n.kind}`, { workflow: n.params.workflow_name || t('notify.unknownWorkflow'), label: n.params.label || '' })
   return <><DropdownMenu onOpenChange={o => o && load()}>
     <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" id="notify-bell" className="relative" data-live={live} aria-label={t('notify.unread', { count: unread })}>
-      <Bell />{unread > 0 && <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px]" data-testid="notify-count">{unread}</Badge>}</Button></DropdownMenuTrigger>
+      <Bell />{unread > 0 && <Badge size="sm" className="absolute -top-1 -right-1 min-w-4" data-testid="notify-count">{unread}</Badge>}</Button></DropdownMenuTrigger>
     <DropdownMenuContent align="end" className="w-80">
       <DropdownMenuLabel className="flex items-center justify-between">{t('notify.title')}
-        {unread > 0 && <Button variant="ghost" size="sm" className="h-6" id="notify-read-all" onClick={e => { e.preventDefault(); readAll() }}><CheckCheck />{t('notify.markAll')}</Button>}</DropdownMenuLabel>
+        {unread > 0 && <Button variant="ghost" size="xs" id="notify-read-all" onClick={e => { e.preventDefault(); readAll() }}><CheckCheck />{t('notify.markAll')}</Button>}</DropdownMenuLabel>
       <DropdownMenuSeparator />
       {!items.length && <div className="px-2 py-3 text-xs text-muted-foreground">{t('notify.empty')}</div>}
       {items.map(n => <DropdownMenuItem key={n.id} data-testid="notify-item" data-read={n.read} onClick={() => open(n)} className="flex items-start gap-2">

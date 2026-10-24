@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "./typeset.css";  /* shadcn/typeset (https://ui.shadcn.com/typeset.css): rendered Markdown in the chat */
 
 @custom-variant dark (&:is(.dark *));
 
@@ -298,3 +299,9 @@
 }
 .react-flow__node { font-family: inherit; }
 .react-flow__handle { width: 10px; height: 10px; }
+
+/* Typeset preset for chat answers (TASK-0085): the tighter rhythm from the Typeset docs. */
+.typeset-chat {
+  --typeset-flow: 1em;
+  --typeset-leading: 1.6;
+}

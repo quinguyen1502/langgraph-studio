@@ -65,7 +65,7 @@ export function SchedulesDialog({ wid, open, onOpenChange, defaultInput }: { wid
                 {s.last_run && <> · {t('schedules.last', { when: at(s.last_run, s.timezone) })}</>}</div>
             </div>
             {!s.enabled && s.note && <Badge variant="outline" className="border-warning text-warning">{t('schedules.stopped')}</Badge>}
-            <Button variant="ghost" size="icon" className="size-7" aria-label={t('schedules.deleteFor', { name: s.name })} onClick={() => remove(s)}><Trash2 /></Button>
+            <Button variant="ghost" size="icon-sm" aria-label={t('schedules.deleteFor', { name: s.name })} onClick={() => remove(s)}><Trash2 /></Button>
           </div>)}
           {!items.length && <p className="text-xs text-muted-foreground">{t('schedules.empty')}</p>}
         </div>

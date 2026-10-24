@@ -14,7 +14,7 @@ export function CopyButton({ value, className }: { value: any; className?: strin
     try { await navigator.clipboard.writeText(txt) } catch { /* clipboard may be unavailable (http) */ }
     setOk(true); setTimeout(() => setOk(false), 1200)
   }
-  return <Tip tip={t('common.copyJson')}><Button variant="ghost" size="icon" className={cn('size-6', className)} onClick={copy} aria-label={t('common.copyJson')}>{ok ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}</Button></Tip>
+  return <Tip tip={t('common.copyJson')}><Button variant="ghost" size="icon-xs" className={className} onClick={copy} aria-label={t('common.copyJson')}>{ok ? <Check /> : <Copy />}</Button></Tip>
 }
 
 function Leaf({ v }: { v: any }) {
@@ -33,7 +33,7 @@ function Node({ k, v, depth }: { k?: string; v: any; depth: number }) {
   const entries = Array.isArray(v) ? v.map((x, i) => [String(i), x] as const) : Object.entries(v)
   const [o, c] = Array.isArray(v) ? ['[', ']'] : ['{', '}']
   return <Collapsible open={open} onOpenChange={setOpen} className={cn(depth > 0 && 'pl-4')}>
-    <CollapsibleTrigger asChild><Button variant="ghost" size="icon" className="size-4 -ml-4 align-middle text-muted-foreground" aria-label={t(open ? 'common.collapse' : 'common.expand')}>
+    <CollapsibleTrigger asChild><Button variant="ghost" size="icon" /* ui-class-ok: 16px disclosure chevron inside a JSON tree line; smaller than icon-xs */ className="size-4 -ml-4 align-middle text-muted-foreground" aria-label={t(open ? 'common.collapse' : 'common.expand')}>
       <ChevronRight className={cn('size-3.5 transition-transform', open && 'rotate-90')} /></Button></CollapsibleTrigger>
     {keyEl}<span className="text-muted-foreground">{o}{!open && <> {t(Array.isArray(v) ? 'common.items' : 'common.keys', { count: entries.length })} {c}</>}</span>
     <CollapsibleContent>{entries.map(([kk, vv]) => <Node key={kk} k={kk} v={vv} depth={depth + 1} />)}<div className="text-muted-foreground">{c}</div></CollapsibleContent>

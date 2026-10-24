@@ -25,7 +25,7 @@ def main(state):
    stub (see [TypeScript](#typescript)). Mode only lists the languages this
    server can run.
 2. Below the editor, the node lists the packages in the image and the limits.
-3. Put sample input in the run panel's **Input** tab.
+3. Put sample input in **Input** in the bottom panel's **Run** tab.
 4. Press **Test with sample state**. It runs `main(state)` once with that
    input and saves nothing. The result shows the returned value, the printed
    output and, on failure, the traceback with your own frames only.

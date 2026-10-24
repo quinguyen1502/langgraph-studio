@@ -75,8 +75,8 @@ export function ApiTriggerDialog(props: { wid?: string; open?: boolean; onOpenCh
           <span className="font-medium">{tk.name}</span><span className="font-mono text-xs text-muted-foreground">{tk.prefix}…</span>
           {tk.revoked ? <Badge variant="secondary">{t('api.revoked')}</Badge> : <Badge variant="success">{t('api.active')}</Badge>}
           <span className="ml-auto text-xs text-muted-foreground">{t('api.lastUsed', { when: when(tk.last_used) })}</span>
-          {!tk.revoked && tk.signed && <Tip tip={t('api.rotate')}><Button variant="ghost" size="icon" className="size-7" data-testid="api-rotate" aria-label={t('api.rotateAria', { name: tk.name })} onClick={() => rotate(tk.id)}><RefreshCw /></Button></Tip>}
-          {!tk.revoked && <Button variant="ghost" size="icon" className="size-7" aria-label={t('api.revokeAria', { name: tk.name })} onClick={() => revoke(tk)}><Trash2 /></Button>}
+          {!tk.revoked && tk.signed && <Tip tip={t('api.rotate')}><Button variant="ghost" size="icon-sm" data-testid="api-rotate" aria-label={t('api.rotateAria', { name: tk.name })} onClick={() => rotate(tk.id)}><RefreshCw /></Button></Tip>}
+          {!tk.revoked && <Button variant="ghost" size="icon-sm" aria-label={t('api.revokeAria', { name: tk.name })} onClick={() => revoke(tk)}><Trash2 /></Button>}
         </div>)}
         {!visible.length && <p className="text-xs text-muted-foreground">{t('api.empty')}</p>}
       </div>

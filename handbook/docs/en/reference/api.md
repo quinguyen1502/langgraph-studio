@@ -29,7 +29,7 @@ codes are listed in [Error codes](errors.md).
 | API client | `POST /api/auth/login` → `data.token`; then `Authorization: Bearer <token>` |
 | Browser | The `studio_session` cookie, plus `X-Requested-With: studio` on writes |
 | WebSocket | The cookie, or `?token=<token>` |
-| Workflow trigger | `Authorization: Bearer wft_…` on `/api/hooks/*` only |
+| Workflow trigger | `Authorization: Bearer wft_…` on `/api/hooks/*` and `/api/lg/*` only |
 
 ## Running a workflow over WebSocket
 
@@ -97,6 +97,23 @@ WS /ws/run
     GET    /api/workflows/{wid}/deliveries      POST   /api/workflows/{wid}/deliveries/{did}/redeliver
     ```
 
+??? abstract "LangGraph Agent Server API (subset)"
+    LangGraph-compatible API ([guide](../run/agent-server-api.md)), `x-api-key: wft_…` or a JWT.
+
+    ```text
+    GET    /api/lg/info                         POST   /api/lg/assistants/search
+    GET    /api/lg/assistants/{id}             GET    /api/lg/assistants/{id}/graph
+    GET    /api/lg/assistants/{id}/schemas     POST   /api/lg/threads
+    POST   /api/lg/threads/search               GET    /api/lg/threads/{tid}
+    DELETE /api/lg/threads/{tid}               GET    /api/lg/threads/{tid}/state
+    POST   /api/lg/threads/{tid}/history       POST   /api/lg/threads/{tid}/runs
+    POST   /api/lg/threads/{tid}/runs/wait     POST   /api/lg/threads/{tid}/runs/stream
+    GET    /api/lg/threads/{tid}/runs          GET    /api/lg/threads/{tid}/runs/{rid}
+    GET    /api/lg/threads/{tid}/runs/{rid}/join  POST /api/lg/threads/{tid}/runs/{rid}/cancel
+    POST   /api/lg/runs                         POST   /api/lg/runs/wait
+    POST   /api/lg/runs/stream
+    ```
+
 ??? abstract "Schedules"
 
     ```text
@@ -122,6 +139,7 @@ WS /ws/run
     GET    /api/workflows/{wid}/tests/runs     (suite history)
     GET    /api/workflows/{wid}/tests/runs/{sid}   (with the comparison to an earlier version)
     POST   /api/workflows/{wid}/tests/runs/{sid}/cancel
+    POST   /api/workflows/{wid}/tests/runs/{sid}/langsmith
     POST   /api/workflows/{wid}/tests/from-run/{run_id}   (a draft case from a run, not saved)
     ```
 
@@ -194,6 +212,7 @@ WS /ws/run
     GET    /api/admin/users                     PATCH  /api/admin/users/{target}
     DELETE /api/admin/users/{target}            POST   /api/admin/users/{target}/password-reset
     GET    /api/admin/policy                    PUT    /api/admin/policy
+    GET    /api/admin/langsmith                 PUT    /api/admin/langsmith
     GET    /api/admin/audit
     GET    /api/teams                           POST   /api/teams
     PATCH  /api/teams/{tid}                     DELETE /api/teams/{tid}

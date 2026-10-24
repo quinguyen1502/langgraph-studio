@@ -6,6 +6,22 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **LangSmith evals and trace links (opt-in).** With `LANGSMITH_API_KEY` set and the admin setting **Send test
+  results to LangSmith** on, each finished workflow test run goes to LangSmith: the test cases as a dataset (kept
+  in sync) and the run as an experiment with `passed` and per-check feedback; **Open in LangSmith** / **Send to
+  LangSmith** in the Tests panel. Runs traced to LangSmith (`LANGSMITH_TRACING=true`) link to their LangSmith
+  trace when `STUDIO_TRACE_URL` is not set. Routes `GET|PUT /api/admin/langsmith`,
+  `POST /api/workflows/{wid}/tests/runs/{sid}/langsmith`; columns `runs.trace_root`,
+  `workflow_test_suites.langsmith_url` (migration 0037); error codes `LANGSMITH_NOT_CONFIGURED`,
+  `LANGSMITH_PUSH_FAILED`.
+- **LangGraph Agent Server API (subset) at `/api/lg`.** The official `langgraph-sdk` clients and `RemoteGraph` can
+  run Superstep workflows: assistants (one per workflow: search, get, graph, schemas), threads (create, get, search,
+  delete, state, history), runs (create, wait, stream with `values` / `updates`, get, list, join, cancel, also
+  without a thread), Human nodes as interrupts resumed with `Command(resume=...)`. Auth with a workflow token or a
+  user JWT (`x-api-key`, `X-Workflow-Token` or `Authorization: Bearer`). New tables `agent_threads` and
+  `agent_thread_runs` (migration 0036), error codes `THREAD_NOT_FOUND`, `THREAD_EXISTS`, `THREAD_BUSY`,
+  `THREAD_WORKFLOW_MISMATCH`. Handbook page **LangGraph-compatible API** (en, vi); design in
+  `docs/agent-server-api.md`; live check `scripts/agent_server_smoke.py`.
 - **Public API and SDKs.** The two workflow-trigger routes (`POST /api/hooks/workflows/{wid}/runs`,
   `GET /api/hooks/workflows/{wid}/runs/{run_id}`) now have a full OpenAPI contract: `WorkflowToken` (`X-Workflow-Token`)
   and `WorkflowBearer` security schemes, typed request and response models, error-envelope responses with examples,

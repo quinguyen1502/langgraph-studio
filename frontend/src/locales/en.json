@@ -524,6 +524,9 @@
     "EMAIL_RECIPIENTS_MISSING": "Send email node {{node}}: there is no recipient (To, Cc or Bcc)",
     "EMAIL_TOO_MANY_RECIPIENTS": "Send email node {{node}}: at most {{max}} recipients",
     "EMAIL_RATE_LIMITED": "Send email nodes may reach {{limit}} recipients per hour; try again in {{retry}} s",
+    "DEMO_CODE_DISABLED": "Code nodes are turned off in the public demo",
+    "DEMO_NODE_DISABLED": "{{node}} nodes are turned off in the public demo",
+    "DEMO_READ_ONLY": "The public demo is read-only: you can open, edit and run workflows, but not save changes",
     "CODE_RUNTIME_OFF": "Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES)",
     "CODE_RUNTIME_UNAVAILABLE": "Code nodes cannot run on this server: {{reason}}",
     "CODE_INVALID": "Code node {{node}}: {{reason}}",
@@ -1588,7 +1591,8 @@
     "languageReady": "Ready",
     "languageNotReady": "Not ready",
     "adminPackages": "Packages: {{packages}}",
-    "adminNoPackages": "No extra packages"
+    "adminNoPackages": "No extra packages",
+    "demoOff": "Code nodes are turned off in this public demo. Deploy your own Superstep to use them."
   },
   "inbox": {
     "title": "Approvals",
@@ -1747,5 +1751,11 @@
     "selectHint": "Select a node on the canvas to find its code",
     "download": "Download .{{ext}}",
     "languageLabel": "Language"
+  },
+  "demo": {
+    "banner": "This is a public demo. Data resets when the server sleeps, and the first load may take about 30 s. Changes are not saved; Code, HTTP and Send email nodes are off, and models answer with a mock.",
+    "hide": "Hide",
+    "try": "Try the demo",
+    "tryHint": "Sign in as the shared demo visitor. You can open, edit and run workflows, but not save changes."
   }
 }

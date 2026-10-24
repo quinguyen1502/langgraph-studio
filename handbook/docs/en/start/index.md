@@ -1,5 +1,8 @@
 # Getting started
 
+!!! tip "Live demo"
+    Try Superstep without installing anything at [superstep-demo.onrender.com](https://superstep-demo.onrender.com): click **Try the demo**. It runs on a free plan, so the first load may take about 30 s, data resets whenever the server sleeps, and changes are not saved. Code, HTTP and Send email nodes are off and models answer with a mock ([how the demo works](https://github.com/quinguyen1502/superstep/blob/develop/docs/deploy/demo.md)).
+
 Superstep has three parts:
 
 | Part | What it is |

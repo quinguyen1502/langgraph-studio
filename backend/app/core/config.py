@@ -75,6 +75,11 @@ def home_dir() -> str:
     return old if not os.path.exists(new) and os.path.isdir(old) else new
 
 
+def demo_mode() -> bool:
+    """STUDIO_DEMO_MODE=true: the public demo (services/demo_service.py). Code nodes, HTTP and Send email nodes are off,
+    models use the offline mock, and visitors share one read-only account. Never turn it on for real work."""
+    return (os.environ.get("STUDIO_DEMO_MODE") or "").strip().lower() in ("1", "true", "yes", "on")
+def demo_run_rate_limit() -> int: return max(0, _int("STUDIO_DEMO_RUN_RATE_LIMIT", 20))  # runs per client IP per minute in demo mode (0 = off)
 def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
     """The studio's own SMTP server (notification, approval and password reset e-mail; core/smtp.py settings); None
@@ -152,7 +157,7 @@ def import_host_dir() -> str | None:
 CODE_RUNTIMES = ("docker", "subprocess", "remote")  # subprocess (TASK-0056) is NOT isolation; remote = the sandbox service
 def code_runtime() -> str:
     """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
-    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
+    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1" or demo_mode(): return "off"
     choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
     return choice if choice in CODE_RUNTIMES else "off"
 def code_languages() -> list[str]:

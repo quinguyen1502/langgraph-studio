@@ -11,7 +11,7 @@ log = get_logger("api")
 HTTP_CODES = {404: "NOT_FOUND", 405: "METHOD_NOT_ALLOWED", 413: "PAYLOAD_TOO_LARGE"}
 
 
-def _respond(err: AppError) -> JSONResponse:
+def respond(err: AppError) -> JSONResponse:
     return JSONResponse(status_code=err.status, content=fail(err.to_dict()), headers=err.headers)
 
 
@@ -22,20 +22,20 @@ def _field(e) -> str:
 def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
     async def app_error(_: Request, exc: AppError):
-        return _respond(exc)
+        return respond(exc)
 
     @app.exception_handler(RequestValidationError)
     async def validation_error(_: Request, exc: RequestValidationError):
         details = [{"field": _field(e), "message": e.get("msg")} for e in exc.errors()][:10]
-        return _respond(AppError("VALIDATION_ERROR", details=details))
+        return respond(AppError("VALIDATION_ERROR", details=details))
 
     @app.exception_handler(StarletteHTTPException)
     async def http_error(_: Request, exc: StarletteHTTPException):
         err = AppError(HTTP_CODES.get(exc.status_code, "BAD_REQUEST"))
         err.status = exc.status_code
-        return _respond(err)
+        return respond(err)
 
     @app.exception_handler(Exception)
     async def unhandled(_: Request, exc: Exception):
         log.exception("unhandled error: %s", exc)
-        return _respond(AppError("INTERNAL_ERROR"))
+        return respond(AppError("INTERNAL_ERROR"))

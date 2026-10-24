@@ -1,8 +1,10 @@
 """WebSocket run controller: auth + socket I/O only; the run lifecycle lives in RunService."""
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from ...core import config
+from ...core.client_ip import client_ip
 from ...core.errors import AppError
 from ...services.run_service import error_event
-from ..deps import run_service, ws_user
+from ..deps import demo_service, run_service, ws_user
 
 router = APIRouter()
 
@@ -25,6 +27,7 @@ async def ws_run(ws: WebSocket):
         return
     svc = run_service()
     try:
+        if config.demo_mode(): await demo_service().check_run(client_ip(ws.client.host if ws.client else None, ws.headers.get("x-forwarded-for")))
         plan = svc.plan(uid, req)
     except AppError as e:
         await ws.send_json(error_event(e.to_dict())); await ws.close(); return

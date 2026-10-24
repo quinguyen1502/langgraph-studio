@@ -194,6 +194,9 @@ CATALOG: dict[str, tuple[int, str]] = {
     "EMAIL_RATE_LIMITED": (429, "Send email nodes may reach {limit} recipients per hour; try again in {retry} s"),
     "ORG_RESOURCE_NOT_ALLOWED": (403, "Your role may not use organization-wide resources at run time ({kind})"),
     # Tool node Code mode (TASK-0053)
+    "DEMO_CODE_DISABLED": (403, "Code nodes are turned off in the public demo"),
+    "DEMO_NODE_DISABLED": (403, "{node} nodes are turned off in the public demo"),
+    "DEMO_READ_ONLY": (403, "The public demo is read-only: you can open, edit and run workflows, but not save changes"),
     "CODE_RUNTIME_OFF": (400, "Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES)"),
     "CODE_RUNTIME_UNAVAILABLE": (503, "Code nodes cannot run on this server: {reason}"),
     "CODE_INVALID": (400, "Code node {node}: {reason}"),

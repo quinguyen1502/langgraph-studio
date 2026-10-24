@@ -95,6 +95,8 @@ WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi 
 
 ## Triển khai
 
+**Demo trực tuyến:** [superstep-demo.onrender.com](https://superstep-demo.onrender.com) (bấm "Dùng thử demo"). Bản demo chạy trên gói miễn phí của Render: lần tải đầu có thể mất khoảng 30 giây trong lúc máy chủ khởi động lại, dữ liệu được đặt lại mỗi khi máy chủ nghỉ, và thay đổi không được lưu. Node Code, HTTP và Send email đang tắt, model trả lời bằng mock; xem [docs/deploy/demo.vi.md](docs/deploy/demo.vi.md).
+
 Triển khai image all-in-one (giao diện, API và WebSocket trên một cổng; SQLite trên volume hoặc Postgres):
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)

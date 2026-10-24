@@ -181,6 +181,8 @@ class RunService:
         if size(inp) > config.input_max(): raise AppError("RUN_INPUT_TOO_LARGE", max_kb=config.input_max() // 1024)
         stored = json.loads(row.data or "{}") if row else {}
         edits = row is None or self.access is None or self.access.may(wid, uid, P.EDIT)
+        # public demo: visitors (viewers) may run their unsaved edits; the engine refuses code, HTTP and email there
+        if config.demo_mode() and not stored.get("source"): edits = True
         wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
         n = req.get("version")  # a stored version's snapshot instead (workflow tests run against version, TASK-0068)

@@ -9,6 +9,7 @@ from .core import config, crypto
 from .api.error_handlers import register_error_handlers
 from .api.routes import ROUTERS
 from .api.static import mount_frontend
+from .api.demo import install_demo_guard
 from .core.security import check_secret
 from .engine import code_runtime
 from .schemas.envelope import EnvelopeResponse
@@ -44,6 +45,7 @@ def create_app() -> FastAPI:
         app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
     redact_tokens("uvicorn.access", "uvicorn.error")  # WebSocket URLs carry ?token=<JWT>
     register_error_handlers(app)
+    if config.demo_mode(): install_demo_guard(app)  # STUDIO_DEMO_MODE: the shared visitor account is read-only
     for r in ROUTERS: app.include_router(r)
     mount_frontend(app, config.static_dir())  # all-in-one image (TASK-PaaS): the built UI on the same origin, after the API routes
     return app

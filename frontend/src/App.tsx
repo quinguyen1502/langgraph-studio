@@ -8,6 +8,7 @@ import { ForgotPasswordPage, ResetPasswordPage } from '@/pages/PasswordReset'
 import { ApprovePage } from '@/pages/Approve'
 import { ApprovalsPage } from '@/pages/Approvals'
 import { CommandPalette } from '@/components/command-palette'
+import { DemoBanner } from '@/components/demo-banner'
 
 // The editor (React Flow, CodeMirror, dagre) and Settings load as their own chunks (TASK-0039).
 const EditorPage = lazy(() => import('@/pages/Editor').then(m => ({ default: m.EditorPage })))
@@ -20,7 +21,7 @@ function Protected({ children }: { children: React.ReactElement }) {
 }
 scheduleExpiry()
 export default function App() {
-  return <TooltipProvider delayDuration={300}><BrowserRouter><CommandPalette /><Suspense fallback={null}><Routes>
+  return <TooltipProvider delayDuration={300}><BrowserRouter><CommandPalette /><DemoBanner /><Suspense fallback={null}><Routes>
     <Route path="/login" element={<AuthPage mode="login" />} />
     <Route path="/register" element={<AuthPage mode="register" />} />
     <Route path="/forgot-password" element={<ForgotPasswordPage />} />

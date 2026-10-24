@@ -90,6 +90,8 @@ Details: [Architecture](https://quinguyen1502.github.io/superstep/reference/arch
 
 ## Deploy
 
+**Live demo:** [superstep-demo.onrender.com](https://superstep-demo.onrender.com) (click "Try the demo"). It runs on Render's free plan: the first load may take about 30 s while the server wakes, data resets whenever it sleeps, and changes are not saved. Code, HTTP and Send email nodes are off and models answer with a mock; see [docs/deploy/demo.md](docs/deploy/demo.md).
+
 Deploy the all-in-one image (UI, API and WebSocket on one port; SQLite on a volume or Postgres):
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)

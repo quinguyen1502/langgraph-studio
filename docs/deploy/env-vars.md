@@ -18,6 +18,8 @@ The variables that matter for the all-in-one image. The full list, including cha
 | Variable | Default in the image | Purpose |
 |---|---|---|
 | `STUDIO_ADMIN_PASSWORD` | empty | Password for that first admin. Empty = generated and logged once. Must have 8+ characters, a letter and a digit. Only used when the account is created. |
+| `STUDIO_DEMO_MODE` | empty | `true` runs the public demo ([demo.md](demo.md)): a shared read-only visitor account, sample workflows seeded on every boot, Code/HTTP/Send email nodes off, models on the mock. Never for real work. |
+| `STUDIO_DEMO_RUN_RATE_LIMIT` | `20` | Demo mode only: runs per client IP per minute (0 = off). |
 | `STUDIO_PUBLIC_URL` | empty | The https address of the app (links in emails, Slack/Telegram callbacks). |
 | `OPENAI_API_KEY`, `OPENAI_BASE_URL` | empty | Default LLM provider. Empty = sample answers; users can also add credentials in Settings. |
 

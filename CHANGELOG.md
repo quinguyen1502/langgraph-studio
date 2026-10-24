@@ -6,6 +6,11 @@ All notable changes to Superstep. Versions follow [Semantic Versioning](https://
 
 ### Added
 
+- **Time travel in the Run panel.** **Time travel** on a finished run lists its checkpoints (the nodes that ran
+  next and the state before them, then the final state); inspect or edit a state and **Fork from here** to start
+  a new run at those nodes. The fork runs the original run's stored version, keeps iteration counts and records
+  `forked_from` on its `run_started` event. Route `GET /api/runs/{run_id}/checkpoints`, WebSocket request
+  `{"fork": {run_id, checkpoint, state?}}`; error codes `CHECKPOINT_NOT_FOUND`, `RUN_FORK_UNSUPPORTED`.
 - **Public API and SDKs.** The two workflow-trigger routes (`POST /api/hooks/workflows/{wid}/runs`,
   `GET /api/hooks/workflows/{wid}/runs/{run_id}`) now have a full OpenAPI contract: `WorkflowToken` (`X-Workflow-Token`)
   and `WorkflowBearer` security schemes, typed request and response models, error-envelope responses with examples,

@@ -9,7 +9,7 @@ test('run metrics: tokens, cost and history', async ({ page }) => {
   await expect(page.locator('#trace-cost')).toHaveText('$0')
   await expect(page.locator('#trace-link')).toHaveCount(0) // no exporter / STUDIO_TRACE_URL configured
   await expect(page.locator('[data-testid=span-tokens]').first()).toBeVisible()
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.locator('#history-all').click()
   const row = page.locator('[data-testid=history-row]').first()
   await expect(row.locator('[data-testid=history-tokens]')).toContainText('token')
   await expect(row.locator('[data-testid=history-cost]')).toHaveText('$0')

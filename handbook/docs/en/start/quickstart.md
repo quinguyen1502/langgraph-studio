@@ -96,7 +96,7 @@ workflow has one field, `message`, which holds the run input.
 
 ## 5. Run it and approve
 
-1. Open the **Input** tab at the bottom and enter:
+1. In the **Run** tab at the bottom, type into **Input** (left) and enter:
 
     ```json
     {"message": "My order A100 arrived broken. Can I get a refund?"}
@@ -119,12 +119,12 @@ workflow has one field, `message`, which holds the run input.
     [Human approval](../run/human-approval.md#approve-from-chat).
 
 !!! success "Check"
-    The **Logs** tab shows **Completed** with four steps: Start, Draft reply,
+    The logs (right of the input) show **Completed** with four steps: Start, Draft reply,
     Approve reply and End.
 
 ## 6. Read the trace
 
-Select **Draft reply** on the canvas or in **Logs**. The step opens with
+Select **Draft reply** on the canvas or in the logs. The step opens with
 **Input**, **Output**, **State diff** and **Raw** events. The state diff shows
 `reply` added by this step.
 
@@ -149,7 +149,7 @@ Select **Draft reply** on the canvas or in **Logs**. The step opens with
 
     The response is `202` with a `run_id` and `"status": "queued"`.
 
-3. Open the **History** tab (reload the page first). The API run has an
+3. Open **Run → View all** (reload the page first). The API run has an
    **API** badge and status `waiting`: it stopped at the Human node, like the
    studio run.
 

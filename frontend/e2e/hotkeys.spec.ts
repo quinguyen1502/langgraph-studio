@@ -22,11 +22,11 @@ test('save, run, delete with the keyboard; typing is safe; cheat sheet lists eve
   await expect(page.locator('.react-flow__edge')).toHaveCount(0)
   // Mod+Enter runs (start → end directly is invalid without edges; the run still starts and reports)
   await page.locator('.react-flow__pane').click(); await page.keyboard.press('ControlOrMeta+Enter')
-  await expect(page.locator('[role=tab][id$="-trigger-logs"]')).toHaveAttribute('data-state', 'active')
+  await expect(page.locator('#run-tab')).toHaveAttribute('data-state', 'active')
   // ? opens the cheat sheet
   await page.locator('.react-flow__pane').click(); await page.keyboard.press('Shift+?')
   const sheet = page.locator('#shortcut-cheatsheet'); await expect(sheet).toBeVisible()
-  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(18)
+  await expect(sheet.getByTestId('shortcut-row')).toHaveCount(19)
   await expect(sheet).toContainText(/Ctrl|⌘/); await expect(sheet).toContainText('Lưu workflow')
   await page.keyboard.press('Escape'); await expect(sheet).toHaveCount(0)
 })

@@ -3,13 +3,14 @@
 Design: every visitor signs in to one shared account, DEMO_VISITOR_EMAIL, whose global role is viewer. RBAC already keeps
 a viewer away from credentials, knowledge bases, API tokens, MCP servers, workflow creation and every admin page; demo mode
 adds the rest:
-- refuses(): the API refuses every write from the visitor except signing in/out, cancelling a run, answering a Human node
-  and marking notifications read, so nobody can save, share or change the account (password, preferences, identities);
+- refuses(): the API refuses every write from the visitor except signing in/out, cancelling a run, answering a Human node,
+  marking notifications read and starting or deleting their own chats in the Chat panel, so nobody can save, share or change the account (password, preferences, identities);
   sign-up and password reset are closed to everyone (DEMO_READ_ONLY).
 - the visitor may run unsaved edits (run_service); the engine turns off Code, HTTP Tool and Send email nodes and runs LLM
   and Decision nodes on the offline mock model, so nothing leaves the server.
 - check_run(): at most STUDIO_DEMO_RUN_RATE_LIMIT runs per client IP and minute.
-- seed(): the visitor and the sample workflows (shared with the visitor as viewer) exist after every boot, since the free
+- seed(): the visitor and the sample workflows (shared with the visitor as viewer; chat turned on for the Chatbot) exist
+  after every boot, since the free
   plan's SQLite file is wiped when the service sleeps.
 The admin (STUDIO_ADMIN_EMAILS + STUDIO_ADMIN_PASSWORD) is a normal account and is not restricted."""
 import re, time
@@ -21,14 +22,16 @@ from ..engine.examples import EXAMPLE
 from ..engine.templates import BUILTINS
 from ..models.database import Database
 from ..models.workflow_share import WorkflowShare
-from ..repositories import RunRepository, UserRepository, WorkflowRepository, WorkflowShareRepository, WorkflowVersionRepository
+from ..repositories import ChatMessageRepository, ChatSessionRepository, ChatTriggerRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowShareRepository, WorkflowVersionRepository
 from .rate_limit import RateLimiter
 
 log = get_logger("demo")
 VISITOR_ID = "demo-visitor"
 VISITOR_EMAIL, VISITOR_PASSWORD = "demo@superstep.dev", "superstep-demo-2026"  # public on purpose: printed on the sign-in page
 SAMPLES = ("builtin-chatbot", "builtin-router", "builtin-approval")  # the chat-enabled Chatbot first
-_VISITOR_WRITES = re.compile(r"/api/(auth/(login|logout)|runs/[^/]+/cancel|notifications/(read-all|[^/]+/read)|approvals/inbox/[^/]+)")
+CHAT_SAMPLE = "demo-chatbot"  # web chat on, so the Chat panel works for the visitor
+_VISITOR_WRITES = re.compile(r"/api/(auth/(login|logout)|runs/[^/]+/cancel|notifications/(read-all|[^/]+/read)|approvals/inbox/[^/]+"
+                             r"|workflows/[^/]+/chat/sessions|chat/sessions/[^/]+)")  # + their own chat sessions (Chat panel)
 _CLOSED = re.compile(r"/api/auth/(register|password-reset(/confirm)?)")
 UNSAFE = ("POST", "PUT", "PATCH", "DELETE")
 
@@ -58,7 +61,10 @@ class DemoService:
 def seed(db: Database, owner: str) -> None:
     """Idempotent: the visitor account (viewer, the public password) and the samples owned by `owner` (an admin)."""
     from .workflow_service import WorkflowService
+    from .chat_session_service import ChatSessionService
     users, wfs, shares = UserRepository(db), WorkflowRepository(db), WorkflowShareRepository(db)
+    triggers = ChatTriggerRepository(db)
+    chats = ChatSessionService(ChatSessionRepository(db), triggers, ChatMessageRepository(db), wfs, RunRepository(db))
     if users.get_by_id(VISITOR_ID) is None:
         users.add(VISITOR_ID, VISITOR_EMAIL, security.hash_password(VISITOR_PASSWORD), time.time())
     users.set_role(VISITOR_ID, "viewer"); users.set_active(VISITOR_ID, True)
@@ -67,6 +73,7 @@ def seed(db: Database, owner: str) -> None:
                                              for sid in SAMPLES for t in BUILTINS if t["id"] == sid]
     for wid, wf in samples:
         if not wfs.exists(wid): svc.seed(owner, wid, wf)
+        if wid == CHAT_SAMPLE and triggers.web(wid) is None: chats.save_settings(wid, owner, {"enabled": True})
         if shares.role_of(wid, VISITOR_ID) is None:
             shares.upsert(WorkflowShare(workflow_id=wid, user_id=VISITOR_ID, role="viewer", created=time.time(), shared_by=owner))
     log.info("Demo mode: %d sample workflows shared with %s", len(samples), VISITOR_EMAIL)

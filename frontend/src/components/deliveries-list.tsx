@@ -30,7 +30,7 @@ export function DeliveriesList({ wid }: { wid?: string }) {
         <Badge variant={VARIANT[d.status]} data-testid="delivery-status">{t(`deliveries.status.${d.status}`)}</Badge>
         <span className="font-mono truncate">{d.url}</span>
         <span className="ml-auto text-muted-foreground">{when(d.created)}</span>
-        <Button size="sm" variant="outline" className="h-6" data-testid="delivery-redeliver" disabled={d.status === 'pending'} onClick={() => redeliver(d.id)}><Send />{t('deliveries.redeliver')}</Button>
+        <Button size="xs" variant="outline" data-testid="delivery-redeliver" disabled={d.status === 'pending'} onClick={() => redeliver(d.id)}><Send />{t('deliveries.redeliver')}</Button>
       </div>
       <div className="flex gap-3 text-muted-foreground tabular-nums">
         <span>{t('deliveries.attempts', { count: d.attempts })}</span>

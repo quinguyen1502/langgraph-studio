@@ -28,7 +28,7 @@ function Row({ label, hint, children }: { label: React.ReactNode; hint?: string;
 function AccountCard() {
   const { t, i18n } = useTranslation(); const me = useMe(); const [notify, setNotify] = useState(false)
   return <Card id="profile-account"><CardHeader><CardTitle>{t('profile.account')}</CardTitle></CardHeader>
-    <CardContent className="py-0">
+    <CardContent /* ui-class-ok: content-only card row; the Card already pads vertically */ className="py-0">
       <Row label={<p className="text-sm font-medium">{t('auth.email')}</p>} hint={t('profile.emailHint')}><span className="text-sm" id="profile-email">{me?.email}</span></Row>
       <Row label={<p className="text-sm font-medium">{t('profile.role')}</p>}>{me && <Badge variant="secondary" id="profile-role">{t(`users.roles.${me.role}`)}</Badge>}</Row>
       <Row label={<p className="text-sm font-medium">{t('users.created')}</p>}><span className="text-sm text-muted-foreground" id="profile-created">{me?.created ? fmtDate(me.created) : '—'}</span></Row>

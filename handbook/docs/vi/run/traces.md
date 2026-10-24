@@ -4,7 +4,7 @@
 
 ![Trace của run](../images/run-trace.png)
 
-Tab **Logs** có mỗi bước của node là một dòng: trạng thái, tên, loại, thời
+Logs trong tab **Chạy** có mỗi bước của node là một dòng: trạng thái, tên, loại, thời
 gian, thanh thác nước, và số token khi model trả về. Vòng lặp hiện `#2`, `#3`,
 … Dòng tóm tắt cho biết trạng thái run, thời gian, số bước, token input và
 output, chi phí và số lỗi.
@@ -20,8 +20,9 @@ Bấm vào một dòng, hoặc vào node trên canvas, để mở chi tiết:
 
 ![State diff](../images/trace-detail.png)
 
-**Raw events** chuyển cả tab sang luồng sự kiện gốc. **Lịch sử** phát lại bất
-kỳ run nào trước đó trên cùng timeline, kèm nhãn phiên bản.
+**Raw events** chuyển cả timeline sang luồng sự kiện gốc. Chọn một run trước
+đó ở menu run cạnh các tab (10 run gần nhất), hoặc trong **Xem tất cả**, để
+phát lại trên cùng timeline, kèm nhãn phiên bản.
 
 ## Chạy từng bước
 

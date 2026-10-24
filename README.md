@@ -1,10 +1,15 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-lockup-dark.svg">
-    <img src="frontend/public/brand/superstep-lockup.svg" alt="Superstep" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-mark-dark.svg">
+    <img src="frontend/public/brand/superstep-mark.svg" alt="Superstep logo" width="140" height="140">
   </picture>
 
+  <h3><b>Superstep</b></h3>
+  <p>Open-source visual LangGraph studio<br>Drag-and-drop graphs • Live run streaming • Human-in-the-loop approvals • Python &amp; TypeScript code nodes</p>
+
   <p>
+    <a href="https://github.com/quinguyen1502/superstep/stargazers"><img src="https://img.shields.io/github/stars/quinguyen1502/superstep?style=social" alt="GitHub stars"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/quinguyen1502/superstep" alt="License"></a>
     <a href="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://quinguyen1502.github.io/superstep/"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg" alt="Handbook"></a>
   </p>
@@ -12,18 +17,36 @@
   <b>English</b> · <a href="README.vi.md">Tiếng Việt</a>
 </div>
 
-Superstep is a self-hosted platform for building LangGraph workflows in
-the browser and running them as services. Workflows are JSON documents that
-the FastAPI backend validates and compiles into a LangGraph `StateGraph`. Each
-one can run from the editor with a live per-node trace, from another service
-over HTTP, on a cron schedule, and pause for a human decision in between.
+<p align="center"><b>Build LangGraph workflows in the browser and run them as services.</b></p>
 
-[![Quickstart video: build, run, approve and trigger a workflow](handbook/docs/en/assets/video/studio-intro-en.jpg)](https://quinguyen1502.github.io/superstep/#video)
+<p align="center"><a href="https://quinguyen1502.github.io/superstep/">Documentation</a> • <a href="https://quinguyen1502.github.io/superstep/#video">Quickstart video</a> • <a href="https://quinguyen1502.github.io/superstep/reference/api/">HTTP API</a> • <a href="https://quinguyen1502.github.io/superstep/reference/architecture/">Architecture</a></p>
 
-[Documentation](https://quinguyen1502.github.io/superstep/) ·
-[Quickstart](https://quinguyen1502.github.io/superstep/start/quickstart/) ·
-[HTTP API](https://quinguyen1502.github.io/superstep/reference/api/) ·
-[Architecture](https://quinguyen1502.github.io/superstep/reference/architecture/)
+<img src="handbook/docs/en/images/overview.png" alt="Superstep editor with a branching workflow, node settings, a run waiting for a human, and the chat panel" width="100%">
+
+<table>
+  <tr>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/chat-tab.png" alt="Chat with a workflow" width="100%"><br><sub>Chat with a workflow</sub></td>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/run-trace.png" alt="Live run trace" width="100%"><br><sub>Live run trace</sub></td>
+    <td width="33%" align="center"><img src="handbook/docs/en/images/code-tab.png" alt="LangGraph code export" width="100%"><br><sub>LangGraph code export</sub></td>
+  </tr>
+</table>
+
+## Why Superstep?
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><b>Visual graphs</b><br>Drag nodes, wire edges; saved as JSON, compiled to a LangGraph <code>StateGraph</code></td>
+    <td width="50%" valign="top"><b>Live runs</b><br>Per-node trace and state diff as it runs; step and run-to-node debugging</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Human in the loop</b><br>Pause for approval in the studio, Slack, Telegram, email or Teams</td>
+    <td width="50%" valign="top"><b>Triggers</b><br>HTTP API with tokens, signed webhooks, cron schedules, chat commands</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Python & TypeScript code</b><br>Code nodes in a locked Docker sandbox; any model, MCP and pgvector</td>
+    <td width="50%" valign="top"><b>Learn LangGraph</b><br>Export any workflow as one readable Python file that runs on its own</td>
+  </tr>
+</table>
 
 ## Quick start
 

@@ -51,7 +51,7 @@ export function ApprovalsPage() {
       {items && !items.length && <div id="inbox-empty" className="flex flex-col items-center gap-2 py-14 text-center">
         <div className="rounded-full bg-muted p-3 text-muted-foreground"><Inbox className="size-5" /></div>
         <div className="font-medium">{t('inbox.empty')}</div><div className="text-sm text-muted-foreground">{t('inbox.emptyHelp')}</div></div>}
-      {items?.map(it => <Card key={it.run_id} data-testid="inbox-row" data-run={it.run_id} className="gap-3 py-4">
+      {items?.map(it => <Card key={it.run_id} data-testid="inbox-row" data-run={it.run_id} className="gap-3">
         <CardHeader className="px-4">
           <CardTitle className="text-base">{it.workflow_name || it.workflow_id || it.run_id}</CardTitle>
           <CardDescription className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">

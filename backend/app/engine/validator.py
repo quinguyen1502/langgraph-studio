@@ -133,6 +133,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "decision": errs += decisions.errors(nid, d, schema)
         if t == "email": errs += emails.errors(nid, d, schema)
         if t == "human": errs += deadlines.errors(nid, d, config.wait_ttl())
+        if t == "human" and d.get("answered_by") not in (None, "visitor", "reviewer"):
+            errs.append(f"Human node {nid}: answered by must be visitor or reviewer")
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]

@@ -27,6 +27,9 @@ def test_policy_lets_the_visitor_read_and_run_but_not_write():
     assert not demo_service.refuses("GET", "/api/credentials", v)
     for path in ("/api/auth/login", "/api/auth/logout", "/api/runs/r1/cancel", "/api/notifications/read-all", "/api/approvals/inbox/r1"):
         assert not demo_service.refuses("POST", path, v), path
+    assert not demo_service.refuses("POST", "/api/workflows/demo-chatbot/chat/sessions", v)  # the Chat panel
+    assert not demo_service.refuses("DELETE", "/api/chat/sessions/s1", v)
+    assert demo_service.refuses("PUT", "/api/workflows/demo-chatbot/chat", v)  # but not the Chat settings
     for m, path in (("PUT", "/api/workflows/example"), ("POST", "/api/credentials"), ("POST", "/api/me/password"),
                     ("PUT", "/api/notifications/preferences"), ("PUT", "/api/workflows/example/shares"), ("POST", "/api/workflows")):
         assert demo_service.refuses(m, path, v), path
@@ -53,6 +56,9 @@ def test_seed_is_idempotent_and_shares_samples_read_only(tmp_path, demo):
     assert v.role == "viewer" and v.active and security.verify_password(demo_service.VISITOR_PASSWORD, v.password)
     for wid in ("example", "demo-chatbot", "demo-router", "demo-approval"):
         assert wfs.exists(wid) and wfs.get(wid).owner != v.id and shares.role_of(wid, v.id) == "viewer", wid
+    from app.repositories import ChatTriggerRepository
+    web = ChatTriggerRepository(d).web("demo-chatbot")
+    assert web is not None and web.enabled  # the Chat panel works for the visitor
     opts = AuthService(users).options()["demo_mode"]
     assert opts == {"email": demo_service.VISITOR_EMAIL, "password": demo_service.VISITOR_PASSWORD}
 

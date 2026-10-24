@@ -187,6 +187,14 @@
 | `CHAT_IDENTITY_UNVERIFIED` | 403 | Their {kind} account is linked but not verified |
 | `CHAT_FORBIDDEN` | 403 | They may not run this workflow |
 | `CHAT_TRIGGER_OFF` | 409 | The chat trigger is off |
+| `CHAT_NOT_ENABLED` | 409 | Chat is off for this workflow. Turn it on in the Chat settings |
+| `CHAT_SETTINGS_INVALID` | 400 | Chat settings: invalid {field} |
+| `CHAT_ACCESS_NOT_AVAILABLE` | 400 | Chat access '{access}' is not available yet |
+| `CHAT_SESSION_NOT_FOUND` | 404 | Chat not found |
+| `CHAT_MESSAGE_EMPTY` | 400 | Write a message first |
+| `CHAT_MESSAGE_TOO_LONG` | 400 | The message is longer than {max} characters |
+| `CHAT_RUN_WAITING` | 409 | Answer the question in the chat first |
+| `CHAT_ANSWER_BY_REVIEWER` | 409 | A reviewer answers this step in the Approvals inbox |
 | `TEST_NOT_FOUND` | 404 | Test case not found |
 | `TEST_CASE_INVALID` | 400 | Test case: {reason} |
 | `TEST_CASES_LIMIT` | 400 | A workflow can have at most {max} test cases |

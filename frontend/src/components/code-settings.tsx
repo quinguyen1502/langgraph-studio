@@ -9,7 +9,7 @@ import { JsonView } from '@/components/json-view'
 import { CodeEditor, type CodeLanguageId } from '@/components/code-editor'
 import { api } from '@/lib/api'
 import { errorText } from '@/lib/i18n'
-import { languageInfo, type CodeRuntime, type CodeTestResult } from '@/lib/code-runtime'
+import { codeOffKey, languageInfo, type CodeRuntime, type CodeTestResult } from '@/lib/code-runtime'
 import { stateFields, stateType, type StateField } from '@/lib/state-type'
 
 /** stdout and traceback of one call; shared by the test result and the trace detail. */
@@ -46,10 +46,10 @@ export function CodeSettings({ value, onChange, runtime, canWrite, editable, inp
     catch (e: any) { setError(e.message) } finally { setBusy(false) }
   }
   return <div className="space-y-2" id="code-settings">
-    {runtime?.code_runtime === 'subprocess' && <Alert variant="warning" id="code-not-isolated" className="py-2"><ShieldAlert />
+    {runtime?.code_runtime === 'subprocess' && <Alert variant="warning" id="code-not-isolated"><ShieldAlert />
       <AlertDescription className="text-xs">{t('code.notIsolated')}</AlertDescription></Alert>}
-    {runtime && !ready && <Alert variant="warning" id="code-runtime-off" className="py-2"><AlertTriangle />
-      <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t('code.off')
+    {runtime && !ready && <Alert variant="warning" id="code-runtime-off"><AlertTriangle />
+      <AlertDescription className="text-xs">{runtime.code_runtime === 'off' ? t(codeOffKey(runtime))
         : !info ? t('code.languageOff', { language: t(`code.languages.${language}`) })
         : t('code.unavailable', { problem: info.problem || runtime.problem || '' })}</AlertDescription></Alert>}
     {kept && <p className="text-[11px] text-muted-foreground" id="code-language-kept">{t('code.languageKept', { language: t(`code.languages.${language}`) })}</p>}
@@ -64,11 +64,11 @@ export function CodeSettings({ value, onChange, runtime, canWrite, editable, inp
     {canWrite && <Button type="button" variant="outline" size="sm" id="code-test" disabled={busy || !ready || !value.trim()} onClick={test}>
       {busy ? <Loader2 className="animate-spin" /> : <FlaskConical />}{t('code.test')}</Button>}
     {canWrite && <p className="text-[11px] text-muted-foreground">{t('code.testHint')}</p>}
-    {error && <Alert variant="destructive" id="code-test-error" className="py-2"><AlertTriangle /><AlertDescription className="text-xs break-words">{error}</AlertDescription></Alert>}
+    {error && <Alert variant="destructive" id="code-test-error"><AlertTriangle /><AlertDescription className="text-xs break-words">{error}</AlertDescription></Alert>}
     {result && <div className="space-y-2 rounded-md border p-2" id="code-test-result">
       {result.ok
         ? <div className="space-y-1"><div className="text-[11px] font-medium text-muted-foreground">{t('code.result', { ms: Math.round(result.duration_ms ?? 0) })}</div><JsonView value={result.value} /></div>
-        : <Alert variant="destructive" className="py-2"><AlertTriangle /><AlertDescription className="text-xs break-words" id="code-test-failure">{result.error ? errorText(result.error) : t('trace.error')}</AlertDescription></Alert>}
+        : <Alert variant="destructive"><AlertTriangle /><AlertDescription className="text-xs break-words" id="code-test-failure">{result.error ? errorText(result.error) : t('trace.error')}</AlertDescription></Alert>}
       <CodeConsole stdout={result.stdout} traceback={result.traceback} />
     </div>}
   </div>

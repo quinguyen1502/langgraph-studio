@@ -17,8 +17,9 @@ test('api trigger: token, sync run, history source', async ({ page }) => {
   expect(r.status()).toBe(200); expect(body.data.status).toBe('ok'); expect(body.data.final_state.intent).toBe('order_status')
   await page.keyboard.press('Escape')
   await page.reload()
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.locator('#history-all').click()
   await expect(page.locator('[data-testid=history-row]').first().locator('[data-testid=history-source]')).toHaveText('API')
+  await page.keyboard.press('Escape')
   // revoked tokens are rejected
   await page.locator('#more-btn').click(); await page.locator('#api-btn').click()
   await page.locator('[data-testid=api-token-row]', { hasText: 'e2e' }).first().getByRole('button', { name: /Thu hồi/ }).click()

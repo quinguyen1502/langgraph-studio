@@ -34,7 +34,7 @@ export function StatusBadge({ s }: { s?: string }) {
 function UnisolatedBadge() {
   const { t } = useTranslation(); const rt = useCodeRuntime()
   if (rt?.code_runtime !== 'subprocess') return null
-  return <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" className="h-4 px-1 text-[9px] gap-0.5 mt-0.5" data-testid="node-unisolated"><ShieldAlert className="size-2.5" />{t('code.notIsolatedNode')}</Badge></Tip>
+  return <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" size="sm" className="mt-0.5" data-testid="node-unisolated"><ShieldAlert />{t('code.notIsolatedNode')}</Badge></Tip>
 }
 
 export function StudioNode({ data, type, selected }: NodeProps) {
@@ -50,8 +50,8 @@ export function StudioNode({ data, type, selected }: NodeProps) {
         <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{m.label}</div>
         <div className="text-sm font-medium truncate">{d.label}</div>
         {type === 'tool' && d.mode === 'code' && <UnisolatedBadge />}
-        {type === 'tool' && d.mode === 'code' && d.language === 'typescript' && <Badge variant="outline" className="h-4 px-1 font-mono text-[9px]" data-testid="node-language">TS</Badge>}
-        {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" className="h-4 px-1 text-[9px] gap-0.5"><Sparkles className="size-2.5" />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
+        {type === 'tool' && d.mode === 'code' && d.language === 'typescript' && <Badge variant="outline" size="sm" className="font-mono" data-testid="node-language">TS</Badge>}
+        {type === 'code' && <div className="flex gap-1 mt-0.5">{d.is_llm && <Badge variant="outline" size="sm"><Sparkles />LLM</Badge>}{d.kind && <span className="text-[9px] text-muted-foreground font-mono">{d.kind}</span>}</div>}
       </div>
     </div>
     {(d._status || d._dur != null) && <div className="mt-2 flex items-center justify-between gap-2">

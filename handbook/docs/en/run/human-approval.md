@@ -8,7 +8,7 @@ branch on it.
 
 ## Answer in the studio
 
-The Logs tab shows the question with **Approve** (`approved`), **Reject**
+The logs in the **Run** tab show the question with **Approve** (`approved`), **Reject**
 (`rejected`), or a free-text **Send response**. Only the run's owner can open,
 answer or cancel the run here.
 

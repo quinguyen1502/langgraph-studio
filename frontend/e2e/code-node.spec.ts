@@ -12,7 +12,7 @@ async function setCode(page: Page, code: string) {
   await page.locator('#code-source').click(); await page.keyboard.press('ControlOrMeta+a'); await page.keyboard.insertText(code)
 }
 async function runInput(page: Page, json: string) {
-  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill(json)
+  await page.locator('#run-tab').click(); await page.locator('#run-input').fill(json)
 }
 
 test('code mode: write, test with sample state, run, traceback, read-only for editors', async ({ page, browser }) => {

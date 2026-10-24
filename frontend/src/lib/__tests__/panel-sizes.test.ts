@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { PANEL_DEFAULT, PANEL_KEY, panelStore, parseSizes } from '../panel-sizes'
+import { CHAT_KEY, CHAT_WIDTH, PANEL_DEFAULT, PANEL_KEY, chatStore, panelStore, parseChat, parseSizes } from '../panel-sizes'
 
 describe('parseSizes', () => {
   it('uses the defaults when nothing is stored or the value is corrupt', () => {
@@ -25,5 +25,20 @@ describe('panelStore', () => {
   it('clearing site data restores the defaults', () => {
     panelStore.write({ left: 300, right: 420, bottom: 180 }); localStorage.clear()
     expect(panelStore.read()).toEqual(PANEL_DEFAULT)
+  })
+})
+
+describe('chatStore', () => {
+  beforeEach(() => localStorage.clear())
+  it('defaults to closed at 420px and clamps the width to 340–760', () => {
+    expect(chatStore.read()).toEqual({ open: false, width: CHAT_WIDTH.default })
+    expect(parseChat(JSON.stringify({ open: true, width: 2000 }))).toEqual({ open: true, width: 760 })
+    expect(parseChat(JSON.stringify({ open: 'yes', width: 100.6 }))).toEqual({ open: false, width: 340 })
+    expect(parseChat('{bad')).toEqual({ open: false, width: 420 })
+  })
+  it('merges partial writes under one key', () => {
+    chatStore.write({ open: true }); chatStore.write({ width: 500 })
+    expect(Object.keys(localStorage)).toEqual([CHAT_KEY])
+    expect(chatStore.read()).toEqual({ open: true, width: 500 })
   })
 })

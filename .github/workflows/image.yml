@@ -1,0 +1,158 @@
+# All-in-one image (root Dockerfile): build, smoke test on SQLite and on Postgres, Trivy scan, then publish to GHCR on
+# develop and on release tags (vX.Y.Z). Only GITHUB_TOKEN is used; nothing secret is passed to the build.
+name: Image
+
+on:
+  push:
+    branches: [develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  SMOKE_EMAIL: ci-admin@example.com
+  SMOKE_PASSWORD: Ci-smoke-pass-1
+
+jobs:
+  test:
+    name: All-in-one image (build + SQLite/Postgres smoke + Trivy)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env: { POSTGRES_USER: studio, POSTGRES_PASSWORD: studio, POSTGRES_DB: studio }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U studio" --health-interval 5s --health-timeout 3s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy files (Render, Heroku, Railway, Fly, DO, Zeabur, compose)
+        run: pip install pyyaml && python scripts/check_deploy_configs.py
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          load: true
+          tags: superstep:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build the sandbox service
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: docker/studio-sandbox/Dockerfile
+          load: true
+          tags: superstep-sandbox:ci
+          cache-from: type=gha,scope=sandbox
+          cache-to: type=gha,mode=max,scope=sandbox
+      - run: pip install httpx websockets
+      - name: Smoke on SQLite (volume, production mode, admin from env)
+        run: |
+          docker run -d --name sq -p 8000:8000 -v sqdata:/data -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef \
+            -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
+          scripts/image_smoke.sh http://localhost:8000 sq
+          docker restart sq && scripts/image_smoke.sh http://localhost:8000 sq   # data and sign-in survive a restart
+          docker exec sq deno --version && docker exec sq sh -c 'test -w /data && ls /data'
+      - name: Smoke on Postgres (postgres:// URL, generated admin password)
+        run: |
+          docker run -d --name pg --network host -e PORT=8001 -e DATABASE_URL=postgres://studio:studio@localhost:5432/studio \
+            -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL superstep:ci
+          until curl -fsS http://localhost:8001/api/health >/dev/null 2>&1; do sleep 1; done
+          pw=$(docker logs pg 2>&1 | sed -n 's/.*change it now): \([^ ]*\).*/\1/p' | head -1)
+          test -n "$pw" && SMOKE_PASSWORD=$pw scripts/image_smoke.sh http://localhost:8001 pg
+      - name: Root-owned volume (Fly, Railway, Render, Zeabur mounts) and a platform PORT
+        run: |
+          sudo mkdir -p "$RUNNER_TEMP/rootdata" && sudo chown root:root "$RUNNER_TEMP/rootdata" && sudo chmod 755 "$RUNNER_TEMP/rootdata"
+          docker run -d --name rv -p 8080:8080 -e PORT=8080 -v "$RUNNER_TEMP/rootdata:/data" \
+            -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID \
+            -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
+          scripts/image_smoke.sh http://localhost:8080 rv
+          test "$(docker top rv -o pid,uid,args | awk '/uvicorn/ {print $2; exit}')" = 10001 || { docker top rv -o pid,uid,args; exit 1; }  # dropped root
+          sudo test -f "$RUNNER_TEMP/rootdata/studio.db"
+      - name: Remote sandbox (internal network, hardened container, Python + TypeScript, no network)
+        run: |
+          docker network create --internal sbx && docker network create front
+          docker run -d --name sbx --network sbx --read-only --tmpfs /tmp:size=256m --cap-drop ALL \
+            --cap-add SETUID --cap-add SETGID --cap-add CHOWN --cap-add KILL --cap-add DAC_OVERRIDE --cap-add FOWNER \
+            --security-opt no-new-privileges:true -e STUDIO_SANDBOX_TOKEN=ci-sandbox-token-$GITHUB_RUN_ID superstep-sandbox:ci
+          docker create --name rm --network front -p 8090:8000 -e STUDIO_CODE_RUNTIME=remote -e STUDIO_SANDBOX_URL=sbx:8080 \
+            -e STUDIO_SANDBOX_TOKEN=ci-sandbox-token-$GITHUB_RUN_ID -e JWT_SECRET=ci-jwt-$GITHUB_RUN_ID-0123456789abcdef \
+            -e STUDIO_SECRET_KEY=ci-key-$GITHUB_RUN_ID -e STUDIO_ADMIN_EMAILS=$SMOKE_EMAIL -e STUDIO_ADMIN_PASSWORD=$SMOKE_PASSWORD superstep:ci
+          docker network connect sbx rm && docker start rm
+          scripts/image_smoke.sh http://localhost:8090 rm
+          python scripts/sandbox_smoke.py http://localhost:8090
+      - name: Production refuses a missing STUDIO_SECRET_KEY
+        run: |
+          if docker run --rm -e JWT_SECRET=ci-jwt-0123456789abcdef0123456789 superstep:ci python -c "import app.main"; then
+            echo "started without STUDIO_SECRET_KEY" >&2; exit 1; fi
+      - if: failure()
+        run: docker logs sq || true; docker logs pg || true; docker logs rv || true; docker logs sbx || true; docker logs rm || true
+      - name: Trivy (fail on fixable CRITICAL)
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0 (immutable; earlier tags were compromised in March 2026)
+        with:
+          version: v0.69.3
+          image-ref: superstep:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+      - name: Trivy, sandbox image
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          version: v0.69.3
+          image-ref: superstep-sandbox:ci
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+  publish:
+    name: Publish to GHCR (${{ matrix.image.suffix || 'app' }})
+    needs: test
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - { suffix: "", file: Dockerfile, scope: "", title: "Superstep", description: "Visual LangGraph studio (all-in-one image)" }
+          - { suffix: "-sandbox", file: docker/studio-sandbox/Dockerfile, scope: sandbox, title: "Superstep sandbox", description: "Code node sandbox service for STUDIO_CODE_RUNTIME=remote" }
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}${{ matrix.image.suffix }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}},enable=${{ !startsWith(github.ref, 'refs/tags/v0.') }}
+            type=raw,value=develop,enable=${{ github.ref == 'refs/heads/develop' }}
+            type=sha,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=${{ matrix.image.title }}
+            org.opencontainers.image.description=${{ matrix.image.description }}
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ${{ matrix.image.file }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha${{ matrix.image.scope && format(',scope={0}', matrix.image.scope) || '' }}
+          provenance: true

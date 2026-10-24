@@ -28,8 +28,8 @@ test('cancel a running workflow', async ({ page }) => {
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'cancelled', { timeout: 5000 })
   await expect(page.locator('#trace-cancelled')).toBeVisible()
   await expect(page.locator('#cancel-btn')).toHaveCount(0)
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
-  await expect(page.locator('[role=tabpanel]').getByText('đã huỷ').first()).toBeVisible()
+  await page.locator('#history-all').click()
+  await expect(page.locator('#history-dialog').getByText('đã huỷ').first()).toBeVisible()
 })
 
 test('run timeout shows timeout status', async ({ page }) => {
@@ -49,7 +49,7 @@ test('validation errors are listed clearly', async ({ page }) => {
       { id: 'e', type: 'end', position: { x: 700, y: 150 }, data: { label: 'End' } }],
     edges: [{ id: '1', source: 's', target: 'a' }, { id: '2', source: 'a', target: 'b' }, { id: '3', source: 'b', target: 'a' }, { id: '4', source: 'lonely', target: 'e' }] })
   await page.locator('#run-btn').click()
-  await page.getByRole('tab', { name: 'Input' }).click()
+  await page.locator('#run-tab').click()
   const box = page.locator('#validation-errors')
   await expect(box).toContainText('Loop without a Condition') // validator details stay English (server messages)
   await expect(box).toContainText('is not reachable from Start')

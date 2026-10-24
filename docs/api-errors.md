@@ -158,6 +158,9 @@
 | `EMAIL_RECIPIENTS_MISSING` | 400 | Send email node {node}: there is no recipient (To, Cc or Bcc) |
 | `EMAIL_TOO_MANY_RECIPIENTS` | 400 | Send email node {node}: at most {max} recipients |
 | `EMAIL_RATE_LIMITED` | 429 | Send email nodes may reach {limit} recipients per hour; try again in {retry} s |
+| `DEMO_CODE_DISABLED` | 403 | Code nodes are turned off in the public demo |
+| `DEMO_NODE_DISABLED` | 403 | {node} nodes are turned off in the public demo |
+| `DEMO_READ_ONLY` | 403 | The public demo is read-only: you can open, edit and run workflows, but not save changes |
 | `CODE_RUNTIME_OFF` | 400 | Code nodes are turned off on this server (STUDIO_ENABLE_CODE_NODES) |
 | `CODE_RUNTIME_UNAVAILABLE` | 503 | Code nodes cannot run on this server: {reason} |
 | `CODE_INVALID` | 400 | Code node {node}: {reason} |
@@ -184,6 +187,14 @@
 | `CHAT_IDENTITY_UNVERIFIED` | 403 | Their {kind} account is linked but not verified |
 | `CHAT_FORBIDDEN` | 403 | They may not run this workflow |
 | `CHAT_TRIGGER_OFF` | 409 | The chat trigger is off |
+| `CHAT_NOT_ENABLED` | 409 | Chat is off for this workflow. Turn it on in the Chat settings |
+| `CHAT_SETTINGS_INVALID` | 400 | Chat settings: invalid {field} |
+| `CHAT_ACCESS_NOT_AVAILABLE` | 400 | Chat access '{access}' is not available yet |
+| `CHAT_SESSION_NOT_FOUND` | 404 | Chat not found |
+| `CHAT_MESSAGE_EMPTY` | 400 | Write a message first |
+| `CHAT_MESSAGE_TOO_LONG` | 400 | The message is longer than {max} characters |
+| `CHAT_RUN_WAITING` | 409 | Answer the question in the chat first |
+| `CHAT_ANSWER_BY_REVIEWER` | 409 | A reviewer answers this step in the Approvals inbox |
 | `TEST_NOT_FOUND` | 404 | Test case not found |
 | `TEST_CASE_INVALID` | 400 | Test case: {reason} |
 | `TEST_CASES_LIMIT` | 400 | A workflow can have at most {max} test cases |
@@ -234,7 +245,7 @@ Codes used only in WebSocket events (`RUN_*`, `NODE_FAILED`) list their nominal 
 
 ### Code mode of Tool nodes (TASK-0053)
 
-The `CODE_*` codes are the `code` of a run `error` event from a Tool node in Code mode. `CODE_FAILED`, `CODE_INVALID` (raised by the code itself), `CODE_RESULT_NOT_JSON`, `CODE_TIMEOUT` and `CODE_MEMORY` events also carry `code_output` with `stdout`, `traceback` and `runtime`. `CODE_RUNTIME_OFF` and `CODE_RUNTIME_UNAVAILABLE` mean the server cannot run code at all: the mode is off (`STUDIO_ENABLE_CODE_NODES`), Docker is not reachable, or the image (`STUDIO_CODE_IMAGE`, default `studio-code:1`) is missing. TypeScript nodes (TASK-0080) use their own image (`STUDIO_CODE_TS_IMAGE`, default `studio-code-ts:1`) or, on the subprocess runtime, the `deno` binary (`STUDIO_DENO`); a TypeScript import outside `STUDIO_CODE_TS_PACKAGES`, or one that is not in Deno's cache, is `CODE_INVALID`. The allowed entries are pinned `name@major` (default `npm:zod@3,npm:date-fns@4`) and an import must name the same major (`npm:zod@3`, `npm:zod@3.25.1` or `npm:zod@3/mini`); an unversioned `npm:zod` or another major is refused at save time with a reason that names the allowed spec (`import "npm:zod" needs a version: use "npm:zod@3"`), and an action Deno has no permission for (files, network, environment, processes) is `CODE_FAILED`.
+The `CODE_*` codes are the `code` of a run `error` event from a Tool node in Code mode. `CODE_FAILED`, `CODE_INVALID` (raised by the code itself), `CODE_RESULT_NOT_JSON`, `CODE_TIMEOUT` and `CODE_MEMORY` events also carry `code_output` with `stdout`, `traceback` and `runtime`. The `DEMO_*` codes appear only with `STUDIO_DEMO_MODE=true` (the public demo, `docs/deploy/demo.md`). `CODE_RUNTIME_OFF` and `CODE_RUNTIME_UNAVAILABLE` mean the server cannot run code at all: the mode is off (`STUDIO_ENABLE_CODE_NODES`), Docker is not reachable, or the image (`STUDIO_CODE_IMAGE`, default `studio-code:1`) is missing. TypeScript nodes (TASK-0080) use their own image (`STUDIO_CODE_TS_IMAGE`, default `studio-code-ts:1`) or, on the subprocess runtime, the `deno` binary (`STUDIO_DENO`); a TypeScript import outside `STUDIO_CODE_TS_PACKAGES`, or one that is not in Deno's cache, is `CODE_INVALID`. The allowed entries are pinned `name@major` (default `npm:zod@3,npm:date-fns@4`) and an import must name the same major (`npm:zod@3`, `npm:zod@3.25.1` or `npm:zod@3/mini`); an unversioned `npm:zod` or another major is refused at save time with a reason that names the allowed spec (`import "npm:zod" needs a version: use "npm:zod@3"`), and an action Deno has no permission for (files, network, environment, processes) is `CODE_FAILED`.
 
 `CODE_LANGUAGE_UNSUPPORTED` (TASK-0079) means the node's `data.language` is unknown or not in `STUDIO_CODE_LANGUAGES` on this server (`python` by default). Nodes without a `language` are Python. It is raised before anything runs, by a run and by *Test with sample state*; saving such a graph reports the same problem as a validation error.
 

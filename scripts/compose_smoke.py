@@ -1,15 +1,17 @@
 """Smoke test for a running stack (docker compose or dev): health, demo login, seeded example run over /ws/run.
-Usage: python scripts/compose_smoke.py [http://localhost:8080]   (needs `httpx` and `websockets`)"""
-import asyncio, json, sys
+Usage: python scripts/compose_smoke.py [http://localhost:8080]   (needs `httpx` and `websockets`)
+SMOKE_EMAIL / SMOKE_PASSWORD sign in as another account (production has no demo user: the all-in-one image smoke test)."""
+import asyncio, json, os, sys
 import httpx, websockets
 
 BASE = (sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8080").rstrip("/")
+LOGIN = {"email": os.environ.get("SMOKE_EMAIL", "admin@example.com"), "password": os.environ.get("SMOKE_PASSWORD", "admin123")}
 
 
 async def main():
     with httpx.Client(base_url=BASE, timeout=10) as c:
         health = c.get("/api/health").json()["data"]; print("health:", health)
-        tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
+        tok = c.post("/api/auth/login", json=LOGIN).json()["data"]["token"]
         H = {"Authorization": f"Bearer {tok}"}
         wf = c.get("/api/workflows", headers=H).json()["data"][0]; print("workflow:", wf["name"])
         assert c.post("/api/runs/nope/cancel", headers=H).json()["error"]["code"] == "RUN_NOT_FOUND"
@@ -34,7 +36,7 @@ asyncio.run(main())
 def api_trigger_check():
     """TASK-0007: token + sync trigger through nginx (executed by the worker service via the Redis queue)."""
     with httpx.Client(base_url=BASE, timeout=60) as c:
-        tok = c.post("/api/auth/login", json={"email": "admin@example.com", "password": "admin123"}).json()["data"]["token"]
+        tok = c.post("/api/auth/login", json=LOGIN).json()["data"]["token"]
         wid = c.get("/api/workflows", headers={"Authorization": f"Bearer {tok}"}).json()["data"][0]["id"]
         secret = c.post(f"/api/workflows/{wid}/tokens", json={"name": "smoke"}, headers={"Authorization": f"Bearer {tok}"}).json()["data"]["token"]
         d = c.post(f"/api/hooks/workflows/{wid}/runs", json={"input": {"message": "refund"}, "mode": "sync"},

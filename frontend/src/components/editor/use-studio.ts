@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState } from 'react'
 import { addEdge, useNodesState, useEdgesState, useReactFlow, type Node, type Edge, type Connection } from '@xyflow/react'
-import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, MessageSquare, Search, FileCode2 } from 'lucide-react'
+import { Trash2, Braces, ArrowRight, ArrowDown, History, LayoutTemplate, Share2, Webhook, CalendarClock, MessageSquare, MessagesSquare, Search, FileCode2 } from 'lucide-react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 import { freeSpot, openPalette, registerCommands, type PaletteCommand } from '@/lib/palette'
 import { useDeleteWorkflow } from '@/components/delete-workflow'
 import { SHORTCUTS } from '@/lib/shortcuts'
+import { chatStore } from '@/lib/panel-sizes'
 import { layoutGraph, type Direction } from '@/lib/layout'
 import { clipStore, copySelection, pasteClip, type Clip } from '@/lib/clipboard'
 import { canEdit, type Access } from '@/lib/rbac'
+import { useDemoMode } from '@/lib/demo'
 import { api, wsUrl, sessionExpired, signedIn } from '@/lib/api'
 import i18n, { eventErrors } from '@/lib/i18n'
 import { useTranslation } from 'react-i18next'
@@ -46,7 +48,9 @@ export function useStudio() {
   const [traceSel, setTraceSel] = useState<string | null>(null); const [replay, setReplay] = useState<string | null>(null)
   const [loadErr, setLoadErr] = useState<{ status: number; msg: string } | null>(null)
   const [access, setAccess] = useState<Access>('owner'); const [ownerEmail, setOwnerEmail] = useState<string | null>(null)
-  const edit = canEdit(access)  // viewers (share or global role) get a read-only editor; they can still run (TASK-0014)
+  const canSave = canEdit(access)  // viewers (share or global role) get a read-only editor; they can still run (TASK-0014)
+  const demo = useDemoMode()
+  const edit = canSave || !!demo  // the public demo: visitors edit locally and run, but never save
   const { dark } = useTheme()
   const rf = useReactFlow(); const idc = useRef(1); const wsRef = useRef<WebSocket | null>(null)
 
@@ -155,8 +159,12 @@ export function useStudio() {
   }
     // keyboard shortcuts (TASK-0023): one registry (lib/shortcuts.ts) drives this map and the cheat sheet
   const [cheat, setCheat] = useState(false)
+  // the Chat side panel (TASK-0085): open state survives a reload, like its width (lib/panel-sizes.ts)
+  const [chatOpen, setChatOpenState] = useState(() => chatStore.read().open)
+  const canChat = !!wid && !source
+  const setChatOpen = (open: boolean) => { setChatOpenState(open); chatStore.write({ open }) }
   const handlers: Record<string, () => void | boolean> = {
-    save: () => { if (edit) save() },
+    save: () => { if (canSave) save() },
     run: () => { if (!running) run() },
     stop: () => { if (running) cancelRun() },
     delete: () => { if (!edit || source) return false; const s = selectionIds(nodes, edges, sel); removeIds(s.nodeIds, s.edgeIds) },
@@ -173,6 +181,7 @@ export function useStudio() {
     duplicate: () => { if (!editable) return false; const c = selClip(); if (!c) return; insert(c, 1) },
     undo: () => { if (edit) hist.undo() },
     redo: () => { if (edit) hist.redo() },
+    chat: () => { if (!canChat) return false; setChatOpen(!chatOpen) },
   }
   useShortcuts(handlers)
   // command palette (TASK-0028, DEC-0031): registry actions, add node, jump to node — re-registered each render so closures stay fresh
@@ -198,11 +207,11 @@ export function useStudio() {
       { id, type: 'note', position: pos, selected: true, connectable: false, data: { text: '' } }])
     setSel({ kind: 'node', id })
   }
-  const off: Record<string, boolean> = { save: !edit, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
+  const off: Record<string, boolean> = { save: !canSave, run: running, stop: !running, undo: !hist.canUndo, redo: !hist.canRedo,
     ...Object.fromEntries(['delete', 'cut', 'paste', 'duplicate', 'layout'].map(k => [k, !editable])) }
   const paletteRef = useRef<Record<string, () => void>>({})
   // secondary editor actions (TASK-0028 follow-up): one list feeds the ⋯ menu and the command palette
-  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'schedules' | 'chat' | 'template' | 'json'>(null)
+  const [dlg, setDlg] = useState<null | 'share' | 'versions' | 'api' | 'schedules' | 'chat' | 'chatSettings' | 'template' | 'json'>(null)
   const [ctx, setCtx] = useState<null | { kind: 'node' | 'edge'; id: string } | { kind: 'pane'; at: { x: number; y: number } }>(null)
   const nav = useNavigate(); const delWf = useDeleteWorkflow(() => nav('/workflows'))
   const isDirty = () => savedSnap.current !== null && snap() !== savedSnap.current
@@ -210,11 +219,12 @@ export function useStudio() {
     ...(['LR', 'TB'] as Direction[]).map(d => ({ id: `action:layout${d}`, group: 'actions' as const, label: `${t('layout.button')}: ${t(d === 'LR' ? 'layout.lr' : 'layout.tb')}`, icon: d === 'LR' ? ArrowRight : ArrowDown,
       menu: 'arrange' as const, elementId: `layout-${d.toLowerCase()}`, disabled: !editable, hint: layoutDir === d ? '✓' : undefined, run: () => { tidy(d) } })),
     { id: 'action:versions', group: 'actions', label: t('versions.button'), icon: History, menu: 'workflow', elementId: 'versions-btn', disabled: !wid, run: () => setDlg('versions') },
-    { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !edit || !wid, run: () => setDlg('template') },
+    { id: 'action:saveTemplate', group: 'actions', label: t('templates.saveAs'), icon: LayoutTemplate, menu: 'workflow', elementId: 'save-template-btn', disabled: !canSave || !wid, run: () => setDlg('template') },
     { id: 'action:share', group: 'actions', label: t('share.button'), icon: Share2, menu: 'workflow', elementId: 'share-btn', disabled: !wid, run: () => setDlg('share') },
     { id: 'action:api', group: 'actions', label: t('api.button'), icon: Webhook, menu: 'workflow', elementId: 'api-btn', disabled: !wid || access !== 'owner', run: () => setDlg('api') },
     { id: 'action:schedules', group: 'actions', label: t('schedules.button'), icon: CalendarClock, menu: 'workflow', elementId: 'schedules-btn', disabled: !wid || access !== 'owner', run: () => setDlg('schedules') },
     { id: 'action:chatTriggers', group: 'actions', label: t('chatTriggers.button'), icon: MessageSquare, menu: 'workflow', elementId: 'chat-triggers-btn', disabled: !wid || access !== 'owner' || !!source, run: () => setDlg('chat') },
+    { id: 'action:chatSettings', group: 'actions', label: t('chat.settings.title'), icon: MessagesSquare, menu: 'workflow', elementId: 'chat-settings-menu', disabled: !wid || access !== 'owner' || !!source, run: () => setDlg('chatSettings') },
     { id: 'action:json', group: 'actions', label: t('editor.jsonTitle'), icon: Braces, menu: 'workflow', elementId: 'json-btn', run: () => setDlg('json') },
     { id: 'action:code', group: 'actions', label: t('codeView.button'), icon: FileCode2, menu: 'workflow', elementId: 'code-btn', keywords: ['langgraph', 'python', 'export'],
       disabled: !!source, run: () => setTab('code') },
@@ -290,11 +300,11 @@ export function useStudio() {
   return {
     id, nodes, setNodes, onNodesChange, edges, setEdges, onEdgesChange, state, setState, name, setName, wid, setSel,
     input, setInput, log, setLog, errors, setErrors, tools, mode, source, creds, setCreds, providers, channels, history,
-    tab, setTab, running, traceSel, setTraceSel, replay, setReplay, loadErr, access, ownerEmail, edit, dark, rf,
+    tab, setTab, running, traceSel, setTraceSel, replay, setReplay, loadErr, access, ownerEmail, edit, canSave, dark, rf,
     hist, load, openRun, toJSON, save, mark, run, respond, cancelRun, removeIds,
     clipNote, note, insert, editable, layoutDir, cheat, setCheat, insertAround, addNode, addNote, dlg, setDlg, ctx, setCtx,
     delWf, isDirty, saves, paletteCmds, trace, traceMeta, step, continueRun, nodesView, onNodeClick, onConnect, onDrop,
-    selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds,
+    selNode, selEdge, upd, setRuntime, d, runTo, fieldNames, canvasLock, setCanvasLock, copyIds, chatOpen: chatOpen && canChat, setChatOpen, canChat,
   }
 }
 

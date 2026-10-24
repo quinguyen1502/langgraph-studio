@@ -17,6 +17,7 @@ from .job_queue import JobQueue
 from .run_service import RunService, error_event
 
 log = get_logger("worker")
+CHAT_CLEANUP_EVERY = 3600  # seconds between chat retention sweeps
 
 
 class RunWorker:
@@ -107,7 +108,7 @@ class RunWorker:
             log.exception("reaping expired jobs failed"); return 0
 
     async def maintain(self) -> None:
-        last_reap = 0.0
+        last_reap = last_cleanup = 0.0
         while not self._stop:
             try: await asyncio.to_thread(self.jobs.promote_due)
             except Exception: log.warning("promoting delayed jobs failed")
@@ -117,6 +118,11 @@ class RunWorker:
             if self.approvals is not None:
                 try: await asyncio.to_thread(self.approvals().fire_deadlines)
                 except Exception: log.exception("firing approval deadlines failed")
+            if self.chat is not None and time.time() - last_cleanup >= CHAT_CLEANUP_EVERY:  # chat history retention (TASK-0084)
+                last_cleanup = time.time()
+                try:
+                    if (web := self.chat().web) is not None: await asyncio.to_thread(web.cleanup)
+                except Exception: log.exception("cleaning up old chats failed")
             if time.time() - last_reap >= config.job_reap_every():
                 last_reap = time.time(); await self.reap()
             await asyncio.sleep(min(1.0, config.job_reap_every()))

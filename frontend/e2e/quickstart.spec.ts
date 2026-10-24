@@ -134,10 +134,10 @@ for (const lang of ['en', 'vi'] as Lang[]) {
       await snap('human-slack', { channel: page.locator('#approval-channel'), target: page.locator('#approval-target'), save: page.locator('#save-btn') })
       await page.locator('#save-btn').click(); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
       await pane.click({ position: { x: 30, y: 30 } })
-      await snap('graph', { save: page.locator('#save-btn'), input: page.getByRole('tab', { name: 'Input' }).first() })
+      await snap('graph', { save: page.locator('#save-btn'), input: page.locator('#run-input') })
 
       // 4. Run: the LLM drafts, the Human node waits, approve, read the state diff
-      await page.getByRole('tab', { name: 'Input' }).first().click()
+      await page.locator('#run-tab').click()
       await page.locator('#run-input').click(); await page.keyboard.press('ControlOrMeta+a')
       await page.keyboard.insertText(JSON.stringify({ message: s.message }, null, 2))
       await snap('input', { input: page.locator('#run-input'), run: page.locator('#run-btn') })
@@ -176,7 +176,7 @@ for (const lang of ['en', 'vi'] as Lang[]) {
 
       // History loads with the editor: reload to list the run the API call queued
       await page.reload(); await expect(page.locator('.react-flow__node')).toHaveCount(4)
-      await page.getByRole('tab', { name: s.history }).first().click()
+      await page.locator('#history-all').click()
       await expect(page.getByTestId('history-row')).toHaveCount(2, { timeout: 30_000 })
       await snap('history', { rows: page.getByTestId('history-row').first() })
 

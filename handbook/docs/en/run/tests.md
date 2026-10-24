@@ -52,7 +52,7 @@ A workflow keeps up to 50 test cases (`STUDIO_TEST_CASES_MAX`), each with up to
 - When a Human node waits and the case has no answer left for it, the case
   fails and says which node waited.
 
-Test runs are left out of **History**. Turn on **Test runs** there to list them.
+Test runs are left out of the run history (**Run → View all**). Turn on **Test runs** there to list them.
 
 ## What a test run does not send
 
@@ -93,7 +93,7 @@ passed and failed) and opens any of them.
 ## Save a run as a test case
 
 A run that went well makes a good test. **Save as test case** on a run in
-**History**, or in the bar of a run's trace, opens a new case with:
+the run history (**View all**), or in the bar of a run's trace, opens a new case with:
 
 - the run's input;
 - the answers its Human nodes were given, in order;

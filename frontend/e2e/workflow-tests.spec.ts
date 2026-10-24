@@ -57,11 +57,12 @@ test('workflow tests: add a case, run all, see pass and fail with expected and a
   await expect(failed).toContainText('rejected'); await expect(failed).toContainText('approved')
 
   // test runs stay out of the history unless asked for, and open in the trace
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.locator('#run-tab').click(); await page.locator('#history-all').click()
   await expect(page.getByTestId('history-row')).toHaveCount(0)
   await page.locator('#history-tests').click()
   await expect(page.getByTestId('history-row')).toHaveCount(2)
   await expect(page.getByTestId('history-source').first()).toHaveText('Test')
+  await page.keyboard.press('Escape')
   await page.locator('#tests-tab').click()
   await page.getByTestId('result-open-run').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok')
@@ -73,7 +74,7 @@ test('workflow tests: save as test case from a run, regression against the previ
   const wf = { ...APPROVAL, name: `Regression e2e ${Date.now()}` }
   const wid = (await (await page.request.post('/api/workflows', { headers: H, data: wf })).json()).data.id
   await page.goto(`/workflows/${wid}`)
-  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order A100"}')
+  await page.locator('#run-tab').click(); await page.locator('#run-input').fill('{"message": "order A100"}')
   await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
   await page.locator('#human-approve').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
 

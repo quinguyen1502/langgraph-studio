@@ -1,0 +1,46 @@
+# Zeabur template (docs/deploy/README.md#zeabur). Not published: deploy it with `npx zeabur@latest template deploy -f deploy/zeabur/template.yaml`.
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Superstep
+spec:
+  description: Open-source visual LangGraph studio (all-in-one image, SQLite on a volume).
+  tags: [AI, Developer Tools]
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: Domain for Superstep
+    - key: STUDIO_ADMIN_EMAILS
+      type: STRING
+      name: Admin email
+      description: The first admin account; its one-time password is printed in the service log.
+    - key: STUDIO_SECRET_KEY
+      type: STRING
+      name: Secret key
+      description: A long random string that encrypts stored credentials. Keep it; changing it makes them unreadable.
+  readme: |-
+    # Superstep
+    Visual LangGraph studio. After the first start, open the service log and copy the one-time admin password.
+    Code nodes run directly on the server (no Docker sandbox): use only with trusted users and code.
+  services:
+    - name: superstep
+      template: PREBUILT
+      domainKey: PUBLIC_DOMAIN
+      spec:
+        source:
+          image: ghcr.io/quinguyen1502/superstep:latest
+        ports:
+          - id: web
+            port: 8000
+            type: HTTP
+        volumes:
+          - id: data
+            dir: /data
+        env:
+          PORT:
+            default: "8000"
+          JWT_SECRET:
+            default: ${PASSWORD}
+          STUDIO_PUBLIC_URL:
+            default: https://${PUBLIC_DOMAIN}

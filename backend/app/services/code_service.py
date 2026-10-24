@@ -18,7 +18,7 @@ class CodeService:
         """The one source the UI reads for the Code mode: runtime, whether it can run now, image, limits and packages.
         The top-level image/packages/starter are Python's (as before TASK-0079); `languages` has one entry per language."""
         why = code_runtime.unavailable()
-        return {"code_runtime": config.code_runtime(), "available": why is None, "problem": None if why in (None, "off") else why,
+        return {"code_runtime": config.code_runtime(), "available": why is None, "problem": None if why in (None, "off", "demo") else why, "demo": config.demo_mode(),
                 "image": config.code_image(), "packages": config.code_packages(), "starter": code_runtime.STARTER,
                 "limits": {"memory": config.code_memory(), "cpus": config.code_cpus(), "pids": config.code_pids(),
                            "seconds": config.code_max_seconds(), "source_kb": code_runtime.SOURCE_MAX // 1024},

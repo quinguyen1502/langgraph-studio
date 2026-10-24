@@ -133,6 +133,8 @@ def validate(wf: Dict[str, Any]) -> List[str]:
         if t == "decision": errs += decisions.errors(nid, d, schema)
         if t == "email": errs += emails.errors(nid, d, schema)
         if t == "human": errs += deadlines.errors(nid, d, config.wait_ttl())
+        if t == "human" and d.get("answered_by") not in (None, "visitor", "reviewer"):
+            errs.append(f"Human node {nid}: answered by must be visitor or reviewer")
         if t == "condition":
             if not d.get("field"): errs.append(f"Node {nid}: Condition field is missing")
             labels = [e.get("label") for e in out.get(nid, [])]
@@ -180,6 +182,7 @@ def validate(wf: Dict[str, Any]) -> List[str]:
                    if n.get("type") == "tool" and (n.get("data") or {}).get("mode") == "code"})
     for lang in used:  # per language: Docker and its image, checked at most every 30 s (TASK-0053, TASK-0079)
         why = code_runtime.unavailable(lang)
+        if why == "demo": errs.append("Code nodes are turned off in the public demo"); break
         if why == "off": errs.append("Code nodes are turned off on this server (set STUDIO_ENABLE_CODE_NODES=1)"); break
         elif why: errs.append(f"Code nodes cannot run on this server: {why}" if lang == code_languages.DEFAULT
                               else f"{lang} Code nodes cannot run on this server: {why}")

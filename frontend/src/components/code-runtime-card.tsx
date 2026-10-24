@@ -10,7 +10,7 @@ import { useCodeRuntime } from '@/lib/code-runtime'
 export function CodeRuntimeCard() {
   const { t } = useTranslation(); const rt = useCodeRuntime()
   if (!rt) return null
-  const variant = rt.code_runtime === 'subprocess' ? 'warning' : rt.code_runtime === 'docker' && rt.available ? 'success' : 'secondary'
+  const variant = rt.code_runtime === 'subprocess' ? 'warning' : (rt.code_runtime === 'docker' || rt.code_runtime === 'remote') && rt.available ? 'success' : 'secondary'
   const row = (label: string, value: React.ReactNode, id?: string) => <div className="flex flex-wrap items-center gap-2 text-sm"><span className="w-32 text-muted-foreground">{label}</span><span id={id}>{value}</span></div>
   return <Card id="code-runtime-card"><CardHeader><CardTitle>{t('code.adminTitle')}</CardTitle><CardDescription>{t('code.adminIntro')}</CardDescription></CardHeader>
     <CardContent className="space-y-2">
@@ -28,6 +28,6 @@ export function CodeRuntimeCard() {
           {l.problem && <p className="flex items-start gap-1.5 text-xs text-muted-foreground" data-testid="code-language-problem"><AlertTriangle className="mt-0.5 size-3 shrink-0 text-warning" />{l.problem}</p>}
         </div>)}
       </div>}
-      {rt.code_runtime === 'subprocess' && <Alert variant="warning" className="py-2" id="code-runtime-risk"><ShieldAlert /><AlertDescription className="text-xs">{t('code.adminRisk')}</AlertDescription></Alert>}
+      {rt.code_runtime === 'subprocess' && <Alert variant="warning" id="code-runtime-risk"><ShieldAlert /><AlertDescription className="text-xs">{t('code.adminRisk')}</AlertDescription></Alert>}
     </CardContent></Card>
 }

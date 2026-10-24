@@ -1,0 +1,27 @@
+# Render Blueprint, default variant: one web service, SQLite on a persistent disk (docs/deploy/README.md#render).
+# Other variants: deploy/render/render.postgres.yaml (Render Postgres) and deploy/render/render.full.yaml
+# (Postgres + Key Value + a run worker). A persistent disk needs a paid instance type (starter or above).
+services:
+  - type: web
+    name: superstep
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"  # Deploy-button copies must not redeploy on every push to this repo
+    disk:
+      name: superstep-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: STUDIO_SECRET_KEY  # encrypts stored credentials; keep it, or they cannot be read again
+        generateValue: true
+      - key: STUDIO_ADMIN_EMAILS  # the first admin, created at the first start (password in the deploy log)
+        sync: false
+      - key: STUDIO_PUBLIC_URL  # https://<your-service>.onrender.com (links in emails, Slack/Telegram callbacks)
+        sync: false
+      - key: OPENAI_API_KEY  # optional: empty = sample answers
+        sync: false

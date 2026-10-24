@@ -4,7 +4,7 @@
 
 ![Run trace](../images/run-trace.png)
 
-The **Logs** tab has one row per node step: status, name, kind, duration, a
+The logs in the **Run** tab have one row per node step: status, name, kind, duration, a
 waterfall bar, and tokens when the model reports them. Loops show `#2`, `#3`
 and so on. The summary line shows the run status, duration, steps, input and
 output tokens, cost and error count.
@@ -20,9 +20,9 @@ Click a row, or a node on the canvas, to open its detail:
 
 ![State diff](../images/trace-detail.png)
 
-**Raw events** switches the whole tab to the original event stream.
-**History** replays any earlier run on the same timeline, labelled with its
-version.
+**Raw events** switches the whole timeline to the original event stream. Pick
+an earlier run in the run menu next to the tabs (the last 10), or in **View
+all**, to replay it on the same timeline, labelled with its version.
 
 ## Stepping
 

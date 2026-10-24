@@ -5,9 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.deps import get_db, run_service, run_worker
 from .core.logging import get_logger, redact_tokens
-from .core import config
+from .core import config, crypto
 from .api.error_handlers import register_error_handlers
 from .api.routes import ROUTERS
+from .api.static import mount_frontend
+from .api.demo import install_demo_guard
 from .core.security import check_secret
 from .engine import code_runtime
 from .schemas.envelope import EnvelopeResponse
@@ -26,7 +28,7 @@ async def expire_waiting_loop() -> None:
 
 
 def create_app() -> FastAPI:
-    check_secret()
+    check_secret(); crypto.check_key()
     code_runtime.warn_if_unisolated()  # TASK-0056: once at start-up
     bootstrap(get_db())  # alembic upgrade head + demo user + example workflow
     @asynccontextmanager
@@ -43,7 +45,9 @@ def create_app() -> FastAPI:
         app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["*"], allow_headers=["*"])
     redact_tokens("uvicorn.access", "uvicorn.error")  # WebSocket URLs carry ?token=<JWT>
     register_error_handlers(app)
+    if config.demo_mode(): install_demo_guard(app)  # STUDIO_DEMO_MODE: the shared visitor account is read-only
     for r in ROUTERS: app.include_router(r)
+    mount_frontend(app, config.static_dir())  # all-in-one image (TASK-PaaS): the built UI on the same origin, after the API routes
     return app
 
 

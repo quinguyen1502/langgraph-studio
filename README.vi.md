@@ -1,10 +1,15 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-lockup-dark.svg">
-    <img src="frontend/public/brand/superstep-lockup.svg" alt="Superstep" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/public/brand/superstep-mark-dark.svg">
+    <img src="frontend/public/brand/superstep-mark.svg" alt="Superstep logo" width="140" height="140">
   </picture>
 
+  <h3><b>Superstep</b></h3>
+  <p>Studio LangGraph trực quan, mã nguồn mở<br>Kéo thả đồ thị • Theo dõi run trực tiếp • Duyệt bởi con người • Node code Python &amp; TypeScript</p>
+
   <p>
+    <a href="https://github.com/quinguyen1502/superstep/stargazers"><img src="https://img.shields.io/github/stars/quinguyen1502/superstep?style=social" alt="GitHub stars"></a>
+    <a href="LICENSE"><img src="https://img.shields.io/github/license/quinguyen1502/superstep" alt="License"></a>
     <a href="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
     <a href="https://quinguyen1502.github.io/superstep/vi/"><img src="https://github.com/quinguyen1502/superstep/actions/workflows/handbook.yml/badge.svg" alt="Handbook"></a>
   </p>
@@ -12,18 +17,36 @@
   <a href="README.md">English</a> · <b>Tiếng Việt</b>
 </div>
 
-Superstep là nền tảng tự host để xây workflow LangGraph trên trình duyệt
-và chạy chúng như một dịch vụ. Workflow là tài liệu JSON được backend FastAPI
-kiểm tra và biên dịch thành `StateGraph` của LangGraph. Mỗi workflow chạy được
-từ trình soạn thảo kèm trace trực tiếp của từng node, từ dịch vụ khác qua
-HTTP, theo lịch cron, và có thể dừng giữa chừng chờ người quyết định.
+<p align="center"><b>Dựng workflow LangGraph trên trình duyệt và chạy chúng như một dịch vụ.</b></p>
 
-[![Video bắt đầu nhanh: dựng, chạy, duyệt và gọi một workflow](handbook/docs/vi/assets/video/studio-intro-vi.jpg)](https://quinguyen1502.github.io/superstep/vi/#video)
+<p align="center"><a href="https://quinguyen1502.github.io/superstep/vi/">Tài liệu</a> • <a href="https://quinguyen1502.github.io/superstep/vi/#video">Video bắt đầu nhanh</a> • <a href="https://quinguyen1502.github.io/superstep/vi/reference/api/">HTTP API</a> • <a href="https://quinguyen1502.github.io/superstep/vi/reference/architecture/">Kiến trúc</a></p>
 
-[Tài liệu](https://quinguyen1502.github.io/superstep/vi/) ·
-[Bắt đầu nhanh](https://quinguyen1502.github.io/superstep/vi/start/quickstart/) ·
-[HTTP API](https://quinguyen1502.github.io/superstep/vi/reference/api/) ·
-[Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/)
+<img src="handbook/docs/vi/images/overview.png" alt="Trình soạn thảo Superstep: workflow rẽ nhánh, cài đặt node, run đang chờ người duyệt và khung Chat" width="100%">
+
+<table>
+  <tr>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/chat-tab.png" alt="Chat với workflow" width="100%"><p>Chat với workflow</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/run-trace.png" alt="Trace run trực tiếp" width="100%"><p>Trace run trực tiếp</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/code-tab.png" alt="Xuất mã LangGraph" width="100%"><p>Xuất mã LangGraph</p></td>
+  </tr>
+</table>
+
+## Vì sao chọn Superstep?
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><b>Đồ thị trực quan</b><br>Kéo node, nối cạnh; lưu dạng JSON, biên dịch thành <code>StateGraph</code> của LangGraph</td>
+    <td width="50%" valign="top"><b>Run trực tiếp</b><br>Trace và thay đổi state của từng node khi đang chạy; debug từng bước</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Con người duyệt</b><br>Dừng chờ duyệt trong studio, Slack, Telegram, email hoặc Teams</td>
+    <td width="50%" valign="top"><b>Trigger</b><br>HTTP API có token, webhook có chữ ký, lịch cron, lệnh chat</td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><b>Code Python & TypeScript</b><br>Node code trong sandbox Docker khoá chặt; mọi model, MCP và pgvector</td>
+    <td width="50%" valign="top"><b>Học LangGraph</b><br>Xuất workflow thành một file Python dễ đọc, chạy độc lập</td>
+  </tr>
+</table>
 
 ## Bắt đầu nhanh
 
@@ -92,6 +115,20 @@ Run khởi chạy từ trình soạn thảo được thực thi ngay trong proce
 WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi qua hàng
 đợi tới worker. Chi tiết:
 [Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/).
+
+## Triển khai
+
+**Demo trực tuyến:** [superstep-demo.onrender.com](https://superstep-demo.onrender.com) (bấm "Dùng thử demo"). Bản demo chạy trên gói miễn phí của Render: lần tải đầu có thể mất khoảng 30 giây trong lúc máy chủ khởi động lại, dữ liệu được đặt lại mỗi khi máy chủ nghỉ, và thay đổi không được lưu. Node Code, HTTP và Send email đang tắt, model trả lời bằng mock; xem [docs/deploy/demo.vi.md](docs/deploy/demo.vi.md).
+
+Triển khai image all-in-one (giao diện, API và WebSocket trên một cổng; SQLite trên volume hoặc Postgres):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/quinguyen1502/superstep)
+[![Deploy to DO](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/quinguyen1502/superstep/tree/main)
+[![Deploy to Koyeb](https://www.koyeb.com/static/images/deploy/button.svg)](https://app.koyeb.com/deploy?type=docker&image=ghcr.io/quinguyen1502/superstep:latest&name=superstep&ports=8000;http;/&env%5BSTUDIO_ADMIN_EMAILS%5D=&env%5BJWT_SECRET%5D=&env%5BSTUDIO_SECRET_KEY%5D=&env%5BDATABASE_URL%5D=)
+
+Fly.io, Railway, Zeabur, Northflank, Coolify và Dokploy (cách đầy đủ tính năng với sandbox Docker), các biến thể Postgres và worker, tài khoản admin đầu tiên và các biến môi trường:
+[`docs/deploy/`](docs/deploy/README.vi.md). Trên các nền tảng được quản lý, node Code chạy trực tiếp trên server (không có sandbox Docker); hãy đọc hướng dẫn trước.
 
 ## Tài liệu
 

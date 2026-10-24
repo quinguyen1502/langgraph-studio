@@ -1,0 +1,32 @@
+{
+  "name": "Superstep",
+  "description": "Open-source visual LangGraph studio: design, run and trace agent workflows.",
+  "repository": "https://github.com/quinguyen1502/superstep",
+  "website": "https://github.com/quinguyen1502/superstep",
+  "keywords": ["langgraph", "agents", "workflow", "fastapi", "react"],
+  "stack": "container",
+  "env": {
+    "STUDIO_ADMIN_EMAILS": {
+      "description": "Email of the first admin. The account is created at the first start; its one-time password is in the app log (heroku logs). Or set STUDIO_ADMIN_PASSWORD.",
+      "required": true
+    },
+    "STUDIO_ADMIN_PASSWORD": {
+      "description": "Optional: password for that admin (8+ characters, a letter and a digit). Empty = generated and printed once in the log.",
+      "required": false
+    },
+    "JWT_SECRET": { "description": "Signs session tokens.", "generator": "secret" },
+    "STUDIO_SECRET_KEY": { "description": "Encrypts stored credentials. Keep it: changing it makes them unreadable.", "generator": "secret" },
+    "STUDIO_PUBLIC_URL": {
+      "description": "Optional: the app's https URL (https://<app>.herokuapp.com or your domain), for links in emails and Slack/Telegram callbacks.",
+      "required": false
+    },
+    "OPENAI_API_KEY": { "description": "Optional: OpenAI API key. Empty = sample answers.", "required": false }
+  },
+  "formation": {
+    "web": { "quantity": 1, "size": "basic" },
+    "worker": { "quantity": 0, "size": "basic" }
+  },
+  "addons": [
+    { "plan": "heroku-postgresql:essential-0", "as": "DATABASE" }
+  ]
+}

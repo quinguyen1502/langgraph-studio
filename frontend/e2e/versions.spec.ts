@@ -29,8 +29,9 @@ test('versions: save, diff, restore, run tagged with version', async ({ page }) 
     await page.keyboard.press('Escape')
     await expect(page.locator('.react-flow__node', { hasText: gone })).toHaveCount(1)  // editor shows the restored graph
     await page.locator('#run-btn').click()
-    await page.getByRole('tab', { name: 'Lịch sử' }).click()
+    await page.locator('#history-all').click()
     await expect(page.locator('[data-testid=history-row]').first().locator('[data-testid=history-version]')).toHaveText('v4')
+    await page.keyboard.press('Escape')
     // restoring v1 again is a no-op (v4 already has its content): the dialog says so, no v5
     await page.locator('#more-btn').click(); await page.locator('#versions-btn').click()
     await page.locator('[data-testid=version-row]', { hasText: 'v1' }).locator('[data-testid=restore-btn]').click()

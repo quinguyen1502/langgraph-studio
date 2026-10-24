@@ -58,6 +58,7 @@ def webhook_backoff_max() -> float: return max(0.0, float(os.environ.get("STUDIO
 def secret_grace() -> float: return max(0.0, float(os.environ.get("STUDIO_SECRET_GRACE", 24 * 3600)))  # old signing secret stays valid
 def job_visibility() -> int: return max(3, _int("STUDIO_JOB_VISIBILITY_TIMEOUT", 30))  # lease of a taken job
 def job_reap_every() -> float: return max(0.2, float(os.environ.get("STUDIO_JOB_REAP_EVERY", 15)))
+def static_dir() -> str: return os.environ.get("STUDIO_STATIC_DIR", "")  # built frontend served by the API (all-in-one image); empty = off
 def public_url() -> str: return (os.environ.get("STUDIO_PUBLIC_URL") or "").rstrip("/")  # links in e-mails
 # --- TASK-0045: sign-in hardening ---
 def login_max_failures() -> int: return max(1, _int("STUDIO_LOGIN_MAX_FAILURES", 5))  # failed sign-ins per e-mail before a lockout
@@ -74,6 +75,11 @@ def home_dir() -> str:
     return old if not os.path.exists(new) and os.path.isdir(old) else new
 
 
+def demo_mode() -> bool:
+    """STUDIO_DEMO_MODE=true: the public demo (services/demo_service.py). Code nodes, HTTP and Send email nodes are off,
+    models use the offline mock, and visitors share one read-only account. Never turn it on for real work."""
+    return (os.environ.get("STUDIO_DEMO_MODE") or "").strip().lower() in ("1", "true", "yes", "on")
+def demo_run_rate_limit() -> int: return max(0, _int("STUDIO_DEMO_RUN_RATE_LIMIT", 20))  # runs per client IP per minute in demo mode (0 = off)
 def demo_user() -> bool: return not IS_PROD  # the seeded admin@example.com / admin123 account exists only outside production
 def smtp() -> dict | None:
     """The studio's own SMTP server (notification, approval and password reset e-mail; core/smtp.py settings); None
@@ -148,10 +154,10 @@ def import_host_dir() -> str | None:
     value = (os.environ.get("STUDIO_IMPORT_HOST_DIR") or "").strip()
     return value or None
 # --- TASK-0053: Tool node Code mode (REQ-0039, DEC-0041); off until STUDIO_ENABLE_CODE_NODES=1 ---
-CODE_RUNTIMES = ("docker", "subprocess")  # subprocess (TASK-0056) is NOT isolation; only when set explicitly
+CODE_RUNTIMES = ("docker", "subprocess", "remote")  # subprocess (TASK-0056) is NOT isolation; remote = the sandbox service
 def code_runtime() -> str:
     """``off`` unless enabled; then STUDIO_CODE_RUNTIME (``docker`` by default). Never falls back to another runtime."""
-    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1": return "off"
+    if os.environ.get("STUDIO_ENABLE_CODE_NODES") != "1" or demo_mode(): return "off"
     choice = (os.environ.get("STUDIO_CODE_RUNTIME") or "docker").strip().lower()
     return choice if choice in CODE_RUNTIMES else "off"
 def code_languages() -> list[str]:
@@ -159,6 +165,16 @@ def code_languages() -> list[str]:
     default since TASK-0080 (TypeScript reports itself unavailable until its image or the deno binary is there)."""
     raw = os.environ.get("STUDIO_CODE_LANGUAGES") or "python,typescript"
     return [x.strip().lower() for x in raw.split(",") if x.strip()]
+def sandbox_url() -> str:
+    """STUDIO_SANDBOX_URL: the sandbox service for STUDIO_CODE_RUNTIME=remote; a bare host:port gets http://."""
+    url = (os.environ.get("STUDIO_SANDBOX_URL") or "").strip().rstrip("/")
+    return url if not url or "://" in url else f"http://{url}"
+def sandbox_token() -> str: return os.environ.get("STUDIO_SANDBOX_TOKEN") or ""  # shared by the studio and the sandbox service
+def code_no_network() -> bool: return os.environ.get("STUDIO_CODE_NO_NETWORK") == "1"  # Python Code: refuse sockets and processes (audit hook)
+def code_run_as() -> int | None:
+    """STUDIO_CODE_RUN_AS: first uid for Code processes when the server runs as root (the sandbox service); unset = no change."""
+    raw = os.environ.get("STUDIO_CODE_RUN_AS", "").strip()
+    return int(raw) if raw.isdigit() else None
 def code_image() -> str: return os.environ.get("STUDIO_CODE_IMAGE", "studio-code:1") or "studio-code:1"
 def code_memory() -> str: return os.environ.get("STUDIO_CODE_MEMORY", "256m") or "256m"
 def code_cpus() -> str: return os.environ.get("STUDIO_CODE_CPUS", "0.5") or "0.5"

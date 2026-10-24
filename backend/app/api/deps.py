@@ -7,7 +7,7 @@ from ..core import config, security
 from ..core.errors import AppError
 from ..services.notification_hub import NotificationHub, make_notification_hub
 from ..models.database import Database
-from ..repositories import CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, ChatTriggerRepository, ChatMessageRepository, WorkflowTestRepository, CredentialRepository as _Creds
+from ..repositories import ChatSessionRepository, CredentialRepository, RunRepository, UserRepository, WorkflowRepository, WorkflowTokenRepository, WorkflowVersionRepository, NotificationRepository, WebhookDeliveryRepository, NodeResultRepository, ApprovalRepository, KnowledgeRepository, McpServerRepository, WorkflowShareRepository, TeamRepository, AuditRepository, SettingsRepository, UserDataRepository, TemplateRepository, AuthSecurityRepository, ScheduleRepository, ChatTriggerRepository, ChatMessageRepository, WorkflowTestRepository, CredentialRepository as _Creds
 from ..services.audit_service import AuditService
 from ..services.code_service import CodeService
 from ..services.inbox_service import InboxService
@@ -35,11 +35,13 @@ from ..services.run_service import RunService
 from ..services.run_worker import RunWorker
 from ..services.delivery_service import DeliveryService
 from ..services.notification_service import NotificationService
+from ..services.demo_service import DemoService
 from ..services.rate_limit import Counter, RateLimiter, make_counter, make_rate_limiter
 from ..services.trigger_service import TriggerService
 from ..services.schedule_service import ScheduleService
 from ..services.chat_trigger_service import ChatTriggerService
 from ..services.chat_run_service import ChatRunService
+from ..services.chat_session_service import ChatSessionService
 from ..services.telemetry import Telemetry
 from ..services.workflow_service import WorkflowService
 from ..services.workflow_test_service import WorkflowTestService
@@ -99,7 +101,12 @@ def chat_trigger_service() -> ChatTriggerService:
 
 def chat_run_service() -> ChatRunService:
     db = get_db(); return ChatRunService(ChatMessageRepository(db), ChatTriggerRepository(db), channel_service(), UserRepository(db), WorkflowRepository(db),
-                                         RunRepository(db), get_job_queue(), access=access_service(), limiter=get_rate_limiter())
+                                         RunRepository(db), get_job_queue(), access=access_service(), limiter=get_rate_limiter(), web=chat_session_service())
+
+
+def chat_session_service() -> ChatSessionService:
+    db = get_db(); return ChatSessionService(ChatSessionRepository(db), ChatTriggerRepository(db), ChatMessageRepository(db), WorkflowRepository(db),
+                                             RunRepository(db), access=access_service())
 
 
 def trigger_service() -> TriggerService:
@@ -116,7 +123,7 @@ def workflow_service() -> WorkflowService:
     db = get_db(); return WorkflowService(WorkflowRepository(db), RunRepository(db), WorkflowVersionRepository(db),
                                           access=access_service(), shares=WorkflowShareRepository(db), users=UserRepository(db),
                                           teams=TeamRepository(db), audit=audit_service(), tests=WorkflowTestRepository(db),
-                                          chat_triggers=ChatTriggerRepository(db))
+                                          chat_triggers=ChatTriggerRepository(db), chat_sessions=ChatSessionRepository(db))
 
 def template_service() -> TemplateService:
     return TemplateService(TemplateRepository(get_db()), workflow_service(), access_service(), tests=workflow_test_service)
@@ -150,6 +157,9 @@ def share_service() -> ShareService:
 
 def auth_service() -> AuthService:
     db = get_db(); return AuthService(UserRepository(db), workflow_service(), AuthSecurityRepository(db), audit=audit_service())
+
+def demo_service() -> DemoService:
+    return DemoService(get_rate_limiter())
 
 def run_service() -> RunService:
     db = get_db(); return RunService(WorkflowRepository(db), RunRepository(db), credential_service(), get_run_bus(), get_telemetry(), WorkflowVersionRepository(db), notification_service(), NodeResultRepository(db), approval_service(), delivery_service,

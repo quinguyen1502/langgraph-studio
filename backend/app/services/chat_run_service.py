@@ -16,6 +16,7 @@ from ..core.logging import get_logger
 from ..engine.limits import size
 from ..models import ApprovalAudit, ChatMessage, Run, WorkflowChatTrigger
 from ..repositories import ChatMessageRepository, ChatTriggerRepository, RunRepository, UserRepository, WorkflowRepository
+from ..repositories.chat_triggers import WEB
 from .approval_channels import ApprovalChannel, IncomingMessage
 from .approval_channels.messages import lang_of, text
 from .channel_service import ChannelService
@@ -40,10 +41,11 @@ class _Job:
 
 class ChatRunService:
     def __init__(self, messages: ChatMessageRepository, triggers: ChatTriggerRepository, channels: ChannelService, users: UserRepository,
-                 workflows: WorkflowRepository, runs: RunRepository, jobs: JobQueue, access=None, limiter=None):
+                 workflows: WorkflowRepository, runs: RunRepository, jobs: JobQueue, access=None, limiter=None, web=None):
         self.messages, self.triggers, self.channels, self.users = messages, triggers, channels, users
         self.workflows, self.runs, self.jobs, self.access, self.limiter = workflows, runs, jobs, access, limiter
         self.approvals = channels.repo  # identities and the approval audit log
+        self.web = web  # ChatSessionService (TASK-0084): answers of the studio / web chat
 
     # ---- on the platform's request ----
     def events(self, kind: str, headers: dict, body: bytes):
@@ -140,6 +142,9 @@ class ChatRunService:
         res = run_result(r); waiting = res["waiting"] or {}
         key = f"waiting:{waiting.get('node')}" if r.status == "waiting" else r.status
         if m.replied == key or not self.messages.mark_replied(m.id, m.replied, key): return  # this state was answered already
+        if m.kind == WEB:  # the web chat writes a turn instead of posting to a platform (TASK-0084)
+            if self.web is not None: self.web.answer(m, r, res)
+            return
         c = self.channels.repo.channel(m.channel_id)
         if c is None or c.kind not in self.channels.adapters: return
         w = self.workflows.get(r.workflow_id); name = w.name if w else r.workflow_id; lang = self._lang(r.owner)

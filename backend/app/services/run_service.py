@@ -172,6 +172,7 @@ class RunService:
     def plan(self, uid: str, req) -> RunPlan:
         if not isinstance(req, dict): raise AppError("RUN_REQUEST_INVALID")
         steps = _parse_steps(req); until = _parse_until(req)
+        if req.get("chat_session_id"): return self._plan_chat(uid, req, steps, until)
         if req.get("resume_run_id"): return self.plan_resume(uid, req["resume_run_id"], req.get("response"), steps=steps, until=until)
         wid = req.get("workflow_id"); row = None
         if wid: row = self._workflow(wid, uid, P.RUN)
@@ -181,8 +182,11 @@ class RunService:
         if size(inp) > config.input_max(): raise AppError("RUN_INPUT_TOO_LARGE", max_kb=config.input_max() // 1024)
         stored = json.loads(row.data or "{}") if row else {}
         edits = row is None or self.access is None or self.access.may(wid, uid, P.EDIT)
+        # public demo: visitors (viewers) may run their unsaved edits; the engine refuses code, HTTP and email there
+        if config.demo_mode() and not stored.get("source"): edits = True
         wf = stored if stored.get("source") or not edits else (req.get("workflow") or stored)  # unsaved edits need edit access
         if not isinstance(wf, dict) or size(wf) > config.workflow_max(): raise AppError("WORKFLOW_TOO_LARGE", max_kb=config.workflow_max() // 1024)
+        if config.demo_mode() and P.code_sources(wf): raise AppError("DEMO_CODE_DISABLED")  # the clear code, not WORKFLOW_INVALID
         n = req.get("version")  # a stored version's snapshot instead (workflow tests run against version, TASK-0068)
         if n is not None:
             v = self.versions.get(wid, n) if wid and edits and self.versions is not None and isinstance(n, int) and not isinstance(n, bool) else None
@@ -195,6 +199,21 @@ class RunService:
             raise AppError("RUN_REQUEST_INVALID")  # imported graphs stay full-run only (TASK-0036)
         return RunPlan(wid, wf, inp, self.credentials.resolver(res) if self.credentials else None, version=version, invalid=invalid,
                        ports=self.ports(res, uid), steps=steps, until=until)
+
+    def _plan_chat(self, uid: str, req: dict, steps, until) -> RunPlan:
+        """A chat message or a visitor's answer from the chat (TASK-0084): the run gets the history as input and
+        source "chat"; ChatRunService.on_settled writes the answer turn."""
+        web = self.chat().web if self.chat else None
+        sid = req["chat_session_id"]
+        if web is None or not isinstance(sid, str): raise AppError("CHAT_NOT_ENABLED")
+        if req.get("resume_run_id"):
+            web.check_answer(uid, sid, str(req["resume_run_id"]))
+            return self.plan_resume(uid, req["resume_run_id"], req.get("response"), steps=steps, until=until)
+        prep = web.input_for(uid, sid, req.get("message"))
+        plan = self.plan(uid, {"workflow_id": prep["workflow_id"], "input": prep["input"]})
+        plan.run_id, plan.source = uuid.uuid4().hex[:10], "chat"
+        web.record(uid, sid, prep["text"], plan.run_id)
+        return plan
 
     def _workflow(self, wid: str, uid: str, action: str = P.VIEW):
         if self.access is not None: return self.access.workflow(wid, uid, action)

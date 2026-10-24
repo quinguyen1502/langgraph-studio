@@ -24,7 +24,7 @@ test('subprocess runtime: every surface warns that code is not isolated', async 
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })
   await expect(page.locator('#trace-code-unisolated')).toBeVisible()
   await expect(page.locator('.trace-row[data-span="c#1"] [data-testid="span-unisolated"]')).toHaveText('runtime: subprocess')
-  await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.locator('#history-all').click()
   await expect(page.locator('[data-testid="history-unisolated"]').first()).toBeVisible()
 
   await page.goto('/settings/users')

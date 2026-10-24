@@ -1,5 +1,8 @@
 # Bắt đầu
 
+!!! tip "Demo trực tuyến"
+    Dùng thử Superstep mà không cần cài gì tại [superstep-demo.onrender.com](https://superstep-demo.onrender.com): bấm **Dùng thử demo**. Bản demo chạy trên gói miễn phí nên lần tải đầu có thể mất khoảng 30 giây, dữ liệu được đặt lại mỗi khi máy chủ nghỉ, và thay đổi không được lưu. Node Code, HTTP và Send email đang tắt, model trả lời bằng mock ([cách bản demo hoạt động](https://github.com/quinguyen1502/superstep/blob/develop/docs/deploy/demo.vi.md)).
+
 Superstep gồm ba phần:
 
 | Phần | Là gì |

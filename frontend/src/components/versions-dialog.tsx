@@ -72,7 +72,7 @@ export function VersionsDialog(props: { wid?: string; onRestored: (wf: any) => v
     catch (e: any) { setErr(e.message) }
   }
   const pick = (v: string, set: (s: string) => void) => <Select value={v} onValueChange={set}>
-    <SelectTrigger className="w-28 h-8"><SelectValue /></SelectTrigger>
+    <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
     <SelectContent>{items.map(i => <SelectItem key={i.version} value={String(i.version)}>v{i.version}</SelectItem>)}</SelectContent>
   </Select>
   return <Dialog open={open} onOpenChange={setOpen}>
@@ -94,9 +94,9 @@ export function VersionsDialog(props: { wid?: string; onRestored: (wf: any) => v
             <div className="text-muted-foreground truncate">{v.author_email ?? '—'} · {t('versions.nodes', { count: v.node_count })}</div>
             {v.note && <div className="text-muted-foreground italic truncate">{v.note.startsWith('Restored from v') ? t('versions.restoredFrom', { n: v.note.slice(15) }) : v.note === 'Initial version' ? t('versions.initial') : v.note}</div>}
             {!v.current && (confirm === v.version
-              ? <div className="space-y-1">{dirty && <p className="text-warning" data-testid="restore-unsaved-warning">{t('versions.unsavedWarning')}</p>}<div className="flex gap-1"><Button size="sm" variant="destructive" className="h-6" data-testid="restore-confirm" onClick={() => restore(v.version)}>{t('versions.confirm', { n: v.version })}</Button>
-                  <Button size="sm" variant="ghost" className="h-6" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button></div></div>
-              : <Button size="sm" variant="ghost" className="h-6" data-testid="restore-btn" onClick={() => setConfirm(v.version)}><RotateCcw />{t('versions.restore')}</Button>)}
+              ? <div className="space-y-1">{dirty && <p className="text-warning" data-testid="restore-unsaved-warning">{t('versions.unsavedWarning')}</p>}<div className="flex gap-1"><Button size="xs" variant="destructive" data-testid="restore-confirm" onClick={() => restore(v.version)}>{t('versions.confirm', { n: v.version })}</Button>
+                  <Button size="xs" variant="ghost" onClick={() => setConfirm(null)}>{t('common.cancel')}</Button></div></div>
+              : <Button size="xs" variant="ghost" data-testid="restore-btn" onClick={() => setConfirm(v.version)}><RotateCcw />{t('versions.restore')}</Button>)}
           </div>)}
           {items.length < total && <Button variant="ghost" size="sm" className="w-full" id="versions-more" onClick={more}>{t('versions.loadMore')} ({t('versions.shown', { shown: items.length, total })})</Button>}</div>
         </ScrollArea>

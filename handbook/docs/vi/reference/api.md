@@ -3,6 +3,10 @@
 UI dùng cùng API với mọi client khác. Trang OpenAPI tương tác nằm ở `/docs` của
 API (<http://localhost:8000/docs> khi phát triển).
 
+Dịch vụ chỉ cần khởi chạy workflow thì dùng API công khai: xem
+[API công khai và SDK](../run/public-api.md) và
+[Tham chiếu API công khai](public-api.md) (`/openapi.public.json`, `/docs/public`).
+
 ## Envelope
 
 Mọi response REST đều là một envelope:

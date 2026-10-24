@@ -48,6 +48,7 @@ nav:
       - Run và trace: run/traces.md
       - Duyệt bởi người: run/human-approval.md
       - API trigger và webhook: run/api-triggers.md
+      - API công khai và SDK: run/public-api.md
       - Lịch chạy: run/schedules.md
       - Chạy từ chat: run/chat-triggers.md
       - Chat: run/chat.md
@@ -66,6 +67,7 @@ nav:
       - reference/index.md
       - Cấu hình: reference/configuration.md
       - HTTP API: reference/api.md
+      - Tham chiếu API công khai: reference/public-api.md
       - Mã lỗi: reference/errors.md
       - Kiến trúc: reference/architecture.md
       - Phím tắt: reference/shortcuts.md

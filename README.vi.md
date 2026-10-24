@@ -116,6 +116,16 @@ WebSocket. Run gọi qua API, run theo lịch và run được khôi phục đi 
 đợi tới worker. Chi tiết:
 [Kiến trúc](https://quinguyen1502.github.io/superstep/vi/reference/architecture/).
 
+## Triển khai
+
+Triển khai image all-in-one (giao diện, API và WebSocket trên một cổng; SQLite trên volume hoặc Postgres):
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/quinguyen1502/superstep)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://www.heroku.com/deploy?template=https://github.com/quinguyen1502/superstep)
+
+Railway, Coolify, Dokploy, các biến thể Postgres và worker, tài khoản admin đầu tiên và các biến môi trường:
+[`docs/deploy/`](docs/deploy/README.vi.md). Node Code ở đó chạy trực tiếp trên server (không có sandbox Docker); hãy đọc hướng dẫn trước.
+
 ## Tài liệu
 
 | Chủ đề | Phần trong handbook |

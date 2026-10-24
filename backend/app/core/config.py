@@ -58,6 +58,7 @@ def webhook_backoff_max() -> float: return max(0.0, float(os.environ.get("STUDIO
 def secret_grace() -> float: return max(0.0, float(os.environ.get("STUDIO_SECRET_GRACE", 24 * 3600)))  # old signing secret stays valid
 def job_visibility() -> int: return max(3, _int("STUDIO_JOB_VISIBILITY_TIMEOUT", 30))  # lease of a taken job
 def job_reap_every() -> float: return max(0.2, float(os.environ.get("STUDIO_JOB_REAP_EVERY", 15)))
+def static_dir() -> str: return os.environ.get("STUDIO_STATIC_DIR", "")  # built frontend served by the API (all-in-one image); empty = off
 def public_url() -> str: return (os.environ.get("STUDIO_PUBLIC_URL") or "").rstrip("/")  # links in e-mails
 # --- TASK-0045: sign-in hardening ---
 def login_max_failures() -> int: return max(1, _int("STUDIO_LOGIN_MAX_FAILURES", 5))  # failed sign-ins per e-mail before a lockout

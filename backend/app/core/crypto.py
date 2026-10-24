@@ -1,11 +1,13 @@
 """Encryption at rest for secrets (Fernet = AES-128-CBC + HMAC-SHA256).
 
 Key source (first match):
-  1. STUDIO_SECRET_KEY env var (urlsafe base64 32-byte Fernet key)
+  1. STUDIO_SECRET_KEY env var: a Fernet key (urlsafe base64, 32 bytes) is used as is; any other value (a PaaS
+     generated secret such as Heroku's 64 hex characters) is stretched to one with SHA-256.
   2. key file STUDIO_SECRET_KEY_FILE (default ~/.superstep/secret.key, see config.home_dir), created with 0600 on first use.
+     Production (STUDIO_ENV=production) refuses to create one: set STUDIO_SECRET_KEY (check_key).
 """
 from __future__ import annotations
-import hashlib, hmac, os
+import base64, hashlib, hmac, os
 from typing import Optional
 from cryptography.fernet import Fernet, InvalidToken
 from . import config
@@ -14,10 +16,26 @@ from .errors import AppError
 _fernet: Optional[Fernet] = None
 
 
+def _key_path() -> str:
+    return os.path.expanduser(os.environ.get("STUDIO_SECRET_KEY_FILE") or os.path.join(config.home_dir(), "secret.key"))
+
+
+def as_fernet_key(raw: str) -> bytes:
+    try: Fernet(raw.encode()); return raw.encode()
+    except ValueError: return base64.urlsafe_b64encode(hashlib.sha256(raw.encode()).digest())
+
+
+def check_key() -> None:
+    """Start-up check: production needs STUDIO_SECRET_KEY, unless a key file from an earlier start already exists.
+    A key generated into an ephemeral PaaS file system would make every stored credential unreadable after a restart."""
+    if config.IS_PROD and not os.environ.get("STUDIO_SECRET_KEY") and not os.path.exists(_key_path()):
+        raise RuntimeError("STUDIO_SECRET_KEY must be set when STUDIO_ENV=production")
+
+
 def _key() -> bytes:
     env = os.environ.get("STUDIO_SECRET_KEY")
-    if env: return env.encode()
-    path = os.path.expanduser(os.environ.get("STUDIO_SECRET_KEY_FILE") or os.path.join(config.home_dir(), "secret.key"))
+    if env: return as_fernet_key(env)
+    path = _key_path()
     if os.path.exists(path): return open(path, "rb").read().strip()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     k = Fernet.generate_key()

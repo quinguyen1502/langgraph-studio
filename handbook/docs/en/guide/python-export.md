@@ -33,7 +33,7 @@ test case's input when the workflow has one) and prints what each node
 returned, then the final state:
 
 ```text
-[read_the_request] {"details": "[mock:gpt-4o-mini] Trả lời: I'd like leave ..."}
+[read_the_request] {"details": "[mock:gpt-4o-mini] Answer: I'd like leave ..."}
 >> manager_approval: approved
 [manager_approval] {"decision": "approved"}
 (e-mail not sent) to bo@example.com: Your leave request: approved

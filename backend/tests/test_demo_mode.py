@@ -88,3 +88,25 @@ def test_a_run_with_a_code_node_is_refused_with_the_demo_code(demo):
           {"id": "c", "type": "tool", "data": {"mode": "code", "code": "def main(state):\n    return 1", "output_field": "x"}}], "edges": []}
     with pytest.raises(AppError) as e: run_service().plan(demo_service.VISITOR_ID, {"workflow_id": "example", "workflow": wf, "input": {}})
     assert e.value.code == "DEMO_CODE_DISABLED"
+
+
+def test_demo_run_rate_limit_per_ip(demo, monkeypatch):
+    import asyncio
+    from app.services.rate_limit import InMemoryRateLimiter
+    monkeypatch.setenv("STUDIO_DEMO_RUN_RATE_LIMIT", "2")
+    svc = demo_service.DemoService(InMemoryRateLimiter())
+    async def go():
+        await svc.check_run("1.2.3.4"); await svc.check_run("1.2.3.4")
+        with pytest.raises(AppError) as e: await svc.check_run("1.2.3.4")
+        assert e.value.code == "RATE_LIMITED" and int(e.value.headers["Retry-After"]) >= 1
+        await svc.check_run("5.6.7.8")  # per client IP
+        monkeypatch.setenv("STUDIO_DEMO_RUN_RATE_LIMIT", "0")
+        for _ in range(5): await svc.check_run("1.2.3.4")  # 0 turns it off
+    asyncio.run(go())
+
+
+def test_demo_node_errors_have_no_class_prefix():
+    from app.engine.limits import safe_error
+    msg = safe_error(AppError("DEMO_NODE_DISABLED", node="HTTP Tool"))
+    assert not msg.startswith("AppError") and "HTTP Tool" in msg
+    assert safe_error(ValueError("boom")) == "ValueError: boom"

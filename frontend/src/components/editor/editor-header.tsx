@@ -92,11 +92,13 @@ export function EditorHeader() {
       </Dialog>
       {delWf.dialog}
       {/* the right column is never narrower than its icons, so it cannot cover the centre actions; the info badges
-          take what is left and clip (TASK-0039) */}
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 overflow-hidden [contain:inline-size]" id="header-info">
+          take what is left (TASK-0039) and hide whole when they do not fit, never as a clipped half badge */}
+      <div className="@container flex min-w-0 flex-1 items-center justify-end overflow-hidden" id="header-info">
+      <div className="flex items-center gap-2">
       {source && <Tip tip={t('editor.importedTip', { src: source.repo_url || 'zip', ref: source.ref })}><Badge variant="secondary" className="gap-1"><GitFork className="size-3" />{t('editor.imported')}</Badge></Tip>}
-      <Badge variant="secondary">{t('editor.llmMode', { mode })}</Badge>{wid && <Badge variant="outline">{t('editor.idBadge', { id: wid })}</Badge>}
-      </div>
+      <Badge variant="secondary" className="hidden @[7rem]:inline-flex" id="llm-mode-badge">{t('editor.llmMode', { mode })}</Badge>
+      {wid && <Badge variant="outline" className="hidden @[16rem]:inline-flex" id="wid-badge">{t('editor.idBadge', { id: wid })}</Badge>}
+      </div></div>
       <PendingBadge /><NotificationBell /><LanguageSwitcher /><ThemeToggle /><UserMenu />
       </div>
     </header>

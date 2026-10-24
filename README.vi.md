@@ -25,9 +25,9 @@
 
 <table>
   <tr>
-    <td width="33%" align="center"><img src="handbook/docs/vi/images/chat-tab.png" alt="Chat với workflow" width="100%"><br><sub>Chat với workflow</sub></td>
-    <td width="33%" align="center"><img src="handbook/docs/vi/images/run-trace.png" alt="Trace run trực tiếp" width="100%"><br><sub>Trace run trực tiếp</sub></td>
-    <td width="33%" align="center"><img src="handbook/docs/vi/images/code-tab.png" alt="Xuất mã LangGraph" width="100%"><br><sub>Xuất mã LangGraph</sub></td>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/chat-tab.png" alt="Chat với workflow" width="100%"><p>Chat với workflow</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/run-trace.png" alt="Trace run trực tiếp" width="100%"><p>Trace run trực tiếp</p></td>
+    <td width="33%" align="center"><img src="handbook/docs/vi/images/code-tab.png" alt="Xuất mã LangGraph" width="100%"><p>Xuất mã LangGraph</p></td>
   </tr>
 </table>
 

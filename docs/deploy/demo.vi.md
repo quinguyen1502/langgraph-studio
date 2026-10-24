@@ -13,20 +13,20 @@ nối duyệt, việc tạo workflow và mọi trang quản trị. Chế độ d
 
 | Phần | Ở chế độ demo |
 | --- | --- |
-| Ghi dữ liệu | API từ chối mọi thao tác ghi của tài khoản khách, trừ đăng nhập, đăng xuất, huỷ run, trả lời node Human và đánh dấu thông báo đã đọc (`403 DEMO_READ_ONLY`). Khách không lưu, chia sẻ, đổi tên hay xoá workflow, và không đổi được tài khoản (mật khẩu, tuỳ chọn, tài khoản liên kết). |
+| Ghi dữ liệu | API từ chối mọi thao tác ghi của tài khoản khách, trừ đăng nhập, đăng xuất, huỷ run, trả lời node Human, đánh dấu thông báo đã đọc và bắt đầu hoặc xoá cuộc trò chuyện trong khung Chat (`403 DEMO_READ_ONLY`). Khách không lưu, chia sẻ, đổi tên hay xoá workflow, và không đổi được tài khoản (mật khẩu, tuỳ chọn, tài khoản liên kết). |
 | Đăng ký, đặt lại mật khẩu | Đóng với mọi người (`DEMO_READ_ONLY`), để không ai tạo được tài khoản có nhiều quyền hơn. |
 | Chạy | Khách có thể chạy các chỉnh sửa **chưa lưu** trong trình soạn thảo. Không thay đổi nào được lưu. |
 | Node Code | Tắt, máy chủ bắt buộc (`DEMO_CODE_DISABLED`); trình soạn thảo ghi rõ lý do. |
 | Node HTTP Tool và Send email | Bị từ chối khi chạy (`DEMO_NODE_DISABLED`), nên run không gọi ra ngoài. |
 | Node LLM và Decision | Luôn dùng model mock ngoại tuyến, kể cả khi có `OPENAI_API_KEY`. Không gọi nhà cung cấp nào. |
 | Giới hạn tần suất | `STUDIO_DEMO_RUN_RATE_LIMIT` run mỗi IP mỗi phút (mặc định 20; `RATE_LIMITED`). |
-| Workflow mẫu | Example, Chatbot (kiểu chat: `message` vào, `answer` ra), Router và Approval flow được tạo và chia sẻ cho khách mỗi lần khởi động, vì gói miễn phí xoá file SQLite khi dịch vụ nghỉ. |
+| Workflow mẫu | Example, Chatbot (kiểu chat: `message` vào, `answer` ra, bật chat web cho khung Chat), Router và Approval flow được tạo và chia sẻ cho khách mỗi lần khởi động, vì gói miễn phí xoá file SQLite khi dịch vụ nghỉ. |
 | Thông báo | Mọi trang có một thông báo nhỏ: đây là bản demo, dữ liệu được đặt lại, lần tải đầu có thể mất khoảng 30 giây. |
 
 Admin (`STUDIO_ADMIN_EMAILS` cùng `STUDIO_ADMIN_PASSWORD` cố định) là tài khoản bình thường,
 không bị giới hạn; hãy giữ kín mật khẩu đó.
 
-Giới hạn, nói thẳng: mọi khách dùng chung một tài khoản nên thấy lịch sử run của nhau cho đến
+Giới hạn, nói thẳng: mọi khách dùng chung một tài khoản nên thấy lịch sử run và các cuộc trò chuyện của nhau cho đến
 lần đặt lại tiếp theo. Node MCP và Retriever không có gì để dùng (không có máy chủ MCP hay kho
 tri thức). Thời gian chạy tối đa và giới hạn kích thước input giữ như bình thường.
 

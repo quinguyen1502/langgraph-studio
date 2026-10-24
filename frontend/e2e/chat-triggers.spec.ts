@@ -65,7 +65,7 @@ test('chat triggers: add, refuse a duplicate command, switch, edit, delete; a me
   await page.keyboard.press('Escape')
 
   // History (loaded when the editor opens, so reload): the run from the chat carries the Chat badge
-  await page.reload(); await page.getByRole('tab', { name: 'Lịch sử' }).click()
+  await page.reload(); await page.locator('#history-all').click()
   await expect(page.locator('[data-testid=history-row]').first().locator('[data-testid=history-source]')).toHaveText('Chat')
   await expect(page.locator('[data-testid=history-row]').first().locator('[data-channel-logo=slack]')).toBeVisible()
 

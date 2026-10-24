@@ -156,6 +156,9 @@
     "httpRequest": "HTTP request",
     "readOnly": "read-only",
     "reducer": "Reducer",
+    "fieldName": "Field name",
+    "fieldType": "Field type",
+    "removeField": "Remove the field {{name}}",
     "reducers": {
       "replace": "Replace (last write wins)",
       "append": "Append (collect all)",
@@ -214,7 +217,12 @@
       "each": "each: run the body for the next item",
       "done": "done: after the last item"
     },
-    "codeMode": "Code ({{language}})"
+    "codeMode": "Code ({{language}})",
+    "panelModes": "Bottom panel",
+    "tabRun": "Run",
+    "pickRun": "Pick a run…",
+    "viewAllRuns": "View all",
+    "historyDesc": "Every run of this workflow. Open one to replay it in the logs."
   },
   "nodes": {
     "start": "Start point",
@@ -421,6 +429,14 @@
     "CHAT_IDENTITY_UNVERIFIED": "Their {{kind}} account is linked but not verified",
     "CHAT_FORBIDDEN": "They may not run this workflow",
     "CHAT_TRIGGER_OFF": "The chat trigger is off",
+    "CHAT_NOT_ENABLED": "Chat is off for this workflow. Turn it on in the Chat settings",
+    "CHAT_SETTINGS_INVALID": "Chat settings: invalid {{field}}",
+    "CHAT_ACCESS_NOT_AVAILABLE": "Chat access '{{access}}' is not available yet",
+    "CHAT_SESSION_NOT_FOUND": "Chat not found",
+    "CHAT_MESSAGE_EMPTY": "Write a message first",
+    "CHAT_MESSAGE_TOO_LONG": "The message is longer than {{max}} characters",
+    "CHAT_RUN_WAITING": "Answer the question in the chat first",
+    "CHAT_ANSWER_BY_REVIEWER": "A reviewer answers this step in the Approvals inbox",
     "TEST_NOT_FOUND": "Test case not found",
     "TEST_CASE_INVALID": "Test case: {{reason}}",
     "TEST_CASES_LIMIT": "A workflow can have at most {{max}} test cases",
@@ -1206,7 +1222,8 @@
       "paste": "Paste nodes",
       "duplicate": "Duplicate selected nodes",
       "layout": "Tidy up the layout",
-      "palette": "Open the command palette"
+      "palette": "Open the command palette",
+      "chat": "Open or close the chat panel"
     }
   },
   "history": {
@@ -1747,5 +1764,108 @@
     "selectHint": "Select a node on the canvas to find its code",
     "download": "Download .{{ext}}",
     "languageLabel": "Language"
+  },
+  "chat": {
+    "tab": "Chat",
+    "new": "New chat",
+    "sessions": "Chats",
+    "noSessions": "No chats yet.",
+    "untitled": "New chat",
+    "delete": "Delete chat",
+    "deleteTitle": "Delete this chat?",
+    "deleteBody": "“{{title}}” and its messages are deleted. Its runs stay in History.",
+    "stepsHint": {
+      "full": "Every step, with its input and output",
+      "labels": "Visitors see step names",
+      "none": "Visitors see no steps"
+    },
+    "unsaved": "Chat uses the saved workflow",
+    "off": "Chat is off for this workflow. Turn it on in the Chat settings to try it here.",
+    "empty": "Send a message to start the chat.",
+    "thinking": "Working…",
+    "saving": "Saving the answer…",
+    "scrollEnd": "Scroll to the latest message",
+    "failed": "The run failed.",
+    "message": "Message",
+    "placeholder": "Type a message… (Enter sends, Shift+Enter adds a line)",
+    "send": "Send",
+    "stop": "Stop",
+    "waitingReviewer": "Waiting for approval by a reviewer.",
+    "openApprovals": "Open Approvals",
+    "needsAnswer": "Your answer is needed",
+    "step": {
+      "ok": "Ran {{label}}",
+      "error": "Failed: {{label}}",
+      "waiting": "Waiting at {{label}}",
+      "running": "Running {{label}}",
+      "input": "Input",
+      "output": "Output",
+      "errorDetail": "Error"
+    },
+    "settings": {
+      "title": "Chat settings",
+      "open": "Open Chat settings",
+      "desc": "Let people chat with this workflow. Each message starts a run of the saved workflow.",
+      "enabled": "Chat",
+      "enabledHint": "Turn chat on for this workflow.",
+      "access": "Who can chat",
+      "accessHint": "Now only people who can run this workflow in the studio. Public links come later.",
+      "later": "Later",
+      "inputField": "Message field",
+      "replyField": "Reply field",
+      "messagesField": "Conversation field",
+      "messagesHint": "A list field that gets the earlier messages, so the workflow remembers the conversation.",
+      "noMemory": "None (no memory)",
+      "pickField": "Pick a field",
+      "maxTurns": "Messages remembered",
+      "maxTurnsHint": "Exchanges sent back to the workflow.",
+      "retention": "Retention (days)",
+      "retentionHint": "Chats idle this long are deleted.",
+      "steps": "Steps shown to visitors",
+      "stepsHint": "Builders always see every step in the studio."
+    },
+    "access": {
+      "studio": "Studio users",
+      "anonymous": "Anyone with the link",
+      "signed_in": "Signed-in users"
+    },
+    "steps": {
+      "none": "None",
+      "labels": "Step names",
+      "full": "Full (input and output)"
+    },
+    "answeredBy": "Answered by",
+    "answeredByOpt": {
+      "visitor": "The person chatting",
+      "reviewer": "A reviewer"
+    },
+    "answeredByHint": {
+      "visitor": "In a chat, the question is asked and answered in the chat.",
+      "reviewer": "In a chat, the person chatting waits while a reviewer answers in Approvals."
+    },
+    "emptyTitle": "Start a chat",
+    "copy": "Copy",
+    "copied": "Copied",
+    "answerHint": "Approve, reject, or type your answer below.",
+    "answerPlaceholder": "Type your answer…",
+    "openTip": "Chat with this workflow",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen (Esc)",
+    "resize": "Resize the chat panel",
+    "viewAs": "View as",
+    "views": {
+      "builder": {
+        "title": "Workflow builder",
+        "desc": "See every step with full input and output.",
+        "short": "Builder"
+      },
+      "visitor": {
+        "title": "Chat visitor",
+        "desc": "Preview exactly what visitors see on the public chat, per Chat settings.",
+        "short": "Visitor"
+      }
+    },
+    "visitorBanner": "You're previewing what chat visitors see",
+    "visitorExit": "Back to builder view"
   }
 }

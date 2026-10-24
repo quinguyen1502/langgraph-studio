@@ -22,7 +22,7 @@ test('human node: wait, pending list, approve, complete', async ({ page }) => {
   await page.goto(`/workflows/${wid}`)
   await page.locator('.react-flow__node[data-id="ask"]').click()
   await expect(page.locator('#human-prompt')).toHaveText('Approve refund for message?'); await expect(page.locator('#human-prompt .template-tag[data-field="message"]')).toBeVisible()
-  await page.getByRole('tab', { name: 'Input' }).first().click()
+  await page.locator('#run-tab').click()
   await page.locator('#run-input').fill('{"message": "order A100"}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
@@ -52,7 +52,7 @@ test('approvals inbox: a listed approver answers in place (TASK-0065)', async ({
   await page.goto(`/workflows/${wid}`)
   await page.locator('.react-flow__node[data-id="ask"]').click()
   await expect(page.locator('#approval-approvers')).toHaveValue(email)  // approvers on a studio-only Human node
-  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order B7"}')
+  await page.locator('#run-tab').click(); await page.locator('#run-input').fill('{"message": "order B7"}')
   await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
 
   await other.goto('/login'); await signIn(other, email, 'secret12'); await other.goto('/approvals')
@@ -81,7 +81,7 @@ test('human node deadline: settings, due time in the inbox, rejected on time (TA
   await page.locator('#save-btn').click(); await expect(page.locator('#unsaved-badge')).toHaveCount(0)
   const saved = (await (await page.request.get(`/api/workflows/${wid}`, { headers: { Authorization: `Bearer ${token}` } })).json()).data
   expect(saved.nodes.find((n: { id: string }) => n.id === 'ask').data.deadline).toEqual({ after: '1m', on_timeout: 'reject' })
-  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "order C3"}')
+  await page.locator('#run-tab').click(); await page.locator('#run-input').fill('{"message": "order C3"}')
   await page.locator('#run-btn').click(); await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'waiting', { timeout: 30_000 })
   await page.goto('/approvals')
   await expect(page.locator('[data-testid=inbox-row]', { hasText: wf.name }).locator('[data-testid=inbox-due]')).toBeVisible()

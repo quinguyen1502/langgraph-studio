@@ -31,7 +31,7 @@ test('send email: SMTP credential, dry run, then a real send', async ({ page }) 
   const runs = async () => (await (await page.request.get(`/api/workflows/${wid}/runs`, { headers: H })).json()).data
     .sort((a: { started: number }, b: { started: number }) => b.started - a.started)
   const run = async () => {
-    await page.getByRole('tab', { name: 'Input' }).first().click()
+    await page.locator('#run-tab').click()
     await page.locator('#run-input').fill('{"email": "ann@example.com", "name": "Ann", "sent": {}}')
     await page.locator('#run-btn').click()
     await expect(page.locator('#trace-summary')).toHaveAttribute('data-status', 'ok', { timeout: 30_000 })

@@ -40,7 +40,7 @@ test('template filters: suggestions, tags, bad filter, edit as text, rendered ru
   expect(saved.nodes.find((n: { id: string }) => n.id === 'ask').data.prompt).toBe('Refund {{state.order.id}}? {{state.order.note | default("none") | upper}} {{state.order.id | trim}}')
 
   // the run renders paths and filters
-  await page.getByRole('tab', { name: 'Input' }).first().click()
+  await page.locator('#run-tab').click()
   await page.locator('#run-input').fill('{"order": {"id": " A7 "}}')
   await page.locator('#run-btn').click()
   await expect(page.locator('#human-question')).toHaveText('Refund  A7 ? NONE A7', { timeout: 30_000 })

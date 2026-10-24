@@ -156,6 +156,9 @@
     "httpRequest": "Request HTTP",
     "readOnly": "chỉ đọc",
     "reducer": "Reducer",
+    "fieldName": "Tên trường",
+    "fieldType": "Kiểu trường",
+    "removeField": "Xoá trường {{name}}",
     "reducers": {
       "replace": "Thay thế (giữ giá trị ghi sau cùng)",
       "append": "Nối (gom tất cả)",
@@ -214,7 +217,12 @@
       "each": "each: chạy các bước lặp cho phần tử tiếp theo",
       "done": "done: sau phần tử cuối"
     },
-    "codeMode": "Code ({{language}})"
+    "codeMode": "Code ({{language}})",
+    "panelModes": "Bảng dưới",
+    "tabRun": "Chạy",
+    "pickRun": "Chọn một run…",
+    "viewAllRuns": "Xem tất cả",
+    "historyDesc": "Mọi run của workflow này. Mở một run để xem lại trong nhật ký."
   },
   "nodes": {
     "start": "Điểm bắt đầu",
@@ -421,6 +429,14 @@
     "CHAT_IDENTITY_UNVERIFIED": "Tài khoản {{kind}} của họ đã liên kết nhưng chưa xác minh",
     "CHAT_FORBIDDEN": "Họ không có quyền chạy workflow này",
     "CHAT_TRIGGER_OFF": "Chat trigger đang tắt",
+    "CHAT_NOT_ENABLED": "Chat đang tắt cho workflow này. Bật trong phần cài đặt Chat",
+    "CHAT_SETTINGS_INVALID": "Cài đặt Chat: {{field}} không hợp lệ",
+    "CHAT_ACCESS_NOT_AVAILABLE": "Quyền truy cập chat '{{access}}' chưa dùng được",
+    "CHAT_SESSION_NOT_FOUND": "Không tìm thấy cuộc trò chuyện",
+    "CHAT_MESSAGE_EMPTY": "Hãy viết tin nhắn trước",
+    "CHAT_MESSAGE_TOO_LONG": "Tin nhắn dài hơn {{max}} ký tự",
+    "CHAT_RUN_WAITING": "Hãy trả lời câu hỏi trong chat trước",
+    "CHAT_ANSWER_BY_REVIEWER": "Bước này do người duyệt trả lời trong trang Duyệt",
     "TEST_NOT_FOUND": "Không tìm thấy test case",
     "TEST_CASE_INVALID": "Test case: {{reason}}",
     "TEST_CASES_LIMIT": "Một workflow có tối đa {{max}} test case",
@@ -1206,7 +1222,8 @@
       "paste": "Dán node",
       "duplicate": "Nhân bản node đang chọn",
       "layout": "Tự sắp xếp bố cục",
-      "palette": "Mở bảng lệnh"
+      "palette": "Mở bảng lệnh",
+      "chat": "Mở hoặc đóng khung chat"
     }
   },
   "history": {
@@ -1747,5 +1764,108 @@
     "selectHint": "Chọn một node trên canvas để xem mã của node đó",
     "download": "Tải .{{ext}}",
     "languageLabel": "Ngôn ngữ"
+  },
+  "chat": {
+    "tab": "Chat",
+    "new": "Chat mới",
+    "sessions": "Cuộc trò chuyện",
+    "noSessions": "Chưa có cuộc trò chuyện nào.",
+    "untitled": "Cuộc trò chuyện mới",
+    "delete": "Xoá cuộc trò chuyện",
+    "deleteTitle": "Xoá cuộc trò chuyện này?",
+    "deleteBody": "“{{title}}” và các tin nhắn của nó sẽ bị xoá. Các run vẫn còn trong Lịch sử.",
+    "stepsHint": {
+      "full": "Mọi bước, kèm input và output",
+      "labels": "Người chat thấy tên các bước",
+      "none": "Người chat không thấy bước nào"
+    },
+    "unsaved": "Chat dùng workflow đã lưu",
+    "off": "Chat đang tắt cho workflow này. Bật trong Cài đặt Chat để thử ở đây.",
+    "empty": "Gửi một tin nhắn để bắt đầu.",
+    "thinking": "Đang xử lý…",
+    "saving": "Đang lưu câu trả lời…",
+    "scrollEnd": "Cuộn tới tin nhắn mới nhất",
+    "failed": "Run bị lỗi.",
+    "message": "Tin nhắn",
+    "placeholder": "Nhập tin nhắn… (Enter để gửi, Shift+Enter để xuống dòng)",
+    "send": "Gửi",
+    "stop": "Dừng",
+    "waitingReviewer": "Đang chờ người duyệt.",
+    "openApprovals": "Mở trang Duyệt",
+    "needsAnswer": "Cần bạn trả lời",
+    "step": {
+      "ok": "Đã chạy {{label}}",
+      "error": "Lỗi: {{label}}",
+      "waiting": "Đang chờ ở {{label}}",
+      "running": "Đang chạy {{label}}",
+      "input": "Input",
+      "output": "Output",
+      "errorDetail": "Lỗi"
+    },
+    "settings": {
+      "title": "Cài đặt Chat",
+      "open": "Mở Cài đặt Chat",
+      "desc": "Cho phép chat với workflow này. Mỗi tin nhắn chạy một run của workflow đã lưu.",
+      "enabled": "Chat",
+      "enabledHint": "Bật chat cho workflow này.",
+      "access": "Ai được chat",
+      "accessHint": "Hiện chỉ những người được chạy workflow này trong studio. Link công khai sẽ có sau.",
+      "later": "Sau này",
+      "inputField": "Trường tin nhắn",
+      "replyField": "Trường trả lời",
+      "messagesField": "Trường cuộc trò chuyện",
+      "messagesHint": "Một trường kiểu list nhận các tin nhắn trước đó, để workflow nhớ cuộc trò chuyện.",
+      "noMemory": "Không (không nhớ)",
+      "pickField": "Chọn một trường",
+      "maxTurns": "Số lượt nhớ",
+      "maxTurnsHint": "Số lượt hỏi–đáp gửi lại cho workflow.",
+      "retention": "Thời gian lưu (ngày)",
+      "retentionHint": "Cuộc trò chuyện không hoạt động quá thời gian này sẽ bị xoá.",
+      "steps": "Bước hiện cho người chat",
+      "stepsHint": "Người dựng trong studio luôn thấy mọi bước."
+    },
+    "access": {
+      "studio": "Người dùng studio",
+      "anonymous": "Ai có link",
+      "signed_in": "Người đã đăng nhập"
+    },
+    "steps": {
+      "none": "Không",
+      "labels": "Tên bước",
+      "full": "Đầy đủ (input và output)"
+    },
+    "answeredBy": "Người trả lời",
+    "answeredByOpt": {
+      "visitor": "Người chat",
+      "reviewer": "Người duyệt"
+    },
+    "answeredByHint": {
+      "visitor": "Trong chat, câu hỏi được hỏi và trả lời ngay trong chat.",
+      "reviewer": "Trong chat, người chat chờ trong khi người duyệt trả lời ở trang Duyệt."
+    },
+    "emptyTitle": "Bắt đầu chat",
+    "copy": "Sao chép",
+    "copied": "Đã sao chép",
+    "answerHint": "Duyệt, từ chối, hoặc nhập câu trả lời bên dưới.",
+    "answerPlaceholder": "Nhập câu trả lời…",
+    "openTip": "Chat với workflow này",
+    "fullscreen": "Toàn màn hình",
+    "exitFullscreen": "Thoát toàn màn hình (Esc)",
+    "resize": "Đổi kích thước khung chat",
+    "viewAs": "Xem dưới góc nhìn",
+    "views": {
+      "builder": {
+        "title": "Người dựng workflow",
+        "desc": "Thấy đầy đủ mọi bước, kèm input và output.",
+        "short": "Người dựng"
+      },
+      "visitor": {
+        "title": "Khách chat",
+        "desc": "Xem trước đúng như khách thấy trên trang chat công khai, theo cài đặt Chat.",
+        "short": "Khách"
+      }
+    },
+    "visitorBanner": "Bạn đang xem trước như khách chat",
+    "visitorExit": "Về góc nhìn người dựng"
   }
 }

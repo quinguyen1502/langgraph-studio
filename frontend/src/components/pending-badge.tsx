@@ -11,7 +11,7 @@ export function PendingBadge() {
   const { t } = useTranslation(); const nav = useNavigate(); const n = useInboxCount()
   const label = n ? t('human.pendingCount', { count: n }) : t('inbox.title')
   return <Tooltip><TooltipTrigger asChild>
-    <Button variant="ghost" size="sm" id="pending-badge" aria-label={label} onClick={() => nav('/approvals')}>
+    <Button variant="ghost" id="pending-badge" aria-label={label} onClick={() => nav('/approvals')}>
       <UserCheck className="text-node-human" />{n > 0 && <Badge variant="secondary" data-testid="pending-count">{n}</Badge>}
     </Button></TooltipTrigger><TooltipContent>{label}</TooltipContent></Tooltip>
 }

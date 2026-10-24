@@ -38,7 +38,7 @@ test('code mode in TypeScript: switch language, State type, test, run, admin car
   await expect(page.locator('.react-flow__node[data-id="c"] [data-testid="node-language"]')).toHaveText('TS')
 
   await setCode(page, SHOUT)
-  await page.getByRole('tab', { name: 'Input' }).first().click(); await page.locator('#run-input').fill('{"message": "xin chào"}')
+  await page.locator('#run-tab').click(); await page.locator('#run-input').fill('{"message": "xin chào"}')
   await page.locator('.react-flow__node[data-id="c"]').click()
   await page.locator('#code-test').click()
   await expect(page.locator('#code-test-result')).toContainText('XIN CHÀO', { timeout: 30_000 })

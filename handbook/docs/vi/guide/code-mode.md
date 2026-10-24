@@ -25,7 +25,7 @@ def main(state):
    đó (xem [TypeScript](#typescript)). Chế độ chỉ liệt kê những ngôn ngữ máy
    chủ này chạy được.
 2. Dưới ô code, node liệt kê các package có trong image và các giới hạn.
-3. Đặt input mẫu vào tab **Input** của panel run.
+3. Đặt input mẫu vào **Input** trong tab **Chạy** của bảng dưới.
 4. Bấm **Chạy thử với state mẫu**. Nút này chạy `main(state)` một lần với
    input đó và không lưu gì. Kết quả hiện giá trị trả về, phần đã in ra, và
    khi lỗi thì có traceback chỉ gồm các frame trong code của bạn.

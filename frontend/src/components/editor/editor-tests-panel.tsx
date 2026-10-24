@@ -120,7 +120,7 @@ export function EditorTestsPanel({ select }: { select?: string | null }) {
         : <span className="text-muted-foreground" id="tests-no-baseline">{t('tests.noBaseline')} {edit && t('tests.runVersionHelp')}</span>}
     </div>}
     {edit && isDirty() && <p className="border-b px-3 py-1.5 text-xs text-warning" id="tests-unsaved">{t('tests.unsaved')}</p>}
-    {err && <Alert variant="destructive" className="m-2 w-auto py-2"><AlertDescription>{err}</AlertDescription></Alert>}
+    {err && <Alert variant="destructive" className="m-2 w-auto"><AlertDescription>{err}</AlertDescription></Alert>}
     <div className="flex min-h-0 flex-1">
       <ScrollArea className="w-64 shrink-0 border-r"><div className="space-y-0.5 p-2">
         {list && !list.items.length && <p className="p-1 text-xs text-muted-foreground">{t(edit ? 'tests.empty' : 'tests.emptyViewer')}</p>}
@@ -152,7 +152,7 @@ export function EditorTestsPanel({ select }: { select?: string | null }) {
           <tbody>{(res?.checks ?? cur.checks.map(c => ({ ...c, passed: undefined } as any))).map((c: CheckResult, i: number) => <tr key={i} className="border-t align-top leading-5" data-testid="check-row">
             <td className="py-1"><span className="flex h-5 items-center">{/* centred on the first text line */}
               {c.passed === true ? <Check className="size-3.5 text-success" /> : c.passed === false ? <X className="size-3.5 text-destructive" /> : c.passed === null ? <CircleDashed className="size-3.5 text-muted-foreground" /> : null}</span></td>
-            <td className="py-1 pr-2">{describe(t, c, label)}{isStale(c, nodeIds, fieldNames) && <Badge variant="warning" className="ml-2 py-0 align-middle" data-testid="check-stale">{t('tests.stale')}</Badge>}</td>
+            <td className="py-1 pr-2">{describe(t, c, label)}{isStale(c, nodeIds, fieldNames) && <Badge variant="warning" className="ml-2 align-middle" data-testid="check-stale">{t('tests.stale')}</Badge>}</td>
             <td className="py-1 pr-2 font-mono break-all">{res ? shown(t, c, c.expected) : ''}</td>
             <td className="py-1 font-mono break-all">{res ? (c.reason ? <span className="font-sans text-muted-foreground">{t(`tests.reason.${c.reason}`, { node: label(c.node ?? '') })}</span> : shown(t, c, c.actual)) : ''}</td></tr>)}</tbody></table>}
       </div></ScrollArea>

@@ -52,7 +52,7 @@ Mỗi workflow có tối đa 50 test case (`STUDIO_TEST_CASES_MAX`), mỗi test 
 - Khi một node Human chờ mà test case không còn câu trả lời cho nó, test case
   không đạt và ghi rõ node nào đang chờ.
 
-Run test không hiện trong **Lịch sử**. Bật **Run test** ở đó để xem chúng.
+Run test không hiện trong lịch sử run (**Chạy → Xem tất cả**). Bật **Run test** ở đó để xem chúng.
 
 ## Run test không gửi gì
 
@@ -92,7 +92,7 @@ nào, số đạt và không đạt) và mở lại được.
 ## Lưu một run thành test case
 
 Một run chạy đúng là một test tốt. **Lưu thành test case** trên một run trong
-**Lịch sử**, hoặc trên thanh trace của run, mở một test case mới với:
+lịch sử run (**Xem tất cả**), hoặc trên thanh trace của run, mở một test case mới với:
 
 - input của run;
 - các câu trả lời đã đưa cho node Human, theo thứ tự;

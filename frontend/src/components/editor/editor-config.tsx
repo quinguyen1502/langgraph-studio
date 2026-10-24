@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils'
 import { applyMode, codeChoices, modeValue, nodeLanguage, type ToolModeValue } from '@/lib/code-mode'
 import { api } from '@/lib/api'
 import { useTranslation } from 'react-i18next'
+import { ANSWERED_BY } from '@/lib/chat'
 import { HumanApprovalSettings } from '@/components/human-approval-settings'
 import { HumanDeadlineSettings } from '@/components/human-deadline-settings'
 import { CredentialsDialog, type Credential } from '@/components/credentials-dialog'
@@ -38,7 +39,7 @@ export function EditorConfig() {
   const chatCreds = creds.filter(c => (providers.find(p => p.id === c.provider)?.kind ?? 'chat') === 'chat')  // TypeSafe keys: Decision nodes; SMTP: Send email
   const tpl = { fields: state, readOnly: !edit, placeholder: t('template.placeholder', { open: '{{' }) }
   return <aside className="h-full bg-muted/30 min-h-0" id="config-panel">
-      <ScrollArea className="h-full [&>[data-slot=scroll-area-viewport]>div]:block!"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
+      <ScrollArea className="h-full"><fieldset disabled={!edit} className="contents"><div className="p-4 space-y-4 min-w-0">
         <div className="text-xs font-semibold uppercase text-muted-foreground">{t('editor.config')}</div>
         {!selNode && !selEdge && <p className="text-muted-foreground text-xs">{t('editor.selectHint')}</p>}
         {selNode?.type === 'note' && <p className="text-muted-foreground text-xs" id="note-hint">{t('editor.noteHint')}</p>}
@@ -67,6 +68,10 @@ export function EditorConfig() {
           {selNode.type === 'human' && <>
             <F label={t('field.humanPrompt', { field: '{{state.field}}' })}><TemplateEditor {...tpl} rows={4} id="human-prompt" value={d.prompt || ''} onChange={v => upd('prompt', v)} /></F>
             <F label={t('field.outputField')}><Sel value={d.output_field} onChange={v => upd('output_field', v)} opts={fieldNames} /></F>
+            <F label={t('chat.answeredBy')}><Select value={d.answered_by || 'visitor'} onValueChange={v => upd('answered_by', v)} disabled={!edit}>
+              <SelectTrigger className="w-full" id="human-answered-by"><SelectValue /></SelectTrigger>
+              <SelectContent>{ANSWERED_BY.map(a => <SelectItem key={a} value={a}>{t(`chat.answeredByOpt.${a}`)}</SelectItem>)}</SelectContent></Select>
+              <p className="text-[11px] text-muted-foreground" id="human-answered-by-hint">{t(`chat.answeredByHint.${d.answered_by || 'visitor'}`)}</p></F>
             <HumanApprovalSettings key={selNode.id} value={d.approval} channels={channels} onChange={v => upd('approval', v)} />
             <HumanDeadlineSettings key={`${selNode.id}-deadline`} value={d.deadline} onChange={v => upd('deadline', v)} />
           </>}
@@ -76,7 +81,7 @@ export function EditorConfig() {
               <SelectContent><SelectItem value="function">{t('editor.pyFunction')}</SelectItem><SelectItem value="http">{t('editor.httpRequest')}</SelectItem>
                 {codeChoices(codeRt, d).map(l => <SelectItem key={l} value={`code:${l}`} id={`tool-mode-code-${l}`} disabled={d.mode !== 'code' && (!canCode || codeRt?.code_runtime === 'off')}>
                   {t('editor.codeMode', { language: t(`code.languages.${l}`) })}
-                  {codeRt?.code_runtime === 'subprocess' && <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" className="ml-1 h-4 min-w-0 shrink truncate px-1 text-[10px]" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge></Tip>}</SelectItem>)}</SelectContent></Select>
+                  {codeRt?.code_runtime === 'subprocess' && <Tip tip={t('code.notIsolatedTip')}><Badge variant="warning" size="sm" className="ml-1 min-w-0 shrink truncate" data-testid="mode-unisolated">{t('code.notIsolatedShort')}</Badge></Tip>}</SelectItem>)}</SelectContent></Select>
               {d.mode !== 'code' && !canCode && <p className="text-[11px] text-muted-foreground" id="tool-code-locked">{t('code.locked')}</p>}
               {d.mode !== 'code' && canCode && codeRt?.code_runtime === 'off' && <p className="text-[11px] text-muted-foreground" id="tool-code-off">{t('code.off')}</p>}</F>
             {d.mode === 'code' ? <F label={t('field.code')}><CodeSettings key={`${selNode.id}-${nodeLanguage(d)}`} value={d.code || ''} onChange={v => upd('code', v)} runtime={codeRt} canWrite={canCode}

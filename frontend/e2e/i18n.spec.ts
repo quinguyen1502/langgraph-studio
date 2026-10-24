@@ -20,7 +20,7 @@ test('language: defaults from browser, switches on login + app header, persists'
   await expect(page.getByRole('columnheader', { name: 'Last run' })).toBeVisible()
   await page.goto('/workflows/example')
   await expect(page.locator('#run-btn')).toContainText('Run')
-  await expect(page.getByRole('tab', { name: 'History' })).toBeVisible()
+  await expect(page.locator('#history-all')).toBeVisible()
 })
 
 test('error codes are translated (fallback to the English server message)', async ({ page }) => {

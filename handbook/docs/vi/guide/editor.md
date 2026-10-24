@@ -6,16 +6,22 @@
 
 | Vùng | Chứa gì |
 | --- | --- |
-| Thanh trên | Tên, **Lưu**, **Chạy**, **Một bước**, **Chạy tới đây**, undo và redo. Mọi thứ khác nằm trong menu **⋯** (Thao tác khác): bố cục, phiên bản, lịch chạy, API, chia sẻ, lưu thành mẫu, workflow JSON, xem dạng code, chuyển quyền sở hữu, xoá. |
+| Thanh trên | Tên, **Lưu**, **Chạy**, **Một bước**, **Chạy tới đây**, [**Chat**](../run/chat.md), undo và redo. Mọi thứ khác nằm trong menu **⋯** (Thao tác khác): bố cục, phiên bản, lịch chạy, API, chia sẻ, lưu thành mẫu, workflow JSON, xem dạng code, chuyển quyền sở hữu, xoá. |
 | Trái | **Node palette** và trình sửa **State schema**. |
 | Giữa | Canvas React Flow. |
 | Phải | **Cấu hình** của node hoặc edge đang chọn. |
-| Dưới | **Input** (JSON), **Logs** (trace trực tiếp), **Lịch sử**, [**Test**](../run/tests.md) và [**Code**](python-export.md) (workflow dưới dạng Python LangGraph). |
+| Dưới | Ba tab. **Chạy**: input (JSON) và logs (trace trực tiếp) nằm cạnh nhau, một menu chọn 10 run gần nhất và **Xem tất cả** cho toàn bộ lịch sử run. [**Test**](../run/tests.md). [**Code**](python-export.md) (workflow dưới dạng LangGraph Python hoặc TypeScript). |
+| Ngoài cùng bên phải | Khung [**Chat**](../run/chat.md), khi đang mở. |
 
 Kéo viền của panel trái, phải hoặc dưới để đổi kích thước. Kích thước tối
 thiểu lần lượt là 180 px, 260 px và 140 px, canvas luôn còn ít nhất
 280 × 160 px. Kích thước lưu trong trình duyệt này
-(`localStorage.lgs.editorPanels`), không lưu vào workflow.
+(`localStorage.lgs.editorPanels`), không lưu vào workflow. Viền giữa input và
+logs cũng kéo được.
+
+Trên màn hình hẹp (editor còn dưới 1100 px khi khung chat đang mở), **Cấu
+hình** tự thu lại khi không có gì được chọn và hiện lại khi bạn chọn một node
+hoặc edge.
 
 ## Sửa canvas
 
@@ -73,7 +79,7 @@ Lưu và Chạy đều kiểm tra graph. Trình kiểm tra từ chối:
 - trường được nhiều nhánh song song ghi mà không có reducer;
 - tham chiếu `{{state.x}}` tới trường không có, hoặc filter không tồn tại.
 
-Lỗi hiện cạnh tab Input.
+Lỗi hiện dưới input trong tab **Chạy**.
 
 ![Lỗi kiểm tra graph](../images/validation.png)
 

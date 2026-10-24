@@ -200,6 +200,7 @@ REQ-0044, Accepted 2026-10-22 (CLAR-0002: only verified linked chat accounts wit
 - TASK-0076 Editor "Chat triggers" dialog, Channels page events URL and missing-scope warning, Chat badge and sender in run history. **merged** (PR #100, REV-0070, QA-0070).
 - TASK-0077 Handbook "Chat triggers" page (en, vi) with Slack and Telegram setup and a screenshot. **merged** (PR #101, REV-0071, QA-0071).
 - TASK-0083 Settling a run (chat reply, callback, test record) survives a cancelled handler: `settled()` uses `_write_in_thread`; fixes the flaky `test_waiting_then_finished_and_errors`. **merged** (PR #113, REV-0076, QA-0076).
+- TASK-0086 Alignment guardrails: ui-conventions rule 11 (one size variant per row, no hand-set heights/paddings/leading, baseline alignment), `e2e/helpers/alignment.ts` + `alignment.spec.ts`, `npm run lint:ui` on CI; editor and list headers fixed. **draft PR** (REQ-0049, DEC-0055, REV-0079, QA-0079).
 
 ## Vietnamese language quality
 
